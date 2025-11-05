@@ -256,7 +256,6 @@ class Canteen:
     address: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    closed: Optional[bool] = None
 
     @classmethod
     def from_api(cls, payload: Mapping[str, Any]) -> Canteen:
@@ -270,7 +269,6 @@ class Canteen:
             address=payload.get("address"),
             latitude=lat,
             longitude=lng,
-            closed=closed,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -281,7 +279,6 @@ class Canteen:
             "address": self.address,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "closed": self.closed,
         }
 
 

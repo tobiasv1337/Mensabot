@@ -129,7 +129,6 @@ def print_canteen(c: Canteen) -> None:
     print(f"  address:    {as_dict['address']}")
     print(f"  latitude:   {as_dict['latitude']}")
     print(f"  longitude:  {as_dict['longitude']}")
-    print(f"  closed:     {as_dict['closed']}")
 
 
 def print_day(d: Day) -> None:
