@@ -6,26 +6,25 @@ Description: Command-line application for using the OpenMensa SDK.
 
 Usage examples:
     # 1. List first 10 canteens
-    python demo_openmensa.py list-canteens --per-page 10
+    openmensa list-canteens --per-page 10
 
     # 2. List canteens near TU Berlin
-    python demo_openmensa.py list-canteens --near-lat 52.512 --near-lng 13.326 --near-dist 2.0
+    openmensa list-canteens --near-lat 52.512 --near-lng 13.326 --near-dist 2.0
 
     # 3. Show details for a single canteen
-    python demo_openmensa.py get-canteen --id 2019
+    openmensa get-canteen --id 2019
 
     # 4. Show available days for a canteen
-    python demo_openmensa.py list-days --canteen-id 2019
+    openmensa list-days --canteen-id 2019
 
     # 5. Show meals for a specific date
-    python demo_openmensa.py list-meals --canteen-id 2019 --date 2025-10-29
+    openmensa list-meals --canteen-id 2019 --date 2025-10-29
 
     # 6. Show a single meal by ID
-    python demo_openmensa.py get-meal --canteen-id 2019 --date 2025-10-29 --meal-id 12345
+    openmensa get-meal --canteen-id 2019 --date 2025-10-29 --meal-id 12345
 """
 
 import argparse
-import sys
 import json
 from datetime import date as _date
 from typing import List, Optional
@@ -225,4 +224,4 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    raise SystemExit(main())
