@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-OpenMensa wrapper CLI demo / testing script.
+OpenMensa SDK — cli application
 Author: Tobias Veselsky
+Description: Command-line application for using the OpenMensa SDK.
 
 Usage examples:
     # 1. List first 10 canteens
@@ -29,7 +30,7 @@ import json
 from datetime import date as _date
 from typing import List, Optional
 
-from openmensa import (
+from openmensa_sdk import (
     OpenMensaClient,
     OpenMensaAPIError,
     Canteen,
@@ -75,7 +76,6 @@ def cmd_list_days(args) -> int:
     with OpenMensaClient() as client:
         try:
             start = args.start
-            end = args.end
             days, next_page = client.list_days(
                 args.canteen_id,
                 start=start,
