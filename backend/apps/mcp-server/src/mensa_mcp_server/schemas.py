@@ -5,7 +5,6 @@ Description: Pydantic schemas for Mensabot MCP Server tools.
 """
 from __future__ import annotations
 
-from typing import Annotated, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from enum import StrEnum
 from openmensa_sdk import Canteen, Meal
@@ -41,39 +40,64 @@ def _meal_to_dto(meal: Meal) -> MealDTO:
 class DTO(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+
 class CoordinateDTO(DTO):
-    latitude: Annotated[float, Field(ge=-90, le=90, description="Latitude in decimal degrees (WGS84)")]
-    longitude: Annotated[float, Field(ge=-180, le=180, description="Longitude in decimal degrees (WGS84)")]
+    latitude: float = Field(ge=-90, le=90, description="Latitude in decimal degrees (WGS84).")
+    longitude: float = Field(ge=-180, le=180, description="Longitude in decimal degrees (WGS84).")
+
 
 class PriceInfoDTO(DTO):
-    students: Optional[Annotated[float, Field(ge=0, description="Price for students. null if no price available for students.")]] = None
-    employees: Optional[Annotated[float, Field(ge=0, description="Price for employees. null if no price available for employees.")]] = None
-    pupils: Optional[Annotated[float, Field(ge=0, description="Price for pupils. null if no price available for pupils.")]] = None
-    others: Optional[Annotated[float, Field(ge=0, description="Price for others. null if no price available for others.")]] = None
-    raw: Annotated[dict[str, float], Field(default_factory=dict, description="Raw price information as provided by the API")]
+    students: float | None = Field(
+        default=None,
+        ge=0,
+        description="Price for students. null if no price available for students.",
+    )
+    employees: float | None = Field(
+        default=None,
+        ge=0,
+        description="Price for employees. null if no price available for employees.",
+    )
+    pupils: float | None = Field(
+        default=None,
+        ge=0,
+        description="Price for pupils. null if no price available for pupils.",
+    )
+    others: float | None = Field(
+        default=None,
+        ge=0,
+        description="Price for others. null if no price available for others.",
+    )
+    raw: dict[str, float] = Field(
+        default_factory=dict,
+        description="Raw price information as provided by the API.",
+    )
+
 
 class MealDTO(DTO):
-    id: Annotated[int, Field(description="Unique identifier of the meal")]
-    name: Annotated[str, Field(description="Name of the meal")]
-    category: Optional[Annotated[str, Field(description="Category of the meal")]] = None
-    notes: Annotated[list[str], Field(default_factory=list, description="List of notes associated with the meal.")]
+    id: int = Field(description="Unique identifier of the meal.")
+    name: str = Field(description="Name of the meal.")
+    category: str | None = Field(default=None, description="Category of the meal.")
+    notes: list[str] = Field(default_factory=list, description="List of notes associated with the meal.")
     prices: PriceInfoDTO
 
+
 class CanteenDTO(DTO):
-    id: Annotated[int, Field(description="Unique identifier of the canteen")]
-    name: Annotated[str, Field(description="Name of the canteen")]
-    city: Optional[Annotated[str, Field(description="City where the canteen is located")]] = None
-    address: Optional[Annotated[str, Field(description="Address of the canteen")]] = None
-    coordinates: Optional[CoordinateDTO] = None
+    id: int = Field(description="Unique identifier of the canteen.")
+    name: str = Field(description="Name of the canteen.")
+    city: str | None = Field(default=None, description="City where the canteen is located.")
+    address: str | None = Field(default=None, description="Address of the canteen.")
+    coordinates: CoordinateDTO | None = None
+
 
 class PageInfoDTO(DTO):
-    current_page: Annotated[int, Field(ge=1, description="Current page number (1-based)")]
-    per_page: Annotated[int, Field(ge=1, description="Number of items per page")]
-    next_page: Optional[Annotated[int, Field(ge=1, description="Next page number, if available")]] = None
-    has_next: Annotated[bool, Field(description="Indicates if there is a next page")]
+    current_page: int = Field(ge=1, description="Current page number (1-based).")
+    per_page: int = Field(ge=1, description="Number of items per page.")
+    next_page: int | None = Field(default=None, ge=1, description="Next page number, if available.")
+    has_next: bool = Field(description="Indicates if there is a next page.")
+
 
 class CanteenListResponseDTO(DTO):
-    canteens: Annotated[list[CanteenDTO], Field(description="List of canteens")]
+    canteens: list[CanteenDTO] = Field(description="List of canteens.")
     page_info: PageInfoDTO
 
 class MenuStatusDTO(StrEnum):
@@ -83,7 +107,7 @@ class MenuStatusDTO(StrEnum):
     api_error = "api_error"
 
 class MenuResponseDTO(DTO):
-    canteen_id: Annotated[int, Field(ge=1, description="Unique identifier of the canteen")]
-    date: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date (YYYY-MM-DD)")]
+    canteen_id: int = Field(ge=1, description="Unique identifier of the canteen.")
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date (YYYY-MM-DD).")
     status: MenuStatusDTO
-    meals: Annotated[list[MealDTO], Field(default_factory=list, description="List of meals for the given date")]
+    meals: list[MealDTO] = Field(default_factory=list, description="List of meals for the given date.")
