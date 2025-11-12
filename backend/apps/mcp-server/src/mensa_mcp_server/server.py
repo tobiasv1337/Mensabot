@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from openmensa_sdk import OpenMensaClient
 
 class MCPServerSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="MENSA_MCP_", env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="MENSA_MCP_", env_file=".env", env_file_encoding="utf-8", extra="forbid", case_sensitive=False)
 
     openmensa_base_url: str = "https://openmensa.org/api/v2"
     openmensa_timeout: float = 10.0

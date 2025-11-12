@@ -5,10 +5,12 @@ Description: Provides OpenMensa-related tools for the MCP server.
 """
 
 import datetime as dt
-from typing import Any, Dict
+from typing import Annotated
+from pydantic import Field
 
-from .server import mcp, make_openmensa_client
 from openmensa_sdk import OpenMensaAPIError
+from .server import mcp, make_openmensa_client
+from .schemas import CoordinateDTO, PriceInfoDTO, MealDTO, CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO
 
 @mcp.tool()
 def list_canteens_near(lat: float, lng: float, radius_km: float, limit: int = 20) -> Dict[str, Any]:
