@@ -4,7 +4,7 @@ Author: Tobias Veselsky
 Description: Builds the FastMCP server and provides client factory for tools.
 """
 
-from fastMCP import FastMCP
+from fastmcp import FastMCP
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from openmensa_sdk import OpenMensaClient
 
