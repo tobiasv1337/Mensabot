@@ -11,7 +11,10 @@ maintainers = [
   { name = "Tobias Veselsky", email = "veselsky@tu-berlin.de" },
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastmcp>=2.13.0.2",
+    "openmensa-sdk",
+]
 
 [project.scripts]
 mensa-mcp-server = "mensa_mcp_server.__main__:main"
@@ -19,3 +22,6 @@ mensa-mcp-server = "mensa_mcp_server.__main__:main"
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+openmensa-sdk = { path = "../../libs/openmensa" }
