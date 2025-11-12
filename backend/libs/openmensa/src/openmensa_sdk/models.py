@@ -153,8 +153,6 @@ class Canteen:
     @classmethod
     def from_api(cls, payload: Mapping[str, Any]) -> Canteen:
         lat, lng = _parse_coord_pair(payload.get("coordinates"))
-        raw_closed = payload.get("closed")
-        closed = bool(raw_closed) if isinstance(raw_closed, bool) else None
         return cls(
             id=int(payload["id"]),
             name=str(payload.get("name") or ""),
