@@ -4,7 +4,6 @@ Author: Tobias Veselsky
 Description: Entry point for the Mensa MCP server application.
 """
 
-from . import tools_openmensa, tools_generic
 from .server import mcp
 
 def main() -> None:
