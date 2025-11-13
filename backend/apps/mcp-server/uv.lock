@@ -637,7 +637,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=2.13.0.2" },
-    { name = "openmensa-sdk", directory = "../../libs/openmensa" },
+    { name = "openmensa-sdk", editable = "../../libs/openmensa" },
 ]
 
 [[package]]
@@ -664,7 +664,7 @@ wheels = [
 [[package]]
 name = "openmensa-sdk"
 version = "0.1.0"
-source = { directory = "../../libs/openmensa" }
+source = { editable = "../../libs/openmensa" }
 dependencies = [
     { name = "requests" },
 ]

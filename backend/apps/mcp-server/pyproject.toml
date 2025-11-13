@@ -24,4 +24,4 @@ requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-openmensa-sdk = { path = "../../libs/openmensa" }
+openmensa-sdk = { path = "../../libs/openmensa", editable = true }

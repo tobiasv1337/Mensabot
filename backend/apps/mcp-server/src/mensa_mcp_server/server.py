@@ -25,3 +25,7 @@ def make_openmensa_client() -> OpenMensaClient:
         timeout=settings.openmensa_timeout,
         user_agent=settings.openmensa_user_agent,
     )
+
+# Import tools to register them with the MCP server
+from . import tools_generic
+from . import tools_openmensa
