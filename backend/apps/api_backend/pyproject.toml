@@ -1,0 +1,27 @@
+[project]
+name = "mensa-api-backend"
+version = "0.1.0"
+description = "Mensa API backend with FastMCP server for OpenMensa and LLM calling with tool support"
+keywords = ["mensabot", "tu-berlin", "mensa", "api", "backend", "fastmcp", "openmensa", "llm", "tools"]
+readme = "README.md"
+authors = [
+    { name = "Tobias Veselsky", email = "veselsky@tu-berlin.de" }
+]
+maintainers = [
+  { name = "Tobias Veselsky", email = "veselsky@tu-berlin.de" },
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp>=2.13.0.2",
+    "mensa-mcp-server"
+]
+
+[project.scripts]
+mensa-api-backend = "mensa_api_backend.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+mensa-mcp-server = { path = "../mcp-server", editable = true }
