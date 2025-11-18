@@ -752,6 +752,7 @@ dependencies = [
     { name = "fastmcp" },
     { name = "mensa-mcp-server" },
     { name = "openai" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -760,6 +761,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.13.0.2" },
     { name = "mensa-mcp-server", editable = "../mcp-server" },
     { name = "openai", specifier = ">=2.8.0" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
 ]
 
 [[package]]
