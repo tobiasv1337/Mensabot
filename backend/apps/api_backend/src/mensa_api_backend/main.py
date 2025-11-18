@@ -1,12 +1,25 @@
+import os
+import json
 from fastapi import FastAPI
 from typing import Optional, Any, Dict, List
 from pydantic import BaseModel
 from openai import OpenAI
-import json
+from dotenv import load_dotenv
 
-api_key = ""
-base_url = "https://chat-ai.academiccloud.de/v1"
-model = "meta-llama-3.1-8b-instruct"
+load_dotenv() # Load environment variables from .env file
+
+def get_env_required(name: str) -> str:
+    """
+    Get a required environment variable. Raise an error if not set.
+    """
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Required environment variable {name} is not set")
+    return value
+
+api_key = get_env_required("LLM_API_KEY")
+base_url = get_env_required("LLM_BASE_URL")
+model = get_env_required("LLM_MODEL")
 
 def list_canteens_near(
     lat: float,
