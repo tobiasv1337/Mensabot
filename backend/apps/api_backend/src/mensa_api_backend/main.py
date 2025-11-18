@@ -223,15 +223,18 @@ def run_tool_calling_loop(request_text: str) -> str:
 
 
 class ChatRequest(BaseModel):
-    messages: list[dict]
-    model: Optional[str] = None
+    # For now make it a simple single string request for simplicity and easy terminal testing.
+    message: str
+    # messages: list[dict]
+    # model: Optional[str] = None
 
 class ChatResponse(BaseModel):
     reply: str
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: str):
-    resp = run_tool_calling_loop(request)
+async def chat(request: ChatRequest):
+    message = request.message
+    resp = run_tool_calling_loop(message)
 
     return ChatResponse(reply=resp)
 
