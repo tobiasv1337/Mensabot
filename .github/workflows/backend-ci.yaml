@@ -17,9 +17,107 @@ on:
       - ".github/workflows/backend-ci.yml"
 
 jobs:
-  test-backend:
+  openmensa-sdk:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Sync OpenMensa SDK dependencies
+        working-directory: backend/libs/openmensa
+        run: uv sync --all-extras --dev
+
+      - name: Compile OpenMensa SDK sources
+        working-directory: backend/libs/openmensa
+        run: uv run python -m compileall src
+
+      - name: Run OpenMensa SDK tests (pytest, optional)
+        working-directory: backend/libs/openmensa
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+  mcp-server:
+    runs-on: ubuntu-latest
+    needs: openmensa-sdk
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Sync MCP server dependencies
+        working-directory: backend/apps/mcp-server
+        run: uv sync --all-extras --dev
+
+      - name: Compile MCP server sources
+        working-directory: backend/apps/mcp-server
+        run: uv run python -m compileall src
+
+      - name: Run MCP server tests (pytest, optional)
+        working-directory: backend/apps/mcp-server
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+  api-backend:
+    runs-on: ubuntu-latest
+    needs: [openmensa-sdk, mcp-server]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Sync API backend dependencies
+        working-directory: backend/apps/api_backend
+        run: uv sync --all-extras --dev
+
+      - name: Compile API backend sources
+        working-directory: backend/apps/api_backend
+        run: uv run python -m compileall src
+
+      - name: Run API backend tests (pytest, optional)
+        working-directory: backend/apps/api_backend
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+      - name: Start API backend for healthcheck
+        working-directory: backend/apps/api_backend
+        run: |
+          uv run mensa-api-backend &
+          echo "Waiting for API to start..."
+          sleep 5
+
+      - name: Healthcheck /health
+        run: curl -f http://127.0.0.1:8000/health
