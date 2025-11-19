@@ -17,9 +17,34 @@ on:
       - ".github/workflows/frontend-ci.yml"
 
 jobs:
-  build-frontend:
+  frontend-ci:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run frontend tests (optional)
+        working-directory: frontend
+        run: |
+          if npm run | grep -q " test"; then
+            echo "Found test script, running npm test"
+            npm test
+          else
+            echo "No npm test script defined, skipping tests"
+          fi
