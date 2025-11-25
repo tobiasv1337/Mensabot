@@ -46,6 +46,9 @@ with OpenMensaClient() as client:
 ### Command-line usage
 A simple CLI is included when the package is installed.
 ```bash
+# show help to see all available commands
+uv run openmensa --help
+
 # list first 10 canteens
 uv run openmensa list-canteens --per-page 10
 
@@ -55,9 +58,6 @@ uv run openmensa list-canteens --near-lat 52.512 --near-lng 13.326 --near-dist 2
 # show meals for a specific canteen and date
 uv run openmensa list-meals --canteen-id 2019 --date 2025-11-11
 ```
-
-```bash
-openmensa --help
 
 ---
 **Maintainer:** Tobias Veselsky  (<veselsky@tu-berlin.de>) 
