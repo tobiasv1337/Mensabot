@@ -56,7 +56,8 @@ uv run openmensa list-canteens --near-lat 52.512 --near-lng 13.326 --near-dist 2
 uv run openmensa list-meals --canteen-id 2019 --date 2025-11-11
 ```
 
-Run openmensa --help to see all available commands.
+```bash
+openmensa --help
 
 ---
 **Maintainer:** Tobias Veselsky  (<veselsky@tu-berlin.de>) 
