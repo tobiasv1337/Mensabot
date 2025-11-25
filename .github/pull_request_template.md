@@ -1,54 +1,69 @@
 <!--
-PR-Vorlage für Mensabot
+Pull Request Template for Mensabot
 
-Hinweise:
-- Alles in diesem Kommentar wird im PR nicht angezeigt.
-- Fülle die Sektionen "Beschreibung", "Änderungen", "Tests" aus.
-- Die Review-Checkliste ist primär für Reviewer gedacht.
+Notes:
+- Everything inside this comment will not appear in the final PR description.
+- Fill out the sections "Summary", "Changes", "Authors".
+- Review checklist is mainly for reviewers.
 -->
 
 # Pull Request - Mensabot
 
-## Kurzbeschreibung
-<!-- Kurze Stichpunkte: Was macht dieser PR? Warum? -->
+## Summary
+<!-- Short bullet points: What does this PR do? Why is it needed? -->
 -
 
-## PR-Typ
-<!-- Wähle eine oder mehrere passende Kategorien -->
+## PR Type
+<!-- Select one or multiple categories -->
 - [ ] Feature
 - [ ] Bugfix
 - [ ] Refactoring / Cleanup
 - [ ] CI / DevOps
-- [ ] Dokumentation
-- [ ] Sonstiges
+- [ ] Documentation
+- [ ] Other
 
-## Betroffene Bereiche
-<!-- Ankreuzen, welche Teile des Monorepos betroffen sind -->
+## Affected Areas
+<!-- Check all areas of the monorepo that are affected -->
 - [ ] Frontend (`frontend/`)
 - [ ] API Backend (`backend/apps/api_backend/`)
 - [ ] MCP Server (`backend/apps/mcp-server/`)
 - [ ] OpenMensa SDK (`backend/libs/openmensa/`)
-- [ ] Nur Config / Docs / Sonstiges
+- [ ] Config / Docs / Other
 
-## Änderungen (kurz & knapp)
-<!-- Bullet Points mit den wichtigsten Änderungen -->
-- 
-- 
+## Authors / Co-authors
+<!--
+List the people who actively contributed to the code in this PR.
+If Pair Programming etc. was involved, add Co-authors here.
+Also ensure commits include proper 'Co-authored-by:' trailers.
+-->
+- Main author:
+- Co-authors (if any):
 
-## Zusammenhang / Issues
-<!-- Relevante Issues, Links etc. -->
+## Changes (short & concise)
+<!-- Bullet points describing the most important changes -->
+-
+-
+
+## Related Issues / Linking
+<!--
+Use GitHub's keyword linking, e.g.:
+Fixes #123
+Closes #45
+Resolves #67
+-->
 -
 
 ---
 
-## Review-Checkliste (für Reviewer)
+## Review Checklist (for reviewers)
 <!--
-Diese Liste ist als Gedankenstütze für Reviewer gedacht.
-Du kannst hier ggfs. direkt abhaken.
+List to help reviewers verify the PR is complete and correct.
+Reviewers may directly tick these items.
 -->
-- [ ] Änderungen fachlich verstanden
-- [ ] Code ist nachvollziehbar und konsistent mit bestehendem Stil
-- [ ] Keine offensichtlichen Sicherheits- oder Logikfehler
-- [ ] Relevante Teile des Codes sind ausreichend kommentiert / selbsterklärend
-- [ ] CI ist grün (Frontend / Backend / MCP / SDK)
-- [ ] PR ist auf dem aktuellen Stand von `development` / `main` (je nach Zielbranch)
+- [ ] Changes are understood and make sense
+- [ ] Code is consistent with existing style and structure
+- [ ] No obvious security or logic flaws
+- [ ] Relevant code is commented / self-explanatory
+- [ ] CI is green (Frontend / Backend / MCP / SDK)
+- [ ] PR branch is up to date with `development` or `main` (target branch)
+- [ ] All conversations are resolved
