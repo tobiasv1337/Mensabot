@@ -23,7 +23,10 @@ def _parse_date(value: Any) -> dt.date:
     """Parse a date from API ('YYYY-MM-DD') into datetime.date."""
     if isinstance(value, dt.date):
         return value
-    return dt.date.fromisoformat(str(value))
+    try:
+        return dt.date.fromisoformat(str(value))
+    except ValueError as e:
+        raise ValueError(f"Invalid date format: {value}. Expected YYYY-MM-DD.") from e
 
 
 def _parse_coord_pair(raw: Any) -> Tuple[Optional[float], Optional[float]]:
@@ -39,6 +42,8 @@ def _parse_coord_pair(raw: Any) -> Tuple[Optional[float], Optional[float]]:
     except (TypeError, ValueError):
         return (None, None)
     if any(map(math.isnan, (lat, lng))) or any(map(math.isinf, (lat, lng))):
+        return (None, None)
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
         return (None, None)
     return (lat, lng)
 
