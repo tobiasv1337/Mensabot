@@ -8,4 +8,4 @@ Description: Entry point for the OpenMensa SDK package.
 from .cli import main
 
 if __name__ == "__main__":
-    SystemExit(main())
+    raise SystemExit(main())
