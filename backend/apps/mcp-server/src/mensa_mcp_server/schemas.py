@@ -108,6 +108,11 @@ class MenuStatusDTO(StrEnum):
 
 class MenuResponseDTO(DTO):
     canteen_id: int = Field(ge=1, description="Unique identifier of the canteen.")
-    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date (YYYY-MM-DD).")
+    date: str = Field(
+        description=(
+            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'api_error' "
+            "this is a valid ISO date. For 'invalid_date' it contains the original invalid input."
+        ),
+    )
     status: MenuStatusDTO
     meals: list[MealDTO] = Field(default_factory=list, description="List of meals for the given date.")
