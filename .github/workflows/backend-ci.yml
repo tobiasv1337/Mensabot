@@ -5,20 +5,33 @@ on:
     branches:
       - main
       - development
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
   pull_request:
     branches:
       - main
       - development
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
 jobs:
+  detect-backend-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Detect backend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend-ci.yml'
+
   openmensa-sdk:
+    needs: detect-backend-changes
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -50,8 +63,9 @@ jobs:
           fi
 
   mcp-server:
+    needs: [detect-backend-changes, openmensa-sdk]
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    needs: openmensa-sdk
 
     steps:
       - name: Checkout repository
@@ -82,8 +96,9 @@ jobs:
           fi
 
   api-backend:
+    needs: [detect-backend-changes, openmensa-sdk, mcp-server]
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    needs: [openmensa-sdk, mcp-server]
 
     env:
       # secrets
