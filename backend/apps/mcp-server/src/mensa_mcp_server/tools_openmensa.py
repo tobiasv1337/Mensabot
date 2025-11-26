@@ -10,7 +10,7 @@ from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError
 from .server import mcp, make_openmensa_client
-from .schemas import CoordinateDTO, PriceInfoDTO, MealDTO, CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, _canteen_to_dto, _meal_to_dto
+from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, _canteen_to_dto, _meal_to_dto
 
 @mcp.tool()
 def list_canteens_near(
@@ -78,16 +78,19 @@ def get_menu_for_date(
     Meal prices may be null for individual groups (e.g. pupils) when no price was published.
     """
 
-    # basic sanity check for the date string
-    try:
-        dt.date.fromisoformat(date)
-    except ValueError:
-        return MenuResponseDTO(
-            canteen_id=canteen_id,
-            date=date,
-            status=MenuStatusDTO.invalid_date,
-            meals=[],
-        )
+    if date is None:
+        # Use today's date if none is provided
+        date = dt.date.today().isoformat()
+    else:
+        try:
+            dt.date.fromisoformat(date)
+        except ValueError:
+            return MenuResponseDTO(
+                canteen_id=canteen_id,
+                date=date,  #invalid input
+                status=MenuStatusDTO.invalid_date,
+                meals=[],
+            )
 
     with make_openmensa_client() as client:
         try:
