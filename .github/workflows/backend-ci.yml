@@ -85,6 +85,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [openmensa-sdk, mcp-server]
 
+    env:
+      #secrets
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      #variables
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      MCP_URL: ${{ vars.MCP_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
