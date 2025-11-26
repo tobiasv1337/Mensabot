@@ -1,1 +1,1 @@
-// dark and lightmode confiq
+// dark and lightmode config
