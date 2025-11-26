@@ -2,7 +2,7 @@ import os
 import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -129,15 +129,15 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
         {
             "role": "system",
             "content": (
-                "You are the Mensabot for university canteens."
-                "If the user asks for information, use the available tools to get real data if possible."
-                "Don't make up any information by hallucination."
-                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge."
-                "You are allowed to answer based on your internal knowledge, but then clearly state that that this is your guess that you couldn't verify and the information may be outdated or incorrect."
-                "But if you are still sure about your answer based on your internal knowledge, you can also just give the answer directly."
-                "If you are very unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up."
-                "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user."
-                "Don't mention anything about tools or tool usage in your final answer."
+                "You are the Mensabot for university canteens.\n"
+                "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
+                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
+                "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
+                "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
+                "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
+                "Don't mention anything about tools or tool usage in your final answer.\n"
+                "Always respond in a friendly and helpful manner.\n"
+                "Always respond in the same language the user used in their request."
             ),
         },
     ]
@@ -176,6 +176,7 @@ def run_tool_calling_loop(request_text: str) -> str:
             final_message = message
             break
 
+        # Per OpenAI spec, we should append this tool calling message to the messages. But the SAIA backend seems to have issues with that responding that only a single tool call is allowed.
         #messages.append(message)
 
         print(f"Number of tool calls: {len(tool_calls)}")

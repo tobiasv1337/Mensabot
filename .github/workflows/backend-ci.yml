@@ -86,9 +86,9 @@ jobs:
     needs: [openmensa-sdk, mcp-server]
 
     env:
-      #secrets
+      # secrets
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      #variables
+      # variables
       LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
       MCP_URL: ${{ vars.MCP_URL }}
