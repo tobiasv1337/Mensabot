@@ -128,5 +128,5 @@ jobs:
           echo "Waiting for API to start..."
           sleep 5
 
-      - name: Healthcheck /health
-        run: curl -f http://127.0.0.1:8000/health
+      - name: Healthcheck /api/health
+        run: curl -f http://127.0.0.1:8000/api/health
