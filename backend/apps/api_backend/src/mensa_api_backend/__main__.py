@@ -31,12 +31,13 @@ def list_canteens_near(
     lng: float,
     radius_km: float = 3.0,
     page: int = 1,
+    per_page: int = 20,
 ) -> Dict[str, Any]:
     """
     Stub: pretend we queried OpenMensa and found some canteens near TU Berlin.
     Just for testing purposes. :)
     """
-    print(f"[STUB] list_canteens_near(lat={lat}, lng={lng}, radius_km={radius_km}, page={page})")
+    print(f"[STUB] list_canteens_near(lat={lat}, lng={lng}, radius_km={radius_km}, page={page}, per_page={per_page})")
 
     return {
         "page_info": {
