@@ -67,46 +67,6 @@ def list_canteens_near(
         ],
     }
 
-# STUB tool definition. Just for testing function-calling behavior for now. :)
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "list_canteens_near",
-            "description": (
-                "List canteens near a geographic location (paginated). "
-                "Use this to find nearby university canteens. "
-                "Return real canteen names, distances, and addresses."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "lat": {
-                        "type": "number",
-                        "description": "Latitude in WGS84 decimal degrees."
-                    },
-                    "lng": {
-                        "type": "number",
-                        "description": "Longitude in WGS84 decimal degrees."
-                    },
-                    "radius_km": {
-                        "type": "number",
-                        "description": "Search radius in kilometers.",
-                        "default": 3.0
-                    },
-                    "page": {
-                        "type": "integer",
-                        "description": "Page number for pagination (1-based).",
-                        "default": 1,
-                        "minimum": 1
-                    },
-                },
-                "required": ["lat", "lng"],
-            },
-        },
-    },
-]
-
 
 app = FastAPI()
 
@@ -156,6 +116,27 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
         print(f"Converted {len(openai_tools)} tools to OpenAI format: {openai_tools}")
         return openai_tools
 
+def unwrap_tool_result(resp: Any) -> Any:
+    """
+    Convert FastMCP tool result into plain Python data for the LLM.
+    """
+    if getattr(resp, "structured_content", None) is not None:
+        return resp.structured_content
+
+async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Call a tool via FastMCP and return a JSON-serializable dict.
+    """
+    async with MCPClient(mcp) as mcp_client:
+        try:
+            resp = await mcp_client.call_tool(tool_name, args)
+            data = unwrap_tool_result(resp)
+            print(f"Tool {tool_name} called with args {args}, got response: {resp}")
+            return {"ok": True, "tool": tool_name, "args": args, "result": data}
+        except Exception as e:
+            print(f"Error calling tool {tool_name} with args {args}: {e}")
+            return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
+
 def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     messages: List[Dict[str, Any]] = [
         {
@@ -180,14 +161,14 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     messages.append(request)
     return messages
 
-def run_tool_calling_loop(request_text: str) -> str:
+async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
 
     while True:
         completion = client.chat.completions.create(
             model=LLM_MODEL,
             messages=messages,
-            tools=tools,
+            tools= await get_openai_tools_from_mcp(),
             tool_choice="auto",
             temperature=0.2,
         )
@@ -219,24 +200,21 @@ def run_tool_calling_loop(request_text: str) -> str:
 
             try:
                 args = json.loads(raw_args)
+                # Delegate to MCP
+                result_payload: Dict[str, Any] = await call_mcp_tool(tool_name, args)
             except json.JSONDecodeError as e:
-                result = {"error": f"Failed to parse arguments: {str(e)}"}
-            else:
-                if tool_name == "list_canteens_near":
-                    result = list_canteens_near(**args)
-                else:
-                    result = {"error": f"Unknown tool: {tool_name}"}
+                result_payload = {"error": f"Failed to parse arguments: {str(e)}"}
 
             messages.append(
                 {
                     "role": "tool",
                     "tool_call_id": call.id,
                     "name": tool_name,
-                    "content": json.dumps(result),
+                    "content": json.dumps(result_payload),
                 }
             )
 
-            if not (isinstance(result, dict) and "error" in result):
+            if not (isinstance(result_payload, dict) and "error" in result_payload):
                 messages.append(
                     {
                         "role": "system",
@@ -284,7 +262,7 @@ class ChatResponse(BaseModel):
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     message = request.message
-    resp = run_tool_calling_loop(message)
+    resp = await run_tool_calling_loop(message)
 
     return ChatResponse(reply=resp)
 
@@ -293,8 +271,6 @@ async def health():
     return {"status": "ok"}
 
 def main():
-    test = asyncio.run(get_openai_tools_from_mcp())
-    print(f"Tools from MCP: {test}")
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
