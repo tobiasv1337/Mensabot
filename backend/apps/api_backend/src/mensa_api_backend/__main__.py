@@ -1,11 +1,14 @@
 import os
 import json
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, List
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
+from fastmcp import Client as MCPClient
+from mensa_mcp_server import mcp
 
 load_dotenv() # Load environment variables from .env file
 
@@ -123,6 +126,34 @@ app.add_middleware(
 
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
+async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
+    async with MCPClient(mcp) as mcp_client:
+        raw_tools = await mcp_client.list_tools()
+        print(f"Retrieved {len(raw_tools)} tools from MCP server: {raw_tools}")
+        tool_list = list(raw_tools)
+        
+        openai_tools = []
+
+        for tool in tool_list:
+            name = getattr(tool, "name", None)
+            description = getattr(tool, "description", "")
+            parameters = getattr(tool, "inputSchema", None)
+            if not name or not parameters:
+                print(f"Warning: Tool {tool} is missing name or inputSchema!")
+                continue
+        
+            openai_tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "description": description,
+                        "parameters": parameters,
+                    },
+                }
+            )
+        print(f"Converted {len(openai_tools)} tools to OpenAI format: {openai_tools}")
+        return openai_tools
 
 def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     messages: List[Dict[str, Any]] = [
@@ -261,6 +292,8 @@ async def health():
     return {"status": "ok"}
 
 def main():
+    test = asyncio.run(get_openai_tools_from_mcp())
+    print(f"Tools from MCP: {test}")
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
