@@ -90,7 +90,6 @@ client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
     async with MCPClient(mcp) as mcp_client:
         raw_tools = await mcp_client.list_tools()
-        print(f"Retrieved {len(raw_tools)} tools from MCP server: {raw_tools}")
         tool_list = list(raw_tools)
         
         openai_tools = []
@@ -113,7 +112,6 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
                     },
                 }
             )
-        print(f"Converted {len(openai_tools)} tools to OpenAI format: {openai_tools}")
         return openai_tools
 
 def unwrap_tool_result(resp: Any) -> Any:
@@ -182,21 +180,18 @@ async def run_tool_calling_loop(request_text: str) -> str:
             break
 
         
-        print("Tool calls detected!")
         tool_calls = message.tool_calls or []
         if not tool_calls:
-            print("No tool calls found, exiting loop.")
             final_message = message
             break
 
-        # Per OpenAI spec, we should append this tool calling message to the messages. But the SAIA backend seems to have issues with that responding that only a single tool call is allowed.
-        #messages.append(message)
+        if "academiccloud.de" not in LLM_BASE_URL:
+            messages.append(message)
 
         print(f"Number of tool calls: {len(tool_calls)}")
         for call in tool_calls:
             tool_name = call.function.name
             raw_args = call.function.arguments
-            print(f"Tool call ID: {call.id}, function: {tool_name}, arguments: {raw_args}")
 
             try:
                 args = json.loads(raw_args)
@@ -214,38 +209,33 @@ async def run_tool_calling_loop(request_text: str) -> str:
                 }
             )
 
-            if not (isinstance(result_payload, dict) and "error" in result_payload):
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "You have just successfully received the tool results you requested as a JSON object."
-                            "You can assume these tool results to be 100% correct and accurate."
-                            "You don't need to validate them and can fully trust them to answer the user query."
-                            "Now either make further tool calls if needed, or answer the user based on the tool results."
-                        ),
-                    }
-                )
-            else:
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "The previous tool call failed and did NOT provide useful data. "
-                            "You should not rely on this tool result. "
-                            "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                        ),
-                    }
-                )
+            if "academiccloud.de" in LLM_BASE_URL:
+                if not (isinstance(result_payload, dict) and "error" in result_payload):
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "You have just successfully received the tool results you requested as a JSON object."
+                                "You can assume these tool results to be 100% correct and accurate."
+                                "You don't need to validate them and can fully trust them to answer the user query."
+                                "Now either make further tool calls if needed, or answer the user based on the tool results."
+                            ),
+                        }
+                    )
+                else:
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "The previous tool call failed and did NOT provide useful data. "
+                                "You should not rely on this tool result. "
+                                "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
+                            ),
+                        }
+                    )
 
 
-    print("Final message content:")
-    print(final_message.content)
-
-    print("Info Log: All infos about this request:")
-    print(messages)
-    print(json.dumps(final_message.model_dump(), indent=2))
-
+    print(f"Final message: {json.dumps(final_message.model_dump(), indent=2)}")
     return final_message.content
 
 
