@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import './App.css'
+import {useShortcutStorage} from "./hooks/useShortcutStorage.ts";
+import {ShortcutList} from "./components/shortcut/ShortcutList.tsx";
 
 type ChatResponse = {
   reply?: string
@@ -11,6 +13,15 @@ function App() {
   const [backendResponse, setBackendResponse] = useState<string>('')
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string>('')
+
+    const { shortcuts, addShortcut, removeShortcut } =
+        useShortcutStorage("mensabot-shortcuts", []);
+
+    const handleAddShortcut = () => {
+        if (!userInput.trim()) return;
+        addShortcut(userInput.trim());
+        setUserInput("");
+    };
 
   const sendMessage = async () => {
     if (!userInput.trim() || isSending) return
@@ -63,7 +74,14 @@ function App() {
           <p>{backendResponse || 'Warte auf deine Eingabe...'}</p>
         )}
       </section>
-
+        <section className="shortcuts">
+            <ShortcutList
+                shortcuts={shortcuts}
+                onShortcutClick={(s) => setUserInput(s)}
+                onAddShortcut={handleAddShortcut}
+                onDeleteShortcut={removeShortcut}
+            />
+        </section>
       <section className="input-row">
         <input
           type="text"
