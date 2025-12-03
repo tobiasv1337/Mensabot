@@ -1,0 +1,78 @@
+
+.inputfeld-container {
+    width: 100%;
+    max-width: 1000px;
+    border-radius: 14px;
+    border: 2px solid #FE413C;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+    gap: 0;
+}
+
+.inputfeld-inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    background: #3D434B;
+    /* CRITICAL FIX: Ensure ample space on the right side.
+       We'll use a larger right padding to push the button away from the edge. */
+    padding: 14px 20px 14px 14px; /* Top, Right(20px), Bottom, Left */
+}
+
+.mensabot-input {
+    flex: 1;
+    background: transparent;
+    color: #F1F1F1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    min-height: 24px;
+    line-height: 1.4;
+
+    /* NEUE ANPASSUNG: Fügt Abstand zwischen Input-Text und Send-Button hinzu */
+    padding-right: 10px; /* Verschiebt den Send-Button um 10px nach links */
+}
+
+.mensabot-input::placeholder {
+    color: #CBCCCD;
+}
+
+.send-btn {
+    background: transparent;
+    border: none;
+    color: #CBCCCD;
+    font-size: 16px;
+    cursor: pointer;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 32px;
+    height: 32px;
+
+    margin-right: 40px; /* Add some space from the right edge */
+    padding: 0;
+}
+
+.pills-row {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
+
+    background: #2A2E32;
+    /* Padding: Top (Gap: 20px), Right/Left (14px), Bottom (10px) */
+    padding: 20px 14px 10px 14px;
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.pills-row::-webkit-scrollbar {
+    display: none;
+}
