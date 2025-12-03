@@ -4,10 +4,12 @@ import logging
 import datetime as dt
 import asyncio
 from zoneinfo import ZoneInfo
+
+from typing import Any, Dict, List, Literal
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, List
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
@@ -15,6 +17,17 @@ from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 
 load_dotenv() # Load environment variables from .env file
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    # model: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    reply: str
 
 def get_env_required(name: str) -> str:
     """
@@ -234,9 +247,29 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     request = {
         "role": "user",
         "content": request_text,
+def format_message_history(messages: List[ChatMessage], format: Literal["openai"] = "openai") -> List[ChatCompletionMessage]:
+    if format == "openai":
+        formatted_messages: List[ChatCompletionMessage] = [*messages]
+    else:
+        raise ValueError(f"Unsupported target message format: {format}")
+    
+    return formatted_messages
+
+def run_tool_calling_loop(messages: list[ChatMessage]) -> str:
+    system_prompt = {
+        "role": "system",
+        "content": (
+            "You are the Mensabot for university canteens.\n"
+            "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
+            "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
+            "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
+            "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
+            "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
+            "Don't mention anything about tools or tool usage in your final answer.\n"
+            "Always respond in a friendly and helpful manner.\n"
+            "Always respond in the same language the user used in their request."
+        ),
     }
-    messages.append(request)
-    return messages
 
 async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
@@ -299,33 +332,39 @@ async def run_tool_calling_loop(request_text: str) -> str:
                 }
             )
 
-            if not LLM_SUPPORTS_TOOL_MESSAGES:
-                if not (isinstance(result_payload, dict) and "error" in result_payload):
-                    messages.append(
-                        {
-                            "role": "system",
-                            "content": (
-                                "You have just successfully received the tool results you requested as a JSON object."
-                                "You can assume these tool results to be 100% correct and accurate."
-                                "You don't need to validate them and can fully trust them to answer the user query."
-                                "Now either make further tool calls if needed, or answer the user based on the tool results."
-                            ),
-                        }
-                    )
-                else:
-                    messages.append(
-                        {
-                            "role": "system",
-                            "content": (
-                                "The previous tool call failed and did NOT provide useful data. "
-                                "You should not rely on this tool result. "
-                                "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                            ),
-                        }
-                    )
-        
-    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
-    return LLM_FALLBACK_RESPONSE
+            if not (isinstance(result, dict) and "error" in result):
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "You have just successfully received the tool results you requested as a JSON object."
+                            "You can assume these tool results to be 100% correct and accurate."
+                            "You don't need to validate them and can fully trust them to answer the user query."
+                            "Now either make further tool calls if needed, or answer the user based on the tool results."
+                        ),
+                    }
+                )
+            else:
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "The previous tool call failed and did NOT provide useful data. "
+                            "You should not rely on this tool result. "
+                            "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
+                        ),
+                    }
+                )
+
+
+    print("Final message content:")
+    print(final_message.content)
+
+    print("Info Log: All infos about this request:")
+    print(messages)
+    print(json.dumps(final_message.model_dump(), indent=2))
+
+    return final_message.content
 
 
 
@@ -340,10 +379,8 @@ class ChatResponse(BaseModel):
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    message = request.message
-    resp = await run_tool_calling_loop(message)
-
-    return ChatResponse(reply=resp)
+    response = run_tool_calling_loop(request.messages)
+    return ChatResponse(reply=response)
 
 @app.get("/api/health")
 async def health():
