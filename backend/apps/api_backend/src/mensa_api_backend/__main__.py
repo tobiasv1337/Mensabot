@@ -1,13 +1,27 @@
 import os
 import json
+
+from typing import Any, Dict, List, Literal
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, List
-from pydantic import BaseModel
+from openai.types.chat import ChatCompletionMessage
 from openai import OpenAI
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from .env file
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    # model: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    reply: str
 
 def get_env_required(name: str) -> str:
     """
@@ -124,32 +138,16 @@ app.add_middleware(
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 
-def generate_messages(request_text: str) -> List[Dict[str, Any]]:
-    messages: List[Dict[str, Any]] = [
-        {
-            "role": "system",
-            "content": (
-                "You are the Mensabot for university canteens.\n"
-                "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
-                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
-                "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
-                "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
-                "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-                "Don't mention anything about tools or tool usage in your final answer.\n"
-                "Always respond in a friendly and helpful manner.\n"
-                "Always respond in the same language the user used in their request."
-            ),
-        },
-    ]
-    request = {
-        "role": "user",
-        "content": request_text,
-    }
-    messages.append(request)
+def format_message_history(messages: List[ChatMessage], format: Literal["openai"] = "openai") -> List[ChatCompletionMessage]:
+    if format == "openai":
+        messages: List[ChatCompletionMessage] = [*messages]
+    else:
+        raise ValueError(f"Unsupported target message format: {format}")
+    
     return messages
 
-def run_tool_calling_loop(request_text: str) -> str:
-    messages = generate_messages(request_text)
+def run_tool_calling_loop(messages: list[ChatMessage]) -> str:
+    messages = format_message_history(messages)
 
     while True:
         completion = client.chat.completions.create(
@@ -238,23 +236,10 @@ def run_tool_calling_loop(request_text: str) -> str:
 
     return final_message.content
 
-
-
-class ChatRequest(BaseModel):
-    # For now make it a simple single string request for simplicity and easy terminal testing.
-    message: str
-    # messages: list[dict]
-    # model: Optional[str] = None
-
-class ChatResponse(BaseModel):
-    reply: str
-
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    message = request.message
-    resp = run_tool_calling_loop(message)
-
-    return ChatResponse(reply=resp)
+    response = run_tool_calling_loop(request.message)
+    return ChatResponse(reply=response)
 
 @app.get("/api/health")
 async def health():
