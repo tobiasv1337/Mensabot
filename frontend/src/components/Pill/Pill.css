@@ -1,0 +1,126 @@
+/* ----------------------------------
+   BASE PILL STYLE
+-----------------------------------*/
+.pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 20px;
+    padding: 8px 10px;
+
+    border-radius: 50px;
+    border-width: 1px;
+    border-style: solid;
+
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.15s ease, border 0.15s ease, opacity 0.15s ease;
+}
+
+.pill:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ICON ONLY */
+.pill-icon-only {
+    gap: 0;
+    padding: 6px;
+    width: 36px;
+    height: 36px;
+    justify-content: center;
+}
+
+/* ----------------------------------
+   STATES
+-----------------------------------*/
+
+/* UNSELECTED = transparent bg */
+.pill-unselected {
+    background: transparent;
+}
+
+/* HOVER = 50% opacity background */
+.pill-unselected:hover:not(:disabled) {
+    background: var(--pill-fill-50);
+}
+
+/* SELECTED = full 100% fill */
+.pill-selected {
+    background: var(--pill-fill-100);
+}
+
+/* ACTIVE/CLICK */
+.pill:not(:disabled):active {
+    filter: brightness(0.9);
+}
+
+/* ----------------------------------
+   COLOR VARIABLES (per pill type)
+-----------------------------------*/
+
+/* RED */
+.pill-red {
+    --pill-fill-50: #FE413C;
+    --pill-fill-100: #FE413C;
+    border-color: #FE413C;
+}
+.pill-red.pill-unselected {
+    color: #f1f1f1;
+}
+.pill-red.pill-selected {
+    color: #f1f1f1;
+}
+
+/* YELLOW */
+.pill-yellow {
+    --pill-fill-50: rgba(255, 188, 44, 0.5);
+    --pill-fill-100: #FFBC2C;
+    border-color: #FFBC2C;
+}
+.pill-yellow.pill-unselected {
+    color: #f1f1f1;
+}
+.pill-yellow.pill-selected {
+    color: #f1f1f1;
+}
+
+/* ORANGE */
+.pill-orange {
+    --pill-fill-50: #FE7F34;
+    --pill-fill-100: #FE7F34;
+    border-color: #FE7F34;
+}
+.pill-orange.pill-unselected {
+    color: #f1f1f1;
+}
+.pill-orange.pill-selected {
+    color: #f1f1f1;
+}
+
+/* DARK */
+.pill-dark {
+    --pill-fill-50: #3D434B;
+    --pill-fill-100: #0F0F0F;
+    border-color: #0F0F0F;
+}
+.pill-dark.pill-unselected {
+    color: #f1f1f1;
+}
+.pill-dark.pill-selected {
+    color: #f1f1f1;
+}
+
+/* GREY (shortcut variant stays solid) */
+.pill-grey {
+    --pill-fill-50: #3D434B;
+    --pill-fill-100: #3D434B;
+    background: #2a2e32;
+    border-color: #0F0F0F;
+    color: #f1f1f1;
+}

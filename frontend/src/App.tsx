@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import './App.css'
+import InputField from "./components/InputField/InputField.tsx";
+import Pill from "./components/Pill/Pill.tsx";
 
 type ChatResponse = {
   reply?: string
@@ -81,6 +83,10 @@ function App() {
           {isSending ? 'Sende...' : 'Senden'}
         </button>
       </section>
+        <section>
+            <InputField />
+            <Pill type={"orange"}>Test</Pill>
+        </section>
     </main>
   )
 }

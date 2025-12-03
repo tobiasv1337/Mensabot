@@ -1,19 +1,25 @@
-import React, { useState } from "react";
-import Pill from "./Pill.tsx";
+import { useState } from "react";
 import "./InputField.css";
+import Pill from "../Pill/Pill";
+
+type Shortcut = {
+    id: number;
+    label: string;
+    selected: boolean;
+};
 
 export default function InputField() {
     const [inputValue, setInputValue] = useState("");
-    const [shortcuts, setShortcuts] = useState([
+    const [shortcuts, setShortcuts] = useState<Shortcut[]>([
         { id: 1, label: "Shortcut 1", selected: false },
         { id: 2, label: "Shortcut 2", selected: false },
     ]);
 
     const addShortcut = () => {
         const newId = Date.now();
-        setShortcuts([
-            ...shortcuts,
-            { id: newId, label: `Shortcut ${shortcuts.length + 1}`, selected: false },
+        setShortcuts((prev) => [
+            ...prev,
+            { id: newId, label: `Shortcut ${prev.length + 1}`, selected: false },
         ]);
     };
 
@@ -25,9 +31,8 @@ export default function InputField() {
         );
     };
 
-
     const removeShortcut = (id: number) => {
-        setShortcuts(shortcuts.filter((s) => s.id !== id));
+        setShortcuts(prev => prev.filter(s => s.id !== id));
     };
 
     const handleSend = () => {
@@ -38,7 +43,6 @@ export default function InputField() {
 
     return (
         <div className="inputfeld-container">
-            {/* INPUT SECTION */}
             <div className="inputfeld-inner">
                 <input
                     className="mensabot-input"
@@ -52,10 +56,9 @@ export default function InputField() {
                 </button>
             </div>
 
-            {/* SHORTCUTS ROW */}
             <div className="pills-row">
                 <Pill
-                    type="dark" // Changed to 'dark' for better styling control
+                    type="dark"
                     iconOnly
                     leftIcon="+"
                     onClick={addShortcut}
@@ -64,13 +67,13 @@ export default function InputField() {
                 {shortcuts.map((s) => (
                     <Pill
                         key={s.id}
-                        type="dark" // Changed to 'dark'
-                        initialSelected={s.selected} // Use initialSelected to sync with state
+                        type="dark"
+                        selected={s.selected}      // controlled mode (richtig!)
                         onClick={() => toggleShortcut(s.id)}
                         rightIcon={
                             <span
                                 onClick={(e) => {
-                                    e.stopPropagation(); // Prevents Pill from toggling selection
+                                    e.stopPropagation();
                                     removeShortcut(s.id);
                                 }}
                             >
