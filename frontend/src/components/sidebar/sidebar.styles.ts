@@ -36,10 +36,12 @@ export const Sidebar = styled.aside<{ open: boolean; collapsed: boolean }>`
 
 }
 
+
 @media (max-width: 768px) {
-  top: 64px;                         
-  height: calc(100vh - 100px);
-  padding-left: 0px;
+  top: 64px;
+  bottom: 0;
+   padding: 5px;
+  height: auto;            /* Höhe dynamisch */
 }
 
   width: ${({ collapsed }) => (collapsed ? "70px" : "290px")};
@@ -168,6 +170,9 @@ export const Footer = styled.div`
   /* Nur auf Desktop nach ganz unten schieben */
   @media (min-width: 768px) {
     margin-top: auto;
+  }
+      @media (max-width: 768px) {
+    margin-top: 55px;
   }
 `;
 

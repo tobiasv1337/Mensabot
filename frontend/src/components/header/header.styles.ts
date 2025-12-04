@@ -10,7 +10,7 @@ export const HeaderContainer = styled.header`
   justify-content: space-between;
   align-items: center;
   padding: 0 100px 0px 50px;
-  z-index: 1000;
+  z-index: 2000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
 @media (max-width: 768px) {

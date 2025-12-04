@@ -30,8 +30,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNavClick,
   onCloseMobile,
 }) => {
-  const expanded = !desktopCollapsed;
-  const isMobile = window.innerWidth < 768;
+const isMobile = window.innerWidth < 768;
+const expanded = isMobile ? true : !desktopCollapsed;
 
 
   return (
@@ -40,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
    <S.Sidebar open={mobileOpen} collapsed={desktopCollapsed}>
 
-  <S.ContentWrapper>
+
     {/* --- HEADER AREA --- */}
     {expanded && (
       <S.HeaderArea>
@@ -108,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </S.Section>
     )}
-  </S.ContentWrapper>
+
 
   {/* --- FOOTER (Theme Switch) --- */}
   {expanded && (
