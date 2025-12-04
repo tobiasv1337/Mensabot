@@ -1,4 +1,4 @@
-import type { MensaBotClient } from "./api";
+import { MensaBotClient } from "./api";
 
 export class ChatMessage {
 	public role: "user" | "assistant";
@@ -7,6 +7,13 @@ export class ChatMessage {
 	constructor(role: "user" | "assistant", content: string) {
 		this.role = role;
 		this.content = content;
+	}
+
+	toJSON() {
+		return {
+			role: this.role,
+			content: this.content,
+		};
 	}
 }
 
@@ -29,6 +36,10 @@ export class Chat {
 	}
 
 	async send(client: MensaBotClient, message: string) {
+		if (!(client instanceof MensaBotClient)) {
+			throw new Error("argument 0 must be an instance of MensaBotClient");
+		}
+
 		this.addMessage(new ChatMessage("user", message));
 		const response = await client.sendMessages(this.#messages);
 		this.addMessage(new ChatMessage("assistant", response));
@@ -44,7 +55,7 @@ export class Chat {
 }
 
 export class Chats {
-	static getById(id: string, createIfMissing = false) {
+	static getById(id: string, createIfMissing = true) {
 		const chatData = localStorage.getItem(`chat-${id}`);
 		if (chatData) {
 			return new Chat(id, JSON.parse(chatData).messages);
