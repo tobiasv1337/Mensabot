@@ -11,22 +11,26 @@ export class ChatMessage {
 }
 
 export class Chat {
-	public readonly messages: ChatMessage[];
+	#messages: ChatMessage[];
 	public readonly id: string;
 
 	constructor(id: string, messages: ChatMessage[] = []) {
 		this.id = id;
-		this.messages = messages;
+		this.#messages = messages;
+	}
+
+	get messages() {
+		return this.#messages;
 	}
 
 	addMessage(message: ChatMessage) {
-		this.messages.push(message);
+		this.#messages.push(message);
 		localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
 	}
 
 	async send(client: MensaBotClient, message: string) {
 		this.addMessage(new ChatMessage("user", message));
-		const response = await client.sendMessages(this.messages);
+		const response = await client.sendMessages(this.#messages);
 		this.addMessage(new ChatMessage("assistant", response));
 		return response;
 	}
@@ -34,10 +38,10 @@ export class Chat {
 	toJSON() {
 		return {
 			id: this.id,
-			messages: this.messages,
+			messages: this.#messages,
 		};
 	}
-};
+}
 
 export class Chats {
 	static getById(id: string, createIfMissing = false) {
@@ -48,7 +52,7 @@ export class Chats {
 			const chat = new Chat(id);
 			localStorage.setItem(`chat-${id}`, JSON.stringify(chat));
 			return chat;
-		}
+		} else return undefined;
 	}
 
 	static exists(id: string) {

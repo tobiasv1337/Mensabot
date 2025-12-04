@@ -9,10 +9,10 @@
  * const chat = Chats.getById("my-chat");
  * const response = await chat.send(client, "Hello");
  * console.log("Message History:", chat.messages);
+ * ```
  * 
  * With the raw {@link MensaBotClient}, you would have to manage
  * storage and sessions yourself.
- * ```
  */
 
 import type { ChatMessage } from "./chats";
