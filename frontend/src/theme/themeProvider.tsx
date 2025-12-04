@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from "react"
-import { lightTheme, darkTheme, type Theme } from "./colors"
+import { themes } from "./colors"
 
 type ThemeMode = "light" | "system" | "dark"
 
 interface ThemeContextType {
     mode: ThemeMode;
-    currentTheme: Theme;
+    currentTheme: typeof themes.light;
     toggleMode: (mode: ThemeMode) => void;
     // boolean to indicate if light/dark mode is active and block system changes
     lightMode: boolean;
@@ -14,7 +14,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType>({ 
     mode: "system", 
-    currentTheme: lightTheme, 
+    currentTheme: themes.light, 
     toggleMode: () => {}, 
     lightMode: false, 
     darkMode: false, })
@@ -53,12 +53,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // blocks system changes when mode is "light" or "dark"
     const activeTheme = useMemo(() => {
         if (mode === "dark") {
-            return darkTheme;
+            return themes.dark;
         }
         if (mode === "light") {
-            return lightTheme;
+            return themes.light;
         }
-        return systemMode === "dark" ? darkTheme : lightTheme;
+        return systemMode === "dark" ? themes.dark : themes.light;
         
     }, [mode, systemMode]);
 
