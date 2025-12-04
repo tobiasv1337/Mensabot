@@ -14,7 +14,7 @@ const palette = {
   accent3Yellow: '#FFBC2C',
 };
 
-interface ThemeColors {
+interface Theme{
   // Background colors (static)
   backgroundPrimary: string;
   backgroundPrimaryOff: string;
@@ -34,7 +34,7 @@ interface ThemeColors {
 }
 
 // LIGHT MODE DEFINITION
-export const lightTheme: ThemeColors = {
+export const lightTheme: Theme= {
   backgroundPrimary: palette.greySilver,
   backgroundPrimaryOff: palette.greyShadowGrey,
   backgroundWidget: palette.white,
@@ -52,7 +52,7 @@ export const lightTheme: ThemeColors = {
 };
 
 // DARK MODE DEFINITION
-export const darkTheme: ThemeColors = {
+export const darkTheme: Theme = {
   backgroundPrimary: palette.greyShadowGrey,
   backgroundPrimaryOff: palette.greyCharcoalBlue,
   backgroundWidget: palette.greyJetBlack,
@@ -69,7 +69,6 @@ export const darkTheme: ThemeColors = {
   accent3: palette.accent3Yellow,
 };
 
-export type Theme = typeof lightTheme;
 export const themes = {
     light: lightTheme,
     dark: darkTheme
