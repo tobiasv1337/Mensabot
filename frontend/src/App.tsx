@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import './App.css'
+import { useTheme } from './theme/themeProvider.tsx'
 import {useShortcutStorage} from "./hooks/useShortcutStorage.ts";
 import {ShortcutList} from "./components/shortcut/ShortcutList.tsx";
 
@@ -9,6 +10,7 @@ type ChatResponse = {
 }
 
 function App() {
+  const { currentTheme, toggleMode } = useTheme()
   const [userInput, setUserInput] = useState('')
   const [backendResponse, setBackendResponse] = useState<string>('')
   const [isSending, setIsSending] = useState(false)
@@ -65,7 +67,38 @@ function App() {
 
   return (
     <main className="app">
-      <h1 className="title">Mensabot</h1>
+      <h1 className="title" style={{color: currentTheme.textPrimary}}>Mensabot</h1>
+
+      <div>
+        <button
+          onClick={() => toggleMode("light")}
+          style={{
+            background: currentTheme.backgroundAccent,
+            color: currentTheme.textContrast,
+          }}
+        >
+        Light Mode
+        </button>
+        <button
+          onClick={() => toggleMode("system")}
+          style={{
+            background: currentTheme.backgroundAccent,
+            color: currentTheme.textContrast,
+          }}
+        >
+        System Mode
+        </button>
+        <button
+          onClick={() => toggleMode("dark")}
+          style={{
+            background: currentTheme.backgroundAccent,
+            color: currentTheme.textContrast,
+          }}
+        >
+        Dark Mode
+        </button>
+      </div>
+
 
       <section className="response">
         {error ? (
