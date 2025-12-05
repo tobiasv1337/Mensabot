@@ -10,6 +10,7 @@ from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError
 from .server import mcp, make_openmensa_client
+from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, MenuBatchRequestDTO, MenuBatchResponseDTO,_canteen_to_dto, _meal_to_dto
 
 # ------------------------------ internal helpers ------------------------------
 
@@ -140,3 +141,76 @@ def get_menu_for_date(
         status=MenuStatusDTO.ok,
         meals=[_meal_to_dto(m) for m in meals],
     )
+
+
+@mcp.tool()
+def get_menus_batch(
+    requests: Annotated[
+        list[MenuBatchRequestDTO],
+        Field(
+            min_length=1,
+            description=(
+                "List of (canteen_id, date) pairs to fetch menus for. "
+                "Dates may be null to use today's date."
+            ),
+        ),
+    ],
+) -> MenuBatchResponseDTO:
+    """
+    Get menus for multiple canteen/date pairs in one call.
+
+    Use this when you want to fetch menus across multiple canteens or dates.
+    Returns the same data as if calling get_menu_for_date repeatedly for each pair.
+    Prefer this method for more than one (canteen_id, date) pair to get more data with fewer tool calls.
+
+    The response contains one `MenuResponseDTO` per input entry in the same order:
+    - `status = ok` if a menu exists,
+    - `status = no_menu_published` if no plan is published yet,
+    - `status = invalid_date` if the date is not a valid ISO date,
+    - `status = api_error` for other upstream OpenMensa errors.
+    """
+
+    results: list[MenuResponseDTO] = []
+
+    with make_openmensa_client() as client:
+        for req in requests:
+            normalized_date, error_response = _normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
+
+            if error_response is not None:
+                results.append(error_response)
+                continue
+
+            try:
+                meals = client.list_meals(req.canteen_id, normalized_date)
+            except OpenMensaAPIError as e:
+                # OpenMensa uses 404 to mean "no plan published yet"
+                if e.status_code == 404:
+                    results.append(
+                        MenuResponseDTO(
+                            canteen_id=req.canteen_id,
+                            date=normalized_date,
+                            status=MenuStatusDTO.no_menu_published,
+                            meals=[],
+                        )
+                    )
+                else:
+                    results.append(
+                        MenuResponseDTO(
+                            canteen_id=req.canteen_id,
+                            date=normalized_date,
+                            status=MenuStatusDTO.api_error,
+                            meals=[],
+                        )
+                    )
+                continue
+
+            results.append(
+                MenuResponseDTO(
+                    canteen_id=req.canteen_id,
+                    date=normalized_date,
+                    status=MenuStatusDTO.ok,
+                    meals=[_meal_to_dto(m) for m in meals],
+                )
+            )
+
+    return MenuBatchResponseDTO(results=results)
