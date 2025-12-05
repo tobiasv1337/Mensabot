@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './App.css'
 import { useTheme } from './theme/themeProvider.tsx'
 
@@ -92,8 +94,14 @@ function App() {
       <section className="response">
         {error ? (
           <p className="error">{error}</p>
+        ) : backendResponse ? (
+          <div className="markdown-response">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {backendResponse}
+            </ReactMarkdown>
+          </div>
         ) : (
-          <p>{backendResponse || 'Warte auf deine Eingabe...'}</p>
+          <p>Warte auf deine Eingabe...</p>
         )}
       </section>
 

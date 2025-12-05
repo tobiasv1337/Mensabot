@@ -23,6 +23,49 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
+.markdown-response {
+  /* Text nicht so gequetscht */
+  line-height: 1.5;
+}
+
+/* Absätze */
+.markdown-response p {
+  margin: 0.5rem 0;
+}
+
+/* Überschriften */
+.markdown-response h1,
+.markdown-response h2,
+.markdown-response h3 {
+  margin: 0.6rem 0 0.3rem;
+}
+
+/* Listen */
+.markdown-response ul,
+.markdown-response ol {
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+
+/* Inline-Code */
+.markdown-response code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9em;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Codeblöcke */
+.markdown-response pre {
+  margin: 0.6rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+}
+
 .error {
   color: #ffb4b4;
 }
