@@ -127,7 +127,8 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         try:
             resp = await mcp_client.call_tool(tool_name, args)
             data = unwrap_tool_result(resp)
-            logger.info("Tool %s called with args %s, got response: %s", tool_name, args, json.dumps(data, indent=2))
+            logger.info("Tool %s called with args %s.", tool_name, args)
+            logger.debug("Got tool response: %s", json.dumps(data, indent=2))
             return {"ok": True, "tool": tool_name, "args": args, "result": data}
         except Exception as e:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
@@ -146,7 +147,8 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
                 "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
                 "Don't mention anything about tools or tool usage in your final answer.\n"
                 "Always respond in a friendly and helpful manner.\n"
-                "Always respond in the same language the user used in their request."
+                "Always respond in the same language the user used in their request.\n"
+                "Format all responses as **valid Markdown** (GitHub-Flavored). Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer."
             ),
         },
     ]
