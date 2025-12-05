@@ -160,11 +160,12 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
 async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
 
+    tools = await get_openai_tools_from_mcp()
     for iteration in range(1, MAX_LLM_ITERATIONS + 1):
         completion = client.chat.completions.create(
             model=LLM_MODEL,
             messages=messages,
-            tools= await get_openai_tools_from_mcp(),
+            tools=tools,
             tool_choice="auto",
             temperature=0.2,
         )
@@ -187,7 +188,7 @@ async def run_tool_calling_loop(request_text: str) -> str:
         if LLM_SUPPORTS_TOOL_MESSAGES:
             messages.append(message)
 
-        logger.info(f"Number of tool calls: {len(tool_calls)}")
+        logger.info("Number of tool calls: %d", len(tool_calls))
         for call in tool_calls:
             tool_name = call.function.name
             raw_args = call.function.arguments
