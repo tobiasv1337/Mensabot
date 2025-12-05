@@ -116,3 +116,15 @@ class MenuResponseDTO(DTO):
     )
     status: MenuStatusDTO
     meals: list[MealDTO] = Field(default_factory=list, description="List of meals for the given date.")
+
+class MenuBatchRequestDTO(DTO):
+    canteen_id: int = Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin).")
+    date: str | None = Field(default=None, description=("Target date in YYYY-MM-DD format. If omitted or null, uses today's date."))
+
+class MenuBatchResponseDTO(DTO):
+    results: list[MenuResponseDTO] = Field(
+        description=(
+            "One entry per requested (canteen_id, date) pair. "
+            "The order matches the input list."
+        ),
+    )
