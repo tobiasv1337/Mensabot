@@ -10,7 +10,39 @@ from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError
 from .server import mcp, make_openmensa_client
-from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, _canteen_to_dto, _meal_to_dto
+
+# ------------------------------ internal helpers ------------------------------
+
+def _normalize_menu_date(
+    canteen_id: int,
+    date: Optional[str],
+) -> tuple[str | None, MenuResponseDTO | None]:
+    """
+    Normalize/validate a menu date.
+
+    Returns (normalized_date, error_response):
+    - If the date is None, normalized_date is today's ISO date and error_response is None.
+    - If the date is invalid, normalized_date is None and error_response is a MenuResponseDTO
+      with status=invalid_date.
+    - If the date is valid, normalized_date is the same string and error_response is None.
+    """
+    if date is None:
+        return dt.date.today().isoformat(), None
+
+    try:
+        dt.date.fromisoformat(date)
+    except ValueError:
+        # keep the original invalid input in the response
+        return None, MenuResponseDTO(
+            canteen_id=canteen_id,
+            date=date,
+            status=MenuStatusDTO.invalid_date,
+            meals=[],
+        )
+
+    return date, None
+
+# ------------------------------ MCP tools ------------------------------
 
 @mcp.tool()
 def list_canteens_near(
@@ -78,43 +110,33 @@ def get_menu_for_date(
     Meal prices may be null for individual groups (e.g. pupils) when no price was published.
     """
 
-    if date is None:
-        # Use today's date if none is provided
-        date = dt.date.today().isoformat()
-    else:
-        try:
-            dt.date.fromisoformat(date)
-        except ValueError:
-            return MenuResponseDTO(
-                canteen_id=canteen_id,
-                date=date,  #invalid input
-                status=MenuStatusDTO.invalid_date,
-                meals=[],
-            )
+    normalized_date, error_response = _normalize_menu_date(canteen_id, date)
+    if error_response is not None:
+        return error_response
 
     with make_openmensa_client() as client:
         try:
-            meals = client.list_meals(canteen_id, date)
+            meals = client.list_meals(canteen_id, normalized_date)
         except OpenMensaAPIError as e:
             # OpenMensa uses 404 to mean "no plan published yet"
             if e.status_code == 404:
                 return MenuResponseDTO(
                     canteen_id=canteen_id,
-                    date=date,
+                    date=normalized_date,
                     status=MenuStatusDTO.no_menu_published,
                     meals=[],
                 )
 
             return MenuResponseDTO(
                 canteen_id=canteen_id,
-                date=date,
+                date=normalized_date,
                 status=MenuStatusDTO.api_error,
                 meals=[],
             )
 
     return MenuResponseDTO(
         canteen_id=canteen_id,
-        date=date,
+        date=normalized_date,
         status=MenuStatusDTO.ok,
         meals=[_meal_to_dto(m) for m in meals],
     )
