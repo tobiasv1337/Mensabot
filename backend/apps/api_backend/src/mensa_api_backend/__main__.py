@@ -1,6 +1,6 @@
 import os
 import json
-import asyncio
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, List
@@ -25,6 +25,21 @@ LLM_API_KEY = get_env_required("LLM_API_KEY")
 LLM_BASE_URL = get_env_required("LLM_BASE_URL")
 LLM_MODEL = get_env_required("LLM_MODEL")
 MCP_URL = get_env_required("MCP_URL")
+LLM_SUPPORTS_TOOL_MESSAGES = os.getenv("LLM_SUPPORTS_TOOL_MESSAGES", "false").lower() == "true"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+MAX_LLM_ITERATIONS = int(os.getenv("MAX_LLM_ITERATIONS", "10"))
+LLM_FALLBACK_RESPONSE = (
+    "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
+    "attempts. Please try rephrasing your question or ask something else."
+)
+
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
 
 
 app = FastAPI()
@@ -46,7 +61,21 @@ app.add_middleware(
 
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
+def ensure_message_content(message: Any, finish_reason: str) -> str:
+    """Return textual assistant content or fall back to a generic apology."""
+    content = getattr(message, "content", None)
+    if isinstance(content, str) and content.strip():
+        return content
+    logger.warning("LLM response missing usable content (finish_reason=%s). Returning fallback message.", finish_reason)
+    return LLM_FALLBACK_RESPONSE
+
 async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
+    """
+    Fetch tool definitions from the MCP server and convert them to OpenAI tool format.
+    Returns:
+        List[Dict[str, Any]]: List of tool definitions in OpenAI function calling format.
+        Each tool has the structure: {"type": "function", "function": {...}}
+    """
     async with MCPClient(mcp) as mcp_client:
         raw_tools = await mcp_client.list_tools()
         tool_list = list(raw_tools)
@@ -58,7 +87,7 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
             description = getattr(tool, "description", "")
             parameters = getattr(tool, "inputSchema", None)
             if not name or not parameters:
-                print(f"Warning: Tool {tool} is missing name or inputSchema!")
+                logger.warning(f"Tool is missing name or inputSchema. Name: {name}, has parameters: {parameters is not None}\n Tool: {tool}.\nSkipping this tool.")
                 continue
         
             openai_tools.append(
@@ -79,19 +108,28 @@ def unwrap_tool_result(resp: Any) -> Any:
     """
     if getattr(resp, "structured_content", None) is not None:
         return resp.structured_content
+    if getattr(resp, "model_dump", None) is not None:
+        return resp.model_dump()
+    return resp
 
 async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     """
     Call a tool via FastMCP and return a JSON-serializable dict.
+    Args:
+        tool_name: Name of the MCP tool to call.
+        args: Arguments to pass to the tool.
+    Returns:
+        On success: {"ok": True, "tool": str, "args": dict, "result": Any}
+        On failure: {"error": str}
     """
     async with MCPClient(mcp) as mcp_client:
         try:
             resp = await mcp_client.call_tool(tool_name, args)
             data = unwrap_tool_result(resp)
-            print(f"Tool {tool_name} called with args {args}, got response: {resp}")
+            logger.info(f"Tool {tool_name} called with args {args}, got response: {resp}")
             return {"ok": True, "tool": tool_name, "args": args, "result": data}
         except Exception as e:
-            print(f"Error calling tool {tool_name} with args {args}: {e}")
+            logger.exception(f"Error calling tool {tool_name} with args {args}")
             return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
 
 def generate_messages(request_text: str) -> List[Dict[str, Any]]:
@@ -121,7 +159,7 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
 async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
 
-    while True:
+    for iteration in range(1, MAX_LLM_ITERATIONS + 1):
         completion = client.chat.completions.create(
             model=LLM_MODEL,
             messages=messages,
@@ -129,35 +167,37 @@ async def run_tool_calling_loop(request_text: str) -> str:
             tool_choice="auto",
             temperature=0.2,
         )
-        print(f"Received completion: {completion.model_dump()}")
+        logger.debug("Received completion: %s", completion.model_dump())
         choice = completion.choices[0]
         finish_reason = choice.finish_reason
         message = choice.message
 
         if finish_reason != "tool_calls":
-            final_message = message
-            break
+            logger.debug("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
+            return ensure_message_content(message, finish_reason)
 
         
         tool_calls = message.tool_calls or []
         if not tool_calls:
-            final_message = message
-            break
+            logger.warning("LLM reported finish_reason=tool_calls but no tool_calls were provided. Returning current message after %d iterations.", iteration)
+            logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
+            return ensure_message_content(message, finish_reason)
 
-        if "academiccloud.de" not in LLM_BASE_URL:
+        if LLM_SUPPORTS_TOOL_MESSAGES:
             messages.append(message)
 
-        print(f"Number of tool calls: {len(tool_calls)}")
+        logger.info(f"Number of tool calls: {len(tool_calls)}")
         for call in tool_calls:
             tool_name = call.function.name
             raw_args = call.function.arguments
 
             try:
                 args = json.loads(raw_args)
-                # Delegate to MCP
-                result_payload: Dict[str, Any] = await call_mcp_tool(tool_name, args)
             except json.JSONDecodeError as e:
                 result_payload = {"error": f"Failed to parse arguments: {str(e)}"}
+            else:
+                # Delegate to MCP
+                result_payload = await call_mcp_tool(tool_name, args)
 
             messages.append(
                 {
@@ -168,7 +208,7 @@ async def run_tool_calling_loop(request_text: str) -> str:
                 }
             )
 
-            if "academiccloud.de" in LLM_BASE_URL:
+            if not LLM_SUPPORTS_TOOL_MESSAGES:
                 if not (isinstance(result_payload, dict) and "error" in result_payload):
                     messages.append(
                         {
@@ -192,10 +232,9 @@ async def run_tool_calling_loop(request_text: str) -> str:
                             ),
                         }
                     )
-
-
-    print(f"Final message: {json.dumps(final_message.model_dump(), indent=2)}")
-    return final_message.content
+        
+    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
+    return LLM_FALLBACK_RESPONSE
 
 
 
