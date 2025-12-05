@@ -33,13 +33,14 @@ LLM_FALLBACK_RESPONSE = (
     "attempts. Please try rephrasing your question or ask something else."
 )
 
-if not logging.getLogger().handlers:
-    logging.basicConfig(
-        level=LOG_LEVEL,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("mensa_api_backend")
 logger.setLevel(LOG_LEVEL)
+
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 app = FastAPI()
@@ -126,7 +127,7 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         try:
             resp = await mcp_client.call_tool(tool_name, args)
             data = unwrap_tool_result(resp)
-            logger.info(f"Tool {tool_name} called with args {args}, got response: {resp}")
+            logger.info("Tool %s called with args %s, got response: %s", tool_name, args, json.dumps(data, indent=2))
             return {"ok": True, "tool": tool_name, "args": args, "result": data}
         except Exception as e:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
@@ -173,7 +174,7 @@ async def run_tool_calling_loop(request_text: str) -> str:
         message = choice.message
 
         if finish_reason != "tool_calls":
-            logger.debug("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
+            logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
             return ensure_message_content(message, finish_reason)
 
         
