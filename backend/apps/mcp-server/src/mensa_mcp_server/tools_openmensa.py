@@ -10,7 +10,7 @@ from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError
 from .server import mcp, make_openmensa_client
-from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, MenuBatchRequestDTO, MenuBatchResponseDTO,_canteen_to_dto, _meal_to_dto
+from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, MenuBatchRequestDTO, MenuBatchResponseDTO, _canteen_to_dto, _meal_to_dto
 
 # ------------------------------ internal helpers ------------------------------
 
