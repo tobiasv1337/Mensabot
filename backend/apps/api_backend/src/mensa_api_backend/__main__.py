@@ -205,6 +205,15 @@ async def run_tool_calling_loop(request_text: str) -> str:
             tool_choice="auto",
             temperature=0.2,
         )
+
+        if not getattr(completion, "choices", None):
+            try:
+                dumped = completion.model_dump()
+            except Exception:
+                dumped = repr(completion)
+            logger.error("LLM completion has no choices: %s", dumped)
+            raise RuntimeError("LLM returned no choices; check upstream LLM/Proxy configuration")
+
         logger.debug("Received completion: %s", completion.model_dump())
         choice = completion.choices[0]
         finish_reason = choice.finish_reason
