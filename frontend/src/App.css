@@ -146,6 +146,16 @@ body {
   background: rgba(0, 0, 0, 0.02);
 }
 
+/* Markdown: callouts / notes */
+.markdown-response blockquote {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid #FE7F34;
+  background: rgba(254, 127, 52, 0.08);
+  font-size: 0.9rem;
+}
+
 /* Errors */
 .error {
   color: #ffb4b4;
@@ -217,5 +227,10 @@ body {
 
   .markdown-response code {
     background: rgba(255, 255, 255, 0.08);
+  }
+
+  .markdown-response blockquote {
+    border-left-color: #FE7F34;
+    background: rgba(254, 127, 52, 0.28);
   }
 }
