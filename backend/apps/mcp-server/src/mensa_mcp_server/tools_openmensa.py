@@ -65,6 +65,14 @@ def _fetch_single_menu(client: OpenMensaClient, canteen_id: int, normalized_date
             status=MenuStatusDTO.api_error,
             meals=[],
         )
+    
+    if not meals:
+        return MenuResponseDTO(
+            canteen_id=canteen_id,
+            date=normalized_date,
+            status=MenuStatusDTO.empty_menu,
+            meals=[],
+        )
 
     return MenuResponseDTO(
         canteen_id=canteen_id,
@@ -135,6 +143,7 @@ def get_menu_for_date(
     The response `status` field is:
     - `ok` if a menu exists,
     - `no_menu_published` if no plan is published yet,
+    - `empty_menu` if the menu is published but contains no meals - likely indicating that the canteen is just closed on that day,
     - `invalid_date` if the date string is not a valid ISO date,
     - `api_error` for other upstream OpenMensa errors.
     
