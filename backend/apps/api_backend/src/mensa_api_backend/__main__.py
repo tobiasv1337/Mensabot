@@ -148,8 +148,13 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
                 "Don't mention anything about tools or tool usage in your final answer.\n"
                 "Always respond in a friendly and helpful manner.\n"
                 "Always respond in the same language the user used in their request.\n"
-                "Format all responses as **valid Markdown** (GitHub-Flavored). Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer."
-            ),
+                "Format all responses as valid GitHub-Flavored Markdown. Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer.\n"
+                "For important notes, use Markdown blockquote callouts with this pattern:\n"
+                "> 💡 **Hint:** ...\n"
+                "> ℹ️ **Info:** ...\n"
+                "> ⚠️ **Warning:** ...\n"
+                "Only use them reasonably. Don't overuse them. For example: Whenever allergy information or other important information could not be verified, end your answer with a short ⚠️ **Warning** blockquote callout explaining what could not be guaranteed.\n"
+            )
         },
     ]
     request = {
