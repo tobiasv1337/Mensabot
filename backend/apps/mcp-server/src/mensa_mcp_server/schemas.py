@@ -111,7 +111,7 @@ class MenuResponseDTO(DTO):
     canteen_id: int = Field(ge=1, description="Unique identifier of the canteen.")
     date: str = Field(
         description=(
-            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'api_error' "
+            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'empty_menu' / 'api_error' "
             "this is a valid ISO date. For 'invalid_date' it contains the original invalid input."
         ),
     )
