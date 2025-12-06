@@ -43,6 +43,36 @@ def _normalize_menu_date(
 
     return date, None
 
+
+def _fetch_single_menu(client, canteen_id: int, normalized_date: str) -> MenuResponseDTO:
+    """Fetch a single menu and map OpenMensa errors to MenuResponseDTO statuses."""
+
+    try:
+        meals = client.list_meals(canteen_id, normalized_date)
+    except OpenMensaAPIError as e:
+        # OpenMensa uses 404 to indicate "no plan published yet"
+        if e.status_code == 404:
+            return MenuResponseDTO(
+                canteen_id=canteen_id,
+                date=normalized_date,
+                status=MenuStatusDTO.no_menu_published,
+                meals=[],
+            )
+
+        return MenuResponseDTO(
+            canteen_id=canteen_id,
+            date=normalized_date,
+            status=MenuStatusDTO.api_error,
+            meals=[],
+        )
+
+    return MenuResponseDTO(
+        canteen_id=canteen_id,
+        date=normalized_date,
+        status=MenuStatusDTO.ok,
+        meals=[_meal_to_dto(m) for m in meals],
+    )
+
 # ------------------------------ MCP tools ------------------------------
 
 @mcp.tool()
@@ -116,31 +146,7 @@ def get_menu_for_date(
         return error_response
 
     with make_openmensa_client() as client:
-        try:
-            meals = client.list_meals(canteen_id, normalized_date)
-        except OpenMensaAPIError as e:
-            # OpenMensa uses 404 to mean "no plan published yet"
-            if e.status_code == 404:
-                return MenuResponseDTO(
-                    canteen_id=canteen_id,
-                    date=normalized_date,
-                    status=MenuStatusDTO.no_menu_published,
-                    meals=[],
-                )
-
-            return MenuResponseDTO(
-                canteen_id=canteen_id,
-                date=normalized_date,
-                status=MenuStatusDTO.api_error,
-                meals=[],
-            )
-
-    return MenuResponseDTO(
-        canteen_id=canteen_id,
-        date=normalized_date,
-        status=MenuStatusDTO.ok,
-        meals=[_meal_to_dto(m) for m in meals],
-    )
+        return _fetch_single_menu(client, canteen_id, normalized_date)
 
 
 @mcp.tool()
@@ -180,37 +186,6 @@ def get_menus_batch(
                 results.append(error_response)
                 continue
 
-            try:
-                meals = client.list_meals(req.canteen_id, normalized_date)
-            except OpenMensaAPIError as e:
-                # OpenMensa uses 404 to mean "no plan published yet"
-                if e.status_code == 404:
-                    results.append(
-                        MenuResponseDTO(
-                            canteen_id=req.canteen_id,
-                            date=normalized_date,
-                            status=MenuStatusDTO.no_menu_published,
-                            meals=[],
-                        )
-                    )
-                else:
-                    results.append(
-                        MenuResponseDTO(
-                            canteen_id=req.canteen_id,
-                            date=normalized_date,
-                            status=MenuStatusDTO.api_error,
-                            meals=[],
-                        )
-                    )
-                continue
-
-            results.append(
-                MenuResponseDTO(
-                    canteen_id=req.canteen_id,
-                    date=normalized_date,
-                    status=MenuStatusDTO.ok,
-                    meals=[_meal_to_dto(m) for m in meals],
-                )
-            )
+            results.append(_fetch_single_menu(client, req.canteen_id, normalized_date))
 
     return MenuBatchResponseDTO(results=results)
