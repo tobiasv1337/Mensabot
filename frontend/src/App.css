@@ -57,6 +57,14 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+/* Override inline code styles for code blocks */
+.markdown-response pre code {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+}
+
 /* Codeblöcke */
 .markdown-response pre {
   margin: 0.6rem 0;
