@@ -43,7 +43,7 @@
 /* Listen */
 .markdown-response ul,
 .markdown-response ol {
-  padding-left: 1.4rem;
+  padding-left: 2.2rem;
   margin: 0.4rem 0;
 }
 
@@ -72,6 +72,30 @@
   border-radius: 0.5rem;
   background: rgba(0, 0, 0, 0.08);
   overflow-x: auto;
+}
+
+/* Tabellen */
+.markdown-response table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.95em;
+}
+
+.markdown-response th,
+.markdown-response td {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  text-align: left;
+}
+
+.markdown-response thead {
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+}
+
+.markdown-response tbody tr:nth-child(odd) {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .error {
