@@ -119,7 +119,7 @@ class MenuResponseDTO(DTO):
 
 class MenuBatchRequestDTO(DTO):
     canteen_id: int = Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin).")
-    date: str | None = Field(default=None, description=("Target date in YYYY-MM-DD format. If omitted or null, uses today's date."))
+    date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
 
 class MenuBatchResponseDTO(DTO):
     results: list[MenuResponseDTO] = Field(
