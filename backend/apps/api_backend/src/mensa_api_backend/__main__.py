@@ -161,13 +161,14 @@ def add_time_context(messages: list[dict]) -> None:
     Add current local date and time (Europe/Berlin) as system context for the LLM. Currently with clear focus on Berlin timezone.
     """
     now = dt.datetime.now(ZoneInfo("Europe/Berlin"))
+    weekday_str = now.strftime("%A")
     local_str = now.strftime("%Y-%m-%d %H:%M")
 
     messages.append(
         {
             "role": "system",
             "content": (
-                f"Current local date and time: {local_str} (timezone: Europe/Berlin). "
+                f"Current local date and time: {weekday_str}, {local_str} (timezone: Europe/Berlin). "
                 "Assume all canteen opening hours and menus refer to this timezone. "
                 "When the user says 'today', interpret it as this local date."
             ),
