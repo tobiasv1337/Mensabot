@@ -148,7 +148,7 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
                 "Don't give generic answers like normally this canteen serves X, Y, Z. Always try to get the actual current data via the tools.\n"
                 "Feel free to use a lot of tools and a lot of tool call iterations to get the best possible answer for the user.\n"
                 "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-                "Don't mention anything about tools or tool usage, Openmensa and other systems in your final answer if not aksed to do so.\n"
+                "Don't mention anything about tools or tool usage, Openmensa and other systems in your final answer if not asked to do so.\n"
                 "Always respond in a friendly and helpful manner.\n"
                 "Always respond in the same language the user used in their request.\n"
                 "Format all responses as valid GitHub-Flavored Markdown. Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer. Don't use HTML tags within your responses. Just use Markdown syntax.\n"
