@@ -103,6 +103,7 @@ class CanteenListResponseDTO(DTO):
 class MenuStatusDTO(StrEnum):
     ok = "ok"
     no_menu_published = "no_menu_published"
+    empty_menu = "empty_menu"
     invalid_date = "invalid_date"
     api_error = "api_error"
 
