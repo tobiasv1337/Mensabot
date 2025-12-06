@@ -141,11 +141,14 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
             "content": (
                 "You are the Mensabot for university canteens.\n"
                 "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
-                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
+                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. But only if you are very sure about the answer.\n"
                 "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
                 "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
+                "Don't ever try to answer about any information that is likely to change over time (like menus, opening hours, prices, etc.) just based on your internal knowledge. However, you can always trust the tools to provide the latest data. For example, the menu fetched from the tools is always up-to-date.\n"
+                "Don't give generic answers like normally this canteen serves X, Y, Z. Always try to get the actual current data via the tools.\n"
+                "Feel free to use a lot of tools and a lot of tool call iterations to get the best possible answer for the user.\n"
                 "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-                "Don't mention anything about tools or tool usage in your final answer.\n"
+                "Don't mention anything about tools or tool usage, Openmensa and other systems in your final answer if not aksed to do so.\n"
                 "Always respond in a friendly and helpful manner.\n"
                 "Always respond in the same language the user used in their request.\n"
                 "Format all responses as valid GitHub-Flavored Markdown. Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer. Don't use HTML tags within your responses. Just use Markdown syntax.\n"
@@ -168,6 +171,7 @@ async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
 
     tools = await get_openai_tools_from_mcp()
+    logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
     for iteration in range(1, MAX_LLM_ITERATIONS + 1):
         completion = client.chat.completions.create(
             model=LLM_MODEL,
