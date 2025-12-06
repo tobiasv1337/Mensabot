@@ -8,7 +8,7 @@ import datetime as dt
 from typing import Annotated, Optional
 from pydantic import Field
 
-from openmensa_sdk import OpenMensaAPIError
+from openmensa_sdk import OpenMensaAPIError, OpenMensaClient
 from .server import mcp, make_openmensa_client
 from .schemas import CanteenDTO, PageInfoDTO, CanteenListResponseDTO, MenuResponseDTO, MenuStatusDTO, MenuBatchRequestDTO, MenuBatchResponseDTO, _canteen_to_dto, _meal_to_dto
 
@@ -44,7 +44,7 @@ def _normalize_menu_date(
     return date, None
 
 
-def _fetch_single_menu(client, canteen_id: int, normalized_date: str) -> MenuResponseDTO:
+def _fetch_single_menu(client: OpenMensaClient, canteen_id: int, normalized_date: str) -> MenuResponseDTO:
     """Fetch a single menu and map OpenMensa errors to MenuResponseDTO statuses."""
 
     try:
