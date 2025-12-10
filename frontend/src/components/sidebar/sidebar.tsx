@@ -1,14 +1,14 @@
 import React from "react";
 import * as S from "./sidebar.styles";
 import type { NavItem } from "../header/header";
-import sidebarIcon from "../../assets/logos/sidebar.svg";
-import favIcon from "../../assets/logos/favourites.svg";
-import shortcutIcon from "../../assets/logos/shortcut.svg";
-import settingsIcon from "../../assets/logos/settings.svg";
-import darkIcon from "../../assets/logos/dark.svg";
-import lightIcon from "../../assets/logos/light.svg";
-import systemIcon from "../../assets/logos/system.svg";
-import headerIcon from "../../assets/logos/header.svg";
+import sidebarIcon from "../../../assets/logos/sidebar.svg";
+import favIcon from "../../../assets/logos/favourites.svg";
+import shortcutIcon from "../../../assets/logos/shortcut.svg";
+import settingsIcon from "../../../assets/logos/settings.svg";
+import darkIcon from "../../../assets/logos/dark.svg";
+import lightIcon from "../../../assets/logos/light.svg";
+import systemIcon from "../../../assets/logos/system.svg";
+import headerIcon from "../../../assets/logos/header.svg";
 
 
 interface SidebarProps {
