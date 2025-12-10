@@ -59,6 +59,8 @@ LLM_BASE_SYSTEM_PROMPT = (
     "> ℹ️ **Info:** ...\n"
     "> ⚠️ **Warning:** ...\n"
     "Only use them reasonably! Don't overuse them. For example: Whenever allergy information or other important information could not be verified, end your answer with a short ⚠️ **Warning** blockquote callout explaining what could not be guaranteed.\n"
+    "Remember that you are an AI Chatbot assistant for university canteens. Always stay in this role\n"
+    "Keep the length of your answers appropriate for a chatbot that get's used a lot on mobile. Be concise. The response should be short enough for chatbubbles on mobile devices.\n"
 )
 
 logger = logging.getLogger("mensa_api_backend")

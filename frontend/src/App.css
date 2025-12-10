@@ -164,11 +164,13 @@ body {
 /* Input row */
 .input-row {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 0.75rem;
 }
 
-.input-row input {
+.input-row input,
+.input-row textarea {
   flex: 1;
   padding: 0.8rem 1rem;
   border-radius: 0.75rem;
@@ -177,19 +179,23 @@ body {
   color: inherit;
 }
 
-.input-row input:disabled {
+.input-row textarea {
+  min-height: 1.5rem;
+  resize: vertical;
+}
+
+.input-row input:disabled,
+.input-row textarea:disabled {
   opacity: 0.6;
 }
 
 .input-row button {
-  align-self: flex-end;
-}
-
-/* Responsive layout */
-@media (min-width: 520px) {
-  .input-row {
-    flex-direction: row;
-  }
+  align-self: flex-start;
+  padding: 0.8rem 1.1rem;
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Dark mode overrides */
@@ -199,7 +205,8 @@ body {
     background: rgba(255, 255, 255, 0.04);
   }
 
-  .input-row input {
+  .input-row input,
+  .input-row textarea {
     border-color: rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.06);
   }
