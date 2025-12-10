@@ -204,7 +204,6 @@ async def run_tool_calling_loop(request_text: str) -> str:
             messages=messages,
             tools=tools,
             tool_choice="auto",
-            temperature=0.2,
         )
 
         if not getattr(completion, "choices", None):
