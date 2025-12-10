@@ -1,6 +1,6 @@
 import React from "react";
 import * as S from "./header.styles";
-import mensaLogo from "../../assets/logos/mensabot-logo-gradient.svg";
+import mensaLogo from "../../../assets/logos/mensabot-logo-gradient.svg";
 
 export type NavItem = string;
 
