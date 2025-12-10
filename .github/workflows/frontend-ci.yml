@@ -1,24 +1,41 @@
 name: Frontend CI
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   push:
     branches:
       - main
       - development
-    paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
   pull_request:
     branches:
       - main
       - development
-    paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
   workflow_dispatch:
 
 jobs:
+  detect-frontend-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Detect frontend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/frontend-ci.yml'
+
   frontend-ci:
+    needs: detect-frontend-changes
+    if: needs.detect-frontend-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:

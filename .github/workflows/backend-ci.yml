@@ -1,24 +1,41 @@
 name: Backend CI
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   push:
     branches:
       - main
       - development
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
   pull_request:
     branches:
       - main
       - development
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
 jobs:
+  detect-backend-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Detect backend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend-ci.yml'
+
   openmensa-sdk:
+    needs: detect-backend-changes
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -50,8 +67,9 @@ jobs:
           fi
 
   mcp-server:
+    needs: [detect-backend-changes, openmensa-sdk]
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    needs: openmensa-sdk
 
     steps:
       - name: Checkout repository
@@ -82,8 +100,17 @@ jobs:
           fi
 
   api-backend:
+    needs: [detect-backend-changes, openmensa-sdk, mcp-server]
+    if: needs.detect-backend-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    needs: [openmensa-sdk, mcp-server]
+
+    env:
+      # secrets
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      # variables
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      MCP_URL: ${{ vars.MCP_URL }}
 
     steps:
       - name: Checkout repository
@@ -120,5 +147,5 @@ jobs:
           echo "Waiting for API to start..."
           sleep 5
 
-      - name: Healthcheck /health
-        run: curl -f http://127.0.0.1:8000/health
+      - name: Healthcheck /api/health
+        run: curl -f http://127.0.0.1:8000/api/health

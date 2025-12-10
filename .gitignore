@@ -1,0 +1,13 @@
+# repo-wide common gitignore rules
+
+# OS
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/
+WARP.md
+
+# ignore any .env files
+.env
+.env.*
