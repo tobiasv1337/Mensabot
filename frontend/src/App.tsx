@@ -119,6 +119,7 @@ function App() {
           disabled={isSending}
           placeholder="Gib hier deinen Text ein..."
           rows={1}
+          aria-label="Chat message input"
         />
         <button
           type="button"
