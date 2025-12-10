@@ -74,7 +74,6 @@ export const Sidebar = styled.aside<{ open: boolean; collapsed: boolean }>`
     filter: brightness(0) invert(1);
     width: 18px;
     height: 18px;
-    outline: 1px solid red;
 }
 `;
 
