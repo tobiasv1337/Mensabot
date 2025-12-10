@@ -2,12 +2,13 @@ import os
 import json
 import logging
 import datetime as dt
+import asyncio
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, List
 from pydantic import BaseModel
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
@@ -30,6 +31,8 @@ MCP_URL = get_env_required("MCP_URL")
 LLM_SUPPORTS_TOOL_MESSAGES = os.getenv("LLM_SUPPORTS_TOOL_MESSAGES", "false").lower() == "true"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 MAX_LLM_ITERATIONS = int(os.getenv("MAX_LLM_ITERATIONS", "10"))
+LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "10"))
+LLM_RETRY_BASE_DELAY = float(os.getenv("LLM_RETRY_BASE_DELAY", "1.0"))
 LLM_FALLBACK_RESPONSE = (
     "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
     "attempts. Please try rephrasing your question or ask something else."
@@ -84,6 +87,38 @@ app.add_middleware(
 
 
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+
+
+async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]):
+    """Call the chat completion API with simple exponential backoff on rate limits."""
+    last_error: Exception | None = None
+    for attempt in range(1, LLM_MAX_RETRIES + 1):
+        try:
+            return client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+            )
+        except RateLimitError as err:
+            last_error = err
+            retry_after = None
+            headers = getattr(err, "headers", None)
+            if isinstance(headers, dict):
+                retry_after = headers.get("Retry-After")
+
+            delay = float(retry_after) if retry_after is not None else LLM_RETRY_BASE_DELAY * attempt
+            if attempt >= LLM_MAX_RETRIES:
+                break
+            logger.warning("Rate limit hit (attempt %d/%d). Retrying in %.2fs.\nError: %s", attempt, LLM_MAX_RETRIES, delay, last_error)
+            await asyncio.sleep(delay)
+        except Exception:
+            raise
+
+    # If we exhausted retries, re-raise the last rate limit error.
+    if last_error:
+        raise last_error
+    raise RuntimeError("LLM request failed without a captured exception")
 
 def ensure_message_content(message: Any, finish_reason: str) -> str:
     """Return textual assistant content or fall back to a generic apology."""
@@ -199,12 +234,11 @@ async def run_tool_calling_loop(request_text: str) -> str:
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
     for iteration in range(1, MAX_LLM_ITERATIONS + 1):
-        completion = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-        )
+        try:
+            completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
+        except RateLimitError as e:
+            logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
+            return LLM_FALLBACK_RESPONSE
 
         if not getattr(completion, "choices", None):
             try:
