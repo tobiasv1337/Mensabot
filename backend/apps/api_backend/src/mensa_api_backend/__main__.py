@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, List
+from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
@@ -33,6 +34,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 MAX_LLM_ITERATIONS = int(os.getenv("MAX_LLM_ITERATIONS", "10"))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "10"))
 LLM_RETRY_BASE_DELAY = float(os.getenv("LLM_RETRY_BASE_DELAY", "1.0"))
+LLM_RETRY_MAX_DELAY = float(os.getenv("LLM_RETRY_MAX_DELAY", "30.0"))
 LLM_FALLBACK_RESPONSE = (
     "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
     "attempts. Please try rephrasing your question or ask something else."
@@ -89,8 +91,8 @@ app.add_middleware(
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 
-async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]):
-    """Call the chat completion API with simple exponential backoff on rate limits."""
+async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
+    """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
     last_error: Exception | None = None
     for attempt in range(1, LLM_MAX_RETRIES + 1):
         try:
@@ -107,7 +109,13 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
             if isinstance(headers, dict):
                 retry_after = headers.get("Retry-After")
 
-            delay = float(retry_after) if retry_after is not None else LLM_RETRY_BASE_DELAY * attempt
+            delay = LLM_RETRY_BASE_DELAY * (2 ** (attempt - 1))
+            if retry_after is not None:
+                try:
+                    delay = float(retry_after)
+                except (TypeError, ValueError):
+                    logger.warning("Retry-After header unparsable (%s); using backoff delay %.2fs", retry_after, delay)
+            delay = min(delay, LLM_RETRY_MAX_DELAY)
             if attempt >= LLM_MAX_RETRIES:
                 break
             logger.warning("Rate limit hit (attempt %d/%d). Retrying in %.2fs.\nError: %s", attempt, LLM_MAX_RETRIES, delay, last_error)
@@ -118,7 +126,7 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
     # If we exhausted retries, re-raise the last rate limit error.
     if last_error:
         raise last_error
-    raise RuntimeError("LLM request failed without a captured exception")
+    raise RuntimeError("Unexpected: no completion and no last_error recorded")
 
 def ensure_message_content(message: Any, finish_reason: str) -> str:
     """Return textual assistant content or fall back to a generic apology."""
