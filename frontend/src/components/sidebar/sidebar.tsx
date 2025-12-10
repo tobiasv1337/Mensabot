@@ -74,7 +74,7 @@ const expanded = isMobile ? true : !desktopCollapsed;
     {expanded && (
       <S.Section>
         <S.Item>
-          <S.Icon><img src={favIcon} className="white-icon" /></S.Icon> Mensa Favoriten
+          <S.Icon><img src={favIcon} className="white-icon" alt="Favorites icon" /></S.Icon> Mensa Favoriten
         </S.Item>
 
         <S.Item active>
