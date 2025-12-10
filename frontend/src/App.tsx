@@ -51,11 +51,12 @@ function App() {
     }
   }
 
-  const handleEnter = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      sendMessage()
-    }
+  const handleEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter') return
+    if (event.shiftKey) return
+
+    event.preventDefault()
+    sendMessage()
   }
 
   return (
@@ -111,13 +112,13 @@ function App() {
       </section>
 
       <section className="input-row">
-        <input
-          type="text"
+        <textarea
           value={userInput}
           onChange={(event) => setUserInput(event.target.value)}
           onKeyDown={handleEnter}
           disabled={isSending}
           placeholder="Gib hier deinen Text ein..."
+          rows={1}
         />
         <button
           type="button"
