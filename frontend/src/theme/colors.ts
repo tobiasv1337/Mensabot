@@ -14,7 +14,7 @@ const palette = {
   accent3Yellow: '#FFBC2C',
 };
 
-interface Theme{
+export interface Theme{
   // Background colors (static)
   backgroundPrimary: string;
   backgroundPrimaryOff: string;

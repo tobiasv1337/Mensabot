@@ -181,9 +181,7 @@ body {
   opacity: 0.6;
 }
 
-.input-row button {
-  align-self: flex-end;
-}
+
 
 /* Responsive layout */
 @media (min-width: 520px) {

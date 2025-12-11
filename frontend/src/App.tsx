@@ -5,6 +5,8 @@ import remarkGfm from 'remark-gfm'
 import './App.css'
 import { useTheme } from './theme/themeProvider.tsx'
 
+import { Button } from './components/button/button';
+
 type ChatResponse = {
   reply?: string
 }
@@ -88,6 +90,11 @@ function App() {
         >
         Dark Mode
         </button>
+        <Button 
+          variant="primary" 
+          text="Primary Action Button Test Dark" 
+          onClick={() => toggleMode("dark")}
+        />
       </div>
 
 
