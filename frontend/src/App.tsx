@@ -11,6 +11,7 @@ import { Chats, ChatMessage, type Chat } from './services/chats'
 import { MensaBotClient } from './services/api'
 import ChatPage from './pages/Chatpage'
 import mensabotLogo from './assets/mensabot-logo-gradient-round.svg'
+import { Button } from './components/button/button';
 
 const AppContainer = styled.main`
   min-height: 100vh;
@@ -749,6 +750,14 @@ function App() {
           <ThemeDemoButton onClick={() => setShowThemeDemo(true)}>
             🎨 Theme Demo anzeigen
           </ThemeDemoButton>
+        </div>
+
+        <div>
+          <Button 
+            variant="primary" 
+            text="Primary Action Button Test Dark" 
+            onClick={() => toggleMode("dark")}
+          ></Button>
         </div>
 
         <div>
