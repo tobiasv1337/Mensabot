@@ -1,139 +1,69 @@
-import { useState } from 'react'
-import type { KeyboardEvent } from 'react'
-import './App.css'
-import { useTheme } from './theme/themeProvider.tsx'
-import {useShortcutStorage} from "./hooks/useShortcutStorage.ts";
-import {ShortcutList} from "./components/shortcut/ShortcutList.tsx";
+import { useState } from "react";
+import ChatWindow from "./components/chat/ChatWindow";
 
-type ChatResponse = {
-  reply?: string
-}
+type Message = {
+    sender: "user" | "bot";
+    text: string;
+};
 
-function App() {
-  const { currentTheme, toggleMode } = useTheme()
-  const [userInput, setUserInput] = useState('')
-  const [backendResponse, setBackendResponse] = useState<string>('')
-  const [isSending, setIsSending] = useState(false)
-  const [error, setError] = useState<string>('')
+export default function App() {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [userInput, setUserInput] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const [error, setError] = useState("");
 
-    const { shortcuts, addShortcut, removeShortcut } =
-        useShortcutStorage("mensabot-shortcuts", []);
+    const sendMessage = async () => {
+        if (!userInput.trim() || isSending) return;
 
-    const handleAddShortcut = () => {
-        if (!userInput.trim()) return;
-        addShortcut(userInput.trim());
+        const userMessage = userInput;
         setUserInput("");
+
+        // Add user message directly
+        setMessages((prev) => [...prev, { sender: "user", text: userMessage }]);
+        setIsSending(true);
+        setError("");
+
+        try {
+            const response = await fetch("http://localhost:8000/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage }),
+            });
+
+            if (!response.ok) throw new Error(`Status ${response.status}`);
+
+            const data = await response.json();
+            const botReply = data.reply ?? "Keine Antwort vom Backend erhalten.";
+
+            // Add bot message
+            setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
+        } catch (err) {
+            console.error(err);
+            setMessages((prev) => [
+                ...prev,
+                { sender: "bot", text: "⚠ Es gab einen Fehler beim Abrufen der Daten." },
+            ]);
+        } finally {
+            setIsSending(false);
+        }
     };
 
-  const sendMessage = async () => {
-    if (!userInput.trim() || isSending) return
+    return (
+        <div className="h-screen w-screen bg-gray-900 text-gray-100 flex flex-col">
+            <header className="h-16 border-b border-gray-800 flex items-center px-6">
+                <h1 className="text-xl font-semibold">Mensabot</h1>
+            </header>
 
-    setIsSending(true)
-    setError('')
-    const textToSend = userInput
-
-    try {
-      const response = await fetch('http://localhost:8000/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: textToSend }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
-      }
-
-      const data = (await response.json()) as ChatResponse
-      const reply = data.reply?.trim()
-      setBackendResponse(reply || 'Keine Antwort vom Backend erhalten.')
-    } catch (err) {
-      console.error('Fehler beim Senden:', err)
-      setError('Fehler beim Verbinden mit dem Backend.')
-      setBackendResponse('')
-    } finally {
-      setUserInput('')
-      setIsSending(false)
-    }
-  }
-
-  const handleEnter = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      sendMessage()
-    }
-  }
-
-  return (
-    <main className="app">
-      <h1 className="title" style={{color: currentTheme.textPrimary}}>Mensabot</h1>
-
-      <div>
-        <button
-          onClick={() => toggleMode("light")}
-          style={{
-            background: currentTheme.backgroundAccent,
-            color: currentTheme.textContrast,
-          }}
-        >
-        Light Mode
-        </button>
-        <button
-          onClick={() => toggleMode("system")}
-          style={{
-            background: currentTheme.backgroundAccent,
-            color: currentTheme.textContrast,
-          }}
-        >
-        System Mode
-        </button>
-        <button
-          onClick={() => toggleMode("dark")}
-          style={{
-            background: currentTheme.backgroundAccent,
-            color: currentTheme.textContrast,
-          }}
-        >
-        Dark Mode
-        </button>
-      </div>
-
-
-      <section className="response">
-        {error ? (
-          <p className="error">{error}</p>
-        ) : (
-          <p>{backendResponse || 'Warte auf deine Eingabe...'}</p>
-        )}
-      </section>
-        <section className="shortcuts">
-            <ShortcutList
-                shortcuts={shortcuts}
-                onShortcutClick={(s) => setUserInput(s)}
-                onAddShortcut={handleAddShortcut}
-                onDeleteShortcut={removeShortcut}
-            />
-        </section>
-      <section className="input-row">
-        <input
-          type="text"
-          value={userInput}
-          onChange={(event) => setUserInput(event.target.value)}
-          onKeyDown={handleEnter}
-          disabled={isSending}
-          placeholder="Gib hier deinen Text ein..."
-        />
-        <button
-          type="button"
-          onClick={sendMessage}
-          disabled={!userInput.trim() || isSending}
-        >
-          {isSending ? 'Sende...' : 'Senden'}
-        </button>
-      </section>
-    </main>
-  )
+            <main className="flex-1 max-w-4xl mx-auto w-full p-4">
+                <ChatWindow
+                    messages={messages}
+                    userInput={userInput}
+                    setUserInput={setUserInput}
+                    sendMessage={sendMessage}
+                    isSending={isSending}
+                    error={error}
+                />
+            </main>
+        </div>
+    );
 }
-
-export default App

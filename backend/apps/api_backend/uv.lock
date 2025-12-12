@@ -753,6 +753,7 @@ dependencies = [
     { name = "mensa-mcp-server" },
     { name = "openai" },
     { name = "python-dotenv" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -762,6 +763,7 @@ requires-dist = [
     { name = "mensa-mcp-server", editable = "../mcp-server" },
     { name = "openai", specifier = ">=2.8.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
 ]
 
 [[package]]
