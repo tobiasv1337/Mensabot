@@ -103,6 +103,7 @@ class CanteenListResponseDTO(DTO):
 class MenuStatusDTO(StrEnum):
     ok = "ok"
     no_menu_published = "no_menu_published"
+    empty_menu = "empty_menu"
     invalid_date = "invalid_date"
     api_error = "api_error"
 
@@ -110,9 +111,21 @@ class MenuResponseDTO(DTO):
     canteen_id: int = Field(ge=1, description="Unique identifier of the canteen.")
     date: str = Field(
         description=(
-            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'api_error' "
+            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'empty_menu' / 'api_error' "
             "this is a valid ISO date. For 'invalid_date' it contains the original invalid input."
         ),
     )
     status: MenuStatusDTO
     meals: list[MealDTO] = Field(default_factory=list, description="List of meals for the given date.")
+
+class MenuBatchRequestDTO(DTO):
+    canteen_id: int = Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin).")
+    date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
+
+class MenuBatchResponseDTO(DTO):
+    results: list[MenuResponseDTO] = Field(
+        description=(
+            "One entry per requested (canteen_id, date) pair. "
+            "The order matches the input list."
+        ),
+    )

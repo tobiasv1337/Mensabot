@@ -1,11 +1,18 @@
 import os
 import json
+import logging
+import datetime as dt
+import asyncio
+from zoneinfo import ZoneInfo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, List
+from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
+from fastmcp import Client as MCPClient
+from mensa_mcp_server import mcp
 
 load_dotenv() # Load environment variables from .env file
 
@@ -22,86 +29,48 @@ LLM_API_KEY = get_env_required("LLM_API_KEY")
 LLM_BASE_URL = get_env_required("LLM_BASE_URL")
 LLM_MODEL = get_env_required("LLM_MODEL")
 MCP_URL = get_env_required("MCP_URL")
+LLM_SUPPORTS_TOOL_MESSAGES = os.getenv("LLM_SUPPORTS_TOOL_MESSAGES", "false").lower() == "true"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+MAX_LLM_ITERATIONS = int(os.getenv("MAX_LLM_ITERATIONS", "10"))
+LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "10"))
+LLM_RETRY_BASE_DELAY = float(os.getenv("LLM_RETRY_BASE_DELAY", "1.0"))
+LLM_RETRY_MAX_DELAY = float(os.getenv("LLM_RETRY_MAX_DELAY", "30.0"))
+LLM_FALLBACK_RESPONSE = (
+    "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
+    "attempts. Please try rephrasing your question or ask something else."
+)
+LLM_BASE_SYSTEM_PROMPT = (
+    "You are the Mensabot for university canteens.\n"
+    "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
+    "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. But only if you are very sure about the answer.\n"
+    "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
+    "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
+    "Don't ever try to answer about any information that is likely to change over time (like menus, opening hours, prices, etc.) just based on your internal knowledge. However, you can always trust the tools to provide the latest data. For example, the menu fetched from the tools is always up-to-date.\n"
+    "Don't give generic answers like normally this canteen serves X, Y, Z. Always try to get the actual current data via the tools.\n"
+    "You are expected to use multiple iterations of tool calls if needed. But don't call tools unnecessarily with random parameters. Instead prefer to use more tool iterations to get all the data you need step by step.\n"
+    "Do NOT stop after only one or two tool calls if the user question clearly requires more data.\n"
+    "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
+    "Don't mention anything about tools or tool usage, OpenMensa and other systems in your final answer if not asked to do so.\n"
+    "Always respond in a friendly and helpful manner.\n"
+    "Always respond in the same language the user used in their request.\n"
+    "Format all responses as valid GitHub-Flavored Markdown. Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer. Don't use HTML tags within your responses. Just use Markdown syntax.\n"
+    "For very important notes, use Markdown blockquote callouts with this pattern:\n"
+    "> 💡 **Hint:** ...\n"
+    "> ℹ️ **Info:** ...\n"
+    "> ⚠️ **Warning:** ...\n"
+    "Only use them reasonably! Don't overuse them. For example: Whenever allergy information or other important information could not be verified, end your answer with a short ⚠️ **Warning** blockquote callout explaining what could not be guaranteed.\n"
+    "Remember that you are an AI Chatbot assistant for university canteens. Always stay in this role.\n"
+    "Keep the length of your answers appropriate for a chatbot that gets used a lot on mobile. Be concise. The response should be short enough for chat bubbles on mobile devices.\n"
+)
 
-def list_canteens_near(
-    lat: float,
-    lng: float,
-    radius_km: float = 3.0,
-    page: int = 1,
-) -> Dict[str, Any]:
-    """
-    Stub: pretend we queried OpenMensa and found some canteens near TU Berlin.
-    Just for testing purposes. :)
-    """
-    print(f"[STUB] list_canteens_near(lat={lat}, lng={lng}, radius_km={radius_km}, page={page})")
+logger = logging.getLogger("mensa_api_backend")
+logger.setLevel(LOG_LEVEL)
 
-    return {
-        "page_info": {
-            "page": page,
-            "has_next": False,
-            "next_page": None,
-        },
-        "query": {
-            "lat": lat,
-            "lng": lng,
-            "radius_km": radius_km,
-            "page": page,
-        },
-        "canteens": [
-            {
-                "id": 1,
-                "name": "Mensa TU Hardenbergstraße",
-                "distance_km": 0.4,
-                "address": "Hardenbergstr. 34, 10623 Berlin",
-            },
-            {
-                "id": 2,
-                "name": "Mensa TU Marchstraße",
-                "distance_km": 0.9,
-                "address": "Marchstr. 6, 10587 Berlin",
-            },
-        ],
-    }
-
-# STUB tool definition. Just for testing function-calling behavior for now. :)
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "list_canteens_near",
-            "description": (
-                "List canteens near a geographic location (paginated). "
-                "Use this to find nearby university canteens. "
-                "Return real canteen names, distances, and addresses."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "lat": {
-                        "type": "number",
-                        "description": "Latitude in WGS84 decimal degrees."
-                    },
-                    "lng": {
-                        "type": "number",
-                        "description": "Longitude in WGS84 decimal degrees."
-                    },
-                    "radius_km": {
-                        "type": "number",
-                        "description": "Search radius in kilometers.",
-                        "default": 3.0
-                    },
-                    "page": {
-                        "type": "integer",
-                        "description": "Page number for pagination (1-based).",
-                        "default": 1,
-                        "minimum": 1
-                    },
-                },
-                "required": ["lat", "lng"],
-            },
-        },
-    },
-]
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 app = FastAPI()
@@ -124,23 +93,144 @@ app.add_middleware(
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 
+async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
+    """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
+    last_error: Exception | None = None
+    for attempt in range(1, LLM_MAX_RETRIES + 1):
+        try:
+            return client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+            )
+        except RateLimitError as err:
+            last_error = err
+            retry_after = None
+            headers = getattr(err, "headers", None)
+            if isinstance(headers, dict):
+                retry_after = headers.get("Retry-After")
+
+            delay = LLM_RETRY_BASE_DELAY * (2 ** (attempt - 1))
+            if retry_after is not None:
+                try:
+                    delay = float(retry_after)
+                except (TypeError, ValueError):
+                    logger.warning("Retry-After header unparsable (%s); using backoff delay %.2fs", retry_after, delay)
+            delay = min(delay, LLM_RETRY_MAX_DELAY)
+            if attempt >= LLM_MAX_RETRIES:
+                break
+            logger.warning("Rate limit hit (attempt %d/%d). Retrying in %.2fs.\nError: %s", attempt, LLM_MAX_RETRIES, delay, last_error)
+            await asyncio.sleep(delay)
+        except Exception:
+            raise
+
+    # If we exhausted retries, re-raise the last rate limit error.
+    if last_error:
+        raise last_error
+    raise RuntimeError("Unexpected: no completion and no last_error recorded")
+
+def ensure_message_content(message: Any, finish_reason: str) -> str:
+    """Return textual assistant content or fall back to a generic apology."""
+    content = getattr(message, "content", None)
+    if isinstance(content, str) and content.strip():
+        return content
+    logger.warning("LLM response missing usable content (finish_reason=%s). Returning fallback message.", finish_reason)
+    return LLM_FALLBACK_RESPONSE
+
+async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
+    """
+    Fetch tool definitions from the MCP server and convert them to OpenAI tool format.
+    Returns:
+        List[Dict[str, Any]]: List of tool definitions in OpenAI function calling format.
+        Each tool has the structure: {"type": "function", "function": {...}}
+    """
+    async with MCPClient(mcp) as mcp_client:
+        raw_tools = await mcp_client.list_tools()
+        tool_list = list(raw_tools)
+        
+        openai_tools = []
+
+        for tool in tool_list:
+            name = getattr(tool, "name", None)
+            description = getattr(tool, "description", "")
+            parameters = getattr(tool, "inputSchema", None)
+            if not name or not parameters:
+                logger.warning(f"Tool is missing name or inputSchema. Name: {name}, has parameters: {parameters is not None}\n Tool: {tool}.\nSkipping this tool.")
+                continue
+        
+            openai_tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "description": description,
+                        "parameters": parameters,
+                    },
+                }
+            )
+        return openai_tools
+
+def unwrap_tool_result(resp: Any) -> Any:
+    """
+    Convert FastMCP tool result into plain Python data for the LLM.
+    """
+    if getattr(resp, "structured_content", None) is not None:
+        return resp.structured_content
+    if getattr(resp, "model_dump", None) is not None:
+        return resp.model_dump()
+    return resp
+
+async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Call a tool via FastMCP and return a JSON-serializable dict.
+    Args:
+        tool_name: Name of the MCP tool to call.
+        args: Arguments to pass to the tool.
+    Returns:
+        On success: {"ok": True, "tool": str, "args": dict, "result": Any}
+        On failure: {"error": str}
+    """
+    async with MCPClient(mcp) as mcp_client:
+        try:
+            resp = await mcp_client.call_tool(tool_name, args)
+            data = unwrap_tool_result(resp)
+            logger.info("Tool %s called with args %s.", tool_name, args)
+            logger.debug("Got tool response: %s", json.dumps(data, indent=2))
+            return {"ok": True, "tool": tool_name, "args": args, "result": data}
+        except Exception as e:
+            logger.exception(f"Error calling tool {tool_name} with args {args}")
+            return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
+
+def add_time_context(messages: list[dict]) -> None:
+    """
+    Add current local date and time (Europe/Berlin) as system context for the LLM. Currently with clear focus on Berlin timezone.
+    """
+    now = dt.datetime.now(ZoneInfo("Europe/Berlin"))
+    weekday_str = now.strftime("%A")
+    local_str = now.strftime("%Y-%m-%d %H:%M")
+
+    messages.append(
+        {
+            "role": "system",
+            "content": (
+                f"Current local date and time: {weekday_str}, {local_str} (timezone: Europe/Berlin). "
+                "Assume all canteen opening hours and menus refer to this timezone. "
+                "When the user says 'today', interpret it as this local date."
+            ),
+        }
+    )
+
 def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     messages: List[Dict[str, Any]] = [
         {
             "role": "system",
-            "content": (
-                "You are the Mensabot for university canteens.\n"
-                "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
-                "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
-                "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
-                "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
-                "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-                "Don't mention anything about tools or tool usage in your final answer.\n"
-                "Always respond in a friendly and helpful manner.\n"
-                "Always respond in the same language the user used in their request."
-            ),
+            "content": LLM_BASE_SYSTEM_PROMPT,
         },
     ]
+
+    add_time_context(messages)
+
     request = {
         "role": "user",
         "content": request_text,
@@ -148,95 +238,94 @@ def generate_messages(request_text: str) -> List[Dict[str, Any]]:
     messages.append(request)
     return messages
 
-def run_tool_calling_loop(request_text: str) -> str:
+async def run_tool_calling_loop(request_text: str) -> str:
     messages = generate_messages(request_text)
 
-    while True:
-        completion = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-            temperature=0.2,
-        )
-        print(f"Received completion: {completion.model_dump()}")
+    tools = await get_openai_tools_from_mcp()
+    logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
+    for iteration in range(1, MAX_LLM_ITERATIONS + 1):
+        try:
+            completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
+        except RateLimitError as e:
+            logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
+            return LLM_FALLBACK_RESPONSE
+
+        if not getattr(completion, "choices", None):
+            try:
+                dumped = completion.model_dump()
+            except Exception:
+                dumped = repr(completion)
+            logger.error("LLM completion has no choices: %s", dumped)
+            raise RuntimeError("LLM returned no choices; check upstream LLM/Proxy configuration")
+
+        logger.debug("Received completion: %s", completion.model_dump())
         choice = completion.choices[0]
         finish_reason = choice.finish_reason
         message = choice.message
 
         if finish_reason != "tool_calls":
-            final_message = message
-            break
+            logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
+            return ensure_message_content(message, finish_reason)
 
         
-        print("Tool calls detected!")
         tool_calls = message.tool_calls or []
         if not tool_calls:
-            print("No tool calls found, exiting loop.")
-            final_message = message
-            break
+            logger.warning("LLM reported finish_reason=tool_calls but no tool_calls were provided. Returning current message after %d iterations.", iteration)
+            logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
+            return ensure_message_content(message, finish_reason)
 
-        # Per OpenAI spec, we should append this tool calling message to the messages. But the SAIA backend seems to have issues with that responding that only a single tool call is allowed.
-        #messages.append(message)
+        if LLM_SUPPORTS_TOOL_MESSAGES:
+            messages.append(message)
 
-        print(f"Number of tool calls: {len(tool_calls)}")
+        logger.info("Number of tool calls: %d", len(tool_calls))
         for call in tool_calls:
             tool_name = call.function.name
             raw_args = call.function.arguments
-            print(f"Tool call ID: {call.id}, function: {tool_name}, arguments: {raw_args}")
 
             try:
                 args = json.loads(raw_args)
             except json.JSONDecodeError as e:
-                result = {"error": f"Failed to parse arguments: {str(e)}"}
+                result_payload = {"error": f"Failed to parse arguments: {str(e)}"}
             else:
-                if tool_name == "list_canteens_near":
-                    result = list_canteens_near(**args)
-                else:
-                    result = {"error": f"Unknown tool: {tool_name}"}
+                # Delegate to MCP
+                result_payload = await call_mcp_tool(tool_name, args)
 
             messages.append(
                 {
                     "role": "tool",
                     "tool_call_id": call.id,
                     "name": tool_name,
-                    "content": json.dumps(result),
+                    "content": json.dumps(result_payload),
                 }
             )
 
-            if not (isinstance(result, dict) and "error" in result):
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "You have just successfully received the tool results you requested as a JSON object."
-                            "You can assume these tool results to be 100% correct and accurate."
-                            "You don't need to validate them and can fully trust them to answer the user query."
-                            "Now either make further tool calls if needed, or answer the user based on the tool results."
-                        ),
-                    }
-                )
-            else:
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "The previous tool call failed and did NOT provide useful data. "
-                            "You should not rely on this tool result. "
-                            "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                        ),
-                    }
-                )
-
-
-    print("Final message content:")
-    print(final_message.content)
-
-    print("Info Log: All infos about this request:")
-    print(messages)
-    print(json.dumps(final_message.model_dump(), indent=2))
-
-    return final_message.content
+            if not LLM_SUPPORTS_TOOL_MESSAGES:
+                if not (isinstance(result_payload, dict) and "error" in result_payload):
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "You have just successfully received the tool results you requested as a JSON object."
+                                "You can assume these tool results to be 100% correct and accurate."
+                                "You don't need to validate them and can fully trust them to answer the user query."
+                                "Now either make further tool calls if needed, or answer the user based on the tool results."
+                            ),
+                        }
+                    )
+                else:
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "The previous tool call failed and did NOT provide useful data. "
+                                "You should not rely on this tool result. "
+                                "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
+                            ),
+                        }
+                    )
+        
+    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
+    return LLM_FALLBACK_RESPONSE
 
 
 
@@ -252,7 +341,7 @@ class ChatResponse(BaseModel):
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     message = request.message
-    resp = run_tool_calling_loop(message)
+    resp = await run_tool_calling_loop(message)
 
     return ChatResponse(reply=resp)
 
