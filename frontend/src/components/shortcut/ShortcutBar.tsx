@@ -1,29 +1,37 @@
+import styled from "styled-components";
 import { useShortcutStorage } from "../../hooks/useShortcutStorage";
 import { ShortcutList } from "./ShortcutList";
 
 interface ShortcutBarProps {
     setUserInput: (v: string) => void;
-    userInput: string; // <-- NEW
+    userInput: string;
 }
+
+const Container = styled.div`
+  background: #1f2937;       /* gray-800 */
+  border: 1px solid #374151; /* gray-700 */
+  border-radius: 0.75rem;    /* rounded-xl */
+  padding: 0.75rem;          /* p-3 */
+`;
 
 export default function ShortcutBar({ setUserInput, userInput }: ShortcutBarProps) {
     const { shortcuts, addShortcut, removeShortcut } =
         useShortcutStorage("mensabot-shortcuts", []);
 
     const handleAddShortcut = () => {
-        if (!userInput.trim()) return; // ignore if input empty
+        if (!userInput.trim()) return;
         addShortcut(userInput);
         setUserInput("");
     };
 
     return (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <Container>
             <ShortcutList
                 shortcuts={shortcuts}
                 onShortcutClick={(s) => setUserInput(s)}
                 onAddShortcut={handleAddShortcut}
                 onDeleteShortcut={removeShortcut}
             />
-        </div>
+        </Container>
     );
 }

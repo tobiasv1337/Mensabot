@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import styled from "styled-components";
 import BotMessage from "./BotMessage";
 import UserMessage from "./UserMessage";
 
@@ -7,21 +8,43 @@ export interface ChatMessagesProps {
     error: string;
 }
 
+const Container = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  background: #1f2937;       /* gray-800 */
+  border: 1px solid #374151; /* gray-700 */
+  border-radius: 0.75rem;    /* rounded-xl */
+  padding: 1rem;             /* p-4 */
+
+  /* space-y-3 */
+  & > * + * {
+    margin-top: 0.75rem;
+  }
+`;
+
+const ErrorText = styled.p`
+  color: #f87171; /* red-400 */
+  font-size: 0.875rem;
+`;
+
+const HintText = styled.p`
+  color: #9ca3af; /* gray-400 */
+  font-size: 0.875rem;
+`;
+
 export default function ChatMessages({ messages, error }: ChatMessagesProps) {
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        // Scroll to bottom whenever messages change
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
     return (
-        <div className="flex-1 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3">
-
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+        <Container>
+            {error && <ErrorText>{error}</ErrorText>}
 
             {messages.length === 0 && !error && (
-                <p className="text-gray-400 text-sm">Warte auf deine Eingabe...</p>
+                <HintText>Warte auf deine Eingabe...</HintText>
             )}
 
             {messages.map((msg, index) =>
@@ -32,8 +55,7 @@ export default function ChatMessages({ messages, error }: ChatMessagesProps) {
                 )
             )}
 
-            {/* Invisible anchor for scrolling */}
             <div ref={bottomRef} />
-        </div>
+        </Container>
     );
 }

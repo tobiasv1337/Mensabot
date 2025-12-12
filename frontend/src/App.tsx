@@ -1,12 +1,5 @@
 import { useState } from 'react'
-import type { KeyboardEvent } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
 import './App.css'
-import { useTheme } from './theme/themeProvider.tsx'
-import { useState } from "react";
 import ChatWindow from "./components/chat/ChatWindow";
 
 type Message = {
@@ -75,41 +68,41 @@ export default function App() {
         </div>
     );
 
-      <section className="response">
-        {error ? (
-          <p className="error">{error}</p>
-        ) : backendResponse ? (
-          <div className="markdown-response">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize]}
-            >
-              {backendResponse}
-            </ReactMarkdown>
-          </div>
-        ) : (
-          <p>Warte auf deine Eingabe...</p>
-        )}
-      </section>
-
-      <section className="input-row">
-        <textarea
-          value={userInput}
-          onChange={(event) => setUserInput(event.target.value)}
-          onKeyDown={handleEnter}
-          disabled={isSending}
-          placeholder="Gib hier deinen Text ein..."
-          rows={1}
-          aria-label="Chat message input"
-        />
-        <button
-          type="button"
-          onClick={sendMessage}
-          disabled={!userInput.trim() || isSending}
-        >
-          {isSending ? 'Sende...' : 'Senden'}
-        </button>
-      </section>
-    </main>
-  )
+  //     <section className="response">
+  //       {error ? (
+  //         <p className="error">{error}</p>
+  //       ) : backendResponse ? (
+  //         <div className="markdown-response">
+  //           <ReactMarkdown
+  //             remarkPlugins={[remarkGfm]}
+  //             rehypePlugins={[rehypeRaw, rehypeSanitize]}
+  //           >
+  //             {backendResponse}
+  //           </ReactMarkdown>
+  //         </div>
+  //       ) : (
+  //         <p>Warte auf deine Eingabe...</p>
+  //       )}
+  //     </section>
+  //
+  //     <section className="input-row">
+  //       <textarea
+  //         value={userInput}
+  //         onChange={(event) => setUserInput(event.target.value)}
+  //         onKeyDown={handleEnter}
+  //         disabled={isSending}
+  //         placeholder="Gib hier deinen Text ein..."
+  //         rows={1}
+  //         aria-label="Chat message input"
+  //       />
+  //       <button
+  //         type="button"
+  //         onClick={sendMessage}
+  //         disabled={!userInput.trim() || isSending}
+  //       >
+  //         {isSending ? 'Sende...' : 'Senden'}
+  //       </button>
+  //     </section>
+  //   </main>
+  // )
 }

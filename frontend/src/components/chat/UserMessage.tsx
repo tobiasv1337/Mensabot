@@ -1,16 +1,46 @@
+import styled from "styled-components";
 import MessageBubble from "./MessageBubble";
+
+const Row = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const MessageContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;          /* gap-3 */
+  max-width: 75%;
+`;
+
+const BubbleWrapper = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const Avatar = styled.div`
+  width: 2rem;           /* w-8 */
+  height: 2rem;          /* h-8 */
+  flex-shrink: 0;
+  border-radius: 9999px; /* rounded-full */
+  background: #a855f7;   /* purple-500 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.125rem;   /* text-lg */
+`;
 
 export default function UserMessage({ text }: { text: string }) {
     return (
-        <div className="w-full flex justify-end">
-            <div className="flex items-start gap-3 max-w-[75%]">
-                <div className="flex-1 min-w-0">
+        <Row>
+            <MessageContainer>
+                <BubbleWrapper>
                     <MessageBubble text={text} isUser />
-                </div>
-                <div className="w-8 h-8 flex-shrink-0 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg">
-                    👤
-                </div>
-            </div>
-        </div>
+                </BubbleWrapper>
+                <Avatar>👤</Avatar>
+            </MessageContainer>
+        </Row>
     );
 }
