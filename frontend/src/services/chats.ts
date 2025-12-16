@@ -66,6 +66,12 @@ export class Chats {
 		} else return undefined;
 	}
 
+	static listIds() {
+		return Object.keys(localStorage)
+			.filter((key) => key.startsWith("chat-"))
+			.map((key) => key.replace("chat-", ""));
+	}
+
 	static exists(id: string) {
 		return localStorage.getItem(`chat-${id}`) !== null;
 	}
