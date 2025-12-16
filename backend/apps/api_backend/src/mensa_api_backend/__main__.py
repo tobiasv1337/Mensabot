@@ -1,8 +1,8 @@
 import os
 import json
 import logging
-import datetime as dt
 import asyncio
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from typing import Any, Dict, List, Literal
@@ -102,9 +102,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
-
 
 async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
     """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
@@ -215,38 +213,24 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
             return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
 
-def add_time_context(messages: list[dict]) -> None:
+def get_time_context() -> ChatCompletionMessage:
     """
-    Add current local date and time (Europe/Berlin) as system context for the LLM. Currently with clear focus on Berlin timezone.
+    Generate a system prompt that informs the LLM about the current local date and time in Europe/Berlin.
     """
-    now = dt.datetime.now(ZoneInfo("Europe/Berlin"))
-    weekday_str = now.strftime("%A")
-    local_str = now.strftime("%Y-%m-%d %H:%M")
 
-    messages.append(
-        {
-            "role": "system",
-            "content": (
-                f"Current local date and time: {weekday_str}, {local_str} (timezone: Europe/Berlin). "
-                "Assume all canteen opening hours and menus refer to this timezone. "
-                "When the user says 'today', interpret it as this local date."
-            ),
-        }
-    )
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    weekday = now.strftime("%A")
+    local = now.strftime("%Y-%m-%d %H:%M")
 
-def generate_messages(request_text: str) -> List[Dict[str, Any]]:
-    messages: List[Dict[str, Any]] = [
-        {
-            "role": "system",
-            "content": LLM_BASE_SYSTEM_PROMPT,
-        },
-    ]
+    return {
+        "role": "system",
+        "content": (
+            f"Current local date and time: {weekday}, {local} (timezone: Europe/Berlin). "
+            "Assume all canteen opening hours and menus refer to this timezone. "
+            "When the user says 'today', interpret it as this local date."
+        ),
+    }
 
-    add_time_context(messages)
-
-    request = {
-        "role": "user",
-        "content": request_text,
 def format_message_history(messages: List[ChatMessage], format: Literal["openai"] = "openai") -> List[ChatCompletionMessage]:
     if format == "openai":
         formatted_messages: List[ChatCompletionMessage] = [*messages]
@@ -255,24 +239,19 @@ def format_message_history(messages: List[ChatMessage], format: Literal["openai"
     
     return formatted_messages
 
-def run_tool_calling_loop(messages: list[ChatMessage]) -> str:
-    system_prompt = {
-        "role": "system",
-        "content": (
-            "You are the Mensabot for university canteens.\n"
-            "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
-            "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. "
-            "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
-            "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
-            "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-            "Don't mention anything about tools or tool usage in your final answer.\n"
-            "Always respond in a friendly and helpful manner.\n"
-            "Always respond in the same language the user used in their request."
-        ),
-    }
+def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMessage]:
+    """ Format the message log (history + current request) into the format required by the LLM. """
+    return [
+        {
+            "role": "system",
+            "content": LLM_BASE_SYSTEM_PROMPT,
+        },
+        *get_time_context(),
+        *format_message_history(message_log),
+    ]
 
-async def run_tool_calling_loop(request_text: str) -> str:
-    messages = generate_messages(request_text)
+async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
+    messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -332,50 +311,33 @@ async def run_tool_calling_loop(request_text: str) -> str:
                 }
             )
 
-            if not (isinstance(result, dict) and "error" in result):
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "You have just successfully received the tool results you requested as a JSON object."
-                            "You can assume these tool results to be 100% correct and accurate."
-                            "You don't need to validate them and can fully trust them to answer the user query."
-                            "Now either make further tool calls if needed, or answer the user based on the tool results."
-                        ),
-                    }
-                )
-            else:
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "The previous tool call failed and did NOT provide useful data. "
-                            "You should not rely on this tool result. "
-                            "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                        ),
-                    }
-                )
-
-
-    print("Final message content:")
-    print(final_message.content)
-
-    print("Info Log: All infos about this request:")
-    print(messages)
-    print(json.dumps(final_message.model_dump(), indent=2))
-
-    return final_message.content
-
-
-
-class ChatRequest(BaseModel):
-    # For now make it a simple single string request for simplicity and easy terminal testing.
-    message: str
-    # messages: list[dict]
-    # model: Optional[str] = None
-
-class ChatResponse(BaseModel):
-    reply: str
+            if not LLM_SUPPORTS_TOOL_MESSAGES:
+                if not (isinstance(result_payload, dict) and "error" in result_payload):
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "You have just successfully received the tool results you requested as a JSON object."
+                                "You can assume these tool results to be 100% correct and accurate."
+                                "You don't need to validate them and can fully trust them to answer the user query."
+                                "Now either make further tool calls if needed, or answer the user based on the tool results."
+                            ),
+                        }
+                    )
+                else:
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "The previous tool call failed and did NOT provide useful data. "
+                                "You should not rely on this tool result. "
+                                "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
+                            ),
+                        }
+                    )
+        
+    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
+    return LLM_FALLBACK_RESPONSE
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
