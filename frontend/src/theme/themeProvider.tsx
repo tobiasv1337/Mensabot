@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from "react"
-import { ThemeProvider as StyledThemeProvider } from "styled-components"
 import { themes } from "./colors"
 
 type ThemeMode = "light" | "system" | "dark"
@@ -73,9 +72,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <ThemeContext.Provider value={contextValue}>
-            <StyledThemeProvider theme={activeTheme}>
-                {children}
-            </StyledThemeProvider>
+            {children}
         </ThemeContext.Provider>
     )
 };
