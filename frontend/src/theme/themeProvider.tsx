@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from "react"
+import { ThemeProvider as StyledThemeProvider } from "styled-components"
 import { themes } from "./colors"
 
 type ThemeMode = "light" | "system" | "dark"
