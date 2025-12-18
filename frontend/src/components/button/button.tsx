@@ -1,5 +1,5 @@
 // The logic and JSX of the component
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { ButtonProps } from './button.types';
 import { StyledButton } from './button.styles';
 
@@ -7,7 +7,8 @@ import { StyledButton } from './button.styles';
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     (
         {
-            variant = 'default', // Setzen Sie den Standardwert
+            variant = 'default',
+            size = 'hug',
             iconLeft,
             iconRight,
             text,
@@ -24,23 +25,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             <StyledButton
                 ref={ref}
                 $variant={variant} // Übergeben Sie die Property mit dem $präfix an den Styled Component
+                $size={size}
                 disabled={disabled}
                 {...rest}
             >
-                {/* 1. Linkes Icon */}
+                {/* only renderes if there */}
                 {iconLeft && <span className="icon-left">{iconLeft}</span>}
-
-                {/* 2. Text/Inhalt (wird nur gerendert, wenn vorhanden) */}
                 {content && <span className="button-content">{content}</span>}
-
-                {/* 3. Rechtes Icon */}
                 {iconRight && <span className="icon-right">{iconRight}</span>}
             </StyledButton>
         );
     }
 );
 
-// Fügen Sie einen display name hinzu, was für Debugging nützlich ist
 Button.displayName = 'Button';
 
 export { Button };
