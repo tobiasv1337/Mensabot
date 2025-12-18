@@ -17,9 +17,9 @@ const palette = {
 export interface Theme{
   // Background colors (static)
   backgroundPrimary: string;
-  backgroundPrimaryOff: string;
-  backgroundWidget: string;
-  backgroundWidgetOff: string;
+  backgroundDarker: string;
+  backgroundLighter1: string;
+  backgroundLighter2: string;
   backgroundAccent: string;
   
   // Dynamic colors (mode-dependent)
@@ -36,9 +36,9 @@ export interface Theme{
 // LIGHT MODE DEFINITION
 export const lightTheme: Theme= {
   backgroundPrimary: palette.greySilver,
-  backgroundPrimaryOff: palette.greyShadowGrey,
-  backgroundWidget: palette.white,
-  backgroundWidgetOff: palette.greyJetBlack,
+  backgroundDarker: palette.greyShadowGrey,
+  backgroundLighter1: palette.white,
+  backgroundLighter2: palette.white, //TODO: add color between white and greySilver
   backgroundAccent: palette.greyCharcoalBlue,
 
   textPrimary: palette.black,
@@ -53,10 +53,10 @@ export const lightTheme: Theme= {
 
 // DARK MODE DEFINITION
 export const darkTheme: Theme = {
-  backgroundPrimary: palette.greyShadowGrey,
-  backgroundPrimaryOff: palette.greyCharcoalBlue,
-  backgroundWidget: palette.greyJetBlack,
-  backgroundWidgetOff: palette.greySilver,
+  backgroundPrimary: palette.greyJetBlack, // switched greyShadowGrey and greyJetBlack
+  backgroundDarker: palette.greyCharcoalBlue,
+  backgroundLighter1: palette.greyShadowGrey, // switched greyShadowGrey and greyJetBlack
+  backgroundLighter2: palette.greySilver,
   backgroundAccent: palette.white,
 
   textPrimary: palette.white,

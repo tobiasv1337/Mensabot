@@ -6,6 +6,7 @@ import './App.css'
 import { useTheme } from './theme/themeProvider.tsx'
 
 import { Button } from './components/button/button';
+import mensabotLogo from './assets/react.svg';
 
 type ChatResponse = {
   reply?: string
@@ -59,7 +60,7 @@ function App() {
   }
 
   return (
-    <main className="app">
+    <main className="app" style={{background: currentTheme.backgroundPrimary, color: currentTheme.textPrimary}}>
       <h1 className="title" style={{color: currentTheme.textPrimary}}>Mensabot</h1>
 
       <div>
@@ -91,7 +92,9 @@ function App() {
         Dark Mode
         </button>
         <Button 
-          variant="primary" 
+          variant="lighter"
+          size='hug'
+          iconLeft={<img src={mensabotLogo} width={20} height={20} />}
           text="Primary Action Button Test Dark" 
           onClick={() => toggleMode("dark")}
         />
