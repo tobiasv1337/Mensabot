@@ -6,29 +6,43 @@ import styled, { css } from 'styled-components';
 interface StyledButtonProps {
     theme: Theme;
     $variant: ButtonProps['variant'];
+    $size: ButtonProps['size'];
 }
 
 
 const getVariantStyles = (currentTheme: Theme, variant: ButtonProps['variant'] = 'default') => {
 // Define color schemes for different button variants
     const variantStyles = {
-        default: {
+        default: { // dark or light background color -> neutral/invisible button
             background: currentTheme.backgroundPrimary,
             color: currentTheme.textPrimary,
-            border: `1px solid ${currentTheme.backgroundPrimary}`,
         }, 
-        primary: {
-            background: currentTheme.accent1,
+        darker: { // darker as background color
+            background: currentTheme.backgroundDarker,
             color: currentTheme.textPrimary,
-            border: `1px solid ${currentTheme.accent1}`,
         },
-        secondary: {
-            background: currentTheme.backgroundWidget,
+        lighter: { // lighter as background color
+            background: currentTheme.backgroundLighter1,
             color: currentTheme.textPrimary,
-            border: `1px solid ${currentTheme.backgroundWidget}`,
         },
     }
     return variantStyles[variant];
+};
+
+const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
+    const sizeStyles = {
+        hug: css`
+            width: fit-content;
+            height: fit-content;
+            padding: 5px 5px;
+        `,
+        fill: css`
+            width: 100%;
+            height: fit-content;
+            padding: 5px 0;
+        `,
+    };
+    return sizeStyles[size];
 };
 
 export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
@@ -38,16 +52,17 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
         return css`
             background: ${styles.background};
             color: ${styles.color};
-            border: ${styles.border};
 
             &:hover:not(:disabled) {
-                // Beispiel: Leichte Verdunkelung/Aufhellung beim Hover
-                filter: brightness(1.1);
+                filter: brightness(0.9);
             }
         `;
     }}
+
+    // Anwendung der Size-Styles
+    ${({ $size }) => getSizeStyles($size)}
 `;
 
 
-export { getVariantStyles };
+export { getVariantStyles, getSizeStyles };
 export type { StyledButtonProps };
