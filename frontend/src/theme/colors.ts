@@ -6,6 +6,7 @@ const palette = {
   greyJetBlack: '#2A2E32',
   greyCharcoalBlue: '#3D434B',
   greySilver: '#CBCCCD',
+  darkenedWhite: '#EBEBEB',
   white: '#F1F1F1',
 
   //accent colors
@@ -14,59 +15,90 @@ const palette = {
   accent3Yellow: '#FFBC2C',
 };
 
-export interface Theme{
-  // Background colors (static)
-  backgroundPrimary: string;
-  backgroundDarker: string;
-  backgroundLighter1: string;
-  backgroundLighter2: string;
-  backgroundAccent: string;
+export interface Theme {
+  // Surface colors - semantic, context-based naming
+  surfacePage: string;           // Main page background
+  textOnPage: string;            // Text color for surfacePage
+  surfaceCard: string;           // Cards, panels (raised surfaces)
+  textOnCard: string;            // Text color for surfaceCard
+  surfaceInset: string;          // Inputs, wells (recessed areas)
+  textOnInset: string;           // Text color for surfaceInset
+  surfaceElevated: string;       // Modals, dropdowns (highest elevation)
+  textOnElevated: string;        // Text color for surfaceElevated
+  surfaceAccent: string;         // Accent surface
+  textOnAccent: string;          // Text color for surfaceAccent
   
-  // Dynamic colors (mode-dependent)
-  textPrimary: string;
-  textSecondary: string;
-  textContrast: string;        // Text color for contrast elements
-  textAccentGradient: string;          // ToDo: Gradient text color for mainPageTitle
-
-  accent1: string;
-  accent2: string;
-  accent3: string;
+  // Accent colors with text pairings
+  accent1: string;               // Primary accent color
+  textOnAccent1: string;         // Text color for accent1 background
+  accent2: string;               // Secondary accent color
+  textOnAccent2: string;         // Text color for accent2 background
+  accent3: string;               // Tertiary accent color
+  textOnAccent3: string;         // Text color for accent3 background
+  
+  // Generic text colors (convenience aliases)
+  textPrimary: string;           // Primary text (= textOnPage)
+  textSecondary: string;         // Dimmed text for less important content
+  textMuted: string;             // Even more dimmed text
+  textLight: string;             // Light text color (for demos/utilities)
+  textDark: string;              // Dark text color (for demos/utilities)
+  textAccentGradient: string;    // Special accent color for gradient text
 }
 
 // LIGHT MODE DEFINITION
-export const lightTheme: Theme= {
-  backgroundPrimary: palette.greySilver,
-  backgroundDarker: palette.greyShadowGrey,
-  backgroundLighter1: palette.white,
-  backgroundLighter2: palette.white, //TODO: add color between white and greySilver
-  backgroundAccent: palette.greyCharcoalBlue,
+export const lightTheme: Theme = {
+  surfacePage: palette.white,            // Main background (lightest)
+  textOnPage: palette.black,
+  surfaceCard: palette.greySilver,       // Cards (darker than page)
+  textOnCard: palette.black,
+  surfaceInset: palette.greyShadowGrey,  // Inputs (even darker)
+  textOnInset: palette.white,
+  surfaceElevated: palette.darkenedWhite, // Modals (slightly darker than page)
+  textOnElevated: palette.black,
+  surfaceAccent: palette.greyCharcoalBlue,
+  textOnAccent: palette.white,
 
-  textPrimary: palette.black,
-  textSecondary: palette.greyJetBlack,
-  textContrast: palette.white,
-  textAccentGradient: palette.accent1Red,
-  
   accent1: palette.accent1Red,
+  textOnAccent1: palette.black,
   accent2: palette.accent2Pumpkin,
+  textOnAccent2: palette.black,
   accent3: palette.accent3Yellow,
+  textOnAccent3: palette.black,
+
+  textPrimary: palette.black,            // Same as textOnPage
+  textSecondary: palette.greyJetBlack,   // Slightly dimmed
+  textMuted: palette.greyCharcoalBlue,   // More dimmed
+  textLight: palette.white,
+  textDark: palette.black,
+  textAccentGradient: palette.accent1Red,
 };
 
 // DARK MODE DEFINITION
 export const darkTheme: Theme = {
-  backgroundPrimary: palette.greyJetBlack, // switched greyShadowGrey and greyJetBlack
-  backgroundDarker: palette.greyCharcoalBlue,
-  backgroundLighter1: palette.greyShadowGrey, // switched greyShadowGrey and greyJetBlack
-  backgroundLighter2: palette.greySilver,
-  backgroundAccent: palette.white,
+  surfacePage: palette.greyJetBlack,     // Main background (darkest)
+  textOnPage: palette.white,
+  surfaceCard: palette.greyCharcoalBlue, // Cards (lighter than page)
+  textOnCard: palette.white,
+  surfaceInset: palette.greyShadowGrey,  // Inputs (even darker than page)
+  textOnInset: palette.white,
+  surfaceElevated: palette.greySilver,   // Modals (lightest)
+  textOnElevated: palette.black,
+  surfaceAccent: palette.white,
+  textOnAccent: palette.black,
 
-  textPrimary: palette.white,
-  textSecondary: palette.greySilver,
-  textContrast: palette.black,
-  textAccentGradient: palette.accent1Red,
-  
   accent1: palette.accent1Red,
+  textOnAccent1: palette.black,
   accent2: palette.accent2Pumpkin,
+  textOnAccent2: palette.black,
   accent3: palette.accent3Yellow,
+  textOnAccent3: palette.black,
+
+  textPrimary: palette.white,            // Same as textOnPage
+  textSecondary: palette.greySilver,     // Slightly dimmed
+  textMuted: palette.greyCharcoalBlue,   // More dimmed
+  textLight: palette.white,
+  textDark: palette.black,
+  textAccentGradient: palette.accent1Red,
 };
 
 export const themes = {

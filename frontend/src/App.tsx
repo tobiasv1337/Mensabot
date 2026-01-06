@@ -6,17 +6,23 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import './App.css'
 import { useTheme } from './theme/themeProvider.tsx'
+import ThemeDemo from './pages/ThemeDemo.tsx'
 
 type ChatResponse = {
   reply?: string
 }
 
 function App() {
+  const [showThemeDemo, setShowThemeDemo] = useState(false)
   const { currentTheme, toggleMode } = useTheme()
   const [userInput, setUserInput] = useState('')
   const [backendResponse, setBackendResponse] = useState<string>('')
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string>('')
+
+  if (showThemeDemo) {
+    return <ThemeDemo />
+  }
 
   const sendMessage = async () => {
     if (!userInput.trim() || isSending) return
@@ -62,6 +68,24 @@ function App() {
   return (
     <main className="app">
       <h1 className="title" style={{color: currentTheme.textPrimary}}>Mensabot</h1>
+
+      <div>
+        <button
+          onClick={() => setShowThemeDemo(true)}
+          style={{
+            background: currentTheme.accent1,
+            color: currentTheme.textContrast,
+            marginBottom: '1rem',
+            padding: '0.5rem 1rem',
+            border: 'none',
+            borderRadius: '0.5rem',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+        🎨 Theme Demo anzeigen
+        </button>
+      </div>
 
       <div>
         <button
