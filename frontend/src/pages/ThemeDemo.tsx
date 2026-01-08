@@ -68,7 +68,7 @@ const ColorSwatch = styled.div<{ $color: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.theme.textContrast};
+  color: ${props => props.theme.textOnCard};
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 0, 0, 0.1);
