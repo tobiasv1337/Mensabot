@@ -48,17 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Lokaler Status nur für die Anzeige des Buttons
 const [currentTheme, setCurrentTheme] = useState<ThemeMode>("System");
 
-  const handleThemeCycle = () => {
-    const themes: ("Light" | "System" | "Dark")[] = ["Light", "System", "Dark"];
-    const nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
-    setCurrentTheme(themes[nextIndex]);
-  };
 
- const themeConfig: Record<ThemeMode, { icon: string; label: string }> = {
-  Light: { icon: "☀️", label: "Light Mode" },
-  System: { icon: "💻", label: "System Mode" },
-  Dark: { icon: "🌙", label: "Dark Mode" },
-};
   return (
     <>
       <S.Backdrop isOpen={drawerOpen} $mode={mode} onClick={onCloseDrawer} />
