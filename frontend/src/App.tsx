@@ -7,6 +7,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import styled from 'styled-components'
 import { useTheme } from './theme/themeProvider.tsx'
 import ThemeDemo from './pages/ThemeDemo.tsx'
+import ChatPage from "./pages/Chatpage";
 
 const AppContainer = styled.main`
   min-height: 100vh;
@@ -240,6 +241,7 @@ type ChatResponse = {
 
 function App() {
   const [showThemeDemo, setShowThemeDemo] = useState(false)
+  const [showChatPage, setShowChatPage] = useState(false);
   const { toggleMode } = useTheme()
   const [userInput, setUserInput] = useState('')
   const [backendResponse, setBackendResponse] = useState<string>('')
@@ -250,6 +252,9 @@ function App() {
     return <ThemeDemo />
   }
 
+  if (showChatPage) {
+  return <ChatPage />;
+  }
   const sendMessage = async () => {
     if (!userInput.trim() || isSending) return
 
@@ -299,6 +304,12 @@ function App() {
         <div>
           <ThemeDemoButton onClick={() => setShowThemeDemo(true)}>
             🎨 Theme Demo anzeigen
+          </ThemeDemoButton>
+        </div>
+
+        <div>
+          <ThemeDemoButton onClick={() => setShowChatPage(true)}>
+            💬 Zum Chat
           </ThemeDemoButton>
         </div>
 
