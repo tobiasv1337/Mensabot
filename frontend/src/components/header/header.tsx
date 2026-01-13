@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
     <S.Header>
       {/* Left: Burger (nur <1024 sichtbar) */}
       <S.Left>
-        <S.BurgerButton onClick={onToggleSidebar} aria-label="Menü umschalten">
+        <S.BurgerButton onClick={onToggleSidebar} aria-label="Toggle menu">
           ☰
         </S.BurgerButton>
       </S.Left>
