@@ -30,9 +30,9 @@ export const Sidebar = styled.aside<{
   $mode: "desktop" | "drawer";
   $isCollapsed?: boolean;
 }>`
-  background: #1e1f23;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  background: ${({ theme }) => theme.surfacePage};
+  border-right: 1px solid ${({ theme }) => theme.textMuted}22;
+  color: ${({ theme }) => theme.textPrimary};
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -77,11 +77,11 @@ export const CollapseToggle = styled.button`
   padding: 12px;
   display: flex;
   justify-content: center;
-  color: rgba(255,255,255,0.5);
+  color: ${({ theme }) => theme.textMuted};
   font-size: 18px;
 
   &:hover {
-    color: #ffffff;
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;
 
@@ -93,7 +93,7 @@ export const MobileHeader = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 14px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid ${({ theme }) => theme.textMuted}22;
   }
 `;
 
@@ -105,7 +105,7 @@ export const MobileTitle = styled.div`
 export const CloseBtn = styled.button`
   border: none;
   background: transparent;
-  color: white;
+  color: ${({ theme }) => theme.textPrimary};
   font-size: 18px;
   cursor: pointer;
 `;
@@ -123,7 +123,7 @@ export const SectionTitle = styled.div`
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: ${({ theme }) => theme.textMuted};
 `;
 
 export const NavButton = styled.button<{
@@ -142,12 +142,15 @@ export const NavButton = styled.button<{
 
   padding: ${({ collapsed }) => (collapsed ? "0" : "0 12px")};
 
-  background: ${({ active }) => (active ? "#383a40" : "transparent")};
-  color: ${({ active }) => (active ? "#ffffff" : "#c8c9cc")};
+  background: ${({ active, theme }) =>
+    active ? theme.surfaceAccent : "transparent"};
+
+  color: ${({ active, theme }) =>
+    active ? theme.textOnAccent : theme.textSecondary};
 
   &:hover {
-    background: #2b2d31;
-    color: #ffffff;
+    background: ${({ theme }) => theme.surfaceInset};
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;
 
@@ -169,98 +172,29 @@ export const ButtonText = styled.span<{ collapsed?: boolean }>`
   `}
 `;
 
-
-
-
-
-
-export const ThemeToggleButton = styled.button`
-  all: unset;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 10px;
-  transition: background 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-`;
-
-export const ThemeTextContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-left: 8px;
-`;
-
-export const ThemeLabel = styled.div`
-  font-size: 13px;
-  font-weight: 500;
-  color: #ffffff;
-`;
-
-
-export const ThemeButton = styled.button`
-  all: unset;
-  cursor: pointer;
-  background: #f1f3f4; /* Hellgrauer Hintergrund wie im Bild */
-  color: #202124;    /* Dunkler Text für Kontrast */
-  height: 40px;
-  width: 100%;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #e8eaed;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-export const ThemeIconWrapper = styled.span`
-  margin-right: 8px;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-`;
-
-export const ThemeButtonText = styled.span`
-  white-space: nowrap;
-`;
-
-
 export const Footer = styled.div<{ $isCollapsed?: boolean }>`
   margin-top: auto;
   padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid ${({ theme }) => theme.textMuted}22;
 `;
 
 export const FooterHint = styled.div`
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: rgba(255, 255, 255, 0.4);
+  color: ${({ theme }) => theme.textMuted};
   margin-bottom: 8px;
   padding-left: 4px;
 `;
 
 export const ThemeButtonGroup = styled.div<{ $isCollapsed?: boolean }>`
   display: flex;
-  background: #2b2d31; /* Dunkler Hintergrund für die Gruppe */
+  background: ${({ theme }) => theme.surfaceInset};
   padding: 4px;
   border-radius: 12px;
   gap: 2px;
-  flex-direction: ${({ $isCollapsed }) => ($isCollapsed ? "column" : "row")};
+  flex-direction: ${({ $isCollapsed }) =>
+    $isCollapsed ? "column" : "row"};
 `;
 
 export const SegmentButton = styled.button<{ active: boolean }>`
@@ -277,11 +211,18 @@ export const SegmentButton = styled.button<{ active: boolean }>`
   transition: all 0.2s ease;
   white-space: nowrap;
 
-  /* Farben basierend auf Aktiv-Zustand */
-  background: ${({ active }) => (active ? "#f1f3f4" : "transparent")};
-  color: ${({ active }) => (active ? "#202124" : "#c8c9cc")};
+  background: ${({ active, theme }) =>
+    active ? theme.surfaceElevated : "transparent"};
+
+  color: ${({ active, theme }) =>
+    active ? theme.textOnElevated : theme.textSecondary};
 
   &:hover {
-    ${({ active }) => !active && "background: rgba(255,255,255,0.05);"}
+    ${({ active, theme }) =>
+      !active &&
+      `
+      background: ${theme.surfaceCard};
+      color: ${theme.textPrimary};
+    `}
   }
 `;
