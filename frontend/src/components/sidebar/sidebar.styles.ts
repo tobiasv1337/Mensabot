@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-/* BACKDROP – nur Drawer */
+/* BACKDROP – only Drawer */
 export const Backdrop = styled.div<{
   isOpen: boolean;
   $mode: "desktop" | "drawer";
