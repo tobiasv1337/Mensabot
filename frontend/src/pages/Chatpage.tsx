@@ -18,7 +18,7 @@ const ChatPage: React.FC = () => {
         activeNav={activeNav}
         navItems={NAV_ITEMS}
         onNavClick={setActiveNav}
-        onOpenSidebar={() => setDrawerOpen(true)}
+        onToggleSidebar={() => setDrawerOpen(!drawerOpen)}
       />
 
       <S.Shell>
