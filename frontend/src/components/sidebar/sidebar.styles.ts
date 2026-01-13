@@ -215,14 +215,14 @@ export const SegmentButton = styled.button<{ active: boolean }>`
     active ? theme.surfaceElevated : "transparent"};
 
   color: ${({ active, theme }) =>
-    active ? theme.textOnElevated : theme.textSecondary};
+    active ? theme.textOnElevated : `${theme.textOnInset}99`};
 
   &:hover {
     ${({ active, theme }) =>
       !active &&
       `
       background: ${theme.surfaceCard};
-      color: ${theme.textPrimary};
+      color: ${theme.textOnInset};
     `}
   }
 `;
