@@ -2,17 +2,17 @@ import styled from "styled-components";
 
 export const PageRoot = styled.div`
   min-height: 100vh;
-  background: #16171a;
+  background: ${({ theme }) => theme.surfacePage};
 `;
 
 export const Shell = styled.div`
-  padding-top: 80px; 
+  padding-top: 80px;
 `;
 
 export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
   display: grid;
-  /* Dynamic width for the sidebar column */
-  grid-template-columns: ${({ $collapsed }) => ($collapsed ? "72px" : "280px")} 1fr;
+  grid-template-columns: ${({ $collapsed }) =>
+    $collapsed ? "72px" : "280px"} 1fr;
   min-height: calc(100vh - 80px);
   transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -29,13 +29,16 @@ export const SidebarSlot = styled.div`
     position: sticky;
     top: 80px;
     height: calc(100vh - 80px);
+    background: ${({ theme }) => theme.surfacePage};
   }
 `;
 
 export const Content = styled.main`
   padding: 24px;
-  color: #ffffff;
   min-width: 0;
+
+  background: ${({ theme }) => theme.surfacePage};
+  color: ${({ theme }) => theme.textOnPage};
 
   @media (max-width: 480px) {
     padding: 16px;
