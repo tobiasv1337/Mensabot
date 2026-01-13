@@ -9,8 +9,8 @@ export const Header = styled.header`
   height: 80px;
   z-index: 2000;
 
-  background: #1e1f23;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: ${({ theme }) => theme.surfaceCard};
+  border-bottom: 1px solid ${({ theme }) => theme.textMuted}22;
 
   /* 3-Spalten Grid => Center ist wirklich mittig */
   display: grid;
@@ -59,7 +59,7 @@ export const LogoImg = styled.img`
 `;
 
 export const Title = styled.div`
-  color: #ffffff;
+  color: ${({ theme }) => theme.textPrimary};
   font-weight: 700;
   letter-spacing: 0.3px;
   font-size: clamp(18px, 2.2vw, 28px);
@@ -76,13 +76,15 @@ export const BurgerButton = styled.button`
 
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   font-size: 26px;
   border-radius: 10px;
 
+  transition: background 0.15s ease;
+
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: ${({ theme }) => theme.surfaceInset};
   }
 
   @media (min-width: 1024px) {
@@ -108,13 +110,16 @@ export const NavItem = styled.button<{ active?: boolean }>`
   border-radius: 12px;
   font-size: 15px;
 
-  color: ${({ active }) => (active ? "#ffffff" : "#c7c7c7")};
-  background: ${({ active }) => (active ? "#383a40" : "transparent")};
+  color: ${({ active, theme }) =>
+    active ? theme.textOnAccent : theme.textSecondary};
 
-  transition: 0.18s ease;
+  background: ${({ active, theme }) =>
+    active ? theme.surfaceAccent : "transparent"};
+
+  transition: background 0.18s ease, color 0.18s ease;
 
   &:hover {
-    background: #2f3237;
-    color: #ffffff;
+    background: ${({ theme }) => theme.surfaceInset};
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;

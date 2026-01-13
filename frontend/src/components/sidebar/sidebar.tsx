@@ -1,8 +1,7 @@
-import React, { useState } from "react"; // <--- useState hier hinzufügen
+import React from "react";
 import * as S from "./sidebar.styles";
 import type { NavItem } from "../header/header";
-
-type ThemeMode = "Light" | "System" | "Dark";
+import { useTheme } from "../../theme/themeProvider";
 
 interface SidebarProps {
   mode: "desktop" | "drawer";
@@ -17,7 +16,7 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-/* Icons (Platzhalter) */
+/* Icons */
 const getIcon = (item: string) => {
   switch (item) {
     case "Home":
@@ -45,9 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse,
 }) => {
-  // Lokaler Status nur für die Anzeige des Buttons
-const [currentTheme, setCurrentTheme] = useState<ThemeMode>("System");
-
+  const { mode: themeMode, toggleMode } = useTheme();
 
   return (
     <>
@@ -65,16 +62,13 @@ const [currentTheme, setCurrentTheme] = useState<ThemeMode>("System");
           </S.CollapseToggle>
         )}
 
-        {/* Mobile Drawer Header */}
+        {/* Mobile Header */}
         <S.MobileHeader>
           <S.MobileTitle>Menü</S.MobileTitle>
           <S.CloseBtn onClick={onCloseDrawer}>✕</S.CloseBtn>
         </S.MobileHeader>
 
-        {/* NAVIGATION (nur sichtbar wenn NICHT collapsed) */}
-        {!isCollapsed && (
-          <S.SectionTitle>Navigation</S.SectionTitle>
-        )}
+        {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
 
         <S.NavSection>
           {navItems.map((n) => (
@@ -82,10 +76,17 @@ const [currentTheme, setCurrentTheme] = useState<ThemeMode>("System");
               key={n}
               active={activeNav === n}
               collapsed={isCollapsed}
-              onClick={() => {
-                onNavClick(n);
-                if (mode === "drawer") onCloseDrawer();
-              }}
+onClick={() => {
+  onNavClick(n);
+
+  if (mode === "drawer") {
+    onCloseDrawer();
+  }
+
+  if (mode === "desktop" && !isCollapsed) {
+    onToggleCollapse?.();
+  }
+}}
               title={isCollapsed ? n : undefined}
             >
               <S.IconWrapper>{getIcon(n)}</S.IconWrapper>
@@ -96,65 +97,65 @@ const [currentTheme, setCurrentTheme] = useState<ThemeMode>("System");
           ))}
         </S.NavSection>
 
-        {/* EINSTELLUNGEN (nur sichtbar wenn NICHT collapsed) */}
-        {!isCollapsed && (
-          <>
-            <S.SectionTitle>Einstellungen</S.SectionTitle>
+{!isCollapsed && (
+  <>
+    <S.SectionTitle>Einstellungen</S.SectionTitle>
 
-            <S.NavSection>
-              <S.NavButton collapsed={isCollapsed}>
-                <S.IconWrapper>⭐</S.IconWrapper>
-                <S.ButtonText collapsed={isCollapsed}>
-                  Favoriten
-                </S.ButtonText>
-              </S.NavButton>
+    <S.NavSection>
+      <S.NavButton collapsed={isCollapsed}>
+        <S.IconWrapper>⭐</S.IconWrapper>
+        <S.ButtonText collapsed={isCollapsed}>
+          Favoriten
+        </S.ButtonText>
+      </S.NavButton>
 
-              <S.NavButton collapsed={isCollapsed}>
-                <S.IconWrapper>⚙️</S.IconWrapper>
-                <S.ButtonText collapsed={isCollapsed}>
-                  Einstellungen
-                </S.ButtonText>
-              </S.NavButton>
-              <S.NavButton collapsed={isCollapsed}>
-                <S.IconWrapper>🔀</S.IconWrapper>
-                <S.ButtonText collapsed={isCollapsed}>
-                  Shortcuts
-                </S.ButtonText>
-              </S.NavButton>
-              <S.NavButton collapsed={isCollapsed}>
-                <S.IconWrapper>📍</S.IconWrapper>
-                <S.ButtonText collapsed={isCollapsed}>
-                  Karte
-                </S.ButtonText>
-              </S.NavButton>
+      <S.NavButton collapsed={isCollapsed}>
+        <S.IconWrapper>⚙️</S.IconWrapper>
+        <S.ButtonText collapsed={isCollapsed}>
+          Einstellungen
+        </S.ButtonText>
+      </S.NavButton>
 
-            </S.NavSection>
-          </>
-        )}
+      <S.NavButton collapsed={isCollapsed}>
+        <S.IconWrapper>🔀</S.IconWrapper>
+        <S.ButtonText collapsed={isCollapsed}>
+          Shortcuts
+        </S.ButtonText>
+      </S.NavButton>
 
-{/* FOOTER MIT DEM THEME BUTTON */}
-<S.Footer $isCollapsed={isCollapsed}>
-          {!isCollapsed && <S.FooterHint>Theme Switch</S.FooterHint>}
+      <S.NavButton collapsed={isCollapsed}>
+        <S.IconWrapper>📍</S.IconWrapper>
+        <S.ButtonText collapsed={isCollapsed}>
+          Karte
+        </S.ButtonText>
+      </S.NavButton>
+    </S.NavSection>
+  </>
+)}
+        {/* THEME SWITCHER */}
+        <S.Footer $isCollapsed={isCollapsed}>
+          {!isCollapsed && <S.FooterHint>Theme</S.FooterHint>}
+
           <S.ThemeButtonGroup $isCollapsed={isCollapsed}>
-            <S.SegmentButton 
-              active={currentTheme === "Light"} 
-              onClick={() => setCurrentTheme("Light")}
+            <S.SegmentButton
+              active={themeMode === "light"}
+              onClick={() => toggleMode("light")}
               title="Light Mode"
             >
               ☀️ {!isCollapsed && "Light"}
             </S.SegmentButton>
-            
-            <S.SegmentButton 
-              active={currentTheme === "System"} 
-              onClick={() => setCurrentTheme("System")}
+
+            <S.SegmentButton
+              active={themeMode === "system"}
+              onClick={() => toggleMode("system")}
               title="System Mode"
             >
               💻 {!isCollapsed && "System"}
             </S.SegmentButton>
-            
-            <S.SegmentButton 
-              active={currentTheme === "Dark"} 
-              onClick={() => setCurrentTheme("Dark")}
+
+            <S.SegmentButton
+              active={themeMode === "dark"}
+              onClick={() => toggleMode("dark")}
               title="Dark Mode"
             >
               🌙 {!isCollapsed && "Dark"}
