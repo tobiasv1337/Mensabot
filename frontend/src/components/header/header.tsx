@@ -8,20 +8,20 @@ interface HeaderProps {
   activeNav: NavItem;
   navItems: NavItem[];
   onNavClick: (i: NavItem) => void;
-  onOpenSidebar: () => void;
+  onToggleSidebar: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   activeNav,
   navItems,
   onNavClick,
-  onOpenSidebar,
+  onToggleSidebar,
 }) => {
   return (
     <S.Header>
       {/* Left: Burger (nur <1024 sichtbar) */}
       <S.Left>
-        <S.BurgerButton onClick={onOpenSidebar} aria-label="Menü öffnen">
+        <S.BurgerButton onClick={onToggleSidebar} aria-label="Menü umschalten">
           ☰
         </S.BurgerButton>
       </S.Left>
