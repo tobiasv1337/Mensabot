@@ -27,7 +27,6 @@ const ChatPage: React.FC = () => {
           <S.SidebarSlot>
             <Sidebar
               mode="desktop"
-              drawerOpen={true}
               isCollapsed={isCollapsed} // Prop weitergeben
               onToggleCollapse={() => setIsCollapsed(!isCollapsed)} // Toggle-Funktion
               onCloseDrawer={() => {}}
