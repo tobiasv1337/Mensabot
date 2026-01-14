@@ -246,7 +246,7 @@ def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMe
             "role": "system",
             "content": LLM_BASE_SYSTEM_PROMPT,
         },
-        *get_time_context(),
+        get_time_context(),
         *format_message_history(message_log),
     ]
 

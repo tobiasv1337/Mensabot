@@ -1,6 +1,11 @@
 import { MensaBotClient } from "./api";
 
-export class ChatMessage {
+export type ChatMessageData = {
+	role: "user" | "assistant";
+	content: string;
+};
+
+export class ChatMessage implements ChatMessageData {
 	public role: "user" | "assistant";
 	public content: string;
 
@@ -9,11 +14,15 @@ export class ChatMessage {
 		this.content = content;
 	}
 
-	toJSON() {
+	toJSON(): ChatMessageData {
 		return {
 			role: this.role,
 			content: this.content,
 		};
+	}
+
+	static fromJSON(json: ChatMessageData) {
+		return new ChatMessage(json.role, json.content);
 	}
 }
 
@@ -32,7 +41,11 @@ export class Chat {
 
 	addMessage(message: ChatMessage) {
 		this.#messages.push(message);
-		localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
+		try {
+			localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
+		} catch (error) {
+			alert(`Due to a problem, your chat history could not be saved.\n(Debug Information: ${error})`);
+		}
 	}
 
 	async send(client: MensaBotClient, message: string) {
@@ -58,7 +71,19 @@ export class Chats {
 	static getById(id: string, createIfMissing = true) {
 		const chatData = localStorage.getItem(`chat-${id}`);
 		if (chatData) {
-			return new Chat(id, JSON.parse(chatData).messages);
+			try {
+				return new Chat(
+					id,
+					JSON.parse(chatData).messages.map(
+						(message: ChatMessageData) => ChatMessage.fromJSON(message)
+					)
+				);
+			} catch (error) {
+				alert(`Due to a problem, your chat history could not be restored.\n(Debug Information: ${error})`);
+				const chat = new Chat(id);
+				localStorage.setItem(`chat-${id}`, JSON.stringify(chat));
+				return chat;
+			}
 		} else if (createIfMissing) {
 			const chat = new Chat(id);
 			localStorage.setItem(`chat-${id}`, JSON.stringify(chat));
