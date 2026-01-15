@@ -46,7 +46,14 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
 };
 
 export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
-    // Anwendung der Variant-Styles
+    display: flex;
+    align-items: center;
+    margin: auto;
+    line-height: 1.2;
+    gap: 5px;
+    cursor: pointer;
+    border: none;
+    // application Variant-Styles
     ${({ theme, $variant }) => {
         const styles = getVariantStyles(theme, $variant);
         return css`
@@ -59,7 +66,7 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
         `;
     }}
 
-    // Anwendung der Size-Styles
+    // application Size-Styles
     ${({ $size }) => getSizeStyles($size)}
 `;
 
