@@ -12,19 +12,18 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             iconLeft,
             iconRight,
             text,
-            children, // 'children' kann auch Text oder andere Elemente enthalten
+            children,
             disabled,
             ...rest
         },
         ref
     ) => {
-        // Priorisieren Sie 'text' vor 'children' (oder verwenden Sie nur eine Property)
         const content = text || children;
 
         return (
             <StyledButton
                 ref={ref}
-                $variant={variant} // Übergeben Sie die Property mit dem $präfix an den Styled Component
+                $variant={variant}
                 $size={size}
                 disabled={disabled}
                 {...rest}
