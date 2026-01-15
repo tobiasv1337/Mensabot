@@ -62,11 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </S.CollapseToggle>
         )}
 
-        {/* Mobile Header */}
-        <S.MobileHeader>
-          <S.MobileTitle>Menü</S.MobileTitle>
-          <S.CloseBtn onClick={onCloseDrawer}>✕</S.CloseBtn>
-        </S.MobileHeader>
+
 
         {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
 
