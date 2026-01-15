@@ -47,11 +47,11 @@ export interface Theme {
 
 // LIGHT MODE DEFINITION
 export const lightTheme: Theme = {
-  surfacePage: palette.white,            // Main background (lightest)
+  surfacePage: palette.darkenedWhite,            // Main background (lightest)
   textOnPage: palette.black,
   surfaceCard: palette.greySilver,       // Cards (darker than page)
   textOnCard: palette.black,
-  surfaceInset: palette.greyShadowGrey,  // Inputs (even darker)
+  surfaceInset: palette.white,  // Inputs (even darker)
   textOnInset: palette.white,
   surfaceElevated: palette.darkenedWhite, // Modals (slightly darker than page)
   textOnElevated: palette.black,

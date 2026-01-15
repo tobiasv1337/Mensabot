@@ -9,7 +9,7 @@ export const Header = styled.header`
   height: 80px;
   z-index: 2000;
 
-  background: ${({ theme }) => theme.surfaceCard};
+  background: ${({ theme }) => theme.surfacePage};
   border-bottom: 1px solid ${({ theme }) => theme.textMuted}22;
 
   /* 3-Spalten Grid => Center ist wirklich mittig */
