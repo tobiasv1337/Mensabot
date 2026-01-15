@@ -27,12 +27,12 @@ const Header: React.FC<HeaderProps> = ({
       </S.Left>
 
       {/* Center: Brand immer mittig */}
-      <S.Center>
+      <S.Left>
         <S.Brand>
           <S.LogoImg src={mensaLogo} alt="MensaMatch Logo" />
           <S.Title>MensaMatch</S.Title>
         </S.Brand>
-      </S.Center>
+      </S.Left>
 
       {/* Right: Desktop Nav (nur >=1024 sichtbar) */}
       <S.Right>
