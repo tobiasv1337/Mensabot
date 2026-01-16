@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, {useCallback, useRef, useState} from "react";
 import Shortcuts from "../Shortcuts/Shortcuts";
 import { useShortcutStorage } from "../hooks/useShortcutStorage";
 import {
@@ -21,6 +21,7 @@ const ChatComposer: React.FC<ChatComposerProps> = ({
                                                        placeholder = "Eingabefeld",
                                                        disabled = false,
                                                    }) => {
+
     const [value, setValue] = useState("");
 
     const { shortcuts, addShortcut, removeShortcut } = useShortcutStorage("mensabot-shortcuts");
@@ -44,6 +45,9 @@ const ChatComposer: React.FC<ChatComposerProps> = ({
         setValue(text); // fill input with full stored shortcut
     }, []);
 
+    const inputRef = useRef<HTMLInputElement>(null);
+
+
     return (
         <Wrapper>
             <Grid>
@@ -58,17 +62,28 @@ const ChatComposer: React.FC<ChatComposerProps> = ({
 
                 <InputShell>
                     <Input
+                        ref={inputRef}
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         placeholder={placeholder}
-                        disabled={disabled}
+                        readOnly={disabled}         // ✅ can still be focused
+                        aria-disabled={disabled}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
+
+                                if (disabled) {
+                                    // keep focus even if user hits enter while sending
+                                    requestAnimationFrame(() => inputRef.current?.focus());
+                                    return;
+                                }
+
                                 submit();
+                                requestAnimationFrame(() => inputRef.current?.focus()); // ✅ after state update
                             }
                         }}
                     />
+
 
                     <SendButton
                         type="button"
