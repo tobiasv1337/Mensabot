@@ -3,6 +3,7 @@ import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../components/header/header";
 import * as S from "./Chatpage.styles";
+import Chat from "../components/chat/Chat.tsx";
 
 const NAV_ITEMS: NavItem[] = ["Home","ChatBot", "Mensen", "Über Uns", "Kontakt"];
 
@@ -38,8 +39,7 @@ const ChatPage: React.FC = () => {
           </S.SidebarSlot>
 
           <S.Content>
-            <h1>{activeNav}</h1>
-            <p>Chat-Seite Inhalt kommt hier rein.</p>
+            <Chat />
           </S.Content>
         </S.BodyGrid>
 
