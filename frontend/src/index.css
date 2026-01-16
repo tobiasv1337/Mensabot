@@ -31,7 +31,7 @@ a {
   text-decoration: inherit;
 }
 
-/* Remove default button styles - will be styled via styled-components */
+/* Remove default button styles - will be styled via styled-AiWarning */
 button {
   font-family: inherit;
   cursor: pointer;
