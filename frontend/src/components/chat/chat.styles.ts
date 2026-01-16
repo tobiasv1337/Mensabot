@@ -13,19 +13,15 @@ export const ChatWrapper = styled.section`
 
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-
-    /* overlay */
+    min-height: 0;
 
     &::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(30, 30, 30, 0.9); /* grey transparent overlay */
+        background: rgba(30, 30, 30, 0.9);
         z-index: 0;
     }
-
-    /* ensures children are above overlay */
 
     > * {
         position: relative;
@@ -34,12 +30,55 @@ export const ChatWrapper = styled.section`
 `;
 
 
+export const ChatContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  /* space so messages start below the top-right button */
+  padding-top: 56px;
+`;
+
+
+
 export const BottomArea = styled.div`
   margin-top: auto;
   padding: 12px 16px;
   display: grid;
   gap: 8px;
 `;
+
+export const TopBar = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+`;
+
+export const NewChatButton = styled.button`
+  padding: 6px 12px;
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 
 //Alternative:
 /*

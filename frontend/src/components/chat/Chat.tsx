@@ -1,47 +1,93 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import AiWarningText from "./AiWarning/AiWarningText";
 import ChatComposer from "./ChatComposer/ChatComposer";
 import Messages from "./Messages/Messages";
-import type { ChatMessage } from "./Messages/Messages";
+import {ChatWrapper, BottomArea, TopBar, NewChatButton, ChatContent} from "./chat.styles";
 
-import { ChatWrapper, BottomArea } from "./chat.styles";
+import { MensaBotClient } from "../../services/api";
+import { Chats, ChatMessage, Chat } from "../../services/chats";
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-    {
-        id: "m1",
-        role: "assistant",
-        content: "Hallo! Ich bin dein Mensabot 🤖\nWas bevorzugst du?",
-        createdAt: 0, // or any fixed value; real timestamps start with user messages
-    },
-];
+const CHAT_ID = "default";
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
+const WELCOME_TEXT =
+    "Hallo! Ich bin dein Mensabot 🤖\nBevor wir loslegen, lass mich deine Präferenzen kennenlernen.\nWas bevorzugst du?";
 
-const Chat: React.FC = () => {
-    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+const ChatPage: React.FC = () => {
+    /** client is stateless → memoized once */
+    const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
 
-    const onSend = useCallback((text: string) => {
-        const userMsg: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: "user",
-            content: text,
-            createdAt: Date.now(),
-        };
+    /** chat IS stateful → must live in React state */
+    const [chat, setChat] = useState<Chat>(() => {
+        const c = Chats.getById(CHAT_ID, true)!;
+        if (c.messages.length === 0) {
+            c.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
+        }
+        return c;
+    });
 
-        setMessages((prev) => [...prev, userMsg]);
+    const [isSending, setIsSending] = useState(false);
 
-        // later: call backend and append assistant response
-    }, []);
+    /** start a brand-new chat */
+    const startNewChat = useCallback(() => {
+        if (isSending) return;
+
+        Chats.deleteById(CHAT_ID);
+        const fresh = Chats.getById(CHAT_ID, true)!;
+        fresh.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
+        setChat(fresh);
+    }, [isSending]);
+
+    /** send message via backend */
+    const onSend = useCallback(
+        async (text: string) => {
+            if (isSending) return;
+
+            setIsSending(true);
+            try {
+                await chat.send(client, text);
+                setChat((c) => c); // trigger rerender (chat mutates internally)
+            } catch (error) {
+                console.error("Chat send failed:", error);
+                chat.addMessage(
+                    new ChatMessage(
+                        "assistant",
+                        "❌ Server konnte nicht erreicht werden. Bitte versuche es später erneut."
+                    )
+                );
+                setChat((c) => c);
+            } finally {
+                setIsSending(false);
+            }
+        },
+        [chat, client, isSending]
+    );
+
+    /** map wrapper messages → UI messages */
+    const uiMessages = chat.messages.map((m, idx) => ({
+        id: `${CHAT_ID}-${idx}`,
+        role: m.role,
+        content: m.content,
+        createdAt: 0,
+    }));
 
     return (
         <ChatWrapper>
-            <Messages messages={messages} />
+            <TopBar>
+                <NewChatButton onClick={startNewChat} disabled={isSending}>
+                    New chat
+                </NewChatButton>
+            </TopBar>
 
-            <BottomArea>
-                <ChatComposer onSend={onSend} />
-                <AiWarningText />
-            </BottomArea>
+            <ChatContent>
+                <Messages messages={uiMessages} />
+                <BottomArea>
+                    <ChatComposer onSend={onSend} disabled={isSending} />
+                    <AiWarningText />
+                </BottomArea>
+            </ChatContent>
         </ChatWrapper>
     );
 };
 
-export default Chat;
+export default ChatPage;
