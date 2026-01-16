@@ -1,13 +1,15 @@
 import os
 import json
 import logging
-import datetime as dt
 import asyncio
+from datetime import datetime
 from zoneinfo import ZoneInfo
+
+from typing import Any, Dict, List, Literal
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, List
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
@@ -15,6 +17,17 @@ from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 
 load_dotenv() # Load environment variables from .env file
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    # model: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    reply: str
 
 def get_env_required(name: str) -> str:
     """
@@ -89,9 +102,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
-
 
 async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
     """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
@@ -202,44 +213,45 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
             return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
 
-def add_time_context(messages: list[dict]) -> None:
+def get_time_context() -> ChatCompletionMessage:
     """
-    Add current local date and time (Europe/Berlin) as system context for the LLM. Currently with clear focus on Berlin timezone.
+    Generate a system prompt that informs the LLM about the current local date and time in Europe/Berlin.
     """
-    now = dt.datetime.now(ZoneInfo("Europe/Berlin"))
-    weekday_str = now.strftime("%A")
-    local_str = now.strftime("%Y-%m-%d %H:%M")
 
-    messages.append(
-        {
-            "role": "system",
-            "content": (
-                f"Current local date and time: {weekday_str}, {local_str} (timezone: Europe/Berlin). "
-                "Assume all canteen opening hours and menus refer to this timezone. "
-                "When the user says 'today', interpret it as this local date."
-            ),
-        }
-    )
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    weekday = now.strftime("%A")
+    local = now.strftime("%Y-%m-%d %H:%M")
 
-def generate_messages(request_text: str) -> List[Dict[str, Any]]:
-    messages: List[Dict[str, Any]] = [
+    return {
+        "role": "system",
+        "content": (
+            f"Current local date and time: {weekday}, {local} (timezone: Europe/Berlin). "
+            "Assume all canteen opening hours and menus refer to this timezone. "
+            "When the user says 'today', interpret it as this local date."
+        ),
+    }
+
+def format_message_history(messages: List[ChatMessage], format: Literal["openai"] = "openai") -> List[ChatCompletionMessage]:
+    if format == "openai":
+        formatted_messages: List[ChatCompletionMessage] = [*messages]
+    else:
+        raise ValueError(f"Unsupported target message format: {format}")
+    
+    return formatted_messages
+
+def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMessage]:
+    """ Format the message log (history + current request) into the format required by the LLM. """
+    return [
         {
             "role": "system",
             "content": LLM_BASE_SYSTEM_PROMPT,
         },
+        get_time_context(),
+        *format_message_history(message_log),
     ]
 
-    add_time_context(messages)
-
-    request = {
-        "role": "user",
-        "content": request_text,
-    }
-    messages.append(request)
-    return messages
-
-async def run_tool_calling_loop(request_text: str) -> str:
-    messages = generate_messages(request_text)
+async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
+    messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -327,23 +339,10 @@ async def run_tool_calling_loop(request_text: str) -> str:
     logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
     return LLM_FALLBACK_RESPONSE
 
-
-
-class ChatRequest(BaseModel):
-    # For now make it a simple single string request for simplicity and easy terminal testing.
-    message: str
-    # messages: list[dict]
-    # model: Optional[str] = None
-
-class ChatResponse(BaseModel):
-    reply: str
-
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    message = request.message
-    resp = await run_tool_calling_loop(message)
-
-    return ChatResponse(reply=resp)
+    response = run_tool_calling_loop(request.messages)
+    return ChatResponse(reply=response)
 
 @app.get("/api/health")
 async def health():
