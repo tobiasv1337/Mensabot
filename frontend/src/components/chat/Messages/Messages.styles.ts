@@ -38,4 +38,56 @@ export const Bubble = styled.div<{ $role: "assistant" | "user" }>`
   word-break: break-word;
 `;
 
+export const MarkdownBody = styled.div`
+  /* Avoid markdown adding weird top/bottom spacing */
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    margin: 6px 0 0;
+    padding-left: 18px;
+  }
+
+  code {
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  pre {
+    margin: 8px 0 0;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.35);
+    overflow: auto;
+  }
+
+  pre code {
+    background: transparent;
+    padding: 0;
+  }
+
+  a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: underline;
+  }
+
+  blockquote {
+    margin: 8px 0 0;
+    padding-left: 10px;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.75);
+  }
+`;
+
+
 
