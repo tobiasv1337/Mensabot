@@ -48,6 +48,23 @@ export class Chat {
 		}
 	}
 
+	clear() {
+		this.#messages = [];
+		try {
+			localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
+		} catch (error) {
+			alert(`Due to a problem, your chat history could not be cleared.\n(Debug Information: ${error})`);
+		}
+	}
+
+	delete() {
+		try {
+			localStorage.removeItem(`chat-${this.id}`);
+		} catch (error) {
+			alert(`Due to a problem, your chat could not be deleted.\n(Debug Information: ${error})`);
+		}
+	}
+
 	async send(client: MensaBotClient, message: string) {
 		if (!(client instanceof MensaBotClient)) {
 			throw new Error("argument 0 must be an instance of MensaBotClient");
@@ -101,7 +118,18 @@ export class Chats {
 		return localStorage.getItem(`chat-${id}`) !== null;
 	}
 
+	static clearById(id: string) {
+		const chat = Chats.getById(id, false);
+		if (!chat) return false;
+		chat.clear();
+		return true;
+	}
+
 	static deleteById(id: string) {
-		localStorage.removeItem(`chat-${id}`);
+		try {
+			localStorage.removeItem(`chat-${id}`);
+		} catch (error) {
+			alert(`Due to a problem, the chat could not be deleted.\n(Debug Information: ${error})`);
+		}
 	}
 }

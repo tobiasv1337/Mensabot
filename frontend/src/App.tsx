@@ -74,6 +74,25 @@ const ThemeToggleButton = styled.button`
   }
 `
 
+const ClearChatButton = styled.button`
+  background: ${props => props.theme.accent2};
+  color: ${props => props.theme.textOnAccent2};
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
 const ChatHistorySection = styled.section`
   background: ${props => props.theme.surfaceCard};
   color: ${props => props.theme.textOnCard};
@@ -321,6 +340,12 @@ function App() {
     sendMessage()
   }
 
+  const clearChat = () => {
+    if (!chat) return
+    chat.clear()
+    setUpdateTrigger(prev => prev + 1)
+  }
+
   return (
     <AppContainer>
       <AppContent>
@@ -348,6 +373,9 @@ function App() {
           <ThemeToggleButton onClick={() => toggleMode("dark")}>
             🌙 Dark Mode
           </ThemeToggleButton>
+          <ClearChatButton onClick={clearChat} disabled={!chat || chat.messages.length === 0}>
+            🧹 Chat löschen
+          </ClearChatButton>
         </ButtonGroup>
 
         {error && (
