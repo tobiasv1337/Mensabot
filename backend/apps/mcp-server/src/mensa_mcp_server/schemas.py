@@ -251,22 +251,21 @@ _DIET_KEYWORDS = {
         "veg",
         "vegetal",
     },
-}
-
-_MEAT_KEYWORDS = {
-    "meat", "fleisch", "carne", "viande", "kott", "kjott", "kjoett", "koed", "mieso",
-    "beef", "rind", "rindfleisch", "rinder", "rinderhack", "hackfleisch", "gehacktes", "okse", "wolowina",
-    "pork", "schwein", "schweine", "schweinefleisch", "schweins", "schweinegelatine", "schinken", "ham", "bacon", "speck", "gris", "svin", "wieprzowina",
-    "chicken", "huhn", "hähnchen", "henderl", "poulet", "pollo", "kip", "kuiken", "hen", "kylling", "kyckling", "kurczak",
-    "turkey", "pute", "puten", "truthahn", "dinde", "pavo", "kalkun", "indyk",
-    "duck", "ente", "canard", "pato", "anatra", "and", "anka", "kaczka",
-    "lamb", "lamm", "agneau", "cordero", "agnello", "lam", "faar", "baranek", "jagnięcina",
-    "goat", "ziege", "chevre", "cabra", "capra", "gedde", "geit",
-    "game", "wild", "hirsch", "reh", "venison", "boar", "wildschwein",
-    "sausage", "wurst", "bratwurst", "currywurst", "salami", "chorizo",
-    "fish", "fisch", "poisson", "pescado", "pesce", "thon", "tuna", "salmon", "lachs", "forelle", "trout", "fisk", "losos", "sledz", "sledzie", "dorsz",
-    "seafood", "marisco", "mariscos", "frutti di mare", "skaldyr", "skaldjur",
-    "shrimp", "prawn", "garnelen", "scampi", "krabbe", "krabben", "lobster", "hummer", "reje", "reker", "rak",
+    DietType.meat: {
+        "meat", "fleisch", "carne", "viande", "kott", "kjott", "kjoett", "koed", "mieso",
+        "beef", "rind", "rindfleisch", "rinder", "rinderhack", "hackfleisch", "gehacktes", "okse", "wolowina",
+        "pork", "schwein", "schweine", "schweinefleisch", "schweins", "schweinegelatine", "schinken", "ham", "bacon", "speck", "gris", "svin", "wieprzowina",
+        "chicken", "huhn", "hähnchen", "henderl", "poulet", "pollo", "kip", "kuiken", "hen", "kylling", "kyckling", "kurczak",
+        "turkey", "pute", "puten", "truthahn", "dinde", "pavo", "kalkun", "indyk",
+        "duck", "ente", "canard", "pato", "anatra", "and", "anka", "kaczka",
+        "lamb", "lamm", "agneau", "cordero", "agnello", "lam", "faar", "baranek", "jagnięcina",
+        "goat", "ziege", "chevre", "cabra", "capra", "gedde", "geit",
+        "game", "wild", "hirsch", "reh", "venison", "boar", "wildschwein",
+        "sausage", "wurst", "bratwurst", "currywurst", "salami", "chorizo",
+        "fish", "fisch", "poisson", "pescado", "pesce", "thon", "tuna", "salmon", "lachs", "forelle", "trout", "fisk", "losos", "sledz", "sledzie", "dorsz",
+        "seafood", "marisco", "mariscos", "frutti di mare", "skaldyr", "skaldjur",
+        "shrimp", "prawn", "garnelen", "scampi", "krabbe", "krabben", "lobster", "hummer", "reje", "reker", "rak",
+    },
 }
 
 _ALLERGEN_KEYWORDS: dict[str, set[str]] = {
@@ -334,15 +333,14 @@ def _normalize_text(text: str) -> str:
 
 def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
     text_blob = _normalize_text(" ".join([name] + list(notes)))
-    if any(keyword in text_blob for keyword in _MEAT_KEYWORDS):
-        return DietType.meat
-
-    if any(keyword in text_blob for keyword in _DIET_KEYWORDS[DietType.vegan]):
-        return DietType.vegan
-
-    if any(keyword in text_blob for keyword in _DIET_KEYWORDS[DietType.vegetarian]):
-        return DietType.vegetarian
-
+    
+    # Check in order: meat -> vegan -> vegetarian -> unknown
+    # This order matters because vegan/vegetarian keywords might appear in descriptions
+    # but meat keywords take precedence for classification
+    for diet_type in [DietType.meat, DietType.vegan, DietType.vegetarian]:
+        if any(keyword in text_blob for keyword in _DIET_KEYWORDS[diet_type]):
+            return diet_type
+    
     return DietType.unknown
 
 
