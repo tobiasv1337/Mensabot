@@ -21,6 +21,7 @@ from .schemas import (
     MenuDietFilter,
     DietType,
     MealDTO,
+    PriceCategory,
     _canteen_to_dto,
     _meal_to_dto,
     _canonicalize_allergen_label,
@@ -96,6 +97,7 @@ def _fetch_single_menu(
     normalized_date: str,
     diet_filter: MenuDietFilter,
     exclude_allergens: list[str],
+    price_category: PriceCategory | None = None,
 ) -> MenuResponseDTO:
     """Fetch a single menu and map OpenMensa errors to MenuResponseDTO statuses."""
 
@@ -133,7 +135,7 @@ def _fetch_single_menu(
         )
     total_meals = len(meals)
     filtered_meals = _filter_meals(
-        [_meal_to_dto(m) for m in meals],
+        [_meal_to_dto(m, price_category) for m in meals],
         diet_filter,
         exclude_allergens,
     )
@@ -206,6 +208,7 @@ def get_menu_for_date(
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
     diet_filter: Annotated[MenuDietFilter, Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan)")] = MenuDietFilter.all,
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut').")]=None,
+    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size.")] = None,
 ) -> MenuResponseDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
@@ -237,6 +240,7 @@ def get_menu_for_date(
             normalized_date,
             diet_filter,
             exclude_allergens,
+            price_category,
         )
 
 
@@ -278,6 +282,7 @@ def get_menus_batch(
                     normalized_date,
                     req.diet_filter,
                     req.exclude_allergens,
+                    req.price_category,
                 )
             )
 
