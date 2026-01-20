@@ -338,8 +338,16 @@ def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
     # This order matters because vegan/vegetarian keywords might appear in descriptions
     # but meat keywords take precedence for classification
     for diet_type in [DietType.meat, DietType.vegan, DietType.vegetarian]:
-        if any(keyword in text_blob for keyword in _DIET_KEYWORDS[diet_type]):
-            return diet_type
+        for keyword in _DIET_KEYWORDS[diet_type]:
+            # For very short keywords (< 4 chars), require word boundaries
+            # to avoid false positives like "ei" (egg allergen note) matching in "fleisch" or "schwein"
+            if len(keyword) < 4:
+                if f" {keyword} " in f" {text_blob} " or text_blob == keyword or text_blob.startswith(f"{keyword} ") or text_blob.endswith(f" {keyword}"):
+                    return diet_type
+            else:
+                # For longer keywords, substring matching is fine
+                if keyword in text_blob:
+                    return diet_type
     
     return DietType.unknown
 
