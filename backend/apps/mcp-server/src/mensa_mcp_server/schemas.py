@@ -255,12 +255,12 @@ _DIET_KEYWORDS = {
 
 _MEAT_KEYWORDS = {
     "meat", "fleisch", "carne", "viande", "kott", "kjott", "kjoett", "koed", "mieso",
-    "beef", "rind", "rindfleisch", "rinder", "rinderhack", "hackfleisch", "gehacktes", "okse", "not", "wolowina",
+    "beef", "rind", "rindfleisch", "rinder", "rinderhack", "hackfleisch", "gehacktes", "okse", "wolowina",
     "pork", "schwein", "schweine", "schweinefleisch", "schweins", "schweinegelatine", "schinken", "ham", "bacon", "speck", "gris", "svin", "wieprzowina",
     "chicken", "huhn", "hähnchen", "henderl", "poulet", "pollo", "kip", "kuiken", "hen", "kylling", "kyckling", "kurczak",
     "turkey", "pute", "puten", "truthahn", "dinde", "pavo", "kalkun", "indyk",
     "duck", "ente", "canard", "pato", "anatra", "and", "anka", "kaczka",
-    "lamb", "lamm", "agneau", "cordero", "agnello", "lam", "faar", "faar", "baranek", "jagnięcina",
+    "lamb", "lamm", "agneau", "cordero", "agnello", "lam", "faar", "baranek", "jagnięcina",
     "goat", "ziege", "chevre", "cabra", "capra", "gedde", "geit",
     "game", "wild", "hirsch", "reh", "venison", "boar", "wildschwein",
     "sausage", "wurst", "bratwurst", "currywurst", "salami", "chorizo",
@@ -363,6 +363,14 @@ def _extract_allergens(notes: Iterable[str]) -> list[str]:
     for note in notes:
         lowered = _normalize_text(note)
         for canonical, keywords in _ALLERGEN_KEYWORDS.items():
-            if any(keyword in lowered for keyword in keywords):
-                found.add(canonical)
+            for keyword in keywords:
+                # For very short keywords (< 4 chars), require word boundaries
+                # to avoid false positives like "ei" matching in "Speiseeis"
+                if len(keyword) < 4:
+                    if f" {keyword} " in f" {lowered} " or lowered == keyword or lowered.startswith(f"{keyword} ") or lowered.endswith(f" {keyword}"):
+                        found.add(canonical)
+                else:
+                    # For longer keywords, substring matching is fine
+                    if keyword in lowered:
+                        found.add(canonical)
     return sorted(found)
