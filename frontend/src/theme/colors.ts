@@ -47,13 +47,13 @@ export interface Theme {
 
 // LIGHT MODE DEFINITION
 export const lightTheme: Theme = {
-  surfacePage: palette.darkenedWhite,            // Main background (lightest)
+  surfacePage: palette.darkenedWhite,            // Main background
   textOnPage: palette.black,
-  surfaceCard: palette.greySilver,       // Cards (darker than page)
+  surfaceCard: palette.greySilver,               // Cards (raised/elevated surfaces)
   textOnCard: palette.black,
-  surfaceInset: palette.white,  // Inputs (even darker)
-  textOnInset: palette.white,
-  surfaceElevated: palette.darkenedWhite, // Modals (slightly darker than page)
+  surfaceInset: palette.white,                   // Inputs, wells (recessed areas)
+  textOnInset: palette.black,
+  surfaceElevated: palette.darkenedWhite,        // Modals, dropdowns (highest elevation)
   textOnElevated: palette.black,
   surfaceAccent: palette.greyCharcoalBlue,
   textOnAccent: palette.white,
@@ -75,13 +75,13 @@ export const lightTheme: Theme = {
 
 // DARK MODE DEFINITION
 export const darkTheme: Theme = {
-  surfacePage: palette.greyJetBlack,     // Main background (darkest)
+  surfacePage: palette.greyJetBlack,             // Main background
   textOnPage: palette.white,
-  surfaceCard: palette.greyCharcoalBlue, // Cards (lighter than page)
+  surfaceCard: palette.greyCharcoalBlue,         // Cards (raised/elevated surfaces)
   textOnCard: palette.white,
-  surfaceInset: palette.greyShadowGrey,  // Inputs (even darker than page)
+  surfaceInset: palette.greyShadowGrey,          // Inputs, wells (recessed areas)
   textOnInset: palette.white,
-  surfaceElevated: palette.greySilver,   // Modals (lightest)
+  surfaceElevated: palette.greySilver,           // Modals, dropdowns (highest elevation)
   textOnElevated: palette.black,
   surfaceAccent: palette.white,
   textOnAccent: palette.black,
@@ -95,7 +95,7 @@ export const darkTheme: Theme = {
 
   textPrimary: palette.white,            // Same as textOnPage
   textSecondary: palette.greySilver,     // Slightly dimmed
-  textMuted: palette.greyCharcoalBlue,   // More dimmed
+  textMuted: palette.greySilver,         // More dimmed
   textLight: palette.white,
   textDark: palette.black,
   textAccentGradient: palette.accent1Red,

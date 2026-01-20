@@ -222,7 +222,7 @@ export const SegmentButton = styled.button<{ active: boolean }>`
       !active &&
       `
       background: ${theme.surfaceCard};
-      color: ${theme.textOnInset};
+      color: ${theme.textOnCard};
     `}
   }
 `;
