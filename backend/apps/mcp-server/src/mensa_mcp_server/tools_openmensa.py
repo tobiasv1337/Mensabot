@@ -206,9 +206,9 @@ def get_canteen_info(
 def get_menu_for_date(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
-    diet_filter: Annotated[MenuDietFilter, Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan)")] = MenuDietFilter.all,
-    exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut').")]=None,
-    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size.")] = None,
+    diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null oder 'all' = kein Filter.")] = None,
+    exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = kein Filter.")] = None,
+    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Null = kein Filter.")] = None,
 ) -> MenuResponseDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
@@ -226,8 +226,12 @@ def get_menu_for_date(
     Prices may be null per group if unpublished.
     """
 
-    # normalize mutable default
-    exclude_allergens = exclude_allergens or []
+    # Normalize Parameter: None = kein Filter
+    if diet_filter is None:
+        diet_filter = MenuDietFilter.all
+    if exclude_allergens is None:
+        exclude_allergens = []
+    # price_category bleibt None, wenn nicht gesetzt
 
     normalized_date, error_response = _normalize_menu_date(canteen_id, date)
     if error_response is not None:
