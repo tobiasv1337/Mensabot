@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from enum import StrEnum
-from typing import Iterable
+from typing import Iterable, Optional
 import unicodedata
 
 from openmensa_sdk import Canteen, Meal
@@ -176,17 +176,17 @@ class MenuResponseDTO(DTO):
 class MenuBatchRequestDTO(DTO):
     canteen_id: int = Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin).")
     date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
-    diet_filter: MenuDietFilter = Field(
-        default=MenuDietFilter.all,
-        description="Filter meals by diet type (all, meat_only, vegetarian, vegan).",
+    diet_filter: Optional[MenuDietFilter] = Field(
+        default=None,
+        description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null/all = kein Filter.",
     )
-    exclude_allergens: list[str] = Field(
-        default_factory=list,
-        description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut').",
+    exclude_allergens: Optional[list[str]] = Field(
+        default=None,
+        description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = kein Filter.",
     )
     price_category: PriceCategory | None = Field(
         default=None,
-        description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size.",
+        description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size. Null = kein Filter.",
     )
 
 class MenuBatchResponseDTO(DTO):
