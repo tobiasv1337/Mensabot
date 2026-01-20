@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { KeyboardEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -7,7 +7,9 @@ import rehypeSanitize from 'rehype-sanitize';
 import styled from 'styled-components'
 import { useTheme } from './theme/themeProvider.tsx'
 import ThemeDemo from './pages/ThemeDemo.tsx'
-import ChatPage from "./pages/Chatpage";
+import { Chats, type Chat, type ChatMessage } from './services/chats'
+import { MensaBotClient } from './services/api'
+import ChatPage from './pages/Chatpage'
 
 const AppContainer = styled.main`
   min-height: 100vh;
@@ -72,13 +74,36 @@ const ThemeToggleButton = styled.button`
   }
 `
 
-const ResponseSection = styled.section`
+const ChatHistorySection = styled.section`
   background: ${props => props.theme.surfaceCard};
   color: ${props => props.theme.textOnCard};
   padding: 1.5rem;
   border-radius: 0.5rem;
   margin: 1rem 0;
-  min-height: 4rem;
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`
+
+const MessageBubble = styled.div<{ $isUser: boolean }>`
+  background: ${props => props.$isUser ? props.theme.accent1 : props.theme.surfaceInset};
+  color: ${props => props.$isUser ? props.theme.textOnAccent1 : props.theme.textOnInset};
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  max-width: 85%;
+  align-self: ${props => props.$isUser ? 'flex-end' : 'flex-start'};
+  ${props => props.$isUser && 'border-bottom-right-radius: 0.25rem;'}
+  ${props => !props.$isUser && 'border-bottom-left-radius: 0.25rem;'}
+`
+
+const MessageRole = styled.div`
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  opacity: 0.8;
 `
 
 const MarkdownResponse = styled.div`
@@ -229,24 +254,39 @@ const SendButton = styled.button`
 const ErrorMessage = styled.p`
   color: ${props => props.theme.accent1};
   font-weight: bold;
+  text-align: center;
 `
 
 const WaitingMessage = styled.p`
   color: ${props => props.theme.textMuted};
+  text-align: center;
+  font-style: italic;
 `
-
-type ChatResponse = {
-  reply?: string
-}
 
 function App() {
   const [showThemeDemo, setShowThemeDemo] = useState(false)
   const [showChatPage, setShowChatPage] = useState(false);
   const { toggleMode } = useTheme()
   const [userInput, setUserInput] = useState('')
-  const [backendResponse, setBackendResponse] = useState<string>('')
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string>('')
+  const [chat, setChat] = useState<Chat | null>(null)
+  const [client, setClient] = useState<MensaBotClient | null>(null)
+  const [, setUpdateTrigger] = useState(0) // Force re-render when messages change
+  const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Initialize chat and client on mount
+  useEffect(() => {
+    const newChat = Chats.getById('default')
+    const newClient = new MensaBotClient('http://localhost:8000')
+    if (newChat) setChat(newChat)
+    setClient(newClient)
+  }, [])
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chat?.messages.length])
 
   if (showThemeDemo) {
     return <ThemeDemo />
@@ -256,32 +296,17 @@ function App() {
   return <ChatPage />;
   }
   const sendMessage = async () => {
-    if (!userInput.trim() || isSending) return
+    if (!userInput.trim() || isSending || !chat || !client) return
 
     setIsSending(true)
     setError('')
-    const textToSend = userInput
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: textToSend }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
-      }
-
-      const data = (await response.json()) as ChatResponse
-      const reply = data.reply?.trim()
-      setBackendResponse(reply || 'Keine Antwort vom Backend erhalten.')
+      await chat.send(client, userInput.trim())
+      setUpdateTrigger(prev => prev + 1) // Trigger re-render
     } catch (err) {
       console.error('Fehler beim Senden:', err)
       setError('Fehler beim Verbinden mit dem Backend.')
-      setBackendResponse('')
     } finally {
       setUserInput('')
       setIsSending(false)
@@ -325,22 +350,30 @@ function App() {
           </ThemeToggleButton>
         </ButtonGroup>
 
-        <ResponseSection>
-          {error ? (
-            <ErrorMessage>{error}</ErrorMessage>
-          ) : backendResponse ? (
-            <MarkdownResponse>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw, rehypeSanitize]}
-              >
-                {backendResponse}
-              </ReactMarkdown>
-            </MarkdownResponse>
+        {error && (
+          <ErrorMessage>{error}</ErrorMessage>
+        )}
+
+        <ChatHistorySection>
+          {!chat || chat.messages.length === 0 ? (
+            <WaitingMessage>Starte eine Unterhaltung...</WaitingMessage>
           ) : (
-            <WaitingMessage>Warte auf deine Eingabe...</WaitingMessage>
+            chat.messages.map((message: ChatMessage, index: number) => (
+              <MessageBubble key={index} $isUser={message.role === 'user'}>
+                <MessageRole>{message.role === 'user' ? 'Du' : 'Mensabot'}</MessageRole>
+                <MarkdownResponse>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </MarkdownResponse>
+              </MessageBubble>
+            ))
           )}
-        </ResponseSection>
+          <div ref={chatEndRef} />
+        </ChatHistorySection>
 
         <InputSection>
           <StyledTextarea
