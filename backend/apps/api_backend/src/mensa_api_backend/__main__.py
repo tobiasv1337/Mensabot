@@ -341,7 +341,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    response = run_tool_calling_loop(request.messages)
+    response = await run_tool_calling_loop(request.messages)
     return ChatResponse(reply=response)
 
 @app.get("/api/health")
