@@ -279,13 +279,16 @@ def get_menus_batch(
                 results.append(error_response)
                 continue
 
+            normalized_diet_filter = req.diet_filter or MenuDietFilter.all
+            normalized_exclude_allergens = req.exclude_allergens or []
+
             results.append(
                 _fetch_single_menu(
                     client,
                     req.canteen_id,
                     normalized_date,
-                    req.diet_filter,
-                    req.exclude_allergens,
+                    normalized_diet_filter,
+                    normalized_exclude_allergens,
                     req.price_category,
                 )
             )
