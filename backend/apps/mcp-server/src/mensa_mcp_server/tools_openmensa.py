@@ -160,10 +160,10 @@ def list_canteens_near(
     per_page: Annotated[int, Field(ge=1, description="Number of results per page")] = 20,
 ) -> CanteenListResponseDTO:
     """
-    List canteens near a geographic location (paginated).
+    Find canteens by geographic coordinates with pagination.
     
-    Use this when you need nearby canteens around a latitude/longitude. Call again with
-    `page = page_info.next_page` while `page_info.has_next` is true to fetch more results.
+    Returns paginated list of nearby canteens. For more results, call again with
+    `page = page_info.next_page` while `page_info.has_next` is true.
     """
     with make_openmensa_client() as client:
         canteens, next_page = client.list_canteens(
@@ -190,9 +190,9 @@ def get_canteen_info(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
 ) -> CanteenDTO:
     """
-    Get detailed metadata for a single canteen by its OpenMensa ID.
+    Get canteen metadata: name, address, city, and GPS coordinates.
     
-    Use this to retrieve name, address, city and coordinates for a specific canteen.
+    Use after discovering a canteen ID from list_canteens_near to get full details.
     """
     with make_openmensa_client() as client:
         canteen = client.get_canteen(canteen_id)
@@ -208,23 +208,19 @@ def get_menu_for_date(
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut').")]=None,
 ) -> MenuResponseDTO:
     """
-    Get all meals for a single canteen on a specific date.
+    Get menu for a canteen on a specific date with optional diet/allergen filtering.
     
-    The response `status` field is:
-    - `ok` if a menu exists,
-    - `no_menu_published` if no plan is published yet,
-    - `empty_menu` if the menu is published but contains no meals - likely indicating that the canteen is just closed on that day,
-    - `filtered_out` if the menu exists but all meals were removed by `diet_filter` / `exclude_allergens`,
-    - `invalid_date` if the date string is not a valid ISO date,
-    - `api_error` for other upstream OpenMensa errors.
+    Response status:
+    - `ok`: Menu exists
+    - `no_menu_published`: No menu available yet
+    - `empty_menu`: Published but no meals (canteen closed)
+    - `filtered_out`: Menu exists but all meals filtered out
+    - `invalid_date`: Bad date format
+    - `api_error`: API failure
     
-    To save tokens we omit OpenMensa notes from the response and instead expose
-    `diet_type` (vegan / vegetarian / meat / unknown) and a canonical `allergens`
-    list. Use `diet_filter` and `exclude_allergens` to reduce the result set
-    before it is returned to the LLM. `total_meals` reports how many meals the
-    source menu contained, `returned_meals` how many are left after filtering.
-
-    Meal prices may be null for individual groups (e.g. pupils) when no price was published.
+    Uses `diet_type` (vegan/vegetarian/meat/unknown) and canonical `allergens` list.
+    `total_meals` = source count, `returned_meals` = after filtering.
+    Prices may be null per group if unpublished.
     """
 
     # normalize mutable default
@@ -258,23 +254,11 @@ def get_menus_batch(
     ],
 ) -> MenuBatchResponseDTO:
     """
-    Get menus for multiple canteen/date pairs in one call.
-
-    Use this when you want to fetch menus across multiple canteens or dates.
-    Returns the same data as if calling get_menu_for_date repeatedly for each pair.
-    Prefer this method for more than one (canteen_id, date) pair to get more data with fewer tool calls.
-
-    Each request entry can also carry `diet_filter` and `exclude_allergens` to
-    shrink responses per canteen/date before they reach the LLM. `total_meals`
-    and `returned_meals` indicate how many items were present before/after
-    filtering, and `filtered_out` signals when the menu existed but nothing
-    survived the filters.
-
-    The response contains one `MenuResponseDTO` per input entry in the same order:
-    - `status = ok` if a menu exists,
-    - `status = no_menu_published` if no plan is published yet,
-    - `status = invalid_date` if the date is not a valid ISO date,
-    - `status = api_error` for other upstream OpenMensa errors.
+    Fetch menus for multiple canteens/dates in one efficient call.
+    
+    Preferred over repeated get_menu_for_date calls when fetching more than one menu.
+    Each request can have its own diet_filter and allergen exclusions.
+    Responses preserve input order with same statuses as get_menu_for_date.
     """
 
     results: list[MenuResponseDTO] = []
