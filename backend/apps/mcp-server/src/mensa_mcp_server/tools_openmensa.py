@@ -206,9 +206,9 @@ def get_canteen_info(
 def get_menu_for_date(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
-    diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null oder 'all' = kein Filter.")] = None,
-    exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = kein Filter.")] = None,
-    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Null = kein Filter.")] = None,
+    diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
+    exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.")] = None,
+    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Null = no filter.")] = None,
 ) -> MenuResponseDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
