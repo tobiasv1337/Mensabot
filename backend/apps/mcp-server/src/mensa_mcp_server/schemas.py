@@ -250,7 +250,7 @@ _DIET_KEYWORDS = {
         "meat", "fleisch", "carne", "viande", "kott", "kjott", "kjoett", "koed", "mieso",
         "beef", "rind", "rindfleisch", "rinder", "rinderhack", "hackfleisch", "gehacktes", "okse", "wolowina",
         "pork", "schwein", "schweine", "schweinefleisch", "schweins", "schweinegelatine", "schinken", "ham", "bacon", "speck", "gris", "svin", "wieprzowina",
-        "chicken", "huhn", "hähnchen", "henderl", "poulet", "pollo", "kip", "kuiken", "hen", "kylling", "kyckling", "kurczak",
+        "chicken", "huhn", "hahnchen", "henderl", "poulet", "pollo", "kip", "kuiken", "hen", "kylling", "kyckling", "kurczak",
         "turkey", "pute", "puten", "truthahn", "dinde", "pavo", "kalkun", "indyk",
         "duck", "ente", "canard", "pato", "anatra", "and", "anka", "kaczka",
         "lamb", "lamm", "agneau", "cordero", "agnello", "lam", "faar", "baranek", "jagnięcina",
@@ -283,7 +283,7 @@ _ALLERGEN_KEYWORDS: dict[str, set[str]] = {
     "milk": {"milch", "milk", "lait", "leche", "latte"},
     "lactose": {"laktose", "lactose", "lactosa"},
     "nut": {
-        "nuss", "nusse", "nusskerne", "nuts", "schalenfruchte", "schalenfrüchte",
+        "nuss", "nusse", "nusskerne", "nuts", "schalenfruchte", "schalenfruechte",
         "walnut", "walnuss", "walnusse", "noix", "hasselnott", "valnot", "orzech wloski",
         "haselnuss", "haselnusse", "hazelnut", "hazelnuts", "noisette", "hasselnot", "hasselnotter", "orzech laskowy",
         "mandel", "mandeln", "almond", "almonds", "amande", "mandler", "migdal",
@@ -307,22 +307,23 @@ _ALLERGEN_KEYWORDS: dict[str, set[str]] = {
     "caffeine": {"koffein", "koffeinhaltig", "caffeine", "cafeine", "kofein", "kofeina"},
     "quinine": {"chinin", "chininhaltig", "quinine", "chinina", "kinin"},
     "preservative": {"konserviert", "konservierungsmittel", "preservative", "conservateur", "conservante", "konserveringsmiddel", "konserwant"},
-    "nitrite": {"nitritpokelsalz", "nitritpökelsalz", "nitrite", "curing salt", "pokelsalz", "pökelsalz", "e250", "sodium nitrite"},
+    "nitrite": {"nitritpokelsalz", "nitrite", "curing salt", "pokelsalz", "e250", "sodium nitrite"},
     "antioxidant": {"antioxidationsmittel", "antioxidant", "antioxydant", "antioksidant"},
     "colorant": {"farbstoff", "colorant", "coloring", "colorante", "fargestoff", "barwnik"},
     "phosphate": {"phosphat", "phosphate", "fosfat"},
-    "sweetener": {"süßungsmittel", "suesungsmittel", "sussstoff", "sweetener", "edulcorant", "sotningsmedel", "slodzik"},
-    "flavor_enhancer": {"geschmacksverstärker", "geschmacksverstarker", "flavor enhancer", "exhausteur de gout", "smakforsterker", "wzmacniacz smaku"},
+    "sweetener": {"sussungsmittel", "suesungsmittel", "sussstoff", "sweetener", "edulcorant", "sotningsmedel", "slodzik"},
+    "flavor_enhancer": {"geschmacksverstarker", "flavor enhancer", "exhausteur de gout", "smakforsterker", "wzmacniacz smaku"},
     "gelatin": {"gelatine", "gelatin", "gelatina", "zelelatyna", "schweinegelatine", "pork gelatin"},
     "yeast": {"hefe", "yeast", "levure", "gjær", "drozdy"},
     "phenylalanine": {"phenylalanin", "phenylalaninquelle", "phenylalanine", "fenyloalanina"},
-    "laxative": {"abführend", "abfuhrend", "laxative", "laksativ", "srodek przeczyszczajacy"},
+    "laxative": {"abfuhrend", "laxative", "laksativ", "srodek przeczyszczajacy"},
 }
 
 
 def _normalize_text(text: str) -> str:
     stripped = unicodedata.normalize("NFKD", text)
     ascii_only = "".join(ch for ch in stripped if not unicodedata.combining(ch))
+    ascii_only = ascii_only.replace("ß", "ss").replace("ẞ", "ss")
     return ascii_only.strip().lower()
 
 
