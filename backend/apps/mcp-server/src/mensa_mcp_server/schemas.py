@@ -178,15 +178,15 @@ class MenuBatchRequestDTO(DTO):
     date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
     diet_filter: Optional[MenuDietFilter] = Field(
         default=None,
-        description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null/all = kein Filter.",
+        description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null/all = no filter.",
     )
     exclude_allergens: Optional[list[str]] = Field(
         default=None,
-        description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = kein Filter.",
+        description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.",
     )
     price_category: PriceCategory | None = Field(
         default=None,
-        description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size. Null = kein Filter.",
+        description="Filter to one price category (students/employees/pupils/others) if known. Reduces output size. Null = no filter.",
     )
 
 class MenuBatchResponseDTO(DTO):
@@ -211,9 +211,6 @@ _DIET_KEYWORDS = {
         "veganos",
         "vegansk",
         "veganske",
-        "veganer",
-        "vegansk",
-        "vegansk",
         "vegetalien",
         "vegetalienne",
         "vegan friendly",
@@ -316,9 +313,9 @@ _ALLERGEN_KEYWORDS: dict[str, set[str]] = {
     "antioxidant": {"antioxidationsmittel", "antioxidant", "antioxydant", "antioksidant"},
     "colorant": {"farbstoff", "colorant", "coloring", "colorante", "fargestoff", "barwnik"},
     "phosphate": {"phosphat", "phosphate", "fosfat"},
-    "sweetener": {"susungsmittel", "sussstoff", "sweetener", "edulcorant", "sotningsmedel", "slodzik"},
+    "sweetener": {"süßungsmittel", "suesungsmittel", "sussstoff", "sweetener", "edulcorant", "sotningsmedel", "slodzik"},
     "flavor_enhancer": {"geschmacksverstärker", "geschmacksverstarker", "flavor enhancer", "exhausteur de gout", "smakforsterker", "wzmacniacz smaku"},
-    "gelatin": {"gelatine", "gelatin", "gelatina", "zelelatyna", "schwein", "schweinegelatine", "pork gelatin"},
+    "gelatin": {"gelatine", "gelatin", "gelatina", "zelelatyna", "schweinegelatine", "pork gelatin"},
     "yeast": {"hefe", "yeast", "levure", "gjær", "drozdy"},
     "phenylalanine": {"phenylalanin", "phenylalaninquelle", "phenylalanine", "fenyloalanina"},
     "laxative": {"abführend", "abfuhrend", "laxative", "laksativ", "srodek przeczyszczajacy"},

@@ -80,7 +80,7 @@ def _filter_meals(
             continue
         if diet_filter == MenuDietFilter.vegetarian and meal.diet_type not in {DietType.vegan, DietType.vegetarian}:
             continue
-        if diet_filter == MenuDietFilter.meat_only and meal.diet_type not in {DietType.meat}:
+        if diet_filter == MenuDietFilter.meat_only and meal.diet_type != DietType.meat:
             continue
 
         if excluded and set(meal.allergens) & excluded:
@@ -227,12 +227,12 @@ def get_menu_for_date(
     Prices may be null per group if unpublished.
     """
 
-    # Normalize Parameter: None = kein Filter
+    # Normalize parameters: None = no filter
     if diet_filter is None:
         diet_filter = MenuDietFilter.all
     if exclude_allergens is None:
         exclude_allergens = []
-    # price_category bleibt None, wenn nicht gesetzt
+    # price_category remains None if not set
 
     normalized_date, error_response = _normalize_menu_date(canteen_id, date)
     if error_response is not None:
