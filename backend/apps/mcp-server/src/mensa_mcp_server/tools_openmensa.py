@@ -222,6 +222,7 @@ def get_menu_for_date(
     - `api_error`: API failure
     
     Uses `diet_type` (vegan/vegetarian/meat/unknown) and canonical `allergens` list.
+    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct.
     `total_meals` = source count, `returned_meals` = after filtering.
     Prices may be null per group if unpublished.
     """
@@ -266,6 +267,7 @@ def get_menus_batch(
     
     Preferred over repeated get_menu_for_date calls when fetching more than one menu.
     Each request can have its own diet_filter and allergen exclusions.
+    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct.
     Responses preserve input order with same statuses as get_menu_for_date.
     """
 
