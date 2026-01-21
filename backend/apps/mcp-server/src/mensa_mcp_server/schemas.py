@@ -178,7 +178,7 @@ class MenuBatchRequestDTO(DTO):
     date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
     diet_filter: Optional[MenuDietFilter] = Field(
         default=None,
-        description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null/all = no filter.",
+        description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.",
     )
     exclude_allergens: Optional[list[str]] = Field(
         default=None,
@@ -233,8 +233,6 @@ _DIET_KEYWORDS = {
         "vegetarismo",
         "vegetarisk",
         "vegetariske",
-        "vegetarisk",
-        "vegetar",
         "wegetarianski",
         "wegetarianskie",
         "ovo-lacto",
