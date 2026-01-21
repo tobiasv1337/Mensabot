@@ -352,10 +352,16 @@ def _canonicalize_allergen_label(label: str) -> str | None:
     for canonical, keywords in _ALLERGEN_KEYWORDS.items():
         if lowered == canonical:
             return canonical
-        if any(lowered == kw for kw in keywords):
-            return canonical
-        if any(kw in lowered for kw in keywords):
-            return canonical
+        for keyword in keywords:
+            if lowered == keyword:
+                return canonical
+            # For very short keywords (< 4 chars), require word boundaries
+            if len(keyword) < 4:
+                if f" {keyword} " in f" {lowered} " or lowered.startswith(f"{keyword} ") or lowered.endswith(f" {keyword}"):
+                    return canonical
+            else:
+                if keyword in lowered:
+                    return canonical
     return None
 
 
