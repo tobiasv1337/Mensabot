@@ -243,7 +243,6 @@ _DIET_KEYWORDS = {
         "meat-free",
         "meat free",
         "veggie",
-        "veg",
         "vegetal",
     },
     DietType.meat: {
