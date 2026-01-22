@@ -326,6 +326,7 @@ function App() {
   const [client, setClient] = useState<MensaBotClient | null>(null)
   const [, setUpdateTrigger] = useState(0) // Force re-render when messages change
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+  const [locationPromptHandled, setLocationPromptHandled] = useState(false)
   const [locationError, setLocationError] = useState<string>('')
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -350,8 +351,8 @@ function App() {
   return <ChatPage />;
   }
   const sendMessage = async (contentOverride?: string) => {
-    const textSource = contentOverride ?? userInput
-    const text = textSource.trim()
+    const textSource = typeof contentOverride === 'string' ? contentOverride : userInput
+    const text = typeof textSource === 'string' ? textSource.trim() : ''
     if (!text || isSending || !chat || !client) return
 
     setIsSending(true)
@@ -403,19 +404,27 @@ function App() {
         const { latitude, longitude } = position.coords
         const coordsMessage = `Mein Standort: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
         await sendMessage(coordsMessage)
+        setLocationPromptHandled(true)
         setIsRequestingLocation(false)
       },
       (geoError) => {
         console.error('Geolocation error', geoError)
         setLocationError('Standort konnte nicht abgefragt werden. Bitte gib ihn manuell ein.')
+        setLocationPromptHandled(true)
         setIsRequestingLocation(false)
       },
       { enableHighAccuracy: true, timeout: 15000 }
     )
   }
 
-  const handleDeclineLocation = () => {
-    setLocationError('')
+  const handleSelfLocation = () => {
+    if (isSending || isRequestingLocation || !chat) return
+    chat.addMessage({
+      role: 'assistant',
+      content: 'Bitte gib deinen Standort unten ins Textfeld ein, damit ich passende Mensen in deiner Nähe finden kann.',
+      meta: { kind: 'normal' }
+    });
+    setLocationPromptHandled(true)
   }
 
   return (
@@ -469,22 +478,22 @@ function App() {
                     {message.content}
                   </ReactMarkdown>
                 </MarkdownResponse>
-                {message.meta.kind === 'location_prompt' && index === chat.messages.length - 1 && (
+                {message.meta.kind === 'location_prompt' && index === chat.messages.length - 1 && !locationPromptHandled && (
                   <LocationActions>
                     <LocationButton
                       type="button"
                       onClick={handleShareLocation}
                       disabled={isSending || isRequestingLocation}
                     >
-                      {isRequestingLocation ? 'Frage Standort ab...' : 'Standort teilen'}
+                      {isRequestingLocation ? 'Frage Standort ab...' : 'Aktuellen Standort teilen'}
                     </LocationButton>
                     <LocationButton
                       type="button"
                       $secondary
-                      onClick={handleDeclineLocation}
+                      onClick={handleSelfLocation}
                       disabled={isSending || isRequestingLocation}
                     >
-                      Ablehnen
+                      Manuell eingeben
                     </LocationButton>
                     {locationError && <LocationError>{locationError}</LocationError>}
                   </LocationActions>
