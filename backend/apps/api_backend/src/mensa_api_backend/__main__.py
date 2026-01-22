@@ -312,7 +312,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
                 args = json.loads(raw_args)
             except json.JSONDecodeError as e:
                 logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
-                result_payload = {"error": f"Failed to parse arguments: {str(e)}"}
+                result_payload = {"error": f"Failed to parse arguments. Invalid JSON: {str(e)}"}
             else:
                 # Delegate to MCP
                 result_payload = await call_mcp_tool(tool_name, args)
