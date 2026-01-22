@@ -13,6 +13,7 @@ This module contains the OSM/Overpass logic only. MCP tool functions live in too
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 import time
@@ -24,6 +25,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from .server import settings
+
+logger = logging.getLogger("mensa_mcp_server")
 
 
 # ------------------------------ constants ------------------------------
@@ -208,6 +211,12 @@ def _score_candidate(
 class OSMOpeningHoursResolver:
     """Resolves opening hours from OSM deterministically using Overpass."""
 
+    # Retry configuration
+    MAX_RETRIES = 10
+    INITIAL_BACKOFF_S = 1.0
+    MAX_BACKOFF_S = 16.0
+    BACKOFF_MULTIPLIER = 2.0
+
     def __init__(
         self,
         overpass_url: str,
@@ -220,20 +229,108 @@ class OSMOpeningHoursResolver:
         self.timeout_s = timeout_s
         self.cache = _TTLCache(ttl_s=cache_ttl_s)
 
+    def _should_retry(self, exception: Exception, status_code: Optional[int] = None) -> bool:
+        """Determine if an error is retryable."""
+        if status_code is not None:
+            return status_code >= 500 or status_code == 429
+        return isinstance(exception, (requests.ConnectionError, requests.Timeout))
+
+    def _post_overpass_with_retry(self, query: str) -> Dict[str, Any]:
+        """POST to Overpass with exponential backoff retry logic."""
+        backoff_s = self.INITIAL_BACKOFF_S
+        last_exception = None
+
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
+                resp = requests.post(
+                    self.overpass_url,
+                    data=query.encode("utf-8"),
+                    headers={"User-Agent": self.user_agent},
+                    timeout=self.timeout_s,
+                )
+
+                # Check for HTTP errors
+                if resp.status_code == 429:
+                    # Rate limited
+                    retry_after = resp.headers.get("Retry-After")
+                    if retry_after:
+                        backoff_s = min(self.MAX_BACKOFF_S, float(retry_after))
+                    if attempt < self.MAX_RETRIES:
+                        logger.warning(f"Overpass rate limited (429), retrying in {backoff_s}s")
+                        time.sleep(backoff_s)
+                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                        continue
+                    else:
+                        resp.raise_for_status()
+
+                if resp.status_code >= 500:
+                    # Server error, retryable
+                    if attempt < self.MAX_RETRIES:
+                        logger.warning(f"Overpass server error ({resp.status_code}), retrying in {backoff_s}s")
+                        time.sleep(backoff_s)
+                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                        continue
+                    else:
+                        resp.raise_for_status()
+
+                # Other HTTP errors are not retried
+                resp.raise_for_status()
+
+                # Successfully got a response, parse JSON
+                try:
+                    data = resp.json()
+                    logger.debug("Overpass request successful")
+                    return data
+                except ValueError as e:
+                    raise RuntimeError(f"Overpass returned invalid JSON: {e}")
+
+            except requests.Timeout as e:
+                if attempt < self.MAX_RETRIES:
+                    logger.warning(f"Overpass timeout, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
+                    time.sleep(backoff_s)
+                    backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                    continue
+                logger.error(f"Overpass timeout after {self.MAX_RETRIES} attempts")
+                raise RuntimeError(f"Overpass API timeout after {self.MAX_RETRIES} attempts")
+
+            except requests.ConnectionError as e:
+                if attempt < self.MAX_RETRIES:
+                    logger.warning(f"Overpass connection error, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
+                    time.sleep(backoff_s)
+                    backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                    continue
+                logger.error(f"Overpass connection failed after {self.MAX_RETRIES} attempts")
+                raise RuntimeError(f"Could not connect to Overpass API after {self.MAX_RETRIES} attempts: {e}")
+
+            except requests.HTTPError as e:
+                logger.error(f"Overpass HTTP error: {e.response.status_code}")
+                if e.response.status_code == 400:
+                    raise RuntimeError("Overpass query error (400): Check query syntax")
+                elif e.response.status_code == 403:
+                    raise RuntimeError("Overpass access denied (403): Check API credentials/access")
+                elif e.response.status_code == 404:
+                    raise RuntimeError("Overpass endpoint not found (404): Check Overpass URL configuration")
+                raise RuntimeError(f"Overpass HTTP error {e.response.status_code}: {e}")
+
+            except RuntimeError:
+                raise
+
+            except Exception as e:
+                logger.error(f"Unexpected Overpass error: {type(e).__name__}: {e}")
+                raise RuntimeError(f"Unexpected Overpass error: {type(e).__name__}: {e}")
+
+        raise RuntimeError(f"Overpass request failed after {self.MAX_RETRIES} attempts")
+
     def _post_overpass(self, query: str) -> Dict[str, Any]:
+        """Fetch from Overpass with caching. Failed requests are never cached."""
         cache_key = f"overpass:{hash(query)}"
         cached = self.cache.get(cache_key)
         if cached is not None:
+            logger.debug("Overpass cache hit")
             return cached
 
-        resp = requests.post(
-            self.overpass_url,
-            data=query.encode("utf-8"),
-            headers={"User-Agent": self.user_agent},
-            timeout=self.timeout_s,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        data = self._post_overpass_with_retry(query)
         self.cache.set(cache_key, data)
         return data
 
@@ -379,6 +476,12 @@ class OSMOpeningHoursResolver:
             }
 
         except requests.RequestException as e:
+            error_msg = f"Overpass request failed: {type(e).__name__}"
+            if isinstance(e, requests.Timeout):
+                error_msg = "Overpass API did not respond in time (timeout)"
+            elif isinstance(e, requests.ConnectionError):
+                error_msg = "Could not connect to Overpass API"
+            logger.error(error_msg)
             return {
                 "status": "error",
                 "opening_hours": None,
@@ -386,7 +489,41 @@ class OSMOpeningHoursResolver:
                 "source": None,
                 "confidence": 0.0,
                 "candidates": [],
-                "note": f"Overpass request failed: {type(e).__name__}",
+                "note": error_msg,
+                "attribution": {
+                    "attribution": DEFAULT_ATTRIBUTION,
+                    "attribution_url": DEFAULT_ATTRIBUTION_URL,
+                    "license": DEFAULT_LICENSE,
+                },
+            }
+        except RuntimeError as e:
+            error_msg = str(e)
+            logger.error(f"Overpass error: {error_msg}")
+            return {
+                "status": "error",
+                "opening_hours": None,
+                "kitchen_hours": None,
+                "source": None,
+                "confidence": 0.0,
+                "candidates": [],
+                "note": error_msg,
+                "attribution": {
+                    "attribution": DEFAULT_ATTRIBUTION,
+                    "attribution_url": DEFAULT_ATTRIBUTION_URL,
+                    "license": DEFAULT_LICENSE,
+                },
+            }
+        except Exception as e:
+            error_msg = f"Unexpected error: {type(e).__name__}: {e}"
+            logger.exception(error_msg)
+            return {
+                "status": "error",
+                "opening_hours": None,
+                "kitchen_hours": None,
+                "source": None,
+                "confidence": 0.0,
+                "candidates": [],
+                "note": error_msg,
                 "attribution": {
                     "attribution": DEFAULT_ATTRIBUTION,
                     "attribution_url": DEFAULT_ATTRIBUTION_URL,
