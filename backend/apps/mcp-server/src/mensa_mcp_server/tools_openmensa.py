@@ -338,6 +338,7 @@ def get_opening_hours_osm_for_canteen(
     a deterministic Overpass lookup.
 
     Returns either a confident match (status=ok) or a ranked candidate list (status=ambiguous).
+    If you get a ranked candidate list, you have to pick the best match yourself.
 
     If you use opening hours returned by this tool in a user-facing response,
     include the provided attribution (usually: "© OpenStreetMap contributors").
