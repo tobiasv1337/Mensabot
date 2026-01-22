@@ -27,7 +27,9 @@ class ChatRequest(BaseModel):
     # model: Optional[str] = None
 
 class ChatResponse(BaseModel):
-    reply: str
+    status: Literal["ok", "needs_location"]
+    reply: str | None = None
+    prompt: str | None = None
 
 def get_env_required(name: str) -> str:
     """
@@ -264,7 +266,11 @@ def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMe
         *format_message_history(message_log),
     ]
 
-async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
+LOCATION_TOOL_NAME = "request_user_location"
+LOCATION_FALLBACK_PROMPT = "To answer your question, I need your location. Would you like to share it?"
+
+
+async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
     messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
@@ -274,7 +280,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
-            return LLM_FALLBACK_RESPONSE
+            return ChatResponse(status="ok", reply=LLM_FALLBACK_RESPONSE)
 
         if not getattr(completion, "choices", None):
             try:
@@ -291,14 +297,14 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
 
         if finish_reason != "tool_calls":
             logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
-            return ensure_message_content(message, finish_reason)
+            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason))
 
         
         tool_calls = message.tool_calls or []
         if not tool_calls:
             logger.warning("LLM reported finish_reason=tool_calls but no tool_calls were provided. Returning current message after %d iterations.", iteration)
             logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
-            return ensure_message_content(message, finish_reason)
+            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason))
 
         if LLM_SUPPORTS_TOOL_MESSAGES:
             messages.append(message)
@@ -314,6 +320,12 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
                 logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
                 result_payload = {"error": f"Failed to parse arguments. Invalid JSON: {str(e)}"}
             else:
+                if tool_name == LOCATION_TOOL_NAME:
+                    prompt = args.get("prompt") if isinstance(args, dict) else None
+                    prompt_text = prompt or LOCATION_FALLBACK_PROMPT
+                    logger.info("Location request tool triggered with prompt: %s", prompt_text)
+                    return ChatResponse(status="needs_location", prompt=prompt_text)
+
                 # Delegate to MCP
                 result_payload = await call_mcp_tool(tool_name, args)
 
@@ -352,12 +364,12 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
                     )
         
     logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
-    return LLM_FALLBACK_RESPONSE
+    return ChatResponse(status="ok", reply=LLM_FALLBACK_RESPONSE)
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     response = await run_tool_calling_loop(request.messages)
-    return ChatResponse(reply=response)
+    return response
 
 @app.get("/api/health")
 async def health():
