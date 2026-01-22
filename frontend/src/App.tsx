@@ -336,7 +336,21 @@ function App() {
     const newClient = new MensaBotClient('http://localhost:8000')
     if (newChat) setChat(newChat)
     setClient(newClient)
+    setLocationPromptHandled(false)
   }, [])
+
+  useEffect(() => {
+    if (!chat) return;
+    const lastMsg = chat.messages[chat.messages.length - 1];
+    if (!lastMsg) return;
+
+    if (lastMsg.meta?.kind === 'location_prompt') {
+      setLocationPromptHandled(false);
+      return;
+    }
+
+    setLocationPromptHandled(true);
+  }, [chat?.messages.length]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
