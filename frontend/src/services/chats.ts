@@ -1,28 +1,37 @@
-import { MensaBotClient } from "./api";
+import { MensaBotClient, type ChatApiResponse } from "./api";
+
+type MessageKind = "normal" | "location_prompt";
 
 export type ChatMessageData = {
 	role: "user" | "assistant";
 	content: string;
+	meta: {
+		kind: MessageKind;
+	};
 };
 
 export class ChatMessage implements ChatMessageData {
 	public role: "user" | "assistant";
 	public content: string;
+	public meta: ChatMessageData["meta"];
 
-	constructor(role: "user" | "assistant", content: string) {
+	constructor(role: "user" | "assistant", content: string, meta: ChatMessageData["meta"] = { kind: "normal" }) {
 		this.role = role;
 		this.content = content;
+		this.meta = meta;
 	}
 
 	toJSON(): ChatMessageData {
 		return {
 			role: this.role,
 			content: this.content,
+			meta: this.meta,
 		};
 	}
 
 	static fromJSON(json: ChatMessageData) {
-		return new ChatMessage(json.role, json.content);
+		const meta: ChatMessageData["meta"] = json.meta ?? { kind: "normal" };
+		return new ChatMessage(json.role, json.content, meta);
 	}
 }
 
@@ -65,14 +74,20 @@ export class Chat {
 		}
 	}
 
-	async send(client: MensaBotClient, message: string) {
+	async send(client: MensaBotClient, message: string): Promise<ChatApiResponse> {
 		if (!(client instanceof MensaBotClient)) {
 			throw new Error("argument 0 must be an instance of MensaBotClient");
 		}
 
 		this.addMessage(new ChatMessage("user", message));
 		const response = await client.sendMessages(this.#messages);
-		this.addMessage(new ChatMessage("assistant", response));
+
+		if (response.status === "needs_location") {
+			this.addMessage(new ChatMessage("assistant", response.prompt, { kind: "location_prompt" }));
+			return response;
+		}
+
+		this.addMessage(new ChatMessage("assistant", response.reply));
 		return response;
 	}
 

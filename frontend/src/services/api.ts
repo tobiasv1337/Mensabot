@@ -17,6 +17,10 @@
 
 import type { ChatMessage } from "./chats";
 
+export type ChatApiResponse =
+	| { status: "ok"; reply: string }
+	| { status: "needs_location"; prompt: string };
+
 export class MensaBotClient {
 	private baseUrl: string;
 
@@ -24,7 +28,7 @@ export class MensaBotClient {
 		this.baseUrl = baseUrl;
 	}
 
-	async sendMessages(messages: ChatMessage[]): Promise<string> {
+	async sendMessages(messages: ChatMessage[]): Promise<ChatApiResponse> {
 		const request = await fetch(this.baseUrl + "/api/chat", {
 			method: "POST",
 			headers: {
@@ -32,7 +36,26 @@ export class MensaBotClient {
 			},
 			body: JSON.stringify({ messages })
 		});
-		const response = await request.json();
-		return response.reply;
+
+		if (!request.ok) {
+			throw new Error(`Chat API error: ${request.status} ${request.statusText}`);
+		}
+
+		let response: unknown;
+		try {
+			response = await request.json();
+		} catch (err) {
+			throw new Error("Chat API returned invalid JSON");
+		}
+
+		if (response?.status === "needs_location") {
+			return { status: "needs_location", prompt: response.prompt };
+		}
+
+		if (response?.status === "ok") {
+			return { status: "ok", reply: response.reply };
+		}
+
+		throw new Error("Unexpected chat API response shape");
 	}
 }
