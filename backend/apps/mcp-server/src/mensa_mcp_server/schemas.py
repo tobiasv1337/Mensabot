@@ -82,11 +82,6 @@ class PriceCategory(StrEnum):
     others = "others"
 
 
-class CoordinateDTO(DTO):
-    latitude: float = Field(ge=-90, le=90, description="Latitude in decimal degrees (WGS84).")
-    longitude: float = Field(ge=-180, le=180, description="Longitude in decimal degrees (WGS84).")
-
-
 class PriceInfoDTO(DTO):
     model_config = ConfigDict(extra="ignore")
 
@@ -196,6 +191,67 @@ class MenuBatchResponseDTO(DTO):
             "The order matches the input list."
         ),
     )
+
+
+# ------------------------------ OpenStreetMap (OSM) opening hours DTOs ------------------------------
+
+class OSMResolveStatus(StrEnum):
+    """Status for OSM opening-hours resolution."""
+
+    ok = "ok"
+    ambiguous = "ambiguous"
+    not_found = "not_found"
+    error = "error"
+
+
+class OSMAttributionDTO(DTO):
+    attribution: str = Field(description="Attribution string to include when using OSM-derived data.")
+    attribution_url: str = Field(description="Attribution URL.")
+    license: str = Field(description="License identifier.")
+
+
+class OSMSourceDTO(DTO):
+    type: str = Field(description="Source type.")
+    osm_type: str = Field(description='OSM element type: "node", "way", or "relation".')
+    osm_id: int = Field(ge=1, description="OSM element id.")
+    url: str = Field(description="OpenStreetMap URL for the element.")
+    name: str | None = Field(default=None, description="Name tag of the element, if present.")
+    distance_m: float | None = Field(default=None, ge=0, description="Distance from query coordinate in meters.")
+
+
+class OSMCandidateDTO(DTO):
+    osm_type: str = Field(description='OSM element type: "node", "way", or "relation".')
+    osm_id: int = Field(ge=1, description="OSM element id.")
+    url: str = Field(description="OpenStreetMap URL for the element.")
+    name: str | None = Field(default=None, description="Name tag of the element, if present.")
+    distance_m: float = Field(ge=0, description="Distance from query coordinate in meters.")
+    score: float = Field(description="Internal matching score (higher is better).")
+    opening_hours: str | None = Field(default=None, description="OSM opening_hours tag (if present).")
+    kitchen_hours: str | None = Field(default=None, description="OSM opening_hours:kitchen tag (if present).")
+    tags: dict[str, str | None] = Field(default_factory=dict, description="Small subset of OSM tags for debugging.")
+
+
+class OSMResolveResponseDTO(DTO):
+    status: OSMResolveStatus
+    opening_hours: str | None = Field(default=None, description="Resolved OSM opening_hours (if found and unambiguous).")
+    kitchen_hours: str | None = Field(default=None, description="Resolved OSM opening_hours:kitchen (if present).")
+    source: OSMSourceDTO | None = Field(default=None, description="Chosen source element if status=ok.")
+    confidence: float = Field(ge=0.0, le=1.0, description="Heuristic confidence for the match.")
+    candidates: list[OSMCandidateDTO] = Field(default_factory=list, description="Ranked candidates if ambiguous or for debugging.")
+    note: str | None = Field(default=None, description="Human-readable note (errors, missing tags, etc.).")
+    attribution: OSMAttributionDTO = Field(description="Attribution metadata that must be included when using this data.")
+
+
+class OpenMensaCanteenRefDTO(DTO):
+    canteen_id: int = Field(ge=1, description="OpenMensa canteen id.")
+    name: str | None = Field(default=None, description="OpenMensa canteen name.")
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+
+
+class OSMResolveForCanteenResponseDTO(OSMResolveResponseDTO):
+    openmensa: OpenMensaCanteenRefDTO
+
 
 
 # ------------------------------ normalization helpers ------------------------------
