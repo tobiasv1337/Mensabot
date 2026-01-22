@@ -212,11 +212,11 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         On success: {"ok": True, "tool": str, "args": dict, "result": Any}
         On failure: {"error": str}
     """
+    logger.info("Tool %s called with args %s.", tool_name, args)
     async with MCPClient(mcp) as mcp_client:
         try:
             resp = await mcp_client.call_tool(tool_name, args)
             data = unwrap_tool_result(resp)
-            logger.info("Tool %s called with args %s.", tool_name, args)
             logger.debug("Got tool response: %s", json.dumps(data, indent=2))
             return {"ok": True, "tool": tool_name, "args": args, "result": data}
         except Exception as e:
