@@ -276,6 +276,39 @@ const ErrorMessage = styled.p`
   text-align: center;
 `
 
+const LocationActions = styled.div`
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+`
+
+const LocationButton = styled.button<{ $secondary?: boolean }>`
+  background: ${props => props.$secondary ? props.theme.surfaceAccent : props.theme.accent1};
+  color: ${props => props.$secondary ? props.theme.textOnAccent : props.theme.textOnAccent1};
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`
+
+const LocationError = styled.span`
+  color: ${props => props.theme.accent1};
+  font-size: 0.9rem;
+`
+
 const WaitingMessage = styled.p`
   color: ${props => props.theme.textMuted};
   text-align: center;
@@ -292,6 +325,8 @@ function App() {
   const [chat, setChat] = useState<Chat | null>(null)
   const [client, setClient] = useState<MensaBotClient | null>(null)
   const [, setUpdateTrigger] = useState(0) // Force re-render when messages change
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+  const [locationError, setLocationError] = useState<string>('')
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // Initialize chat and client on mount
@@ -314,20 +349,27 @@ function App() {
   if (showChatPage) {
   return <ChatPage />;
   }
-  const sendMessage = async () => {
-    if (!userInput.trim() || isSending || !chat || !client) return
+  const sendMessage = async (contentOverride?: string) => {
+    const textSource = contentOverride ?? userInput
+    const text = textSource.trim()
+    if (!text || isSending || !chat || !client) return
 
     setIsSending(true)
     setError('')
 
     try {
-      await chat.send(client, userInput.trim())
+      const response = await chat.send(client, text)
+      if (response.status !== 'needs_location') {
+        setLocationError('')
+      }
       setUpdateTrigger(prev => prev + 1) // Trigger re-render
     } catch (err) {
       console.error('Fehler beim Senden:', err)
       setError('Fehler beim Verbinden mit dem Backend.')
     } finally {
-      setUserInput('')
+      if (!contentOverride) {
+        setUserInput('')
+      }
       setIsSending(false)
     }
   }
@@ -344,6 +386,36 @@ function App() {
     if (!chat) return
     chat.clear()
     setUpdateTrigger(prev => prev + 1)
+  }
+
+  const handleShareLocation = async () => {
+    if (isSending || isRequestingLocation) return
+    if (!('geolocation' in navigator)) {
+      setLocationError('Dein Browser unterstützt keine Standortfreigabe.')
+      return
+    }
+
+    setLocationError('')
+    setIsRequestingLocation(true)
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        const coordsMessage = `Mein Standort: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        await sendMessage(coordsMessage)
+        setIsRequestingLocation(false)
+      },
+      (geoError) => {
+        console.error('Geolocation error', geoError)
+        setLocationError('Standort konnte nicht abgefragt werden. Bitte gib ihn manuell ein.')
+        setIsRequestingLocation(false)
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  }
+
+  const handleDeclineLocation = () => {
+    setLocationError('')
   }
 
   return (
@@ -397,6 +469,26 @@ function App() {
                     {message.content}
                   </ReactMarkdown>
                 </MarkdownResponse>
+                {message.meta.kind === 'location_prompt' && index === chat.messages.length - 1 && (
+                  <LocationActions>
+                    <LocationButton
+                      type="button"
+                      onClick={handleShareLocation}
+                      disabled={isSending || isRequestingLocation}
+                    >
+                      {isRequestingLocation ? 'Frage Standort ab...' : 'Standort teilen'}
+                    </LocationButton>
+                    <LocationButton
+                      type="button"
+                      $secondary
+                      onClick={handleDeclineLocation}
+                      disabled={isSending || isRequestingLocation}
+                    >
+                      Ablehnen
+                    </LocationButton>
+                    {locationError && <LocationError>{locationError}</LocationError>}
+                  </LocationActions>
+                )}
               </MessageBubble>
             ))
           )}
