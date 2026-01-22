@@ -83,7 +83,7 @@ LLM_BASE_SYSTEM_PROMPT = (
     "- **Examples of good length:**\n"
     "  - Opening hours: \"🕐 Mon-Fri: 11:00-14:00\\n🕐 Sat-Sun: Closed\"\n"
     "  - Menu info: \"Today: Pasta with tomato sauce, salad, dessert\"\n"
-    "  - Don't say: \"Our canteen has multiple options available including pasta...\" - just list them directly.\n"
+    "  - Don't say: \"Our canteen has multiple options available including pasta...\" - just list them directly."
 )
 
 logger = logging.getLogger("mensa_api_backend")
