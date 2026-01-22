@@ -11,6 +11,7 @@ from pydantic import Field
 from openmensa_sdk import OpenMensaAPIError, OpenMensaClient
 from .server import mcp, make_openmensa_client
 from .schemas import (
+    # OpenMensa DTOs
     CanteenDTO,
     PageInfoDTO,
     CanteenListResponseDTO,
@@ -25,6 +26,16 @@ from .schemas import (
     _canteen_to_dto,
     _meal_to_dto,
     _canonicalize_allergen_label,
+
+    # OSM opening-hours DTOs
+    OSMResolveForCanteenResponseDTO,
+    OpenMensaCanteenRefDTO,
+)
+
+from .osm_opening_hours import (
+    resolve_opening_hours_osm,
+    OSMRef,
+    fetch_osm_element,
 )
 
 # ------------------------------ internal helpers ------------------------------
@@ -151,7 +162,7 @@ def _fetch_single_menu(
         returned_meals=len(filtered_meals),
     )
 
-# ------------------------------ MCP tools ------------------------------
+# ------------------------------ OpenMensa tools ------------------------------
 
 @mcp.tool()
 def list_canteens_near(
@@ -296,3 +307,64 @@ def get_menus_batch(
             )
 
     return MenuBatchResponseDTO(results=results)
+
+
+# ------------------------------ OSM opening hours tools ------------------------------
+
+
+@mcp.tool()
+def get_opening_hours_osm_for_canteen(
+    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID")],
+    radius_m: Annotated[int, Field(ge=10, le=500, description="Initial search radius in meters")]=80,
+    max_radius_m: Annotated[int, Field(ge=10, le=2000, description="Fallback search radius in meters")]=200,
+    max_candidates: Annotated[int, Field(ge=1, le=30, description="Max candidates returned")]=10,
+) -> OSMResolveForCanteenResponseDTO:
+    """Get opening hours from OpenStreetMap for an OpenMensa canteen ID.
+
+    This uses the canteen's OpenMensa coordinates and name as a hint, then performs
+    a deterministic Overpass lookup.
+
+    Returns either a confident match (status=ok) or a ranked candidate list (status=ambiguous).
+
+    If you use opening hours returned by this tool in a user-facing response,
+    include the provided attribution (usually: "© OpenStreetMap contributors").
+    """
+    with make_openmensa_client() as client:
+        canteen = client.get_canteen(canteen_id)
+
+    dto = _canteen_to_dto(canteen)
+
+    # If OpenMensa has no coordinates, we can't do deterministic OSM matching.
+    if dto.lat is None or dto.lng is None:
+        res = {
+            "status": "error",
+            "opening_hours": None,
+            "kitchen_hours": None,
+            "source": None,
+            "confidence": 0.0,
+            "candidates": [],
+            "note": "Canteen has no coordinates in OpenMensa data; cannot resolve via OSM.",
+            "attribution": {
+                "attribution": "© OpenStreetMap contributors",
+                "attribution_url": "https://www.openstreetmap.org/copyright",
+                "license": "ODbL 1.0",
+            },
+        }
+    else:
+        res = resolve_opening_hours_osm(
+            lat=dto.lat,
+            lon=dto.lng,
+            name_hint=dto.name,
+            radius_m=radius_m,
+            max_radius_m=max_radius_m,
+            max_candidates=max_candidates,
+        )
+
+    res["openmensa"] = OpenMensaCanteenRefDTO(
+        canteen_id=canteen_id,
+        name=dto.name,
+        lat=dto.lat,
+        lng=dto.lng,
+    ).model_dump(exclude_none=True)
+
+    return OSMResolveForCanteenResponseDTO.model_validate(res)
