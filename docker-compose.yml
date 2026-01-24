@@ -16,18 +16,32 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    expose:
+      - "8080"
+    depends_on:
+      - backend
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
       args:
         BASIC_AUTH_USER: ${BASIC_AUTH_USER}
         BASIC_AUTH_PASS: ${BASIC_AUTH_PASS}
     ports:
       - "80:80"
     depends_on:
+      - frontend
       - backend
+      - portainer
 
   portainer:
     image: portainer/portainer-ce:latest
     restart: unless-stopped
     command: ["--base-url", "/portainer"]
+    expose:
+      - "9000"
+      - "9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
