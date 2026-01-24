@@ -16,7 +16,6 @@ dependencies = [
     "fastmcp>=2.13.0.2",
     "mensa-mcp-server",
     "openai>=2.8.0",
-    "python-dotenv>=1.2.1",
     "uvicorn>=0.38.0",
 ]
 

@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 import asyncio
@@ -11,14 +10,37 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from openai import OpenAI, RateLimitError
-from dotenv import load_dotenv
 from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 from mensa_mcp_server.server import make_openmensa_client
 from openmensa_sdk import CanteenIndexStore
 
-load_dotenv() # Load environment variables from .env file
+class APIBackendSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="API_BACKEND_", env_file="src/mensa_api_backend/.env", env_file_encoding="utf-8", extra="forbid", case_sensitive=False)
+
+    llm_api_key: str
+    llm_base_url: str
+    llm_model: str
+    mcp_url: str
+
+    llm_supports_tool_messages: bool = False
+    log_level: str = "INFO"
+    max_llm_iterations: int = 10
+    llm_max_retries: int = 10
+    llm_retry_base_delay: float = 1.0
+    llm_retry_max_delay: float = 30.0
+    llm_fallback_response: str = (
+        "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
+        "attempts. Please try rephrasing your question or ask something else."
+    )
+
+    canteen_index_path: str | None = None
+    canteen_index_ttl_hours: float = 24.0
+
+
+settings = APIBackendSettings()
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -73,32 +95,7 @@ class CanteenSearchResponse(BaseModel):
     total_results: int
     index: CanteenIndexInfo
 
-def get_env_required(name: str) -> str:
-    """
-    Get a required environment variable. Raise an error if not set.
-    """
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"Required environment variable {name} is not set")
-    return value
-
-LLM_API_KEY = get_env_required("LLM_API_KEY")
-LLM_BASE_URL = get_env_required("LLM_BASE_URL")
-LLM_MODEL = get_env_required("LLM_MODEL")
-MCP_URL = get_env_required("MCP_URL")
-LLM_SUPPORTS_TOOL_MESSAGES = os.getenv("LLM_SUPPORTS_TOOL_MESSAGES", "false").lower() == "true"
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-MAX_LLM_ITERATIONS = int(os.getenv("MAX_LLM_ITERATIONS", "10"))
-LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "10"))
-LLM_RETRY_BASE_DELAY = float(os.getenv("LLM_RETRY_BASE_DELAY", "1.0"))
-LLM_RETRY_MAX_DELAY = float(os.getenv("LLM_RETRY_MAX_DELAY", "30.0"))
-LLM_FALLBACK_RESPONSE = (
-    "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
-    "attempts. Please try rephrasing your question or ask something else."
-)
-
-CANTEEN_INDEX_PATH = os.getenv("OPENMENSA_CANTEEN_INDEX_PATH")
-CANTEEN_INDEX_TTL_HOURS = float(os.getenv("OPENMENSA_CANTEEN_INDEX_TTL_HOURS", "24"))
+LOG_LEVEL = settings.log_level.upper()
 LLM_BASE_SYSTEM_PROMPT = (
     f"You are the Mensabot, a friendly assistant for university canteen inquiries. Only answer questions that are at least somewhat related to canteens, meals, food, eating, or dining. Politely decline unrelated or critical topics.\n"
     "\n"
@@ -108,7 +105,7 @@ LLM_BASE_SYSTEM_PROMPT = (
     "3. **Be direct** - Provide concise, relevant answers suitable for mobile chat. Avoid lengthy explanations unless specifically asked.\n"
     "4. **Use multiple tool calls** - Call tools as many times as needed to gather complete information. Don't stop early if more data is required.\n"
     "5. **Use tool calls efficiently** - You have at most "
-    f"{MAX_LLM_ITERATIONS} tool-call iterations (request + tool-results cycles). Plan calls to get all required data, avoid redundant or duplicate requests.\n"
+    f"{settings.max_llm_iterations} tool-call iterations (request + tool-results cycles). Plan calls to get all required data, avoid redundant or duplicate requests.\n"
     "6. **Clarify when needed** - If the user request is unclear, vague, or missing important details, ask a brief follow-up question before answering rather than guessing or hallucinating.\n"
     "7. **Hide the backend** - Don't mention tools, OpenMensa, or technical systems or any alternative apps and systems in your answer unless asked.\n"
     "8. **Trust canteen IDs** - Canteen IDs remain stable; you can rely on them across different calls.\n"
@@ -160,15 +157,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
 
 async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
     """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
     last_error: Exception | None = None
-    for attempt in range(1, LLM_MAX_RETRIES + 1):
+    for attempt in range(1, settings.llm_max_retries + 1):
         try:
             return client.chat.completions.create(
-                model=LLM_MODEL,
+                model=settings.llm_model,
                 messages=messages,
                 tools=tools,
                 tool_choice="auto",
@@ -180,16 +177,16 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
             if isinstance(headers, dict):
                 retry_after = headers.get("Retry-After")
 
-            delay = LLM_RETRY_BASE_DELAY * (2 ** (attempt - 1))
+            delay = settings.llm_retry_base_delay * (2 ** (attempt - 1))
             if retry_after is not None:
                 try:
                     delay = float(retry_after)
                 except (TypeError, ValueError):
                     logger.warning("Retry-After header unparsable (%s); using backoff delay %.2fs", retry_after, delay)
-            delay = min(delay, LLM_RETRY_MAX_DELAY)
-            if attempt >= LLM_MAX_RETRIES:
+            delay = min(delay, settings.llm_retry_max_delay)
+            if attempt >= settings.llm_max_retries:
                 break
-            logger.warning("Rate limit hit (attempt %d/%d). Retrying in %.2fs.\nError: %s", attempt, LLM_MAX_RETRIES, delay, last_error)
+            logger.warning("Rate limit hit (attempt %d/%d). Retrying in %.2fs.\nError: %s", attempt, settings.llm_max_retries, delay, last_error)
             await asyncio.sleep(delay)
         except Exception:
             raise
@@ -205,7 +202,7 @@ def ensure_message_content(message: Any, finish_reason: str) -> str:
     if isinstance(content, str) and content.strip():
         return content
     logger.warning("LLM response missing usable content (finish_reason=%s). Returning fallback message.", finish_reason)
-    return LLM_FALLBACK_RESPONSE
+    return settings.llm_fallback_response
 
 async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
     """
@@ -278,14 +275,14 @@ _canteen_index_store: CanteenIndexStore | None = None
 def get_canteen_index_store() -> CanteenIndexStore:
     global _canteen_index_store
     if _canteen_index_store is None:
-        _canteen_index_store = CanteenIndexStore(path=CANTEEN_INDEX_PATH) if CANTEEN_INDEX_PATH else CanteenIndexStore()
+        _canteen_index_store = CanteenIndexStore(path=settings.canteen_index_path) if settings.canteen_index_path else CanteenIndexStore()
     return _canteen_index_store
 
 
 def load_canteen_index():
     store = get_canteen_index_store()
     with make_openmensa_client() as client:
-        return store.refresh_if_stale(client, ttl_hours=CANTEEN_INDEX_TTL_HOURS)
+        return store.refresh_if_stale(client, ttl_hours=settings.canteen_index_ttl_hours)
 
 
 def _canteen_to_out(canteen) -> CanteenOut:
@@ -344,12 +341,12 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
 
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
-    for iteration in range(1, MAX_LLM_ITERATIONS + 1):
+    for iteration in range(1, settings.max_llm_iterations + 1):
         try:
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
-            return ChatResponse(status="ok", reply=LLM_FALLBACK_RESPONSE)
+            return ChatResponse(status="ok", reply=settings.llm_fallback_response)
 
         if not getattr(completion, "choices", None):
             try:
@@ -375,7 +372,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
             logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
             return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason))
 
-        if LLM_SUPPORTS_TOOL_MESSAGES:
+        if settings.llm_supports_tool_messages:
             messages.append(message)
 
         logger.info("Number of tool calls: %d", len(tool_calls))
@@ -407,7 +404,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
                 }
             )
 
-            if not LLM_SUPPORTS_TOOL_MESSAGES:
+            if not settings.llm_supports_tool_messages:
                 if not (isinstance(result_payload, dict) and "error" in result_payload):
                     messages.append(
                         {
@@ -432,8 +429,8 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
                         }
                     )
         
-    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
-    return ChatResponse(status="ok", reply=LLM_FALLBACK_RESPONSE)
+    logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", settings.max_llm_iterations)
+    return ChatResponse(status="ok", reply=settings.llm_fallback_response)
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
