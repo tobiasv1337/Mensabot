@@ -11,6 +11,34 @@ services:
       - canteen_data:/data
     expose:
       - "8000"
+    depends_on:
+      - ollama_tunnel
+
+  ollama_tunnel:
+    image: alpine:3.20
+    network_mode: "service:backend"   # share network namespace with backend
+    restart: unless-stopped
+    environment:
+    SSHPASS: ${OLLAMA_TUNNEL_PASSWORD}
+    command: >
+      sh -lc '
+        apk add --no-cache openssh-client sshpass &&
+        mkdir -p /root/.ssh &&
+        touch /root/.ssh/known_hosts &&
+        while true; do
+          sshpass -e ssh -N
+            -o ExitOnForwardFailure=yes
+            -o ServerAliveInterval=30
+            -o ServerAliveCountMax=3
+            -o StrictHostKeyChecking=accept-new
+            -o UserKnownHostsFile=/root/.ssh/known_hosts
+            -o PubkeyAuthentication=no
+            -o PreferredAuthentications=password
+            -L 127.0.0.1:11434:127.0.0.1:11434
+            ollama-tunnel@130.149.150.101;
+          sleep 2;
+        done
+      '
 
   frontend:
     build:
