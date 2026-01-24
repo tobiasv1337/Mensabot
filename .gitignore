@@ -13,3 +13,6 @@ WARP.md
 .env.*
 # But include example env files
 !.env.example
+
+# SSL-Zertifikate
+nginx/certs/
