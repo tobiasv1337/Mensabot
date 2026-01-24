@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from typing import Any, Dict, List, Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
@@ -15,6 +15,8 @@ from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
+from mensa_mcp_server.server import make_openmensa_client
+from openmensa_sdk import CanteenIndexStore
 
 load_dotenv() # Load environment variables from .env file
 
@@ -30,6 +32,46 @@ class ChatResponse(BaseModel):
     status: Literal["ok", "needs_location"]
     reply: str | None = None
     prompt: str | None = None
+
+
+class CanteenOut(BaseModel):
+    id: int
+    name: str
+    city: str | None = None
+    address: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+
+
+class PageInfo(BaseModel):
+    current_page: int
+    per_page: int
+    next_page: int | None = None
+    has_next: bool
+
+
+class CanteenIndexInfo(BaseModel):
+    updated_at: str
+    total_canteens: int
+
+
+class CanteenListResponse(BaseModel):
+    canteens: list[CanteenOut]
+    page_info: PageInfo
+    index: CanteenIndexInfo
+    total_results: int
+
+
+class CanteenSearchResultOut(BaseModel):
+    canteen: CanteenOut
+    score: float
+    distance_km: float | None = None
+
+
+class CanteenSearchResponse(BaseModel):
+    results: list[CanteenSearchResultOut]
+    total_results: int
+    index: CanteenIndexInfo
 
 def get_env_required(name: str) -> str:
     """
@@ -54,6 +96,9 @@ LLM_FALLBACK_RESPONSE = (
     "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
     "attempts. Please try rephrasing your question or ask something else."
 )
+
+CANTEEN_INDEX_PATH = os.getenv("OPENMENSA_CANTEEN_INDEX_PATH")
+CANTEEN_INDEX_TTL_HOURS = float(os.getenv("OPENMENSA_CANTEEN_INDEX_TTL_HOURS", "24"))
 LLM_BASE_SYSTEM_PROMPT = (
     f"You are the Mensabot, a friendly assistant for university canteen inquiries. Only answer questions that are at least somewhat related to canteens, meals, food, eating, or dining. Politely decline unrelated or critical topics.\n"
     "\n"
@@ -226,6 +271,33 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
             return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
 
+
+_canteen_index_store: CanteenIndexStore | None = None
+
+
+def get_canteen_index_store() -> CanteenIndexStore:
+    global _canteen_index_store
+    if _canteen_index_store is None:
+        _canteen_index_store = CanteenIndexStore(path=CANTEEN_INDEX_PATH) if CANTEEN_INDEX_PATH else CanteenIndexStore()
+    return _canteen_index_store
+
+
+def load_canteen_index():
+    store = get_canteen_index_store()
+    with make_openmensa_client() as client:
+        return store.refresh_if_stale(client, ttl_hours=CANTEEN_INDEX_TTL_HOURS)
+
+
+def _canteen_to_out(canteen) -> CanteenOut:
+    return CanteenOut(
+        id=canteen.id,
+        name=canteen.name,
+        city=canteen.city,
+        address=canteen.address,
+        lat=canteen.latitude,
+        lng=canteen.longitude,
+    )
+
 def get_time_context() -> ChatCompletionMessage:
     """
     Generate a system prompt that informs the LLM about the current local date and time in Europe/Berlin.
@@ -367,6 +439,75 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
 async def chat(request: ChatRequest):
     response = await run_tool_calling_loop(request.messages)
     return response
+
+
+@app.get("/api/canteens", response_model=CanteenListResponse)
+async def list_canteens(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=500),
+    city: str | None = None,
+    has_coordinates: bool | None = None,
+):
+    index = load_canteen_index()
+    canteens, total = index.list(page=page, per_page=per_page, city=city, has_coordinates=has_coordinates)
+    next_page = page + 1 if page * per_page < total else None
+    return CanteenListResponse(
+        canteens=[_canteen_to_out(c) for c in canteens],
+        page_info=PageInfo(
+            current_page=page,
+            per_page=per_page,
+            next_page=next_page,
+            has_next=next_page is not None,
+        ),
+        index=CanteenIndexInfo(
+            updated_at=index.updated_at.isoformat(),
+            total_canteens=len(index.canteens),
+        ),
+        total_results=total,
+    )
+
+
+@app.get("/api/canteens/search", response_model=CanteenSearchResponse)
+async def search_canteens(
+    query: str | None = None,
+    city: str | None = None,
+    near_lat: float | None = Query(None, ge=-90.0, le=90.0),
+    near_lng: float | None = Query(None, ge=-180.0, le=180.0),
+    radius_km: float | None = Query(None, gt=0.0),
+    limit: int = Query(20, ge=1, le=100),
+    min_score: float = Query(60.0, ge=0.0, le=100.0),
+    has_coordinates: bool | None = None,
+):
+    if (near_lat is None) != (near_lng is None):
+        raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
+
+    index = load_canteen_index()
+    results, total = index.search(
+        query,
+        city=city,
+        near_lat=near_lat,
+        near_lng=near_lng,
+        radius_km=radius_km,
+        limit=limit,
+        min_score=min_score,
+        has_coordinates=has_coordinates,
+    )
+
+    return CanteenSearchResponse(
+        results=[
+            CanteenSearchResultOut(
+                canteen=_canteen_to_out(r.canteen),
+                score=r.score,
+                distance_km=r.distance_km,
+            )
+            for r in results
+        ],
+        total_results=total,
+        index=CanteenIndexInfo(
+            updated_at=index.updated_at.isoformat(),
+            total_canteens=len(index.canteens),
+        ),
+    )
 
 @app.get("/api/health")
 async def health():
