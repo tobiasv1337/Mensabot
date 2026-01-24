@@ -219,7 +219,7 @@ def search_canteens(
         radius_km=radius_km,
         limit=limit,
         min_score=min_score,
-        has_coordinates=has_coordinates,
+        has_coordinates=None, # Don't expose this filter to the LLM
     )
 
     return CanteenSearchResponseDTO(
