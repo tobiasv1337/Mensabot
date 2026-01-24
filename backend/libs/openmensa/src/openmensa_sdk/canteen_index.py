@@ -20,6 +20,7 @@ from typing import Iterable
 from rapidfuzz import fuzz
 
 from .client import OpenMensaClient
+from .errors import OpenMensaAPIError
 from .models import Canteen
 
 logger = logging.getLogger(__name__)
@@ -608,3 +609,20 @@ class CanteenIndexStore:
         if index.is_stale(ttl_hours):
             return self.refresh(client)
         return index
+
+    def refresh_if_stale_or_cached(
+        self,
+        client: OpenMensaClient,
+        *,
+        ttl_hours: float = DEFAULT_INDEX_TTL_HOURS,
+    ) -> CanteenIndex:
+        cached = self.load()
+        if cached is not None and not cached.is_stale(ttl_hours):
+            return cached
+        try:
+            return self.refresh(client)
+        except OpenMensaAPIError:
+            if cached is not None:
+                logger.warning("OpenMensa API error refreshing index; using stale cache.", exc_info=True)
+                return cached
+            raise

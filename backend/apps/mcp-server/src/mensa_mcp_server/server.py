@@ -23,6 +23,10 @@ class MCPServerSettings(BaseSettings):
     overpass_cache_ttl_s: int = 900
     overpass_user_agent: str = "mensabot-mcp-server/0.1"
 
+    # Canteen index
+    canteen_index_path: str | None = None
+    canteen_index_ttl_hours: float = 24.0
+
 settings = MCPServerSettings()
 mcp = FastMCP(name=settings.mcp_name)
 
@@ -32,6 +36,7 @@ def make_openmensa_client() -> OpenMensaClient:
         timeout=settings.openmensa_timeout,
         user_agent=settings.openmensa_user_agent,
     )
+
 
 # Import tools to register them with the MCP server
 from . import tools_generic

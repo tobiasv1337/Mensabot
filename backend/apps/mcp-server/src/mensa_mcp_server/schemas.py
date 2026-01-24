@@ -141,6 +141,22 @@ class CanteenListResponseDTO(DTO):
     canteens: list[CanteenDTO] = Field(description="List of canteens.")
     page_info: PageInfoDTO
 
+
+class CanteenIndexInfoDTO(DTO):
+    updated_at: str = Field(description="ISO timestamp when the canteen index was last updated.")
+    total_canteens: int = Field(ge=0, description="Total number of canteens in the index.")
+
+class CanteenSearchResultDTO(DTO):
+    canteen: CanteenDTO
+    score: float = Field(ge=0.0, le=100.0, description="Text relevance score (higher is better). 0 if no query.")
+    distance_km: float | None = Field(default=None, ge=0.0, description="Distance from query center, if computed.")
+
+
+class CanteenSearchResponseDTO(DTO):
+    results: list[CanteenSearchResultDTO]
+    total_results: int = Field(ge=0, description="Total results before applying limit.")
+    index: CanteenIndexInfoDTO
+
 class MenuStatusDTO(StrEnum):
     ok = "ok"
     no_menu_published = "no_menu_published"

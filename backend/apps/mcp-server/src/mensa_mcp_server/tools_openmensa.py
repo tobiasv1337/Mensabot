@@ -8,13 +8,16 @@ import datetime as dt
 from typing import Annotated, Optional
 from pydantic import Field
 
-from openmensa_sdk import OpenMensaAPIError, OpenMensaClient
-from .server import mcp, make_openmensa_client
+from openmensa_sdk import OpenMensaAPIError, OpenMensaClient, CanteenIndexStore
+from .server import mcp, make_openmensa_client, settings
 from .schemas import (
     # OpenMensa DTOs
     CanteenDTO,
     PageInfoDTO,
     CanteenListResponseDTO,
+    CanteenIndexInfoDTO,
+    CanteenSearchResultDTO,
+    CanteenSearchResponseDTO,
     MenuResponseDTO,
     MenuStatusDTO,
     MenuBatchRequestDTO,
@@ -162,7 +165,79 @@ def _fetch_single_menu(
         returned_meals=len(filtered_meals),
     )
 
+
+_INDEX_STORE: CanteenIndexStore | None = None
+
+
+def _get_index_store() -> CanteenIndexStore:
+    global _INDEX_STORE
+    if _INDEX_STORE is None:
+        path = settings.canteen_index_path
+        _INDEX_STORE = CanteenIndexStore(path=path) if path else CanteenIndexStore()
+    return _INDEX_STORE
+
+
+def _load_canteen_index():
+    store = _get_index_store()
+    with make_openmensa_client() as client:
+        return store.refresh_if_stale_or_cached(client, ttl_hours=settings.canteen_index_ttl_hours)
+
 # ------------------------------ OpenMensa tools ------------------------------
+
+@mcp.tool()
+def search_canteens(
+    query: Annotated[Optional[str], Field(default=None, description="Fuzzy name query (e.g. 'TU Berlin', 'mensa hardenberg'). If omitted, only location filters apply.")] = None,
+    city: Annotated[Optional[str], Field(default=None, description="Base city. All canteens in this city are always included.")] = None,
+    near_lat: Annotated[Optional[float], Field(default=None, ge=-90.0, le=90.0, description="Latitude of the expansion center (used with radius_km).")] = None,
+    near_lng: Annotated[Optional[float], Field(default=None, ge=-180.0, le=180.0, description="Longitude of the expansion center (used with radius_km).")] = None,
+    radius_km: Annotated[Optional[float], Field(default=None, gt=0.0, description="Radius in kilometers to include nearby canteens outside the base city.")] = None,
+    limit: Annotated[int, Field(ge=1, le=100, description="Max number of results to return.")] = 20,
+    min_score: Annotated[float, Field(ge=0.0, le=100.0, description="Minimum text score (0-100). Set to 0 for broad results.")] = 60.0,
+) -> CanteenSearchResponseDTO:
+    """
+    Search canteens by name with optional location filters.
+
+    How it works:
+    - If `city` is set: all canteens in that city are always included.
+    - `radius_km` expands beyond the city:
+      - if `near_lat` + `near_lng` are set, they define the center
+      - otherwise the city centroid is used (if available)
+    - If no center can be determined, `radius_km` is ignored.
+    - If `near_lat/lng` are set without `radius_km`, a default radius of 10 km is used.
+    - If both `city` and `near_lat/lng` are set, the city is the base set and the radius uses the coordinates.
+    - If `query` is omitted, score is 0 and results are ordered by distance (if available).
+    """
+    if (near_lat is None) != (near_lng is None):
+        raise ValueError("near_lat and near_lng must be provided together.")
+
+    index = _load_canteen_index()
+    results, total = index.search(
+        query,
+        city=city,
+        near_lat=near_lat,
+        near_lng=near_lng,
+        radius_km=radius_km,
+        limit=limit,
+        min_score=min_score,
+        has_coordinates=has_coordinates,
+    )
+
+    return CanteenSearchResponseDTO(
+        results=[
+            CanteenSearchResultDTO(
+                canteen=_canteen_to_dto(r.canteen),
+                score=r.score,
+                distance_km=r.distance_km,
+            )
+            for r in results
+        ],
+        total_results=total,
+        index=CanteenIndexInfoDTO(
+            updated_at=index.updated_at.isoformat(),
+            total_canteens=len(index.canteens),
+        ),
+    )
+
 
 @mcp.tool()
 def list_canteens_near(
