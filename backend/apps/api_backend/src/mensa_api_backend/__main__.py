@@ -23,7 +23,6 @@ class APIBackendSettings(BaseSettings):
     llm_api_key: str
     llm_base_url: str
     llm_model: str
-    mcp_url: str
 
     llm_supports_tool_messages: bool = False
     log_level: str = "INFO"
