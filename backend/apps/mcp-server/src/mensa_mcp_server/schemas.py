@@ -81,6 +81,15 @@ class PriceCategory(StrEnum):
     pupils = "pupils"
     others = "others"
 
+class WeekdayName(StrEnum):
+    monday = "Monday"
+    tuesday = "Tuesday"
+    wednesday = "Wednesday"
+    thursday = "Thursday"
+    friday = "Friday"
+    saturday = "Saturday"
+    sunday = "Sunday"
+
 
 class PriceInfoDTO(DTO):
     model_config = ConfigDict(extra="ignore")
@@ -207,6 +216,27 @@ class MenuBatchResponseDTO(DTO):
             "The order matches the input list."
         ),
     )
+
+class DateEntryDTO(DTO):
+    date: str = Field(description="ISO date (YYYY-MM-DD).")
+    weekday: WeekdayName = Field(description="Weekday name.")
+    is_weekend: bool = Field(description="True if Saturday or Sunday.")
+
+class WeekRangeDTO(DTO):
+    start_date: str = Field(description="Week start date (Monday, YYYY-MM-DD).")
+    end_date: str = Field(description="Week end date (Sunday, YYYY-MM-DD).")
+    days: list[DateEntryDTO] = Field(description="All days in the week (Mon-Sun).")
+    weekdays: list[DateEntryDTO] = Field(description="Weekdays only (Mon-Fri).")
+
+class DateContextDTO(DTO):
+    timezone: str = Field(description="IANA timezone used for all dates.")
+    now_local: str = Field(description="Current local time in YYYY-MM-DD HH:MM.")
+    today: DateEntryDTO
+    tomorrow: DateEntryDTO
+    yesterday: DateEntryDTO
+    this_week: WeekRangeDTO
+    next_week: WeekRangeDTO
+    last_week: WeekRangeDTO
 
 
 # ------------------------------ OpenStreetMap (OSM) opening hours DTOs ------------------------------

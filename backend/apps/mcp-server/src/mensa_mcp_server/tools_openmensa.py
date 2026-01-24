@@ -5,6 +5,7 @@ Description: Provides OpenMensa-related tools for the MCP server.
 """
 
 import datetime as dt
+from zoneinfo import ZoneInfo
 from typing import Annotated, Optional
 from pydantic import Field
 
@@ -29,6 +30,10 @@ from .schemas import (
     _canteen_to_dto,
     _meal_to_dto,
     _canonicalize_allergen_label,
+    DateEntryDTO,
+    WeekRangeDTO,
+    DateContextDTO,
+    WeekdayName,
 
     # OSM opening-hours DTOs
     OSMResolveForCanteenResponseDTO,
@@ -42,6 +47,42 @@ from .osm_opening_hours import (
 )
 
 # ------------------------------ internal helpers ------------------------------
+
+_WEEKDAY_BY_INDEX: tuple[WeekdayName, ...] = (
+    WeekdayName.monday,
+    WeekdayName.tuesday,
+    WeekdayName.wednesday,
+    WeekdayName.thursday,
+    WeekdayName.friday,
+    WeekdayName.saturday,
+    WeekdayName.sunday,
+)
+
+def _local_now() -> dt.datetime:
+    return dt.datetime.now(ZoneInfo(settings.timezone))
+
+def _local_today() -> dt.date:
+    return _local_now().date()
+
+def _week_start(date: dt.date) -> dt.date:
+    return date - dt.timedelta(days=date.weekday())
+
+def _date_entry(date: dt.date) -> DateEntryDTO:
+    weekday = _WEEKDAY_BY_INDEX[date.weekday()]
+    return DateEntryDTO(
+        date=date.isoformat(),
+        weekday=weekday,
+        is_weekend=date.weekday() >= 5,
+    )
+
+def _week_range(start_date: dt.date) -> WeekRangeDTO:
+    days = [_date_entry(start_date + dt.timedelta(days=offset)) for offset in range(7)]
+    return WeekRangeDTO(
+        start_date=start_date.isoformat(),
+        end_date=(start_date + dt.timedelta(days=6)).isoformat(),
+        days=days,
+        weekdays=days[:5],
+    )
 
 def _normalize_menu_date(
     canteen_id: int,
@@ -57,7 +98,7 @@ def _normalize_menu_date(
     - If the date is valid, normalized_date is the same string and error_response is None.
     """
     if date is None:
-        return dt.date.today().isoformat(), None
+        return _local_today().isoformat(), None
 
     try:
         dt.date.fromisoformat(date)
@@ -183,6 +224,29 @@ def _load_canteen_index():
         return store.refresh_if_stale_or_cached(client, ttl_hours=settings.canteen_index_ttl_hours)
 
 # ------------------------------ OpenMensa tools ------------------------------
+
+@mcp.tool()
+def get_date_context() -> DateContextDTO:
+    """
+    Return canonical date references in the configured timezone.
+
+    Use this tool whenever the user mentions relative dates (today, tomorrow, next week,
+    next Monday, etc.). Do not compute dates yourself; use the returned ISO dates.
+    """
+    now = _local_now()
+    today = now.date()
+    base_start = _week_start(today)
+
+    return DateContextDTO(
+        timezone=settings.timezone,
+        now_local=now.strftime("%Y-%m-%d %H:%M"),
+        today=_date_entry(today),
+        tomorrow=_date_entry(today + dt.timedelta(days=1)),
+        yesterday=_date_entry(today - dt.timedelta(days=1)),
+        this_week=_week_range(base_start),
+        next_week=_week_range(base_start + dt.timedelta(days=7)),
+        last_week=_week_range(base_start - dt.timedelta(days=7)),
+    )
 
 @mcp.tool()
 def search_canteens(

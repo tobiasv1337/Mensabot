@@ -27,6 +27,9 @@ class MCPServerSettings(BaseSettings):
     canteen_index_path: str | None = None
     canteen_index_ttl_hours: float = 24.0
 
+    # Timezone for date calculations
+    timezone: str = "Europe/Berlin"
+
 settings = MCPServerSettings()
 mcp = FastMCP(name=settings.mcp_name)
 
