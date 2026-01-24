@@ -7,7 +7,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import styled from 'styled-components'
 import { useTheme } from './theme/themeProvider.tsx'
 import ThemeDemo from './pages/ThemeDemo.tsx'
-import { Chats, type Chat, ChatMessage } from './services/chats'
+import { Chats, ChatMessage, type Chat } from './services/chats'
 import { MensaBotClient } from './services/api'
 import ChatPage from './pages/Chatpage'
 
