@@ -25,6 +25,35 @@ services:
       - "8000"
     depends_on:
       - stt
+      - ollama_tunnel
+
+  ollama_tunnel:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      SSHPASS: ${OLLAMA_TUNNEL_PASSWORD}
+      TUNNEL_USER: ${OLLAMA_TUNNEL_USER}
+      TUNNEL_HOST: ${OLLAMA_TUNNEL_HOST}
+      TUNNEL_PORT: ${OLLAMA_TUNNEL_PORT:-11434}
+    command: >
+      sh -lc '
+        apk add --no-cache openssh-client sshpass &&
+        mkdir -p /root/.ssh &&
+        touch /root/.ssh/known_hosts &&
+        while true; do
+          sshpass -e ssh -N \
+            -o ExitOnForwardFailure=yes \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=3 \
+            -o StrictHostKeyChecking=accept-new \
+            -o UserKnownHostsFile=/root/.ssh/known_hosts \
+            -o PubkeyAuthentication=no \
+            -o PreferredAuthentications=password \
+            -L 0.0.0.0:$${TUNNEL_PORT}:127.0.0.1:$${TUNNEL_PORT} \
+            $${TUNNEL_USER}@$${TUNNEL_HOST};
+          sleep 2;
+        done
+      '
 
   frontend:
     build:
