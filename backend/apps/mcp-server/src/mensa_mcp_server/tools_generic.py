@@ -11,5 +11,7 @@ def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brau
     """
     Ask the user for permission to share their location. Returns the prompt text to display.
     The backend will use this to interrupt the tool loop and ask the frontend to collect the location.
+
+    Use this tool when you need the user's location to answer a question.
     """
     return {"prompt": prompt}
