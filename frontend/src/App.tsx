@@ -333,7 +333,8 @@ function App() {
   // Initialize chat and client on mount
   useEffect(() => {
     const newChat = Chats.getById('default')
-    const newClient = new MensaBotClient('http://localhost:8000')
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin
+    const newClient = new MensaBotClient(apiBaseUrl)
     if (newChat) setChat(newChat)
     setClient(newClient)
     setLocationPromptHandled(false)
