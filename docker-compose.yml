@@ -5,6 +5,10 @@ services:
       dockerfile: backend/Dockerfile
     env_file:
       - backend/apps/api_backend/src/mensa_api_backend/.env
+    environment:
+      API_BACKEND_CANTEEN_INDEX_PATH: /data/canteens.json
+    volumes:
+      - canteen_data:/data
     expose:
       - "8000"
 
@@ -30,3 +34,4 @@ services:
 
 volumes:
   portainer_data:
+  canteen_data:
