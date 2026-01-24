@@ -12,6 +12,9 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        BASIC_AUTH_USER: ${BASIC_AUTH_USER}
+        BASIC_AUTH_PASS: ${BASIC_AUTH_PASS}
     ports:
       - "80:80"
     depends_on:
