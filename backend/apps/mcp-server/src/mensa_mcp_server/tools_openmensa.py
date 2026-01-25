@@ -468,7 +468,7 @@ def get_menus_batch(
 def get_opening_hours_osm_for_canteen(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID")],
     radius_m: Annotated[int, Field(ge=10, le=500, description="Initial search radius in meters")]=80,
-    max_radius_m: Annotated[int, Field(ge=10, le=2000, description="Fallback search radius in meters")]=200,
+    max_radius_m: Annotated[int, Field(ge=10, le=2000, description="Fallback search radius in meters")]=1000,
     max_candidates: Annotated[int, Field(ge=1, le=30, description="Max candidates returned")]=10,
 ) -> OSMResolveForCanteenResponseDTO:
     """Get opening hours from OpenStreetMap for an OpenMensa canteen ID.
