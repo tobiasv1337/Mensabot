@@ -149,6 +149,19 @@ LLM_BASE_SYSTEM_PROMPT = (
     "  For example, instead of a table with multiple columns for days of the week or canteens, use several vertical lists or tables under each other - one for each day or canteen.\n"
 )
 
+empty_reply_nudge = (
+    "Your previous message had empty user-visible content. "
+    "You MUST either (1) call a tool by emitting valid tool_calls (with valid JSON arguments), "
+    "or (2) reply with non-empty content for the user. "
+    "Do NOT put the answer in reasoning/thinking."
+)
+
+missing_tool_calls_nudge = (
+    "You indicated you wanted to call a tool, but you did not provide any valid tool_calls. "
+    "If you need tool data, emit proper tool_calls (with valid JSON arguments). "
+    "Otherwise, answer the user with non-empty content."
+)
+
 logger = logging.getLogger("mensa_api_backend")
 logger.setLevel(LOG_LEVEL)
 
@@ -414,16 +427,34 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
         finish_reason = choice.finish_reason
         message = choice.message
 
-        if finish_reason != "tool_calls":
-            logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
-            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason), tool_calls=(tool_traces or None) if include_tool_calls else None)
+        tool_calls = getattr(message, "tool_calls", None) or []
+        if tool_calls and finish_reason != "tool_calls":
+            logger.warning("Overriding finish_reason=%s -> tool_calls because tool_calls are present.", finish_reason)
+            finish_reason = "tool_calls"
 
-        
-        tool_calls = message.tool_calls or []
+        if finish_reason != "tool_calls":
+            content = getattr(message, "content", None)
+            if isinstance(content, str) and content.strip():
+                logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
+                return ChatResponse(status="ok", reply=content, tool_calls=(tool_traces or None) if include_tool_calls else None)
+
+            # Empty content: don't immediately fallback; nudge and keep the loop going.
+            logger.warning(
+                "LLM returned empty assistant content (finish_reason=%s) on iteration %d; nudging and retrying.",
+                finish_reason,
+                iteration,
+            )
+            messages.append({"role": "system", "content": empty_reply_nudge})
+            continue
+
         if not tool_calls:
-            logger.warning("LLM reported finish_reason=tool_calls but no tool_calls were provided. Returning current message after %d iterations.", iteration)
-            logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
-            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason), tool_calls=(tool_traces or None) if include_tool_calls else None)
+            # finish_reason claims tool calls, but none were provided. Nudge and retry.
+            logger.warning(
+                "LLM reported finish_reason=tool_calls but provided no tool_calls on iteration %d; nudging and retrying.",
+                iteration,
+            )
+            messages.append({"role": "system", "content": missing_tool_calls_nudge})
+            continue
 
         if settings.llm_supports_tool_messages:
             messages.append(sanitize_message(message))
