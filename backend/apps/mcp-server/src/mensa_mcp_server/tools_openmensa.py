@@ -372,7 +372,7 @@ def get_menu_for_date(
     - `api_error`: API failure
     
     Uses `diet_type` (vegan/vegetarian/meat/unknown) and canonical `allergens` list.
-    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct.
+    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     `total_meals` = source count, `returned_meals` = after filtering.
     Prices may be null per group if unpublished.
     """
@@ -416,8 +416,8 @@ def get_menus_batch(
     Fetch menus for multiple canteens/dates in one efficient call.
 
     Preferred over repeated get_menu_for_date calls when fetching more than one menu.
-    Each request can have its own diet_filter and allergen exclusions.
-    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct.
+    Each request can have its own diet_filter and allergen exclusions as in get_menu_for_date.
+    The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     Responses preserve input order with same statuses as get_menu_for_date.
 
             Example (OpenAI tool call):
