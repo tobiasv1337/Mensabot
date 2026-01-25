@@ -1,4 +1,4 @@
-import { MensaBotClient, type ChatApiResponse } from "./api";
+import { MensaBotClient, type ChatApiResponse, type ToolCallTrace } from "./api";
 
 type MessageKind = "normal" | "location_prompt";
 
@@ -7,6 +7,7 @@ export type ChatMessageData = {
 	content: string;
 	meta: {
 		kind: MessageKind;
+		toolCalls?: ToolCallTrace[];
 	};
 };
 
@@ -18,7 +19,7 @@ export class ChatMessage implements ChatMessageData {
 	constructor(role: "user" | "assistant", content: string, meta: ChatMessageData["meta"] = { kind: "normal" }) {
 		this.role = role;
 		this.content = content;
-		this.meta = meta;
+		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls };
 	}
 
 	toJSON(): ChatMessageData {
@@ -31,7 +32,7 @@ export class ChatMessage implements ChatMessageData {
 
 	static fromJSON(json: ChatMessageData) {
 		const meta: ChatMessageData["meta"] = json.meta ?? { kind: "normal" };
-		return new ChatMessage(json.role, json.content, meta);
+		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls });
 	}
 }
 
@@ -74,20 +75,21 @@ export class Chat {
 		}
 	}
 
-	async send(client: MensaBotClient, message: string): Promise<ChatApiResponse> {
+	async send(client: MensaBotClient, message: string, options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
 		if (!(client instanceof MensaBotClient)) {
 			throw new Error("argument 0 must be an instance of MensaBotClient");
 		}
 
 		this.addMessage(new ChatMessage("user", message));
-		const response = await client.sendMessages(this.#messages);
+		const response = await client.sendMessages(this.#messages, options);
+		const toolCalls = response.tool_calls && response.tool_calls.length > 0 ? response.tool_calls : undefined;
 
 		if (response.status === "needs_location") {
-			this.addMessage(new ChatMessage("assistant", response.prompt, { kind: "location_prompt" }));
+			this.addMessage(new ChatMessage("assistant", response.prompt, { kind: "location_prompt", toolCalls }));
 			return response;
 		}
 
-		this.addMessage(new ChatMessage("assistant", response.reply));
+		this.addMessage(new ChatMessage("assistant", response.reply, { kind: "normal", toolCalls }));
 		return response;
 	}
 
