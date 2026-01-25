@@ -258,7 +258,9 @@ def search_canteens(
     min_score: Annotated[float, Field(ge=0.0, le=100.0, description="Minimum text score (0-100). Set to 0 for broad results.")] = 60.0,
 ) -> CanteenSearchResponseDTO:
     """
-    Search canteens by name with optional location filters.
+    Search canteens by name and/or location.
+    If you provide the exact user location (near_lat + near_lng), it also gives approximate distances to each canteen.
+    If you only provide a city, the distances are only to the approximated city center, not to the user location.
 
     How it works:
     - If `city` is set: all canteens in that city are always included.
