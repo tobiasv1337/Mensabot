@@ -245,7 +245,6 @@ def get_date_context() -> DateContextDTO:
         yesterday=_date_entry(today - dt.timedelta(days=1)),
         this_week=_week_range(base_start),
         next_week=_week_range(base_start + dt.timedelta(days=7)),
-        last_week=_week_range(base_start - dt.timedelta(days=7)),
     )
 
 @mcp.tool()

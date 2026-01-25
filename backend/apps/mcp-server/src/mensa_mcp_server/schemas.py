@@ -236,7 +236,6 @@ class DateContextDTO(DTO):
     yesterday: DateEntryDTO
     this_week: WeekRangeDTO
     next_week: WeekRangeDTO
-    last_week: WeekRangeDTO
 
 
 # ------------------------------ OpenStreetMap (OSM) opening hours DTOs ------------------------------
