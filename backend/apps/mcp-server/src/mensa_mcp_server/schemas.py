@@ -234,8 +234,7 @@ class DateContextDTO(DTO):
     now_local: str = Field(description="Current local time in YYYY-MM-DD HH:MM.")
     today: DateEntryDTO
     tomorrow: DateEntryDTO
-    yesterday: DateEntryDTO
-    this_week: WeekRangeDTO
+    this_week: WeekRangeDTO = Field(description="Days of this week starting from today (today..Sunday). Replaces previous full-week meaning.")
     next_week: WeekRangeDTO
 
 
