@@ -140,7 +140,13 @@ LLM_BASE_SYSTEM_PROMPT = (
     "- Answers must fit comfortably in **mobile chat bubbles** (typically ~500 characters max per response).\n"
     "- Break up long information into **short bullet points or numbered lists** - one idea per line.\n"
     "- Avoid paragraphs with multiple sentences. Use line breaks liberally.\n"
-    "  Don't say: \"Our canteen has multiple options available including pasta...\" - just list them directly."
+    "- Don't say: \"Our canteen has multiple options available including pasta...\" - just list the options directly.\n"
+    "- If the user only asks for the menu in general, provide a structured summary of the main dishes and inform the user that they can request the full menu if desired.\n"
+    "- If the user requests the full canteen menu, you must provide the complete menu.\n"
+    "- If you display menus for multiple days or canteens, you may combine or group identical items to keep your answer short and concise.\n"
+    "- Use formatted lists or tables for menus where appropriate to enhance readability on mobile.\n"
+    "- **Always prefer multiple vertical lists or tables (one per day or canteen) over wide horizontal tables with many columns.** Wide tables are hard to read on mobile devices.\n"
+    "  For example, instead of a table with multiple columns for days of the week or canteens, use several vertical lists or tables under each other - one for each day or canteen.\n"
 )
 
 logger = logging.getLogger("mensa_api_backend")
