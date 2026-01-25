@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from enum import StrEnum
 from typing import Iterable, Optional
 import unicodedata
+import re
 
 from openmensa_sdk import Canteen, Meal
 
@@ -435,15 +436,9 @@ def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
     # but meat keywords take precedence for classification
     for diet_type in [DietType.meat, DietType.vegan, DietType.vegetarian]:
         for keyword in _DIET_KEYWORDS[diet_type]:
-            # For very short keywords (< 4 chars), require word boundaries
-            # to avoid false positives like "ei" (egg allergen note) matching in "fleisch" or "schwein"
-            if len(keyword) < 4:
-                if f" {keyword} " in f" {text_blob} " or text_blob == keyword or text_blob.startswith(f"{keyword} ") or text_blob.endswith(f" {keyword}"):
-                    return diet_type
-            else:
-                # For longer keywords, substring matching is fine
-                if keyword in text_blob:
-                    return diet_type
+            pattern = r"\\b" + re.escape(keyword) + r"\\b"
+            if re.search(pattern, text_blob):
+                return diet_type
     
     return DietType.unknown
 
@@ -456,13 +451,9 @@ def _canonicalize_allergen_label(label: str) -> str | None:
         for keyword in keywords:
             if lowered == keyword:
                 return canonical
-            # For very short keywords (< 4 chars), require word boundaries
-            if len(keyword) < 4:
-                if f" {keyword} " in f" {lowered} " or lowered.startswith(f"{keyword} ") or lowered.endswith(f" {keyword}"):
-                    return canonical
-            else:
-                if keyword in lowered:
-                    return canonical
+            pattern = r"\\b" + re.escape(keyword) + r"\\b"
+            if re.search(pattern, lowered):
+                return canonical
     return None
 
 
@@ -472,13 +463,7 @@ def _extract_allergens(notes: Iterable[str]) -> list[str]:
         lowered = _normalize_text(note)
         for canonical, keywords in _ALLERGEN_KEYWORDS.items():
             for keyword in keywords:
-                # For very short keywords (< 4 chars), require word boundaries
-                # to avoid false positives like "ei" matching in "Speiseeis"
-                if len(keyword) < 4:
-                    if f" {keyword} " in f" {lowered} " or lowered == keyword or lowered.startswith(f"{keyword} ") or lowered.endswith(f" {keyword}"):
-                        found.add(canonical)
-                else:
-                    # For longer keywords, substring matching is fine
-                    if keyword in lowered:
-                        found.add(canonical)
+                pattern = r"\\b" + re.escape(keyword) + r"\\b"
+                if re.search(pattern, lowered):
+                    found.add(canonical)
     return sorted(found)
