@@ -396,31 +396,79 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
 
         logger.info("Number of tool calls: %d", len(tool_calls))
         for call in tool_calls:
-            tool_name = call.function.name
-            raw_args = call.function.arguments
+            # Extract tool name and arguments
+            func = getattr(call, "function", None)
+            if func is not None:
+                tool_name = getattr(func, "name", None) or getattr(call, "name", None)
+                raw_args = getattr(func, "arguments", None)
+            else:
+                tool_name = getattr(call, "name", None)
+                raw_args = getattr(call, "arguments", None)
+
+            if tool_name is None:
+                tool_name = "<unknown_tool>"
+
             tool_trace = ToolCallTrace(id=call.id, name=tool_name, iteration=iteration)
 
-            try:
-                args = json.loads(raw_args)
-            except json.JSONDecodeError as e:
-                logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
+            # Parse arguments: if already a dict/list, use as-is; if a string, try JSON decode
+            args = None
+            if isinstance(raw_args, (dict, list)):
+                args = raw_args
+            elif isinstance(raw_args, str):
+                try:
+                    args = json.loads(raw_args)
+                except json.JSONDecodeError as e:
+                    logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
+                    tool_trace.raw_args = raw_args
+                    tool_trace.ok = False
+                    tool_trace.error = f"Failed to parse arguments. Invalid JSON: {str(e)}"
+                    tool_traces.append(tool_trace)
+                    result_payload = {"error": tool_trace.error}
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "name": tool_name,
+                            "content": json.dumps(result_payload),
+                        }
+                    )
+                    # continue to next call after logging invalid args
+                    continue
+            else:
+                # Unknown argument shape
                 tool_trace.raw_args = raw_args
                 tool_trace.ok = False
-                tool_trace.error = f"Failed to parse arguments. Invalid JSON: {str(e)}"
+                tool_trace.error = "Tool call arguments missing or in an unsupported format"
+                tool_traces.append(tool_trace)
+                result_payload = {"error": tool_trace.error}
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "name": tool_name,
+                        "content": json.dumps(result_payload),
+                    }
+                )
+                continue
+
+            tool_trace.args = args
+
+            if tool_name == LOCATION_TOOL_NAME:
+                prompt = args.get("prompt") if isinstance(args, dict) else None
+                prompt_text = prompt or LOCATION_FALLBACK_PROMPT
+                logger.info("Location request tool triggered with prompt: %s", prompt_text)
+                tool_trace.ok = True
+                tool_trace.result = {"needs_location": True, "prompt": prompt_text}
+                tool_traces.append(tool_trace)
+                return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
+
+            # Delegate to MCP: ensure args is a dict
+            if not isinstance(args, dict):
+                tool_trace.ok = False
+                tool_trace.error = "Tool arguments must be a JSON object"
                 tool_traces.append(tool_trace)
                 result_payload = {"error": tool_trace.error}
             else:
-                tool_trace.args = args
-                if tool_name == LOCATION_TOOL_NAME:
-                    prompt = args.get("prompt") if isinstance(args, dict) else None
-                    prompt_text = prompt or LOCATION_FALLBACK_PROMPT
-                    logger.info("Location request tool triggered with prompt: %s", prompt_text)
-                    tool_trace.ok = True
-                    tool_trace.result = {"needs_location": True, "prompt": prompt_text}
-                    tool_traces.append(tool_trace)
-                    return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
-
-                # Delegate to MCP
                 result_payload = await call_mcp_tool(tool_name, args)
                 if isinstance(result_payload, dict) and "error" in result_payload:
                     tool_trace.ok = False
