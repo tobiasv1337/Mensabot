@@ -175,7 +175,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+
+def sanitize_message(msg):
+    if isinstance(msg, dict):
+        d = dict(msg)
+    else:
+        d = msg.model_dump()
+
+    role = d.get("role")
+
+    if role == "assistant":
+        allowed = {"role", "content", "tool_calls"}
+    elif role == "tool":
+        allowed = {"role", "tool_call_id", "name", "content"}
+    elif role in ("user", "system"):
+        allowed = {"role", "content", "name"}
+    else:
+        allowed = set(d.keys())
+
+    return {k: v for k, v in d.items() if k in allowed and v is not None}
+
+
+def try_repair_json(s: str) -> str:
+    t = s.strip()
+
+    if t.startswith("{") and not t.endswith("}"):
+        t += "}" * (t.count("{") - t.count("}"))
+
+    if t.startswith("[") and not t.endswith("]"):
+        t += "]" * (t.count("[") - t.count("]"))
+
+    return t.replace(",}", "}").replace(",]", "]")
+
 
 async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
     """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
@@ -184,7 +217,7 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
         try:
             return client.chat.completions.create(
                 model=settings.llm_model,
-                messages=messages,
+                messages=[sanitize_message(m) for m in messages],
                 tools=tools,
                 tool_choice="auto",
             )
@@ -392,7 +425,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason), tool_calls=(tool_traces or None) if include_tool_calls else None)
 
         if settings.llm_supports_tool_messages:
-            messages.append(message)
+            messages.append(sanitize_message(message))
 
         logger.info("Number of tool calls: %d", len(tool_calls))
         for call in tool_calls:
@@ -417,23 +450,26 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             elif isinstance(raw_args, str):
                 try:
                     args = json.loads(raw_args)
-                except json.JSONDecodeError as e:
-                    logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
-                    tool_trace.raw_args = raw_args
-                    tool_trace.ok = False
-                    tool_trace.error = f"Failed to parse arguments. Invalid JSON: {str(e)}"
-                    tool_traces.append(tool_trace)
-                    result_payload = {"error": tool_trace.error}
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "name": tool_name,
-                            "content": json.dumps(result_payload),
-                        }
-                    )
-                    # continue to next call after logging invalid args
-                    continue
+                except json.JSONDecodeError:
+                    try:
+                        args = json.loads(try_repair_json(raw_args))
+                        logger.warning("Tool %s called with MALFORMED JSON arguments, but repair succeeded: %s", tool_name, raw_args)
+                    except json.JSONDecodeError as e:
+                        logger.error(
+                            "Tool %s called with INVALID JSON arguments: %s\n%s",
+                            tool_name,
+                            raw_args,
+                            e,
+                        )
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "name": tool_name,
+                                "content": f"Invalid JSON arguments: {e}",
+                            }
+                        )
+                        continue
             else:
                 # Unknown argument shape
                 tool_trace.raw_args = raw_args
@@ -462,7 +498,10 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                 tool_traces.append(tool_trace)
                 return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
-            # Delegate to MCP: ensure args is a dict
+            # Delegate to MCP: allow no-argument tool calls by treating None as {}
+            if args is None:
+                args = {}
+
             if not isinstance(args, dict):
                 tool_trace.ok = False
                 tool_trace.error = "Tool arguments must be a JSON object"
