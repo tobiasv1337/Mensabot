@@ -47,12 +47,24 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+    include_tool_calls: bool = False
     # model: Optional[str] = None
+
+class ToolCallTrace(BaseModel):
+    id: str | None = None
+    name: str
+    args: Dict[str, Any] | None = None
+    raw_args: str | None = None
+    result: Any | None = None
+    ok: bool | None = None
+    error: str | None = None
+    iteration: int | None = None
 
 class ChatResponse(BaseModel):
     status: Literal["ok", "needs_location"]
     reply: str | None = None
     prompt: str | None = None
+    tool_calls: list[ToolCallTrace] | None = None
 
 
 class CanteenOut(BaseModel):
@@ -336,17 +348,18 @@ LOCATION_TOOL_NAME = "request_user_location"
 LOCATION_FALLBACK_PROMPT = "To answer your question, I need your location. Would you like to share it?"
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
+async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
     messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
+    tool_traces: list[ToolCallTrace] = []
     for iteration in range(1, settings.max_llm_iterations + 1):
         try:
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
-            return ChatResponse(status="ok", reply=settings.llm_fallback_response)
+            return ChatResponse(status="ok", reply=settings.llm_fallback_response, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
         if not getattr(completion, "choices", None):
             try:
@@ -363,14 +376,14 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
 
         if finish_reason != "tool_calls":
             logger.info("Final response returned after %d iterations: %s", iteration, json.dumps(message.model_dump(), indent=2))
-            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason))
+            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason), tool_calls=(tool_traces or None) if include_tool_calls else None)
 
         
         tool_calls = message.tool_calls or []
         if not tool_calls:
             logger.warning("LLM reported finish_reason=tool_calls but no tool_calls were provided. Returning current message after %d iterations.", iteration)
             logger.debug("Final response: %s", json.dumps(message.model_dump(), indent=2))
-            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason))
+            return ChatResponse(status="ok", reply=ensure_message_content(message, finish_reason), tool_calls=(tool_traces or None) if include_tool_calls else None)
 
         if settings.llm_supports_tool_messages:
             messages.append(message)
@@ -379,21 +392,39 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
         for call in tool_calls:
             tool_name = call.function.name
             raw_args = call.function.arguments
+            tool_trace = ToolCallTrace(id=call.id, name=tool_name, iteration=iteration)
 
             try:
                 args = json.loads(raw_args)
             except json.JSONDecodeError as e:
                 logger.error("Tool %s called with INVALID JSON arguments: %s\nJSON parse error: %s", tool_name, raw_args, str(e))
-                result_payload = {"error": f"Failed to parse arguments. Invalid JSON: {str(e)}"}
+                tool_trace.raw_args = raw_args
+                tool_trace.ok = False
+                tool_trace.error = f"Failed to parse arguments. Invalid JSON: {str(e)}"
+                tool_traces.append(tool_trace)
+                result_payload = {"error": tool_trace.error}
             else:
+                tool_trace.args = args
                 if tool_name == LOCATION_TOOL_NAME:
                     prompt = args.get("prompt") if isinstance(args, dict) else None
                     prompt_text = prompt or LOCATION_FALLBACK_PROMPT
                     logger.info("Location request tool triggered with prompt: %s", prompt_text)
-                    return ChatResponse(status="needs_location", prompt=prompt_text)
+                    tool_trace.ok = True
+                    tool_trace.result = {"needs_location": True, "prompt": prompt_text}
+                    tool_traces.append(tool_trace)
+                    return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
                 # Delegate to MCP
                 result_payload = await call_mcp_tool(tool_name, args)
+                if isinstance(result_payload, dict) and "error" in result_payload:
+                    tool_trace.ok = False
+                    tool_trace.error = result_payload.get("error")
+                elif isinstance(result_payload, dict) and result_payload.get("ok") is True:
+                    tool_trace.ok = True
+                    tool_trace.result = result_payload.get("result")
+                else:
+                    tool_trace.result = result_payload
+                tool_traces.append(tool_trace)
 
             messages.append(
                 {
@@ -430,11 +461,11 @@ async def run_tool_calling_loop(message_log: List[ChatMessage]) -> ChatResponse:
                     )
         
     logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", settings.max_llm_iterations)
-    return ChatResponse(status="ok", reply=settings.llm_fallback_response)
+    return ChatResponse(status="ok", reply=settings.llm_fallback_response, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    response = await run_tool_calling_loop(request.messages)
+    response = await run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls)
     return response
 
 
