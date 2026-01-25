@@ -220,6 +220,7 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
                 messages=[sanitize_message(m) for m in messages],
                 tools=tools,
                 tool_choice="auto",
+                stream=False,
             )
         except RateLimitError as err:
             last_error = err
