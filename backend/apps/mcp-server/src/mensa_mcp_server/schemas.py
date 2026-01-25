@@ -435,7 +435,7 @@ def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
     # but meat keywords take precedence for classification
     for diet_type in [DietType.meat, DietType.vegan, DietType.vegetarian]:
         for keyword in _DIET_KEYWORDS[diet_type]:
-            pattern = r"\\b" + re.escape(keyword) + r"\\b"
+            pattern = r"\b" + re.escape(keyword) + r"\b"
             if re.search(pattern, text_blob):
                 return diet_type
     
@@ -450,7 +450,7 @@ def _canonicalize_allergen_label(label: str) -> str | None:
         for keyword in keywords:
             if lowered == keyword:
                 return canonical
-            pattern = r"\\b" + re.escape(keyword) + r"\\b"
+            pattern = r"\b" + re.escape(keyword) + r"\b"
             if re.search(pattern, lowered):
                 return canonical
     return None
@@ -462,7 +462,7 @@ def _extract_allergens(notes: Iterable[str]) -> list[str]:
         lowered = _normalize_text(note)
         for canonical, keywords in _ALLERGEN_KEYWORDS.items():
             for keyword in keywords:
-                pattern = r"\\b" + re.escape(keyword) + r"\\b"
+                pattern = r"\b" + re.escape(keyword) + r"\b"
                 if re.search(pattern, lowered):
                     found.add(canonical)
     return sorted(found)
