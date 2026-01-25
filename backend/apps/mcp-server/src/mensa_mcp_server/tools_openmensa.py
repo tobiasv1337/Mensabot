@@ -225,27 +225,6 @@ def _load_canteen_index():
 
 # ------------------------------ OpenMensa tools ------------------------------
 
-@mcp.tool()
-def get_date_context() -> DateContextDTO:
-    """
-    Return canonical date references in the configured timezone.
-
-    Use this tool whenever the user mentions relative dates (today, tomorrow, next week,
-    next Monday, etc.). Do not compute dates yourself; use the returned ISO dates.
-    """
-    now = _local_now()
-    today = now.date()
-    base_start = _week_start(today)
-
-    return DateContextDTO(
-        timezone=settings.timezone,
-        now_local=now.strftime("%Y-%m-%d %H:%M"),
-        today=_date_entry(today),
-        tomorrow=_date_entry(today + dt.timedelta(days=1)),
-        yesterday=_date_entry(today - dt.timedelta(days=1)),
-        this_week=_week_range(base_start),
-        next_week=_week_range(base_start + dt.timedelta(days=7)),
-    )
 
 @mcp.tool()
 def search_canteens(
