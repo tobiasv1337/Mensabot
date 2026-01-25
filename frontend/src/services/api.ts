@@ -17,9 +17,20 @@
 
 import type { ChatMessage } from "./chats";
 
+export type ToolCallTrace = {
+	id?: string;
+	name: string;
+	args?: Record<string, unknown>;
+	raw_args?: string;
+	result?: unknown;
+	ok?: boolean;
+	error?: string;
+	iteration?: number;
+};
+
 export type ChatApiResponse =
-	| { status: "ok"; reply: string }
-	| { status: "needs_location"; prompt: string };
+	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
+	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
 	id: number;
@@ -87,13 +98,14 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[]): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 		const request = await fetch(this.baseUrl + "/api/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ messages })
+			body: JSON.stringify({ messages: payload, include_tool_calls: options.includeToolCalls ?? false })
 		});
 
 		if (!request.ok) {
@@ -109,11 +121,11 @@ export class MensaBotClient {
 
 		const res = response as ChatApiResponse;
 		if (res.status === "needs_location") {
-			return { status: "needs_location", prompt: res.prompt };
+			return { status: "needs_location", prompt: res.prompt, tool_calls: res.tool_calls };
 		}
 
 		if (res.status === "ok") {
-			return { status: "ok", reply: res.reply };
+			return { status: "ok", reply: res.reply, tool_calls: res.tool_calls };
 		}
 
 		throw new Error("Unexpected chat API response shape");
