@@ -33,6 +33,23 @@ export const TopBar = styled.div`
     backdrop-filter: blur(10px);
 `;
 
+/* NEW: Filters container (top area) */
+export const FiltersArea = styled.div`
+    position: relative;
+    z-index: 10;
+    padding: 12px 16px;
+    background: rgba(30, 30, 30, 0.4);
+    backdrop-filter: blur(10px);
+`;
+
+export const FiltersBar = styled.div`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+`;
+
 // NEW: This container handles the actual scrolling
 export const MessagesContainer = styled.div`
     flex-grow: 1; /* Takes up all available space between top and bottom */

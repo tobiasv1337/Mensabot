@@ -5,11 +5,14 @@ import Messages from "./Messages/Messages";
 
 import {
     ChatWrapper,
-    TopBar,
+    FiltersArea,
+    FiltersBar,
     MessagesContainer,
     BottomArea,
     NewChatButton,
 } from "./chat.styles";
+
+import FilterBar, { type ChatFilters } from "./Filters/FilterBar";
 
 import { MensaBotClient } from "../../services/api";
 import { Chats, ChatMessage, Chat } from "../../services/chats";
@@ -34,6 +37,12 @@ const ChatPage: React.FC = () => {
 
     const [isSending, setIsSending] = useState(false);
 
+    const [filters, setFilters] = useState<ChatFilters>({
+        diet: [],
+        mensas: [],
+        allergens: [],
+    });
+
     // ✅ store chat instance in state (do NOT spread the class)
     const [chat, setChat] = useState<Chat>(() => {
         const c = Chats.getById(CHAT_ID, true)!;
@@ -56,13 +65,11 @@ const ChatPage: React.FC = () => {
         };
 
         el.addEventListener("scroll", onScroll, { passive: true });
-        // initialize
         shouldAutoScrollRef.current = isNearBottom(el);
 
         return () => el.removeEventListener("scroll", onScroll);
     }, []);
 
-    // ✅ scroll to bottom only if user is already near bottom
     useEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -81,7 +88,6 @@ const ChatPage: React.FC = () => {
         setChat(fresh);
         setVersion((v) => v + 1);
 
-        // after new chat, we want to be at bottom (which is basically top)
         shouldAutoScrollRef.current = true;
     }, [isSending]);
 
@@ -94,8 +100,10 @@ const ChatPage: React.FC = () => {
 
             setIsSending(true);
             try {
-                // user is sending a new message → we do want to auto-scroll
                 shouldAutoScrollRef.current = true;
+
+                // UI only for now: filters are not sent to backend yet
+                // Next step is to pass "filters" into your chat.send call.
 
                 await chat.send(client, trimmed);
                 setVersion((v) => v + 1);
@@ -125,22 +133,21 @@ const ChatPage: React.FC = () => {
 
     return (
         <ChatWrapper>
-            <TopBar>
-                <NewChatButton onClick={startNewChat} disabled={isSending}>
-                    New chat
-                </NewChatButton>
-            </TopBar>
+            <FiltersArea>
+                <FiltersBar>
+                    <FilterBar value={filters} onChange={setFilters} />
+
+                    <NewChatButton onClick={startNewChat} disabled={isSending}>
+                        New chat
+                    </NewChatButton>
+                </FiltersBar>
+            </FiltersArea>
 
             <MessagesContainer ref={scrollRef}>
                 <Messages messages={uiMessages} />
             </MessagesContainer>
 
             <BottomArea>
-                {/* ✅ staying in the input after pressing Enter is handled inside ChatComposer:
-            - it should NOT blur
-            - it should preventDefault
-            - and it should keep focus on the input element after calling onSend
-        */}
                 <ChatComposer onSend={onSend} disabled={isSending} />
                 <AiWarningText />
             </BottomArea>
