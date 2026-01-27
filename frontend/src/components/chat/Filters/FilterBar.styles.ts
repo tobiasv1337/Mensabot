@@ -1,96 +1,111 @@
 import styled from "styled-components";
 
 export const Bar = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 8px 10px;
-    border-radius: 14px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 10px 14px;
 
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 
-    width: fit-content;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 `;
 
 export const Section = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 `;
 
-export const SectionLabel = styled.div`
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-right: 2px;
+export const SectionLabel = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const PillsRow = styled.div`
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 `;
 
 export const PillText = styled.span`
-    display: inline-block;
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
 `;
 
-const BasePill = styled.button`
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+export const TogglePill = styled.button<{ $active?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
 
-    height: 28px;
-    padding: 0 10px;
+  border: 1px solid
+    ${({ theme, $active }) =>
+      $active ? theme.accent1 : "rgba(255,255,255,0.14)"};
 
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
+  background: ${({ theme, $active }) =>
+    $active ? theme.accent1 : "rgba(255,255,255,0.06)"};
 
-    cursor: pointer;
+  color: ${({ theme, $active }) =>
+    $active ? theme.textOnAccent1 : theme.textPrimary};
 
-    &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.12);
-    }
+  backdrop-filter: blur(6px);
+  transition: background 0.15s ease, border 0.15s ease;
+
+  &:hover {
+    background: ${({ theme, $active }) =>
+      $active ? theme.accent1 : "rgba(255,255,255,0.12)"};
+  }
 `;
 
-export const TogglePill = styled(BasePill)<{ $active?: boolean }>`
-    background: ${(p) =>
-            p.$active ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.08)"};
+export const AddPill = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+  color: ${({ theme }) => theme.textPrimary};
+  cursor: pointer;
+  font-size: 16px;
+
+  backdrop-filter: blur(6px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
 `;
 
-export const TagPill = styled(BasePill)`
-    padding-right: 8px;
-`;
+export const TagPill = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
 
-export const AddPill = styled(BasePill)`
-    width: 28px;
-    padding: 0;
-    justify-content: center;
+  backdrop-filter: blur(6px);
 `;
 
 export const RemoveButton = styled.button`
-    width: 20px;
-    height: 20px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(0, 0, 0, 0.25);
-    color: rgba(255, 255, 255, 0.85);
-    cursor: pointer;
-    line-height: 0;
-
-    &:hover {
-        background: rgba(0, 0, 0, 0.35);
-    }
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
 `;
