@@ -10,23 +10,29 @@ interface StyledButtonProps {
 }
 
 
-const getVariantStyles = (currentTheme: Theme, variant: ButtonProps['variant'] = 'default') => {
-// Define color schemes for different button variants
+const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'default') => {
+    // Define color schemes for different button variants
     const variantStyles = {
-        default: { // dark or light background color -> neutral/invisible button
-            background: currentTheme.backgroundPrimary,
-            color: currentTheme.textPrimary,
+        default: { // neutral button with surface colors
+            bg: 'transparent',
+            color: theme.textSecondary,
+            hoverBg: theme.surfaceInset,
+            hoverColor: theme.textPrimary,
         }, 
-        darker: { // darker as background color
-            background: currentTheme.backgroundDarker,
-            color: currentTheme.textPrimary,
+        darker: { // darker surface background
+            bg: theme.surfaceAccent,
+            color: theme.textOnAccent,
+            hoverBg: theme.surfaceAccent,
+            hoverColor: theme.textOnAccent,
         },
-        lighter: { // lighter as background color
-            background: currentTheme.backgroundLighter1,
-            color: currentTheme.textPrimary,
+        lighter: { // lighter surface background
+            bg: theme.surfaceInset,
+            color: theme.textOnInset,
+            hoverBg: theme.surfaceInset,
+            hoverColor: theme.textOnInset,
         },
     }
-    return variantStyles[variant];
+    return variantStyles[variant ?? 'default'];
 };
 
 const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
@@ -37,31 +43,56 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
             padding: 5px 5px;
         `,
         fill: css`
-            width: 100%;
-            height: fit-content;
-            padding: 5px 0;
+            width: calc(100% - 16px);
+            height: 44px;
+            padding: 0 12px;
+            justify-content: flex-start;
+            font-weight: 500;
+            margin: 0 8px;
         `,
     };
-    return sizeStyles[size];
+    return sizeStyles[size ?? 'fill'];
 };
 
+// Icon wrapper for fill size buttons
+export const ButtonIconWrapper = styled.span`
+  width: 44px;
+  display: flex;
+  justify-content: center;
+  font-size: 20px;
+`;
+
+// Text wrapper for fill size buttons
+export const ButtonTextWrapper = styled.span`
+  white-space: nowrap;
+  margin-left: 6px;
+`;
+
 export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
+    all: unset;
     display: flex;
     align-items: center;
-    margin: auto;
     line-height: 1.2;
-    gap: 5px;
+    gap: 10px;
     cursor: pointer;
-    border: none;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    
     // application Variant-Styles
     ${({ theme, $variant }) => {
         const styles = getVariantStyles(theme, $variant);
         return css`
-            background: ${styles.background};
+            background: ${styles.bg};
             color: ${styles.color};
 
             &:hover:not(:disabled) {
-                filter: brightness(0.9);
+                background: ${styles.hoverBg};
+                color: ${styles.hoverColor};
+            }
+            
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
             }
         `;
     }}
@@ -69,6 +100,11 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
     // application Size-Styles
     ${({ $size }) => getSizeStyles($size)}
 `;
+
+StyledButton.defaultProps = {
+    $variant: 'default',
+    $size: 'hug',
+};
 
 
 export { getVariantStyles, getSizeStyles };

@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
-import styled from 'styled-components'
+import styled, { ThemeProvider } from 'styled-components'
 import { useTheme } from './theme/themeProvider.tsx'
 import ThemeDemo from './pages/ThemeDemo.tsx'
 import { Chats, ChatMessage, type Chat } from './services/chats'
@@ -13,6 +13,7 @@ import ChatPage from './pages/Chatpage'
 import mensabotLogo from './assets/mensabot-logo-gradient-round.svg'
 import { Button } from './components/button/button';
 import mensabotLogo from './assets/react.svg';
+import { lightTheme } from './theme/colors.ts';
 
 const AppContainer = styled.main`
   min-height: 100vh;
@@ -529,7 +530,7 @@ const formatToolPayload = (payload: unknown) => {
 function App() {
   const [showThemeDemo, setShowThemeDemo] = useState(false)
   const [showChatPage, setShowChatPage] = useState(false);
-  const { toggleMode } = useTheme()
+  const { toggleMode, currentTheme } = useTheme()
   const [userInput, setUserInput] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string>('')
@@ -755,10 +756,10 @@ function App() {
 
         <div>
           <Button 
-            variant="primary" 
-            text="Primary Action Button Test Dark" 
+            variant="default" 
+            text="🎯 Test Button" 
             onClick={() => toggleMode("dark")}
-          ></Button>
+          />
         </div>
 
         <div>
