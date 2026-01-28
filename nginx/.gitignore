@@ -1,0 +1,4 @@
+# nginx-specific gitignore file
+
+# SSL-Zertifikate
+certs/
