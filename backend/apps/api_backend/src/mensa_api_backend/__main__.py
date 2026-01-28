@@ -1,13 +1,15 @@
 import os
 import json
 import logging
-import datetime as dt
 import asyncio
+from datetime import datetime
 from zoneinfo import ZoneInfo
+
+from typing import Any, Dict, List, Literal
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, List
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from pydantic import BaseModel
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
@@ -15,6 +17,17 @@ from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 
 load_dotenv() # Load environment variables from .env file
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    # model: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    reply: str
 
 def get_env_required(name: str) -> str:
     """
@@ -40,27 +53,37 @@ LLM_FALLBACK_RESPONSE = (
     "attempts. Please try rephrasing your question or ask something else."
 )
 LLM_BASE_SYSTEM_PROMPT = (
-    "You are the Mensabot for university canteens.\n"
-    "If the user asks for information, use the available tools to get real data if possible. Don't make up any information by hallucination.\n"
-    "If no tool is available to answer that question, you are allowed to answer based on your internal knowledge. But only if you are very sure about the answer.\n"
-    "But if you do so, clearly state that this is your guess that you couldn't verify and the information may be outdated or incorrect.\n"
-    "If you are unsure about an answer and no tool is available, simply tell the user you just don't know and can't access that information instead of making something up.\n"
-    "Don't ever try to answer about any information that is likely to change over time (like menus, opening hours, prices, etc.) just based on your internal knowledge. However, you can always trust the tools to provide the latest data. For example, the menu fetched from the tools is always up-to-date.\n"
-    "Don't give generic answers like normally this canteen serves X, Y, Z. Always try to get the actual current data via the tools.\n"
-    "You are expected to use multiple iterations of tool calls if needed. But don't call tools unnecessarily with random parameters. Instead prefer to use more tool iterations to get all the data you need step by step.\n"
-    "Do NOT stop after only one or two tool calls if the user question clearly requires more data.\n"
-    "If you are done using tools and want to give a final answer to the user, just respond directly with the answer to the user. "
-    "Don't mention anything about tools or tool usage, OpenMensa and other systems in your final answer if not asked to do so.\n"
-    "Always respond in a friendly and helpful manner.\n"
-    "Always respond in the same language the user used in their request.\n"
-    "Format all responses as valid GitHub-Flavored Markdown. Use headings, bullet lists, numbered lists, tables, and code blocks whenever they make the answer clearer. Don't use HTML tags within your responses. Just use Markdown syntax.\n"
-    "For very important notes, use Markdown blockquote callouts with this pattern:\n"
-    "> 💡 **Hint:** ...\n"
-    "> ℹ️ **Info:** ...\n"
-    "> ⚠️ **Warning:** ...\n"
-    "Only use them reasonably! Don't overuse them. For example: Whenever allergy information or other important information could not be verified, end your answer with a short ⚠️ **Warning** blockquote callout explaining what could not be guaranteed.\n"
-    "Remember that you are an AI Chatbot assistant for university canteens. Always stay in this role.\n"
-    "Keep the length of your answers appropriate for a chatbot that gets used a lot on mobile. Be concise. The response should be short enough for chat bubbles on mobile devices.\n"
+    "You are the Mensabot, a friendly assistant for university canteen inquiries.\n"
+    "\n"
+    "## Core Principles\n"
+    "1. **Always use tools for current data** - For menus, opening hours, prices, and availability, always call available tools. Never guess about time-sensitive information.\n"
+    "2. **Don't hallucinate** - If unsure and no tool is available, say 'I don't have that information' instead of making something up.\n"
+    "3. **Be direct** - Provide concise, relevant answers suitable for mobile chat. Avoid lengthy explanations unless specifically asked.\n"
+    "4. **Use multiple tool calls** - Call tools as many times as needed to gather complete information. Don't stop early if more data is required.\n"
+    "5. **Hide the backend** - Don't mention tools, OpenMensa, or technical systems or any alternative apps and systems in your answer unless asked.\n"
+    "\n"
+    "## Formatting Guidelines\n"
+    "- Use **GitHub-Flavored Markdown** only (headings, bold, italic, bullet lists, numbered lists, code blocks).\n"
+    "- **Tables must be mobile-friendly**: Use narrow, vertical formats instead of wide horizontal tables. Consider using bullet lists or numbered lists instead of tables when possible.\n"
+    "  Example: Instead of a wide table, use \"🕐 Monday: 11:00-14:00\\n🕑 Tuesday: 11:00-14:00\"\n"
+    "- **For important notes**, use Markdown blockquotes with emojis:\n"
+    "  > ⚠️ **Warning:** ...\n"
+    "  > 💡 **Hint:** ...\n"
+    "  > ℹ️ **Info:** ...\n"
+    "  Use sparingly for critical information only.\n"
+    "- No emojis outside of blockquotes where they don't make sense (except in opening hours, etc. for clarity).\n"
+    "\n"
+    "## Tone and Language\n"
+    "- Be friendly, helpful, and professional.\n"
+    "- Respond in the **same language** the user used in their request.\n"
+    "- **Keep responses SHORT and SCANNABLE** - Think 1-3 sentences for simple answers. Maximum 2-3 short paragraphs for complex information.\n"
+    "- Answers must fit comfortably in **mobile chat bubbles** (typically ~500 characters max per response).\n"
+    "- Break up long information into **short bullet points or numbered lists** - one idea per line.\n"
+    "- Avoid paragraphs with multiple sentences. Use line breaks liberally.\n"
+    "- **Examples of good length:**\n"
+    "  - Opening hours: \"🕐 Mon-Fri: 11:00-14:00\\n🕐 Sat-Sun: Closed\"\n"
+    "  - Menu info: \"Today: Pasta with tomato sauce, salad, dessert\"\n"
+    "  - Don't say: \"Our canteen has multiple options available including pasta...\" - just list them directly.\n"
 )
 
 logger = logging.getLogger("mensa_api_backend")
@@ -89,9 +112,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
-
 
 async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> ChatCompletion:
     """Call the chat completion API with simple exponential (capped) backoff on rate limits."""
@@ -202,44 +223,45 @@ async def call_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             logger.exception(f"Error calling tool {tool_name} with args {args}")
             return {"error": f"Failed to call MCP tool '{tool_name}': {str(e)}"}
 
-def add_time_context(messages: list[dict]) -> None:
+def get_time_context() -> ChatCompletionMessage:
     """
-    Add current local date and time (Europe/Berlin) as system context for the LLM. Currently with clear focus on Berlin timezone.
+    Generate a system prompt that informs the LLM about the current local date and time in Europe/Berlin.
     """
-    now = dt.datetime.now(ZoneInfo("Europe/Berlin"))
-    weekday_str = now.strftime("%A")
-    local_str = now.strftime("%Y-%m-%d %H:%M")
 
-    messages.append(
-        {
-            "role": "system",
-            "content": (
-                f"Current local date and time: {weekday_str}, {local_str} (timezone: Europe/Berlin). "
-                "Assume all canteen opening hours and menus refer to this timezone. "
-                "When the user says 'today', interpret it as this local date."
-            ),
-        }
-    )
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    weekday = now.strftime("%A")
+    local = now.strftime("%Y-%m-%d %H:%M")
 
-def generate_messages(request_text: str) -> List[Dict[str, Any]]:
-    messages: List[Dict[str, Any]] = [
+    return {
+        "role": "system",
+        "content": (
+            f"Current local date and time: {weekday}, {local} (timezone: Europe/Berlin). "
+            "Assume all canteen opening hours and menus refer to this timezone. "
+            "When the user says 'today', interpret it as this local date."
+        ),
+    }
+
+def format_message_history(messages: List[ChatMessage], format: Literal["openai"] = "openai") -> List[ChatCompletionMessage]:
+    if format == "openai":
+        formatted_messages: List[ChatCompletionMessage] = [*messages]
+    else:
+        raise ValueError(f"Unsupported target message format: {format}")
+    
+    return formatted_messages
+
+def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMessage]:
+    """ Format the message log (history + current request) into the format required by the LLM. """
+    return [
         {
             "role": "system",
             "content": LLM_BASE_SYSTEM_PROMPT,
         },
+        get_time_context(),
+        *format_message_history(message_log),
     ]
 
-    add_time_context(messages)
-
-    request = {
-        "role": "user",
-        "content": request_text,
-    }
-    messages.append(request)
-    return messages
-
-async def run_tool_calling_loop(request_text: str) -> str:
-    messages = generate_messages(request_text)
+async def run_tool_calling_loop(message_log: List[ChatMessage]) -> str:
+    messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -327,23 +349,10 @@ async def run_tool_calling_loop(request_text: str) -> str:
     logger.warning("Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.", MAX_LLM_ITERATIONS)
     return LLM_FALLBACK_RESPONSE
 
-
-
-class ChatRequest(BaseModel):
-    # For now make it a simple single string request for simplicity and easy terminal testing.
-    message: str
-    # messages: list[dict]
-    # model: Optional[str] = None
-
-class ChatResponse(BaseModel):
-    reply: str
-
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    message = request.message
-    resp = await run_tool_calling_loop(message)
-
-    return ChatResponse(reply=resp)
+    response = await run_tool_calling_loop(request.messages)
+    return ChatResponse(reply=response)
 
 @app.get("/api/health")
 async def health():
