@@ -95,5 +95,6 @@ def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brau
     The backend will use this to interrupt the tool loop and ask the frontend to collect the location.
 
     Use this tool when you need the user's location to answer a question.
+    Prefer this tool for requesting the users location over just asking manually via your response for better user experience and more accurate location data.
     """
     return {"prompt": prompt}
