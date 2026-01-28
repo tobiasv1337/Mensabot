@@ -28,9 +28,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 disabled={disabled}
                 {...rest}
             >
-                {/* only renderes if there */}
+                {/* only renders if there */}
                 {iconLeft && <span className="icon-left">{iconLeft}</span>}
-                {content && <span className="button-content">{content}</span>}
+                {content}
                 {iconRight && <span className="icon-right">{iconRight}</span>}
             </StyledButton>
         );

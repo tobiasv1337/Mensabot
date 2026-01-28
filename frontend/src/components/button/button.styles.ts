@@ -19,13 +19,13 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textPrimary,
         }, 
-        darker: { // darker surface background
+        surfaceAccent: { // darker surface background
             bg: theme.surfaceAccent,
             color: theme.textOnAccent,
             hoverBg: theme.surfaceAccent,
             hoverColor: theme.textOnAccent,
         },
-        lighter: { // lighter surface background
+        surfaceInset: { // lighter surface background
             bg: theme.surfaceInset,
             color: theme.textOnInset,
             hoverBg: theme.surfaceInset,
@@ -43,12 +43,12 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
             padding: 5px 5px;
         `,
         fill: css`
-            width: calc(100% - 16px);
+            width: 100%;
             height: 44px;
             padding: 0 12px;
             justify-content: flex-start;
             font-weight: 500;
-            margin: 0 8px;
+            box-sizing: border-box;
         `,
     };
     return sizeStyles[size ?? 'fill'];
@@ -59,21 +59,29 @@ export const ButtonIconWrapper = styled.span`
   width: 44px;
   display: flex;
   justify-content: center;
+  align-items: center;
   font-size: 20px;
+  
+  img {
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 // Text wrapper for fill size buttons
 export const ButtonTextWrapper = styled.span`
   white-space: nowrap;
-  margin-left: 6px;
 `;
 
 export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
     all: unset;
     display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
+    justify-items: center;
     line-height: 1.2;
-    gap: 10px;
+    gap: 6px;
     cursor: pointer;
     border-radius: 12px;
     transition: all 0.2s ease;

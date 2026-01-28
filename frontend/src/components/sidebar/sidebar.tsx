@@ -2,6 +2,10 @@ import React from "react";
 import * as S from "./sidebar.styles";
 import type { NavItem } from "../header/header";
 import { useTheme } from "../../theme/themeProvider";
+import { Button } from "../button/button";
+import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
+
+import mensabotLogo from '../../assets/react.svg';
 
 interface SidebarProps {
   mode: "desktop" | "drawer";
@@ -125,6 +129,17 @@ onClick={() => {
           Karte
         </S.ButtonText>
       </S.NavButton>
+
+      <Button 
+        variant="default" 
+        size="fill"
+        onClick={() => toggleMode("dark")}
+      >
+        <ButtonIconWrapper>
+          <img src={mensabotLogo} alt="Mensabot" />
+        </ButtonIconWrapper>
+        <ButtonTextWrapper>Chathistorie</ButtonTextWrapper>
+      </Button>
     </S.NavSection>
   </>
 )}
