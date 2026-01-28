@@ -7,7 +7,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import styled from 'styled-components'
 import { useTheme } from './theme/themeProvider.tsx'
 import ThemeDemo from './pages/ThemeDemo.tsx'
-import { Chats, type Chat, type ChatMessage } from './services/chats'
+import { Chats, type Chat, ChatMessage } from './services/chats'
 import { MensaBotClient } from './services/api'
 import ChatPage from './pages/Chatpage'
 
@@ -433,11 +433,7 @@ function App() {
 
   const handleSelfLocation = () => {
     if (isSending || isRequestingLocation || !chat) return
-    chat.addMessage({
-      role: 'assistant',
-      content: 'Bitte gib deinen Standort unten ins Textfeld ein, damit ich passende Mensen in deiner Nähe finden kann.',
-      meta: { kind: 'normal' }
-    });
+    chat.addMessage(new ChatMessage('assistant', 'Bitte gib deinen Standort unten ins Textfeld ein, damit ich passende Mensen in deiner Nähe finden kann.', { kind: 'normal' }));
     setLocationPromptHandled(true)
   }
 
@@ -530,7 +526,7 @@ function App() {
           />
           <SendButton
             type="button"
-            onClick={sendMessage}
+            onClick={() => sendMessage()}
             disabled={!userInput.trim() || isSending}
           >
             {isSending ? 'Sende...' : 'Senden'}

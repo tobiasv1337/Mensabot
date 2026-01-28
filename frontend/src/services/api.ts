@@ -48,12 +48,13 @@ export class MensaBotClient {
 			throw new Error("Chat API returned invalid JSON");
 		}
 
-		if (response?.status === "needs_location") {
-			return { status: "needs_location", prompt: response.prompt };
+		const res = response as ChatApiResponse;
+		if (res.status === "needs_location") {
+			return { status: "needs_location", prompt: res.prompt };
 		}
 
-		if (response?.status === "ok") {
-			return { status: "ok", reply: response.reply };
+		if (res.status === "ok") {
+			return { status: "ok", reply: res.reply };
 		}
 
 		throw new Error("Unexpected chat API response shape");
