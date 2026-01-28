@@ -2,8 +2,8 @@
 import React from 'react';
 
 // Defines the available styles/colors of the button.
-// 'default' is the standard (darkmode: white, lightmode: black)
-export const buttonVariants = ['default', 'darker', 'lighter'] as const;
+// 'default' is the standard (neutral with transparent background)
+export const buttonVariants = ['default', 'surfaceAccent', 'surfaceInset'] as const;
 export type ButtonVariant = typeof buttonVariants[number];
 
 export const buttonSizes = ['hug', 'fill'] as const;
