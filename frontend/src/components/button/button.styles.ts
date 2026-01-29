@@ -32,7 +32,13 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textOnInset,
         },
-    }
+        iconOnly: { // for icon-only buttons
+            bg: 'transparent',
+            color: theme.textSecondary,
+            hoverBg: theme.surfaceInset,
+            hoverColor: theme.textPrimary,
+        },
+    };
     return variantStyles[variant ?? 'default'];
 };
 
@@ -53,11 +59,17 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
             box-sizing: border-box;
         `,
         iconOnly: css`
-            width: 44px;
-            height: 44px;
-            padding: 0;
+            width: 20px;
+            height: 20px;
+            padding: 20px;
+            margin: 20px;
             justify-content: center;
             align-items: center;
+            box-sizing: border-box;
+            img {
+                width: 20px;
+                height: 20px;
+            }
         `,
     };
     return sizeStyles[size ?? 'fill'];
@@ -82,7 +94,6 @@ export const ButtonIconWrapper = styled.span`
 // Text wrapper for fill size buttons
 export const ButtonTextWrapper = styled.span<{ collapsed?: boolean }>`
   white-space: nowrap;
-  
   ${({ collapsed }) =>
     collapsed &&
     `

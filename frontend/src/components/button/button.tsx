@@ -1,7 +1,7 @@
 // The logic and JSX of the component
-import { forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 import type { ButtonProps } from './button.types';
-import { StyledButton, ButtonTextWrapper } from './button.styles';
+import { StyledButton, ButtonTextWrapper, ButtonIconWrapper } from './button.styles';
 
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -31,10 +31,29 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 disabled={disabled}
                 {...rest}
             >
-                {/* only renders if there */}
-                {iconLeft && <span className="icon-left">{iconLeft}</span>}
-                {children ? children : <ButtonTextWrapper collapsed={collapsed}>{content}</ButtonTextWrapper>}
-                {iconRight && <span className="icon-right">{iconRight}</span>}
+                {/* left icon */}
+                {iconLeft && (
+                    React.isValidElement(iconLeft) && (iconLeft as any).type === 'img' ? (
+                        <ButtonIconWrapper>
+                            <img src={(iconLeft as any).props.src} alt={(iconLeft as any).props.alt || ''} />
+                        </ButtonIconWrapper>
+                    ) : (
+                        <ButtonIconWrapper>{iconLeft}</ButtonIconWrapper>
+                    )
+                )}
+
+                {/* if iconOnly size, don't render text */}
+                {size === 'iconOnly' ? null : (children ? children : <ButtonTextWrapper collapsed={collapsed}>{content}</ButtonTextWrapper>)}
+
+                {iconRight && (
+                    React.isValidElement(iconRight) && (iconRight as any).type === 'img' ? (
+                        <ButtonIconWrapper>
+                            <img src={(iconRight as any).props.src} alt={(iconRight as any).props.alt || ''} />
+                        </ButtonIconWrapper>
+                    ) : (
+                        <ButtonIconWrapper>{iconRight}</ButtonIconWrapper>
+                    )
+                )}
             </StyledButton>
         );
     }
