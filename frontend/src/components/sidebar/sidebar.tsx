@@ -6,7 +6,19 @@ import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
 import mensabotLogo from '../../assets/react.svg';
-import sideBarIcon from '../../assets/left-sidebar-icon.svg';
+//import sideBarIcon from '../../assets/left-sidebar-icon.svg';
+
+const SideBarIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 122.88 118.96"
+    fill="currentColor"
+    aria-hidden
+  >
+    <path d="M119.61,0H3.27A3.26,3.26,0,0,0,0,3.27V115.69A3.26,3.26,0,0,0,3.27,119H119.61a3.26,3.26,0,0,0,3.27-3.27V3.27A3.26,3.26,0,0,0,119.61,0ZM6.54,6.54H38.78V112.42H6.54V6.54Zm38.78,0h71V112.42h-71V6.54Z"/>
+  </svg>
+);
 
 interface SidebarProps {
   mode: "desktop" | "drawer";
@@ -69,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     size="iconOnly"
                     onClick={onToggleCollapse}
                     title="Toggle Sidebar"
-                    iconLeft={<img src={sideBarIcon} alt="Toggle Sidebar" />}
+                    iconLeft={<SideBarIcon />}
                   />
           </div>
         )}
