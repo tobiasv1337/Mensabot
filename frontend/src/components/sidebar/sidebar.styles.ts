@@ -35,6 +35,7 @@ export const Sidebar = styled.aside<{
   color: ${({ theme }) => theme.textPrimary};
   display: flex;
   flex-direction: column;
+  /* Overall sidebar does not scroll itself; content area will */
   overflow: hidden;
 
   /* ===== DESKTOP ===== */
@@ -115,6 +116,15 @@ export const NavSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+`;
+
+/* Scrollable content area inside the Sidebar. Footer stays outside this area. */
+export const Content = styled.div`
+  flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 8px;
 `;
 
 export const SectionTitle = styled.div`

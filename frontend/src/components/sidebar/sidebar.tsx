@@ -64,20 +64,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         {mode === "desktop" && (
           <div style={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
             {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
-            <Button
-              variant="default"
-              size="iconOnly"
-              onClick={onToggleCollapse}
-              title="Toggle Sidebar"
-            >
-              <ButtonIconWrapper>
-                <img src={sideBarIcon} alt="Toggle Sidebar" />
-              </ButtonIconWrapper>
-            </Button>
+                  <Button
+                    variant="default"
+                    size="iconOnly"
+                    onClick={onToggleCollapse}
+                    title="Toggle Sidebar"
+                    iconLeft={<img src={sideBarIcon} alt="Toggle Sidebar" />}
+                  />
           </div>
         )}
 
-        {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
+        <S.Content>
+          {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
         
         {/* TODO Entfernen Delete when finished
         <S.NavSection>
@@ -177,6 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     </S.NavSection>
   </>
 )}
+        </S.Content>
         {/* THEME SWITCHER */}
         <S.Footer $isCollapsed={isCollapsed}>
           {!isCollapsed && <S.FooterHint>Theme</S.FooterHint>}
