@@ -6,13 +6,15 @@ import React from 'react';
 export const buttonVariants = ['default', 'surfaceAccent', 'surfaceInset'] as const;
 export type ButtonVariant = typeof buttonVariants[number];
 
-export const buttonSizes = ['hug', 'fill'] as const;
+export const buttonSizes = ['hug', 'fill', 'iconOnly'] as const;
 export type ButtonSize = typeof buttonSizes[number];
 
 // Defines the props that the Button component accepts
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  active?: boolean;
+  collapsed?: boolean;
 
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;

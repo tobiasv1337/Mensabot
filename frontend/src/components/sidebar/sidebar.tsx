@@ -6,6 +6,7 @@ import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
 import mensabotLogo from '../../assets/react.svg';
+import sideBarIcon from '../../assets/left-sidebar-icon.svg';
 
 interface SidebarProps {
   mode: "desktop" | "drawer";
@@ -61,32 +62,41 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Desktop Collapse Toggle */}
         {mode === "desktop" && (
-          <S.CollapseToggle onClick={onToggleCollapse}>
-            {isCollapsed ? "»" : "«"}
-          </S.CollapseToggle>
+          <div style={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
+            {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
+            <Button
+              variant="default"
+              size="iconOnly"
+              onClick={onToggleCollapse}
+              title="Toggle Sidebar"
+            >
+              <ButtonIconWrapper>
+                <img src={sideBarIcon} alt="Toggle Sidebar" />
+              </ButtonIconWrapper>
+            </Button>
+          </div>
         )}
 
-
-
-        {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
-
+        {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
+        
+        {/* TODO Entfernen Delete when finished
         <S.NavSection>
           {navItems.map((n) => (
             <S.NavButton
               key={n}
               active={activeNav === n}
               collapsed={isCollapsed}
-onClick={() => {
-  onNavClick(n);
+              onClick={() => {
+                onNavClick(n);
 
-  if (mode === "drawer") {
-    onCloseDrawer();
-  }
+                if (mode === "drawer") {
+                  onCloseDrawer();
+                }
 
-  if (mode === "desktop" && !isCollapsed) {
-    onToggleCollapse?.();
-  }
-}}
+                if (mode === "desktop" && !isCollapsed) {
+                  onToggleCollapse?.();
+                }
+              }}
               title={isCollapsed ? n : undefined}
             >
               <S.IconWrapper>{getIcon(n)}</S.IconWrapper>
@@ -94,6 +104,30 @@ onClick={() => {
                 {n}
               </S.ButtonText>
             </S.NavButton>
+          ))}
+        </S.NavSection>*/}
+
+        <S.NavSection>
+          {navItems.map((n) => (
+            <Button
+              key={n}
+              variant="default"
+              size="fill"
+              active={activeNav === n}
+              collapsed={isCollapsed}
+              onClick={() => {
+                onNavClick(n);
+                if (mode === "drawer") {
+                  onCloseDrawer();
+                }
+              }}
+              title={isCollapsed ? n : undefined}
+            >
+              <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
+              <ButtonTextWrapper collapsed={isCollapsed}>
+                {n}
+              </ButtonTextWrapper>
+            </Button>
           ))}
         </S.NavSection>
 

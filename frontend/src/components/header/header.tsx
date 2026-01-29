@@ -1,6 +1,7 @@
 import React from "react";
 import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
+import { Button } from "../button/button";
 
 export type NavItem = string;
 
@@ -24,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
         <S.BurgerButton onClick={onToggleSidebar} aria-label="Toggle menu">
           ☰
         </S.BurgerButton>
-      </S.Left>
+      </S.Left> 
 
       {/* Center: Brand immer mittig */}
       <S.Left>
@@ -38,15 +39,18 @@ const Header: React.FC<HeaderProps> = ({
       <S.Right>
         <S.DesktopNav aria-label="Hauptnavigation">
           {navItems.map((n) => (
-            <S.NavItem
+            <Button
               key={n}
+              variant="default"
+              size="hug"
               active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
               {n}
-            </S.NavItem>
+            </Button>
           ))}
         </S.DesktopNav>
+
       </S.Right>
     </S.Header>
   );

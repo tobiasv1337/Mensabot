@@ -7,6 +7,7 @@ interface StyledButtonProps {
     theme: Theme;
     $variant: ButtonProps['variant'];
     $size: ButtonProps['size'];
+    $active?: boolean;
 }
 
 
@@ -40,7 +41,8 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
         hug: css`
             width: fit-content;
             height: fit-content;
-            padding: 5px 5px;
+            padding: 10px 14px;
+            font-size: 15px;
         `,
         fill: css`
             width: 100%;
@@ -49,6 +51,13 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
             justify-content: flex-start;
             font-weight: 500;
             box-sizing: border-box;
+        `,
+        iconOnly: css`
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            justify-content: center;
+            align-items: center;
         `,
     };
     return sizeStyles[size ?? 'fill'];
@@ -61,16 +70,24 @@ export const ButtonIconWrapper = styled.span`
   justify-content: center;
   align-items: center;
   font-size: 20px;
+  color: inherit;
   
   img {
     width: 20px;
     height: 20px;
+    filter: brightness(0) saturate(100%) invert(1);
   }
 `;
 
 // Text wrapper for fill size buttons
-export const ButtonTextWrapper = styled.span`
+export const ButtonTextWrapper = styled.span<{ collapsed?: boolean }>`
   white-space: nowrap;
+  
+  ${({ collapsed }) =>
+    collapsed &&
+    `
+    display: none;
+  `}
 `;
 
 export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
@@ -87,8 +104,9 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
     transition: all 0.2s ease;
     
     // application Variant-Styles
-    ${({ theme, $variant }) => {
-        const styles = getVariantStyles(theme, $variant);
+    ${({ theme, $variant, $active }) => {
+        const variant = $active ? 'surfaceAccent' : $variant;
+        const styles = getVariantStyles(theme, variant);
         return css`
             background: ${styles.bg};
             color: ${styles.color};
@@ -96,6 +114,7 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
             &:hover:not(:disabled) {
                 background: ${styles.hoverBg};
                 color: ${styles.hoverColor};
+                filter: brightness(0.85);
             }
             
             &:disabled {
