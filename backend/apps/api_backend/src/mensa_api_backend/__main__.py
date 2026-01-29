@@ -15,6 +15,7 @@ from openai import OpenAI, RateLimitError
 from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 from mensa_mcp_server.server import make_openmensa_client
+from mensa_mcp_server.schemas import MenuDietFilter, Allergen
 from openmensa_sdk import CanteenIndexStore
 
 class APIBackendSettings(BaseSettings):
@@ -47,6 +48,8 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+    diet: MenuDietFilter = MenuDietFilter.all
+    allergens: list[Allergen] = []
     include_tool_calls: bool = False
     # model: Optional[str] = None
 
@@ -401,7 +404,7 @@ LOCATION_TOOL_NAME = "request_user_location"
 LOCATION_FALLBACK_PROMPT = "To answer your question, I need your location. Would you like to share it?"
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
+async def run_tool_calling_loop(message_log: List[ChatMessage], diet: MenuDietFilter, allergens: list[Allergen], include_tool_calls: bool = False) -> ChatResponse:
     messages = prepare_message_log(message_log)
 
     tools = await get_openai_tools_from_mcp()
@@ -519,6 +522,26 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                 )
                 continue
 
+            if tool_name == "get_menu_for_date" and isinstance(args, dict):
+                # Merge allergens (no duplicates)
+                llm_allergens = set(args.get("exclude_allergens") or [])
+                user_allergens = {str(a) for a in allergens}
+                args["exclude_allergens"] = list(llm_allergens | user_allergens) or None
+                # User diet takes priority unless "all"
+                if diet != MenuDietFilter.all:
+                    args["diet_filter"] = str(diet)
+            elif tool_name == "get_menus_batch" and isinstance(args, dict):
+                requests = args.get("requests", [])
+                for req in requests:
+                    if isinstance(req, dict):
+                        # Merge allergens (no duplicates)
+                        llm_allergens = set(req.get("exclude_allergens") or [])
+                        user_allergens = {str(a) for a in allergens}
+                        req["exclude_allergens"] = list(llm_allergens | user_allergens) or None
+                        # User diet takes priority unless "all"
+                        if diet != MenuDietFilter.all:
+                            req["diet_filter"] = str(diet)
+
             tool_trace.args = args
 
             if tool_name == LOCATION_TOOL_NAME:
@@ -590,7 +613,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    response = await run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls)
+    response = await run_tool_calling_loop(request.messages, request.diet, request.allergens, include_tool_calls=request.include_tool_calls)
     return response
 
 
