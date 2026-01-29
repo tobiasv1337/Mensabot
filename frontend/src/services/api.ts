@@ -16,6 +16,7 @@
  */
 
 import type { ChatMessage } from "./chats";
+import type { Allergen, Diet } from "./preferences";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -98,14 +99,19 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], diet: Diet, allergens: Allergen[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 		const request = await fetch(this.baseUrl + "/api/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ messages: payload, include_tool_calls: options.includeToolCalls ?? false })
+			body: JSON.stringify({
+				messages: payload,
+				diet,
+				allergens,
+				include_tool_calls: options.includeToolCalls ?? false,
+			})
 		});
 
 		if (!request.ok) {
