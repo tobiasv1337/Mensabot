@@ -1,72 +1,106 @@
 import styled from "styled-components";
-import bgImage from "../../assets/background.png";
 
 export const ChatWrapper = styled.section`
     position: relative;
-    height: 89vh; /* Ensure it takes full viewport height */
+    height: 100%;
+    min-height: 0;
     width: 100%;
+
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Prevents the whole page from scrolling */
+    overflow: hidden;
 
-    background-image: url("${bgImage}");
-    background-size: cover;
-    background-position: center;
-
-    &::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: rgba(30, 30, 30, 0.9);
-        z-index: 0;
-    }
+    background: transparent;
 `;
 
 export const TopBar = styled.div`
     position: relative;
     z-index: 10;
+
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
+    gap: 12px;
+
+    flex-wrap: nowrap; /* ✅ keep everything on one row */
+
     padding: 12px 16px;
-    background: rgba(30, 30, 30, 0.4); /* Optional: adds contrast to sticky bar */
-    backdrop-filter: blur(10px);
+
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceCard} 78%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 22%, transparent);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 `;
 
-// NEW: This container handles the actual scrolling
+export const FiltersArea = styled.div`
+    position: relative;
+    z-index: 10;
+
+    padding: 12px 16px;
+
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceCard} 78%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 22%, transparent);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+`;
+
+export const FiltersBar = styled.div`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
+`;
+
 export const MessagesContainer = styled.div`
-    flex-grow: 1; /* Takes up all available space between top and bottom */
-    overflow-y: auto; /* This is the ONLY part that scrolls */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+
     position: relative;
     z-index: 1;
-    padding: 16px;
 
-    /* Smooth scrolling */
+    padding: 16px;
     scroll-behavior: smooth;
 `;
 
 export const BottomArea = styled.div`
     position: relative;
     z-index: 10;
+
     padding: 12px 16px;
     display: grid;
     gap: 8px;
-    background: rgba(30, 30, 30, 0.4);
-    backdrop-filter: blur(10px);
+
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceCard} 78%, transparent);
+    border-top: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 22%, transparent);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 `;
 
 export const NewChatButton = styled.button`
-    /* ... your existing styles ... */
     padding: 6px 12px;
     border-radius: 10px;
+
     font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+
+    color: ${({ theme }) => theme.textOnInset};
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 88%, transparent);
+    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 24%, transparent);
+
     cursor: pointer;
 
     &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.14);
+        background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 96%, transparent);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 `;

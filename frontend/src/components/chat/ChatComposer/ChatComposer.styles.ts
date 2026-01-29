@@ -19,18 +19,20 @@ export const PlusButton = styled.button`
     width: 40px;
     border-radius: 12px;
 
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 28%, transparent);
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 78%, transparent);
 
-    color: rgba(255, 255, 255, 0.9);
+    color: ${({ theme }) => theme.textOnInset};
     font-size: 18px;
     line-height: 1;
 
     cursor: pointer;
 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
     &:hover:not(:disabled) {
-        background: rgba(0, 0, 0, 0.35);
+        background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 92%, transparent);
     }
 
     &:active:not(:disabled) {
@@ -51,9 +53,11 @@ export const InputShell = styled.div`
     align-items: center;
     padding: 0 6px 0 12px;
 
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 28%, transparent);
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 78%, transparent);
+
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 `;
 
 export const Input = styled.input`
@@ -62,11 +66,11 @@ export const Input = styled.input`
     outline: none;
     background: transparent;
 
-    color: rgba(255, 255, 255, 0.92);
+    color: ${({ theme }) => theme.textOnInset};
     font-size: 14px;
 
     ::placeholder {
-        color: rgba(255, 255, 255, 0.5);
+        color: color-mix(in srgb, ${({ theme }) => theme.textOnInset} 55%, transparent);
     }
 
     &:disabled {
@@ -86,11 +90,11 @@ export const SendButton = styled.button`
     border-radius: 10px;
     background: transparent;
 
-    color: rgba(255, 255, 255, 0.9);
+    color: ${({ theme }) => theme.textOnInset};
     cursor: pointer;
 
     &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.08);
+        background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 92%, transparent);
     }
 
     &:active:not(:disabled) {

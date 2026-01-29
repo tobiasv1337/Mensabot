@@ -11,6 +11,8 @@ import {
     NewChatButton,
 } from "./chat.styles";
 
+import FilterBar, { type ChatFilters } from "./Filters/FilterBar";
+
 import { MensaBotClient } from "../../services/api";
 import { Chats, ChatMessage, Chat } from "../../services/chats";
 
@@ -33,6 +35,12 @@ const ChatPage: React.FC = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const [isSending, setIsSending] = useState(false);
+
+    const [filters, setFilters] = useState<ChatFilters>({
+        diet: [],
+        mensas: [],
+        allergens: [],
+    });
 
     // ✅ store chat instance in state (do NOT spread the class)
     const [chat, setChat] = useState<Chat>(() => {
@@ -126,6 +134,8 @@ const ChatPage: React.FC = () => {
     return (
         <ChatWrapper>
             <TopBar>
+                <FilterBar value={filters} onChange={setFilters} />
+
                 <NewChatButton onClick={startNewChat} disabled={isSending}>
                     New chat
                 </NewChatButton>

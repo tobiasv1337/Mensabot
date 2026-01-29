@@ -1,45 +1,45 @@
 import styled from "styled-components";
 
 export const ScrollArea = styled.div`
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 16px;
 `;
 
 export const List = styled.div`
-  display: grid;
-  gap: 10px;
-  align-content: start;
+    display: grid;
+    gap: 10px;
+    align-content: start;
 `;
 
 export const BubbleRow = styled.div<{ $role: "assistant" | "user" }>`
-  display: flex;
-  justify-content: ${({ $role }) => ($role === "user" ? "flex-end" : "flex-start")};
+    display: flex;
+    justify-content: ${({ $role }) => ($role === "user" ? "flex-end" : "flex-start")};
 `;
 
 export const Bubble = styled.div<{ $role: "assistant" | "user" }>`
-  max-width: min(680px, 85%);
-  padding: 10px 12px;
-  border-radius: 14px;
+    max-width: min(680px, 85%);
+    padding: 10px 12px;
+    border-radius: 14px;
 
-  font-size: 14px;
-  line-height: 1.35;
+    font-size: 14px;
+    line-height: 1.35;
 
-  color: rgba(255, 255, 255, 0.92);
+    color: ${({ theme, $role }) => ($role === "user" ? theme.textOnInset : theme.textOnCard)};
 
-  background: ${({ $role }) =>
-    $role === "user" ? "rgba(42, 46, 50, 1)" : "rgba(61, 67, 75, 1)"};
+    background: ${({ theme, $role }) => ($role === "user" ? theme.surfaceInset : theme.surfaceCard)};
 
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 22%, transparent);
 
-  white-space: pre-wrap;
-  word-break: break-word;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    white-space: pre-wrap;
+    word-break: break-word;
 `;
 
 export const MarkdownBody = styled.div`
-  /* Avoid markdown adding weird top/bottom spacing */
   & > :first-child {
     margin-top: 0;
   }
@@ -60,14 +60,15 @@ export const MarkdownBody = styled.div`
   code {
     padding: 2px 6px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 86%, transparent);
   }
 
   pre {
     margin: 8px 0 0;
     padding: 10px;
     border-radius: 12px;
-    background: rgba(0, 0, 0, 0.35);
+    background: color-mix(in srgb, ${({ theme }) => theme.surfaceInset} 92%, transparent);
+    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 18%, transparent);
     overflow: auto;
   }
 
@@ -77,17 +78,14 @@ export const MarkdownBody = styled.div`
   }
 
   a {
-    color: rgba(255, 255, 255, 0.9);
+    color: ${({ theme }) => theme.accent2};
     text-decoration: underline;
   }
 
   blockquote {
     margin: 8px 0 0;
     padding-left: 10px;
-    border-left: 2px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.75);
+    border-left: 2px solid color-mix(in srgb, ${({ theme }) => theme.textMuted} 40%, transparent);
+    color: ${({ theme }) => theme.textSecondary};
   }
 `;
-
-
-
