@@ -70,6 +70,7 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
                 width: 20px;
                 height: 20px;
             }
+            color: inherit;
         `,
     };
     return sizeStyles[size ?? 'fill'];
@@ -78,7 +79,7 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
 // Icon wrapper for fill size buttons
 export const ButtonIconWrapper = styled.span`
   width: 44px;
-  display: flex;
+  display: flex;    
   justify-content: center;
   align-items: center;
   font-size: 20px;
