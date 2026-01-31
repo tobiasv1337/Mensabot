@@ -11,7 +11,7 @@ import {
     NewChatButton,
 } from "./chat.styles";
 
-import { MensaBotClient } from "../../services/api";
+import { MensaBotClient, type Canteen } from "../../services/api";
 import { Chats, ChatMessage, Chat } from "../../services/chats";
 
 const CHAT_ID = "default";
@@ -27,7 +27,12 @@ const isNearBottom = (el: HTMLDivElement) => {
     return remaining <= NEAR_BOTTOM_PX;
 };
 
-const ChatPage: React.FC = () => {
+type ChatProps = {
+    selectedCanteen?: Canteen | null;
+    resetKey?: number;
+};
+
+const ChatPage: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => {
     const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
 
     const scrollRef = useRef<HTMLDivElement>(null);

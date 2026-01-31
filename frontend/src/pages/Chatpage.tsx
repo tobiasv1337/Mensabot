@@ -4,6 +4,8 @@ import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../components/header/header";
 import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
+import CanteensPage from "./CanteensPage";
+import type { Canteen } from "../services/api";
 
 const NAV_ITEMS: NavItem[] = ["Home","ChatBot", "Mensen", "Über Uns", "Kontakt"];
 
@@ -12,6 +14,15 @@ const ChatPage: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   // HIER: State für das Einklappen
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedCanteen, setSelectedCanteen] = useState<Canteen | null>(null);
+  const [chatResetKey, setChatResetKey] = useState(0);
+
+  const handleSelectCanteen = (canteen: Canteen) => {
+    setSelectedCanteen(canteen);
+    setChatResetKey((prev) => prev + 1);
+    setActiveNav("ChatBot");
+    setDrawerOpen(false);
+  };
 
   return (
     <S.PageRoot>
@@ -39,7 +50,14 @@ const ChatPage: React.FC = () => {
           </S.SidebarSlot>
 
           <S.Content>
-            <Chat />
+            {activeNav === "Mensen" ? (
+              <CanteensPage
+                onSelectCanteen={handleSelectCanteen}
+                selectedCanteenId={selectedCanteen?.id ?? null}
+              />
+            ) : (
+              <Chat selectedCanteen={selectedCanteen} resetKey={chatResetKey} />
+            )}
           </S.Content>
         </S.BodyGrid>
 
