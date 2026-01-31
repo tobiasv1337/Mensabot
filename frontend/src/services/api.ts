@@ -51,6 +51,7 @@ export type PageInfo = {
 export type CanteenIndexInfo = {
 	updated_at: string;
 	total_canteens: number;
+	total_cities: number;
 };
 
 export type CanteenListResponse = {
@@ -69,6 +70,7 @@ export type CanteenSearchResult = {
 export type CanteenSearchResponse = {
 	results: CanteenSearchResult[];
 	total_results: number;
+	page_info: PageInfo;
 	index: CanteenIndexInfo;
 };
 
@@ -131,7 +133,7 @@ export class MensaBotClient {
 		throw new Error("Unexpected chat API response shape");
 	}
 
-	async listCanteens(params: {page?: number; perPage?: number; city?: string; hasCoordinates?: boolean;} = {}): Promise<CanteenListResponse> {
+	async listCanteens(params: { page?: number; perPage?: number; city?: string; hasCoordinates?: boolean; } = {}): Promise<CanteenListResponse> {
 		const url = new URL(this.baseUrl + "/api/canteens");
 		if (params.page) url.searchParams.set("page", String(params.page));
 		if (params.perPage) url.searchParams.set("per_page", String(params.perPage));
@@ -142,16 +144,18 @@ export class MensaBotClient {
 		return response as CanteenListResponse;
 	}
 
-	async searchCanteens(params: {query?: string; city?: string; nearLat?: number; nearLng?: number; radiusKm?: number; limit?: number; minScore?: number; hasCoordinates?: boolean;} = {}): Promise<CanteenSearchResponse> {
+	async searchCanteens(params: { query?: string; city?: string; nearLat?: number; nearLng?: number; radiusKm?: number; page?: number; perPage?: number; minScore?: number; hasCoordinates?: boolean; sortBy?: "auto" | "distance" | "name" | "city" } = {}): Promise<CanteenSearchResponse> {
 		const url = new URL(this.baseUrl + "/api/canteens/search");
 		if (params.query) url.searchParams.set("query", params.query);
 		if (params.city) url.searchParams.set("city", params.city);
 		if (params.nearLat !== undefined) url.searchParams.set("near_lat", String(params.nearLat));
 		if (params.nearLng !== undefined) url.searchParams.set("near_lng", String(params.nearLng));
 		if (params.radiusKm !== undefined) url.searchParams.set("radius_km", String(params.radiusKm));
-		if (params.limit !== undefined) url.searchParams.set("limit", String(params.limit));
+		if (params.page !== undefined) url.searchParams.set("page", String(params.page));
+		if (params.perPage !== undefined) url.searchParams.set("per_page", String(params.perPage));
 		if (params.minScore !== undefined) url.searchParams.set("min_score", String(params.minScore));
 		if (params.hasCoordinates !== undefined) url.searchParams.set("has_coordinates", String(params.hasCoordinates));
+		if (params.sortBy) url.searchParams.set("sort_by", params.sortBy);
 
 		const response = await this.getJson(url.pathname + url.search);
 		return response as CanteenSearchResponse;
