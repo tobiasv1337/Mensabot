@@ -86,6 +86,7 @@ class PageInfo(BaseModel):
 class CanteenIndexInfo(BaseModel):
     updated_at: str
     total_canteens: int
+    total_cities: int
 
 
 class CanteenListResponse(BaseModel):
@@ -104,6 +105,7 @@ class CanteenSearchResultOut(BaseModel):
 class CanteenSearchResponse(BaseModel):
     results: list[CanteenSearchResultOut]
     total_results: int
+    page_info: PageInfo
     index: CanteenIndexInfo
 
 LOG_LEVEL = settings.log_level.upper()
@@ -615,6 +617,7 @@ async def list_canteens(
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
+            total_cities=len(index._cities),
         ),
         total_results=total,
     )
@@ -627,9 +630,11 @@ async def search_canteens(
     near_lat: float | None = Query(None, ge=-90.0, le=90.0),
     near_lng: float | None = Query(None, ge=-180.0, le=180.0),
     radius_km: float | None = Query(None, gt=0.0),
-    limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     min_score: float = Query(60.0, ge=0.0, le=100.0),
     has_coordinates: bool | None = None,
+    sort_by: str = Query("auto", regex="^(auto|distance|name|city)$"),
 ):
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
@@ -641,10 +646,14 @@ async def search_canteens(
         near_lat=near_lat,
         near_lng=near_lng,
         radius_km=radius_km,
-        limit=limit,
+        page=page,
+        per_page=per_page,
         min_score=min_score,
         has_coordinates=has_coordinates,
+        sort_by=sort_by,
     )
+
+    next_page = page + 1 if page * per_page < total else None
 
     return CanteenSearchResponse(
         results=[
@@ -656,9 +665,16 @@ async def search_canteens(
             for r in results
         ],
         total_results=total,
+        page_info=PageInfo(
+            current_page=page,
+            per_page=per_page,
+            next_page=next_page,
+            has_next=next_page is not None,
+        ),
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
+            total_cities=len(index._cities),
         ),
     )
 
