@@ -381,13 +381,15 @@ class CanteenIndex:
         self,
         query: str | None,
         *,
+        page: int = 1,
+        per_page: int = 50,
         city: str | None = None,
         near_lat: float | None = None,
         near_lng: float | None = None,
         radius_km: float | None = None,
-        limit: int = 20,
         min_score: float = 60.0,
         has_coordinates: bool | None = None,
+        sort_by: str = "auto",  # auto, distance, name, city
     ) -> tuple[list[CanteenSearchResult], int]:
         query_norm = _normalize_query(query or "")
         if not query_norm and not city and near_lat is None and near_lng is None:
@@ -408,7 +410,7 @@ class CanteenIndex:
         effective_radius: float | None = None
         if near_lat is not None and near_lng is not None:
             expansion_center = (near_lat, near_lng)
-            effective_radius = radius_km or 10.0
+            effective_radius = radius_km
         elif radius_km is not None and explicit_city and city_norm:
             centroid = self._city_centroids.get(city_norm)
             if centroid is not None:
@@ -453,7 +455,7 @@ class CanteenIndex:
                 if not (in_city or in_expansion):
                     continue
             else:
-                if expansion_center is not None and not in_expansion:
+                if expansion_center is not None and effective_radius is not None and not in_expansion:
                     continue
 
             if not variants:
@@ -469,15 +471,38 @@ class CanteenIndex:
             results.append(CanteenSearchResult(canteen=entry.canteen, score=score, distance_km=distance_km))
 
         total = len(results)
-        results.sort(
-            key=lambda r: (
-                -r.score,
-                r.distance_km is None,
-                r.distance_km if r.distance_km is not None else float("inf"),
-                _normalize_text(r.canteen.name),
+        
+        # Sort results
+        if sort_by == "distance":
+             results.sort(
+                key=lambda r: (
+                    r.distance_km is None,
+                    r.distance_km if r.distance_km is not None else float("inf"),
+                    _normalize_text(r.canteen.name),
+                )
             )
-        )
-        return results[: max(limit, 0)], total
+        elif sort_by == "city":
+             results.sort(
+                key=lambda r: (
+                    _normalize_text(r.canteen.city or ""),
+                    _normalize_text(r.canteen.name),
+                )
+            )
+        elif sort_by == "name":
+             results.sort(key=lambda r: _normalize_text(r.canteen.name))
+        else: # auto / default
+            results.sort(
+                key=lambda r: (
+                    -r.score,
+                    r.distance_km is None,
+                    r.distance_km if r.distance_km is not None else float("inf"),
+                    _normalize_text(r.canteen.name),
+                )
+            )
+
+        start = (page - 1) * per_page
+        end = start + per_page
+        return results[start:end], total
 
     @staticmethod
     def _index_canteens(canteens: list[Canteen]) -> list[_IndexedCanteen]:
