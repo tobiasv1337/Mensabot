@@ -261,7 +261,8 @@ def search_canteens(
         near_lat=near_lat,
         near_lng=near_lng,
         radius_km=radius_km,
-        limit=limit,
+        per_page=limit, # Map limit -> per_page
+        page=1,         # Default to first page
         min_score=min_score,
         has_coordinates=None, # Don't expose this filter to the LLM
     )
