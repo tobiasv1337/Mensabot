@@ -1,7 +1,9 @@
 export type NavItem =
     | "Home"
     | "ChatBot"
-    | "Mensen"
-    | "Über Uns"
-    | "Kontakt"
-    | "Shortcuts";
+    | "Canteens"
+    | "Map"
+    | "About"
+    | "Contact"
+    | "Shortcuts"
+    | "Settings";

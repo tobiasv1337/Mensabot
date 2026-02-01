@@ -72,6 +72,11 @@ export const Sidebar = styled.aside<{
   `}
 `;
 
+export const Main = styled.div`
+  flex: 1;
+  overflow-y: auto;
+`;
+
 export const CollapseToggle = styled.button`
   all: unset;
   cursor: pointer;
@@ -116,15 +121,6 @@ export const NavSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
-`;
-
-/* Scrollable content area inside the Sidebar. Footer stays outside this area. */
-export const Content = styled.div`
-  flex: 1 1 auto;
-  overflow: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 8px;
 `;
 
 export const SectionTitle = styled.div`
@@ -235,5 +231,56 @@ export const SegmentButton = styled.button<{ $active: boolean }>`
       background: ${theme.surfaceCard};
       color: ${theme.textOnCard};
     `}
+  }
+`;
+
+export const ChatList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px 12px;
+`;
+
+export const ChatButton = styled.button<{ $active?: boolean }>`
+  all: unset;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: ${({ $active, theme }) =>
+    $active ? theme.surfaceAccent : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.textOnAccent : theme.textSecondary};
+
+  &:hover {
+    background: ${({ theme }) => theme.surfaceInset};
+    color: ${({ theme }) => theme.textPrimary};
+  }
+`;
+
+export const ChatTitle = styled.div`
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const ChatHint = styled.div`
+  padding: 8px 12px;
+  font-size: 11px;
+  color: ${({ theme }) => theme.textMuted};
+`;
+
+export const ChatLoadMore = styled.button`
+  all: unset;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: ${({ theme }) => theme.textMuted};
+  border-radius: 10px;
+
+  &:hover {
+    background: ${({ theme }) => theme.surfaceInset};
+    color: ${({ theme }) => theme.textPrimary};
   }
 `;

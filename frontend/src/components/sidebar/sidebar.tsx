@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useCallback } from "react";
 import * as S from "./sidebar.styles";
 import type { NavItem } from "../../types/navigation";
 import { useTheme } from "../../theme/themeProvider";
+import type { ChatSummary } from "../../services/chats";
 import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
@@ -170,6 +171,12 @@ interface SidebarProps {
   activeNav: NavItem;
   onNavClick: (i: NavItem) => void;
 
+  chats: ChatSummary[];
+  activeChatId: string | null;
+  onSelectChat: (id: string) => void;
+  onLoadMoreChats: () => void;
+  hasMoreChats: boolean;
+
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -199,6 +206,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   navItems,
   activeNav,
   onNavClick,
+  chats,
+  activeChatId,
+  onSelectChat,
+  onLoadMoreChats,
+  hasMoreChats,
   isCollapsed = false,
   onToggleCollapse,
 }) => {
@@ -211,6 +223,26 @@ const Sidebar: React.FC<SidebarProps> = ({
       onCloseDrawer();
     }
   };
+
+  const handleChatSelection = (id: string) => {
+    onSelectChat(id);
+
+    if (mode === "drawer") {
+      onCloseDrawer();
+    }
+  };
+
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!hasMoreChats) return;
+      const el = event.currentTarget;
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (remaining <= 80) {
+        onLoadMoreChats();
+      }
+    },
+    [hasMoreChats, onLoadMoreChats]
+  );
 
   return (
     <>
@@ -235,43 +267,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        <S.Content>
-          {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
+        <S.Main onScroll={handleScroll}>
+          {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
 
-          <S.NavSection>
-            {navItems.map((n) => (
-              <Button
-                key={n}
-                variant="default"
-                size="fill"
-                active={activeNav === n}
-                collapsed={isCollapsed}
-                onClick={() => handleNavSelection(n)}
-                title={isCollapsed ? n : undefined}
-              >
-                <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
-                <ButtonTextWrapper $collapsed={isCollapsed}>
-                  {n}
-                </ButtonTextWrapper>
-              </Button>
-            ))}
-          </S.NavSection>
+            <S.NavSection>
+              {navItems.map((n) => (
+                <Button
+                  key={n}
+                  variant="default"
+                  size="fill"
+                  active={activeNav === n}
+                  collapsed={isCollapsed}
+                  onClick={() => handleNavSelection(n)}
+                  title={isCollapsed ? n : undefined}
+                >
+                  <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
+                  <ButtonTextWrapper $collapsed={isCollapsed}>
+                    {n}
+                  </ButtonTextWrapper>
+                </Button>
+              ))}
+            </S.NavSection>
 
           {!isCollapsed && (
             <>
               <S.SectionTitle>Einstellungen</S.SectionTitle>
 
               <S.NavSection>
-                <Button
-                  variant="default"
-                  size="fill"
-                  collapsed={isCollapsed}>
-                  <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Einstellungen
-                  </ButtonTextWrapper>
-                </Button>
-
                 <Button
                   variant="default"
                   size="fill"
@@ -286,7 +308,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="default"
                   size="fill"
-                  collapsed={isCollapsed}>
+                  collapsed={isCollapsed}
+                  onClick={() => handleNavSelection("Einstellungen")}>
+                  <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
+                  <ButtonTextWrapper $collapsed={isCollapsed}>
+                    Einstellungen
+                  </ButtonTextWrapper>
+                </Button>
+
+                <Button
+                  variant="default"
+                  size="fill"
+                  collapsed={isCollapsed}
+                  onClick={() => handleNavSelection("Karte")}>
                   <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
                     Karte
@@ -296,16 +330,39 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="default"
                   size="fill"
-                  collapsed={isCollapsed}>
+                  collapsed={isCollapsed}
+                  onClick={() => handleNavSelection("Neuen Chat starten")}>
                   <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
                     Neuen Chat starten
                   </ButtonTextWrapper>
                 </Button>
               </S.NavSection>
+
+              <S.SectionTitle>Chats</S.SectionTitle>
+              <S.ChatList>
+                {chats.length === 0 && (
+                  <S.ChatHint>Keine Chats gefunden.</S.ChatHint>
+                )}
+                {chats.map((chat) => (
+                  <S.ChatButton
+                    key={chat.id}
+                    $active={chat.id === activeChatId}
+                    onClick={() => handleChatSelection(chat.id)}
+                    title={chat.title}
+                  >
+                    <S.ChatTitle>{chat.title}</S.ChatTitle>
+                  </S.ChatButton>
+                ))}
+                {hasMoreChats && (
+                  <S.ChatLoadMore onClick={onLoadMoreChats}>
+                    Mehr Chats laden
+                  </S.ChatLoadMore>
+                )}
+              </S.ChatList>
             </>
           )}
-        </S.Content>
+        </S.Main>
         {/* THEME SWITCHER */}
         <S.Footer $isCollapsed={isCollapsed}>
           {!isCollapsed && <S.FooterHint>Theme</S.FooterHint>}
