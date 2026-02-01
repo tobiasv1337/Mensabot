@@ -123,6 +123,19 @@ export const FiltersSection = styled.div`
   background: ${({ theme }) => theme.surfacePage};
 `;
 
+export const DeleteName = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => `${theme.accent1}66`};
+  background: ${({ theme }) => `${theme.accent1}12`};
+  color: ${({ theme }) => theme.accent1};
+  font-size: 13px;
+  font-weight: 700;
+`;
+
 export const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
