@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Canteen, CanteenSearchResult } from "../../services/api";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Canteen } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
 import { Chats, ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
+import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatInput from "./ChatInput";
+import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
+import ShortcutModal from "../shortcuts/ShortcutModal";
 import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
-import vegetarianIcon from "../../assets/vegetarian.svg";
-import veganIcon from "../../assets/vegan.svg";
-import meatIcon from "../../assets/meat.svg";
+import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import * as S from "./chat.styles";
 
 const CHAT_ID = "default";
@@ -20,91 +21,6 @@ const WELCOME_TEXT =
 
 const NEAR_BOTTOM_PX = 120;
 
-const DIET_OPTIONS: Array<{
-  value: Exclude<ChatFilters["diet"], null>;
-  label: string;
-  iconSrc: string;
-}> = [
-    {
-      value: "vegetarian",
-      label: "Vegetarisch",
-      iconSrc: vegetarianIcon,
-    },
-    {
-      value: "vegan",
-      label: "Vegan",
-      iconSrc: veganIcon,
-    },
-    {
-      value: "meat",
-      label: "Fleisch",
-      iconSrc: meatIcon,
-    },
-  ];
-
-const ALLERGENS = [
-  { key: "gluten", label: "Gluten" },
-  { key: "wheat", label: "Weizen" },
-  { key: "rye", label: "Roggen" },
-  { key: "barley", label: "Gerste" },
-  { key: "oats", label: "Hafer" },
-  { key: "spelt", label: "Dinkel" },
-  { key: "crustacean", label: "Krebstiere" },
-  { key: "egg", label: "Eier" },
-  { key: "fish", label: "Fisch" },
-  { key: "peanut", label: "Erdnüsse" },
-  { key: "soy", label: "Soja" },
-  { key: "milk", label: "Milch" },
-  { key: "lactose", label: "Laktose" },
-  { key: "nut", label: "Schalenfrüchte" },
-  { key: "celery", label: "Sellerie" },
-  { key: "mustard", label: "Senf" },
-  { key: "sesame", label: "Sesam" },
-  { key: "sulfite", label: "Schwefeldioxid" },
-  { key: "lupin", label: "Lupinen" },
-  { key: "mollusc", label: "Weichtiere" },
-  { key: "alcohol", label: "Alkohol" },
-  { key: "caffeine", label: "Koffein" },
-  { key: "quinine", label: "Chinin" },
-  { key: "preservative", label: "Konservierungsstoffe" },
-  { key: "nitrite", label: "Nitritpökelsalz" },
-  { key: "antioxidant", label: "Antioxidationsmittel" },
-  { key: "colorant", label: "Farbstoffe" },
-  { key: "phosphate", label: "Phosphate" },
-  { key: "sweetener", label: "Süßungsmittel" },
-  { key: "flavor_enhancer", label: "Geschmacksverstärker" },
-  { key: "gelatin", label: "Gelatine" },
-  { key: "yeast", label: "Hefe" },
-  { key: "phenylalanine", label: "Phenylalanin" },
-  { key: "laxative", label: "Abführend" },
-];
-
-const ALLERGEN_LABELS = new Map(ALLERGENS.map((allergen) => [allergen.key, allergen.label]));
-const ALLERGEN_KEY_BY_LABEL = new Map(ALLERGENS.map((allergen) => [allergen.label.toLowerCase(), allergen.key]));
-const ALLERGEN_KEYS = new Set(ALLERGENS.map((allergen) => allergen.key));
-
-const normalizeAllergenKey = (value: string) => {
-  const trimmed = value.trim();
-  if (ALLERGEN_KEYS.has(trimmed)) return trimmed;
-  const byLabel = ALLERGEN_KEY_BY_LABEL.get(trimmed.toLowerCase());
-  return byLabel ?? trimmed;
-};
-
-const normalizeAllergenList = (items: string[]) => {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-  items.forEach((item) => {
-    const key = normalizeAllergenKey(item);
-    if (!seen.has(key)) {
-      seen.add(key);
-      normalized.push(key);
-    }
-  });
-  return normalized;
-};
-
-const getAllergenLabel = (key: string) => ALLERGEN_LABELS.get(key) ?? key;
-
 const isNearBottom = (el: HTMLDivElement) => {
   const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
   return remaining <= NEAR_BOTTOM_PX;
@@ -113,14 +29,25 @@ const isNearBottom = (el: HTMLDivElement) => {
 type ChatProps = {
   selectedCanteen?: Canteen | null;
   resetKey?: number;
+  shortcuts: Shortcut[];
+  onCreateShortcut: (shortcut: ShortcutInput) => void;
 };
 
-const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => {
+const cloneFilters = (filters: ChatFilters): ChatFilters => ({
+  diet: filters.diet ?? null,
+  allergens: [...filters.allergens],
+  canteens: [...filters.canteens],
+});
+
+const Chat: React.FC<ChatProps> = ({
+  selectedCanteen = null,
+  resetKey = 0,
+  shortcuts,
+  onCreateShortcut,
+}) => {
   const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
-  const canteenRequestId = useRef(0);
-  const canteenAnchorRef = useRef<HTMLDivElement>(null);
 
   const [chat, setChat] = useState<ChatType>(() => {
     const existing = Chats.getById(CHAT_ID, true)!;
@@ -136,18 +63,18 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
   const [isSending, setIsSending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
 
+  const [inputValue, setInputValue] = useState("");
+  const [focusSignal, setFocusSignal] = useState(0);
+  const [shortcutModalOpen, setShortcutModalOpen] = useState(false);
+  const [shortcutDraft, setShortcutDraft] = useState<ShortcutInput>({
+    name: "",
+    prompt: "",
+    filters: defaultChatFilters,
+  });
+
   const [locationPromptHandled, setLocationPromptHandled] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
-
-  const [canteenFilterOpen, setCanteenFilterOpen] = useState(false);
-  const [canteenQuery, setCanteenQuery] = useState("");
-  const [canteenResults, setCanteenResults] = useState<CanteenSearchResult[]>([]);
-  const [canteenLoading, setCanteenLoading] = useState(false);
-  const [canteenError, setCanteenError] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties | null>(null);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -179,10 +106,9 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
       setFilters(nextFilters);
       setVersion((v) => v + 1);
       setFiltersOpen(false);
+      setInputValue("");
       setLocationPromptHandled(false);
       setLocationError("");
-      setLocationStatus("idle");
-      setUserLocation(null);
       setShowScrollToLatest(false);
       shouldAutoScrollRef.current = true;
     },
@@ -247,103 +173,6 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
 
     setLocationPromptHandled(true);
   }, [chat.messages.length]);
-
-  const requestSearchLocation = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      setLocationStatus("error");
-      return;
-    }
-
-    setLocationStatus("loading");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocationStatus("ready");
-      },
-      () => {
-        setLocationStatus("error");
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  }, []);
-
-  useEffect(() => {
-    if (!canteenFilterOpen) return;
-    if (canteenQuery.trim().length === 0) return;
-    if (locationStatus !== "idle") return;
-    requestSearchLocation();
-  }, [canteenFilterOpen, canteenQuery, locationStatus, requestSearchLocation]);
-
-  const updateDropdownPosition = useCallback(() => {
-    const anchor = canteenAnchorRef.current;
-    if (!anchor) return;
-    const rect = anchor.getBoundingClientRect();
-    const width = Math.min(Math.max(rect.width, 240), 360);
-    const padding = 12;
-    let left = rect.left;
-    if (left + width > window.innerWidth - padding) {
-      left = Math.max(padding, window.innerWidth - width - padding);
-    }
-    const top = rect.bottom + 6;
-    setDropdownStyle({ top, left, width });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!canteenFilterOpen || canteenQuery.trim().length === 0) {
-      setDropdownStyle(null);
-      return;
-    }
-
-    updateDropdownPosition();
-
-    const handleWindowChange = () => updateDropdownPosition();
-    window.addEventListener("resize", handleWindowChange);
-    window.addEventListener("scroll", handleWindowChange, true);
-
-    return () => {
-      window.removeEventListener("resize", handleWindowChange);
-      window.removeEventListener("scroll", handleWindowChange, true);
-    };
-  }, [canteenFilterOpen, canteenQuery, updateDropdownPosition]);
-
-  useEffect(() => {
-    const trimmed = canteenQuery.trim();
-    if (!canteenFilterOpen || trimmed.length === 0) {
-      setCanteenResults([]);
-      setCanteenLoading(false);
-      setCanteenError(null);
-      return;
-    }
-
-    const timer = window.setTimeout(async () => {
-      const requestId = ++canteenRequestId.current;
-      setCanteenLoading(true);
-      setCanteenError(null);
-
-      try {
-        const response = await client.searchCanteens({
-          query: trimmed,
-          perPage: 8,
-          sortBy: trimmed.length > 0 ? "auto" : userLocation ? "distance" : "name",
-          nearLat: userLocation?.lat,
-          nearLng: userLocation?.lng,
-          hasCoordinates: userLocation ? true : undefined,
-        });
-
-        if (requestId !== canteenRequestId.current) return;
-        setCanteenResults(response.results);
-      } catch (error) {
-        if (requestId !== canteenRequestId.current) return;
-        setCanteenError("Mensen konnten nicht geladen werden.");
-      } finally {
-        if (requestId === canteenRequestId.current) {
-          setCanteenLoading(false);
-        }
-      }
-    }, 320);
-
-    return () => window.clearTimeout(timer);
-  }, [canteenQuery, canteenFilterOpen, client, userLocation]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -413,56 +242,9 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
     setVersion((v) => v + 1);
   }, [chat, isSending, isRequestingLocation]);
 
-  const handleAddAllergen = useCallback(
-    (allergen: string) => {
-      if (filters.allergens.includes(allergen)) return;
-      updateFiltersPartial({ allergens: [...filters.allergens, allergen] });
-    },
-    [filters.allergens, updateFiltersPartial]
-  );
-
-  const handleRemoveAllergen = useCallback(
-    (allergen: string) => {
-      updateFiltersPartial({ allergens: filters.allergens.filter((item) => item !== allergen) });
-    },
-    [filters.allergens, updateFiltersPartial]
-  );
-
-  const handleAddCanteen = useCallback(
-    (canteen: Canteen) => {
-      if (filters.canteens.some((item) => item.id === canteen.id)) return;
-      updateFiltersPartial({ canteens: [...filters.canteens, canteen] });
-      setCanteenQuery("");
-      setCanteenResults([]);
-    },
-    [filters.canteens, updateFiltersPartial]
-  );
-
-  const handleRemoveCanteen = useCallback(
-    (canteenId: number) => {
-      updateFiltersPartial({ canteens: filters.canteens.filter((item) => item.id !== canteenId) });
-    },
-    [filters.canteens, updateFiltersPartial]
-  );
-
   const handleResetFilters = useCallback(() => {
     updateFilters(defaultChatFilters);
-    setCanteenQuery("");
-    setCanteenResults([]);
-    setCanteenError(null);
-    setCanteenLoading(false);
-    setCanteenFilterOpen(false);
-    setLocationStatus("idle");
-    setUserLocation(null);
   }, [updateFilters]);
-
-  const availableAllergens = ALLERGENS.filter((allergen) => !filters.allergens.includes(allergen.key)).sort(
-    (a, b) => a.label.localeCompare(b.label, "de")
-  );
-
-  const filteredCanteenResults = canteenResults.filter(
-    (result) => !filters.canteens.some((item) => item.id === result.canteen.id)
-  );
 
   const hasActiveFilters =
     filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0;
@@ -480,12 +262,18 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
     ...filters.allergens.map((allergenKey) => ({
       key: `allergen-${allergenKey}`,
       label: getAllergenLabel(allergenKey),
-      onRemove: () => handleRemoveAllergen(allergenKey),
+      onRemove: () =>
+        updateFiltersPartial({
+          allergens: filters.allergens.filter((item) => item !== allergenKey),
+        }),
     })),
     ...filters.canteens.map((canteen) => ({
       key: `canteen-${canteen.id}`,
       label: canteen.name,
-      onRemove: () => handleRemoveCanteen(canteen.id),
+      onRemove: () =>
+        updateFiltersPartial({
+          canteens: filters.canteens.filter((item) => item.id !== canteen.id),
+        }),
     })),
   ];
 
@@ -496,6 +284,37 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
     shouldAutoScrollRef.current = true;
     setShowScrollToLatest(false);
   };
+
+  const handleOpenShortcutModal = useCallback(() => {
+    setShortcutDraft({
+      name: "",
+      prompt: inputValue,
+      filters: cloneFilters(filters),
+    });
+    setShortcutModalOpen(true);
+  }, [filters, inputValue]);
+
+  const handleSaveShortcut = useCallback(
+    (draft: ShortcutInput) => {
+      onCreateShortcut({
+        name: draft.name.trim(),
+        prompt: draft.prompt,
+        filters: cloneFilters(draft.filters),
+      });
+      setShortcutModalOpen(false);
+    },
+    [onCreateShortcut]
+  );
+
+  const handleApplyShortcut = useCallback(
+    (shortcut: Shortcut) => {
+      updateFilters(cloneFilters(shortcut.filters));
+      setFiltersOpen(false);
+      setInputValue(shortcut.prompt);
+      setFocusSignal((prev) => prev + 1);
+    },
+    [updateFilters]
+  );
 
   return (
     <S.ChatShell>
@@ -579,121 +398,7 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
 
       <S.FilterCard $open={filtersOpen}>
         <S.FilterBody>
-          <S.FilterSection>
-            <S.FilterLabel>Ernährungsweise</S.FilterLabel>
-            <ScrollablePillRow>
-              {DIET_OPTIONS.map((option) => (
-                <S.PillButton
-                  key={option.label}
-                  type="button"
-                  $selected={filters.diet === option.value}
-                  $removable={filters.diet === option.value}
-                  onClick={() =>
-                    updateFiltersPartial({
-                      diet: filters.diet === option.value ? null : option.value,
-                    })
-                  }
-                >
-                  {filters.diet === option.value && <S.PillRemove>×</S.PillRemove>}
-                  <S.PillIcon>
-                    <img src={option.iconSrc} alt="" aria-hidden="true" />
-                  </S.PillIcon>
-                  {option.label}
-                </S.PillButton>
-              ))}
-            </ScrollablePillRow>
-          </S.FilterSection>
-
-          <S.FilterSection>
-            <S.FilterLabel>Allergene</S.FilterLabel>
-            <ScrollablePillRow>
-              {[...filters.allergens, ...availableAllergens.map((allergen) => allergen.key)].map((allergenKey) => {
-                const isSelected = filters.allergens.includes(allergenKey);
-                return (
-                  <S.PillButton
-                    key={allergenKey}
-                    type="button"
-                    $selected={isSelected}
-                    $removable={isSelected}
-                    onClick={() =>
-                      isSelected ? handleRemoveAllergen(allergenKey) : handleAddAllergen(allergenKey)
-                    }
-                  >
-                    {isSelected && <S.PillRemove>×</S.PillRemove>}
-                    {getAllergenLabel(allergenKey)}
-                  </S.PillButton>
-                );
-              })}
-            </ScrollablePillRow>
-          </S.FilterSection>
-
-          <S.FilterSection>
-            <S.FilterLabel>Mensa</S.FilterLabel>
-            <ScrollablePillRow onScroll={updateDropdownPosition}>
-              <S.CanteenSearchWrap ref={canteenAnchorRef}>
-                <S.PillInputShell
-                  $active={canteenFilterOpen}
-                  onClick={() => setCanteenFilterOpen(true)}
-                >
-                  <S.PillInput
-                    type="search"
-                    placeholder="Mensa suchen"
-                    value={canteenQuery}
-                    onChange={(event) => {
-                      setCanteenQuery(event.target.value);
-                      if (!canteenFilterOpen) setCanteenFilterOpen(true);
-                    }}
-                    onFocus={() => setCanteenFilterOpen(true)}
-                    onBlur={() => {
-                      if (canteenQuery.trim().length === 0) setCanteenFilterOpen(false);
-                    }}
-                    style={{
-                      width: `${Math.min(Math.max(canteenQuery.length + 6, 12), 22)}ch`,
-                    }}
-                  />
-                </S.PillInputShell>
-                {canteenFilterOpen && canteenQuery.trim().length > 0 && dropdownStyle && (
-                  <S.SearchDropdown style={dropdownStyle}>
-                    {canteenLoading && <S.SearchDropdownItem $muted>Suche läuft...</S.SearchDropdownItem>}
-                    {canteenError && <S.SearchDropdownItem $muted>Fehler beim Laden</S.SearchDropdownItem>}
-                    {!canteenLoading && !canteenError && filteredCanteenResults.length === 0 && (
-                      <S.SearchDropdownItem $muted>Keine Treffer</S.SearchDropdownItem>
-                    )}
-                    {!canteenLoading &&
-                      !canteenError &&
-                      filteredCanteenResults.map((result) => (
-                        <S.SearchDropdownItem
-                          key={result.canteen.id}
-                          type="button"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => handleAddCanteen(result.canteen)}
-                        >
-                          <span>{result.canteen.name}</span>
-                          <S.SearchDropdownMeta>
-                            {result.canteen.city ? result.canteen.city : "Unbekannte Stadt"}
-                            {result.distance_km !== undefined
-                              ? ` · ${result.distance_km.toFixed(1)} km`
-                              : ""}
-                          </S.SearchDropdownMeta>
-                        </S.SearchDropdownItem>
-                      ))}
-                  </S.SearchDropdown>
-                )}
-              </S.CanteenSearchWrap>
-              {filters.canteens.map((canteen) => (
-                <S.PillButton
-                  key={canteen.id}
-                  type="button"
-                  $selected
-                  $removable
-                  onClick={() => handleRemoveCanteen(canteen.id)}
-                >
-                  <S.PillRemove>×</S.PillRemove>
-                  {canteen.name}
-                </S.PillButton>
-              ))}
-            </ScrollablePillRow>
-          </S.FilterSection>
+          <FiltersEditor filters={filters} onChange={updateFilters} client={client} />
         </S.FilterBody>
       </S.FilterCard>
 
@@ -757,9 +462,28 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
       </S.MessagesCard>
 
       <S.ComposerCard>
-        <ChatInput onSend={sendMessage} disabled={isSending} />
+        <ChatInput
+          value={inputValue}
+          onChange={setInputValue}
+          onSend={sendMessage}
+          disabled={isSending}
+          shortcuts={shortcuts}
+          onShortcutAdd={handleOpenShortcutModal}
+          onShortcutSelect={handleApplyShortcut}
+          focusSignal={focusSignal}
+        />
         <AiWarningText />
       </S.ComposerCard>
+      {shortcutModalOpen && (
+        <ShortcutModal
+          isOpen={shortcutModalOpen}
+          mode="create"
+          initialData={shortcutDraft}
+          client={client}
+          onCancel={() => setShortcutModalOpen(false)}
+          onSave={handleSaveShortcut}
+        />
+      )}
     </S.ChatShell>
   );
 };

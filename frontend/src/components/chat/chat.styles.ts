@@ -25,7 +25,7 @@ const pulse = keyframes`
 export const ChatShell = styled.section`
   position: relative;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto auto 1fr auto;
   height: calc(100vh - 140px);
   min-height: 560px;
   background: ${({ theme }) => theme.surfacePage};
@@ -37,6 +37,7 @@ export const ChatShell = styled.section`
 `;
 
 export const HeaderCard = styled.div`
+  grid-row: 1;
   position: sticky;
   top: 0;
   z-index: 6;
@@ -115,6 +116,7 @@ export const IconButtonLabelAlways = styled(IconButtonLabel)`
 `;
 
 export const FilterCard = styled.div<{ $open?: boolean }>`
+  grid-row: 3;
   position: sticky;
   top: 40px;
   z-index: 5;
@@ -124,7 +126,7 @@ export const FilterCard = styled.div<{ $open?: boolean }>`
   transform: ${({ $open }) => ($open ? "none" : "translateY(-6px)")};
   transition: max-height 0.35s ease, opacity 0.2s ease, transform 0.2s ease;
   background: ${({ theme }) => theme.surfacePage};
-  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}1F`};
+  border-bottom: none;
 `;
 
 export const FilterBody = styled.div`
@@ -301,15 +303,17 @@ export const SearchDropdownMeta = styled.span`
 `;
 
 export const ActiveFiltersRow = styled(PillRow)`
+  grid-row: 2;
   position: sticky;
   top: 40px;
   z-index: 4;
   background: ${({ theme }) => theme.surfacePage};
   padding: 6px 0 8px;
-  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}12`};
+  border-bottom: none;
 `;
 
 export const MessagesCard = styled.section`
+  grid-row: 4;
   position: relative;
   min-height: 0;
   display: flex;
@@ -323,6 +327,7 @@ export const MessagesScroll = styled.div`
   overflow-y: auto;
   padding: 14px 0 24px;
   scroll-behavior: smooth;
+  overflow-anchor: none;
 `;
 
 export const MessageList = styled.div`
@@ -626,6 +631,7 @@ export const ScrollToLatest = styled.button`
 `;
 
 export const ComposerCard = styled.div`
+  grid-row: 5;
   position: sticky;
   bottom: 0;
   z-index: 6;
@@ -633,7 +639,7 @@ export const ComposerCard = styled.div`
   gap: 8px;
   padding: 12px 0 8px;
   background: linear-gradient(180deg, transparent, ${({ theme }) => theme.surfacePage} 25%);
-  border-top: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+  border-top: none;
 `;
 
 export const ComposerRow = styled.div`
@@ -644,13 +650,22 @@ export const ComposerRow = styled.div`
 
 export const ComposerInputShell = styled.div`
   flex: 1;
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border-radius: 18px;
+  border: 1.5px solid ${({ theme }) => `${theme.accent1}66`};
+  background: ${({ theme }) => theme.surfaceInset};
+  box-shadow: 0 10px 24px ${({ theme }) => `${theme.textDark}18`};
+`;
+
+export const ComposerTopRow = styled.div`
   display: flex;
   gap: 10px;
   align-items: flex-end;
   padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}30`};
-  background: ${({ theme }) => theme.surfaceInset};
+  border-radius: 18px 18px 0 0;
+  background: ${({ theme }) => theme.surfaceCard};
 `;
 
 export const ComposerTextarea = styled.textarea`
@@ -668,6 +683,79 @@ export const ComposerTextarea = styled.textarea`
 
   &::placeholder {
     color: ${({ theme }) => theme.textMuted};
+  }
+`;
+
+export const ShortcutRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 10px;
+`;
+
+export const ShortcutAddButton = styled.button`
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}44`};
+  background: ${({ theme }) => theme.surfacePage};
+  color: ${({ theme }) => theme.textPrimary};
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => `${theme.accent1}88`};
+    box-shadow: 0 6px 12px ${({ theme }) => `${theme.textDark}18`};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const ShortcutPillRow = styled(PillRow)`
+  flex: 1;
+  gap: 8px;
+  padding: 4px 0 2px;
+`;
+
+export const ShortcutPillButton = styled.button`
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}3F`};
+  background: ${({ theme }) => theme.surfacePage};
+  color: ${({ theme }) => theme.textPrimary};
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => `${theme.accent1}77`};
+    box-shadow: 0 6px 12px ${({ theme }) => `${theme.textDark}16`};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
   }
 `;
 
