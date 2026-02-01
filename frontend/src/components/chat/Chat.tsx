@@ -328,6 +328,7 @@ const Chat: React.FC<ChatProps> = ({
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
   const initialMenuFetched = useRef(false);
+  const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
 
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
@@ -471,8 +472,20 @@ const Chat: React.FC<ChatProps> = ({
 
         setIsSending(true);
         try {
+          const resolved = resolvedCanteenRef.current;
+          const normalizedCommand = parsed.rawQuery.trim().toLowerCase();
+          if (resolved && normalizedCommand === resolved.command) {
+            updateFiltersPartial({ canteens: [resolved.canteen] });
+            await fetchAndAppendMenu(resolved.canteen, chat, parsed.dateISO);
+            resolvedCanteenRef.current = null;
+            return;
+          }
+
+          const searchQuery = parsed.rawQuery.includes("_")
+            ? parsed.query.replace(/\b(\d)0\b/g, "$1 0")
+            : parsed.query;
           const response = await client.searchCanteens({
-            query: parsed.query,
+            query: searchQuery,
             perPage: 1,
             minScore: 30,
             sortBy: "auto",
@@ -924,6 +937,7 @@ const Chat: React.FC<ChatProps> = ({
           buildSlashInput(commandBase, slashDateToken, { trailingSpace: !slashDateToken })
         );
         setFocusSignal((prev) => prev + 1);
+        resolvedCanteenRef.current = { command: commandBase, canteen };
         return;
       }
 
@@ -943,6 +957,7 @@ const Chat: React.FC<ChatProps> = ({
   const handleCommandClose = useCallback(() => {
     setInputValue("");
     setFocusSignal((prev) => prev + 1);
+    resolvedCanteenRef.current = null;
   }, []);
 
   const commandMenu = slashActive
