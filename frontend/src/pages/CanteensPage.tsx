@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Canteen, CanteenSearchResult, PageInfo } from "../services/api";
 import { MensaBotClient } from "../services/api";
 import * as S from "./CanteensPage.styles";
+import { Page, Content } from "./PageLayout.styles";
 
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -140,8 +141,8 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
   };
 
   return (
-    <S.Page>
-      <S.Content>
+    <Page>
+      <Content>
         <S.Hero>
           <S.HeroCard>
             <S.HeroEyebrow>Mensa Auswahl</S.HeroEyebrow>
@@ -303,8 +304,8 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
             Lädt mehr ...
           </S.LoadMoreButton>
         )}
-      </S.Content>
-    </S.Page>
+      </Content>
+    </Page>
   );
 };
 
