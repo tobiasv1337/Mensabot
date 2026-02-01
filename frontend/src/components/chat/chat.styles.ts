@@ -690,24 +690,24 @@ export const TypingDot = styled.span`
 
 export const ScrollToLatest = styled.button`
   position: absolute;
-  right: 6px;
-  bottom: 86px;
-  height: 36px;
-  width: 36px;
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}30`};
+  right: 18px;
+  bottom: 64px;
+  height: 44px;
+  width: 44px;
+  border-radius: 14px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}40`};
   background: ${({ theme }) => theme.surfacePage};
   color: ${({ theme }) => theme.textPrimary};
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 16px ${({ theme }) => `${theme.textDark}12`};
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 10px 20px ${({ theme }) => `${theme.textDark}14`};
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 
   &:hover {
     transform: translateY(-1px);
-    border-color: ${({ theme }) => `${theme.accent1}55`};
-    box-shadow: 0 12px 20px ${({ theme }) => `${theme.textDark}18`};
+    border-color: ${({ theme }) => `${theme.textMuted}70`};
+    box-shadow: 0 14px 24px ${({ theme }) => `${theme.textDark}1C`};
   }
 
   &:focus-visible {
