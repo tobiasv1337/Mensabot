@@ -53,26 +53,25 @@ const formatPrice = (value?: number | null) => {
   return PRICE_FORMATTER.format(value);
 };
 
-const formatPriceLine = (prices: PriceInfo) => {
-  const parts: string[] = [];
-  const pushPrice = (label: string, value?: number | null) => {
-    const formatted = formatPrice(value);
-    if (formatted) parts.push(`${label} ${formatted}`);
-  };
+const formatPriceCompact = (prices: PriceInfo) => {
+  const values = [
+    prices.students,
+    prices.employees,
+    prices.pupils,
+    prices.others,
+  ]
+    .map((price) => formatPrice(price))
+    .filter((value): value is string => Boolean(value));
 
-  pushPrice("Studierende", prices.students);
-  pushPrice("Mitarbeitende", prices.employees);
-  pushPrice("Schüler:innen", prices.pupils);
-  pushPrice("Gäste", prices.others);
-
-  return parts.length > 0 ? parts.join(" · ") : null;
+  return values.length > 0 ? ` (${values.join(", ")})` : "";
 };
 
-const DIET_LABELS: Record<string, string> = {
-  vegan: "vegan",
-  vegetarian: "vegetarisch",
-  meat: "mit Fleisch",
-  unknown: "unbekannt",
+const DIET_SYMBOLS: Record<string, string> = {
+  vegan: "🌱",
+  vegetarian: "🥕",
+  meat: "🥩",
+  fish: "🐟",
+  unknown: "🍽️",
 };
 
 const WEEKDAY_INDEX: Record<string, number> = {
@@ -239,13 +238,27 @@ const groupMealsByCategory = (meals: MenuMeal[]) => {
   return Array.from(groups.entries());
 };
 
+const formatGermanMenuDate = (isoDate?: string) => {
+  if (!isoDate) return "";
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${weekday}, ${day}.${month}.${year}`;
+};
+
 const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
   const lines: string[] = [`### ${canteen.name ?? "Mensa"}`];
   const metaParts = [canteen.city, canteen.address].filter(Boolean);
   if (metaParts.length > 0) {
     lines.push(`_${metaParts.join(" · ")}_`);
   }
-  lines.push(`**Speiseplan für ${menu.date}**`);
+  const formattedDate = formatGermanMenuDate(menu.date) || menu.date;
+  lines.push(`Speiseplan für **${formattedDate}**`);
   lines.push("");
 
   if (menu.status !== "ok") {
@@ -272,17 +285,9 @@ const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
     if (groupIndex > 0) lines.push("");
     lines.push(`#### ${category}`);
     meals.forEach((meal) => {
-      const dietLabel = DIET_LABELS[meal.diet_type] ?? meal.diet_type;
-      const dietTag = meal.diet_type !== "unknown" ? ` _(${dietLabel})_` : "";
-      lines.push(`- **${meal.name}**${dietTag}`);
-      const priceLine = formatPriceLine(meal.prices);
-      if (priceLine) {
-        lines.push(`  - Preise: ${priceLine}`);
-      }
-      if (meal.allergens && meal.allergens.length > 0) {
-        const allergenLabels = meal.allergens.map((item) => getAllergenLabel(item));
-        lines.push(`  - Allergene: ${allergenLabels.join(", ")}`);
-      }
+      const dietSymbol = DIET_SYMBOLS[meal.diet_type] ?? "🍽️";
+      const priceSuffix = formatPriceCompact(meal.prices);
+      lines.push(`- ${dietSymbol} **${meal.name}**${priceSuffix}`);
     });
   });
 
@@ -1092,8 +1097,16 @@ const Chat: React.FC<ChatProps> = ({
           </S.MessageList>
         </S.MessagesScroll>
         {showScrollToLatest && (
-          <S.ScrollToLatest type="button" onClick={handleScrollToLatest}>
-            Zum neuesten ↓
+          <S.ScrollToLatest type="button" onClick={handleScrollToLatest} aria-label="Zum neuesten">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6 9l6 6 6-6"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </S.ScrollToLatest>
         )}
       </S.MessagesCard>

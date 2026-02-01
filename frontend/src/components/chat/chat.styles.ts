@@ -608,20 +608,22 @@ export const ScrollToLatest = styled.button`
   position: absolute;
   right: 6px;
   bottom: 86px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+  height: 36px;
+  width: 36px;
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}30`};
   background: ${({ theme }) => theme.surfacePage};
   color: ${({ theme }) => theme.textPrimary};
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 20px ${({ theme }) => `${theme.textDark}18`};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 16px ${({ theme }) => `${theme.textDark}12`};
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 24px ${({ theme }) => `${theme.textDark}24`};
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => `${theme.accent1}55`};
+    box-shadow: 0 12px 20px ${({ theme }) => `${theme.textDark}18`};
   }
 
   &:focus-visible {
@@ -636,8 +638,8 @@ export const ComposerCard = styled.div`
   bottom: 0;
   z-index: 6;
   display: grid;
-  gap: 8px;
-  padding: 12px 0 8px;
+  gap: 4px;
+  padding: 12px 0 4px;
   background: linear-gradient(180deg, transparent, ${({ theme }) => theme.surfacePage} 25%);
   border-top: none;
 `;
