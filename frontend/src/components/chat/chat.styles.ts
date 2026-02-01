@@ -155,8 +155,14 @@ export const PillRow = styled.div`
   overflow-x: auto;
   overflow-y: visible;
   padding: 4px 0 6px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   cursor: grab;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
   &.is-dragging {
     cursor: grabbing;
