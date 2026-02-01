@@ -5,7 +5,9 @@ import type { NavItem } from "../components/header/header";
 import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
+import ShortcutsPage from "./ShortcutsPage";
 import type { Canteen } from "../services/api";
+import { useShortcuts } from "../services/shortcuts";
 
 const NAV_ITEMS: NavItem[] = ["Home","ChatBot", "Mensen", "Über Uns", "Kontakt"];
 
@@ -16,6 +18,7 @@ const ChatPage: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedCanteen, setSelectedCanteen] = useState<Canteen | null>(null);
   const [chatResetKey, setChatResetKey] = useState(0);
+  const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
   const handleSelectCanteen = (canteen: Canteen) => {
     setSelectedCanteen(canteen);
@@ -55,8 +58,20 @@ const ChatPage: React.FC = () => {
                 onSelectCanteen={handleSelectCanteen}
                 selectedCanteenId={selectedCanteen?.id ?? null}
               />
+            ) : activeNav === "Shortcuts" ? (
+              <ShortcutsPage
+                shortcuts={shortcuts}
+                onCreateShortcut={addShortcut}
+                onUpdateShortcut={updateShortcut}
+                onDeleteShortcut={deleteShortcut}
+              />
             ) : (
-              <Chat selectedCanteen={selectedCanteen} resetKey={chatResetKey} />
+              <Chat
+                selectedCanteen={selectedCanteen}
+                resetKey={chatResetKey}
+                shortcuts={shortcuts}
+                onCreateShortcut={addShortcut}
+              />
             )}
           </S.Content>
         </S.BodyGrid>
