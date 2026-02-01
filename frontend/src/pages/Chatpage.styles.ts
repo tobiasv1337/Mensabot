@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const PageRoot = styled.div`
   min-height: 100vh;
-  background: ${({ theme }) => theme.surfaceInset};
+  background: ${({ theme }) => theme.surfacePage};
 `;
 
 export const Shell = styled.div`
@@ -37,7 +37,7 @@ export const Content = styled.main`
   padding: 24px;
   min-width: 0;
 
-  background: ${({ theme }) => theme.surfaceInset};
+  background: ${({ theme }) => theme.surfacePage};
   color: ${({ theme }) => theme.textOnPage};
 
   @media (max-width: 480px) {
