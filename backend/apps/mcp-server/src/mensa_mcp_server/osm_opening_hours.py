@@ -25,7 +25,7 @@ import requests
 
 from .cache import shared_cache
 from .cache_keys import overpass_query_key
-from .server import settings
+from .settings import settings
 
 logger = logging.getLogger("mensa_mcp_server")
 

@@ -28,5 +28,8 @@ class APIBackendSettings(BaseSettings):
     canteen_index_path: str | None = None
     canteen_index_ttl_hours: float = 24.0
 
+    io_max_concurrency: int = 10
+    llm_max_concurrency: int = 10
+
 
 settings = APIBackendSettings()

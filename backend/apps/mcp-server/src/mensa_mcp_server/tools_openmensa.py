@@ -5,12 +5,15 @@ Description: Provides OpenMensa-related tools for the MCP server.
 """
 
 import datetime as dt
+import anyio
 from zoneinfo import ZoneInfo
 from typing import Annotated, Optional
 from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError, OpenMensaClient, CanteenIndexStore
-from .server import mcp, make_openmensa_client, settings
+from .concurrency import IO_SEMAPHORE
+from .server import mcp, make_openmensa_client
+from .settings import settings
 from .cache import shared_cache
 from .cache_keys import openmensa_canteen_key, openmensa_canteens_near_key, openmensa_menu_key, osm_opening_hours_key
 from .schemas import (
@@ -245,7 +248,7 @@ def _load_canteen_index():
 
 
 @mcp.tool()
-def search_canteens(
+async def search_canteens(
     query: Annotated[Optional[str], Field(default=None, description="Fuzzy name query (e.g. 'TU Berlin', 'mensa hardenberg'). If omitted, only location filters apply.")] = None,
     city: Annotated[Optional[str], Field(default=None, description="Base city. All canteens in this city are always included.")] = None,
     near_lat: Annotated[Optional[float], Field(default=None, ge=-90.0, le=90.0, description="Latitude of the expansion center (used with radius_km).")] = None,
@@ -272,7 +275,8 @@ def search_canteens(
     if (near_lat is None) != (near_lng is None):
         raise ValueError("near_lat and near_lng must be provided together.")
 
-    index = _load_canteen_index()
+    async with IO_SEMAPHORE:
+        index = await anyio.to_thread.run_sync(_load_canteen_index)
     results, total = index.search(
         query,
         city=city,
@@ -303,7 +307,7 @@ def search_canteens(
 
 
 @mcp.tool()
-def list_canteens_near(
+async def list_canteens_near(
     lat: Annotated[float, Field(ge=-90.0, le=90.0, description="Latitude in decimal degrees (WGS84)")],
     lng: Annotated[float, Field(ge=-180.0, le=180.0, description="Longitude in decimal degrees (WGS84)")],
     radius_km: Annotated[float, Field(gt=0.0, description="Search radius in kilometers")],
@@ -321,14 +325,18 @@ def list_canteens_near(
     if cached is not None:
         return CanteenListResponseDTO.model_validate(cached)
 
-    with make_openmensa_client() as client:
-        canteens, next_page = client.list_canteens(
-            near_lat=lat,
-            near_lng=lng,
-            near_dist=radius_km,
-            per_page=per_page,
-            page=page,
-        )
+    def _fetch_list():
+        with make_openmensa_client() as client:
+            return client.list_canteens(
+                near_lat=lat,
+                near_lng=lng,
+                near_dist=radius_km,
+                per_page=per_page,
+                page=page,
+            )
+
+    async with IO_SEMAPHORE:
+        canteens, next_page = await anyio.to_thread.run_sync(_fetch_list)
 
     response = CanteenListResponseDTO(
         canteens=[_canteen_to_dto(c) for c in canteens],
@@ -344,7 +352,7 @@ def list_canteens_near(
 
 
 @mcp.tool()
-def get_canteen_info(
+async def get_canteen_info(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
 ) -> CanteenDTO:
     """
@@ -357,13 +365,17 @@ def get_canteen_info(
     if cached is not None:
         return CanteenDTO.model_validate(cached)
 
-    with make_openmensa_client() as client:
-        try:
-            canteen = client.get_canteen(canteen_id)
-        except OpenMensaAPIError as e:
-            if e.status_code == 404:
-                raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-            raise
+    def _fetch_canteen():
+        with make_openmensa_client() as client:
+            try:
+                return client.get_canteen(canteen_id)
+            except OpenMensaAPIError as e:
+                if e.status_code == 404:
+                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
+                raise
+
+    async with IO_SEMAPHORE:
+        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
 
     dto = _canteen_to_dto(canteen)
     shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
@@ -371,7 +383,7 @@ def get_canteen_info(
 
 
 @mcp.tool()
-def get_menu_for_date(
+async def get_menu_for_date(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
     diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
@@ -406,19 +418,23 @@ def get_menu_for_date(
     if error_response is not None:
         return error_response
 
-    with make_openmensa_client() as client:
-        return _fetch_single_menu(
-            client,
-            canteen_id,
-            normalized_date,
-            diet_filter,
-            exclude_allergens,
-            price_category,
-        )
+    def _fetch_menu():
+        with make_openmensa_client() as client:
+            return _fetch_single_menu(
+                client,
+                canteen_id,
+                normalized_date,
+                diet_filter,
+                exclude_allergens,
+                price_category,
+            )
+
+    async with IO_SEMAPHORE:
+        return await anyio.to_thread.run_sync(_fetch_menu)
 
 
 @mcp.tool()
-def get_menus_batch(
+async def get_menus_batch(
     requests: Annotated[
         list[MenuBatchRequestDTO],
         Field(
@@ -454,27 +470,31 @@ def get_menus_batch(
 
     results: list[MenuResponseDTO] = []
 
-    with make_openmensa_client() as client:
-        for req in requests:
-            normalized_date, error_response = _normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
+    def _fetch_batch():
+        with make_openmensa_client() as client:
+            for req in requests:
+                normalized_date, error_response = _normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
 
-            if error_response is not None:
-                results.append(error_response)
-                continue
+                if error_response is not None:
+                    results.append(error_response)
+                    continue
 
-            normalized_diet_filter = req.diet_filter or MenuDietFilter.all
-            normalized_exclude_allergens = req.exclude_allergens or []
+                normalized_diet_filter = req.diet_filter or MenuDietFilter.all
+                normalized_exclude_allergens = req.exclude_allergens or []
 
-            results.append(
-                _fetch_single_menu(
-                    client,
-                    req.canteen_id,
-                    normalized_date,
-                    normalized_diet_filter,
-                    normalized_exclude_allergens,
-                    req.price_category,
+                results.append(
+                    _fetch_single_menu(
+                        client,
+                        req.canteen_id,
+                        normalized_date,
+                        normalized_diet_filter,
+                        normalized_exclude_allergens,
+                        req.price_category,
+                    )
                 )
-            )
+
+    async with IO_SEMAPHORE:
+        await anyio.to_thread.run_sync(_fetch_batch)
 
     return MenuBatchResponseDTO(results=results)
 
@@ -483,7 +503,7 @@ def get_menus_batch(
 
 
 @mcp.tool()
-def get_opening_hours_osm_for_canteen(
+async def get_opening_hours_osm_for_canteen(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID")],
     radius_m: Annotated[int, Field(ge=10, le=500, description="Initial search radius in meters")]=80,
     max_radius_m: Annotated[int, Field(ge=10, le=2000, description="Fallback search radius in meters")]=1000,
@@ -505,13 +525,17 @@ def get_opening_hours_osm_for_canteen(
     if cached is not None:
         return OSMResolveForCanteenResponseDTO.model_validate(cached)
 
-    with make_openmensa_client() as client:
-        try:
-            canteen = client.get_canteen(canteen_id)
-        except OpenMensaAPIError as e:
-            if e.status_code == 404:
-                raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-            raise
+    def _fetch_canteen():
+        with make_openmensa_client() as client:
+            try:
+                return client.get_canteen(canteen_id)
+            except OpenMensaAPIError as e:
+                if e.status_code == 404:
+                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
+                raise
+
+    async with IO_SEMAPHORE:
+        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
 
     dto = _canteen_to_dto(canteen)
 
@@ -532,14 +556,18 @@ def get_opening_hours_osm_for_canteen(
             },
         }
     else:
-        res = resolve_opening_hours_osm(
-            lat=dto.lat,
-            lon=dto.lng,
-            name_hint=dto.name,
-            radius_m=radius_m,
-            max_radius_m=max_radius_m,
-            max_candidates=max_candidates,
-        )
+        def _resolve():
+            return resolve_opening_hours_osm(
+                lat=dto.lat,
+                lon=dto.lng,
+                name_hint=dto.name,
+                radius_m=radius_m,
+                max_radius_m=max_radius_m,
+                max_candidates=max_candidates,
+            )
+
+        async with IO_SEMAPHORE:
+            res = await anyio.to_thread.run_sync(_resolve)
 
     res["openmensa"] = OpenMensaCanteenRefDTO(
         canteen_id=canteen_id,
