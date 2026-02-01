@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Any, Dict, List, Literal
 
-from openai import OpenAI, RateLimitError
+from openai import AsyncOpenAI, RateLimitError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from ..config import settings
@@ -14,7 +14,7 @@ from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
 
 
-client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
 
 
 def sanitize_message(msg):
@@ -42,7 +42,7 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
     last_error: Exception | None = None
     for attempt in range(1, settings.llm_max_retries + 1):
         try:
-            return client.chat.completions.create(
+            return await client.chat.completions.create(
                 model=settings.llm_model,
                 messages=[sanitize_message(m) for m in messages],
                 tools=tools,
