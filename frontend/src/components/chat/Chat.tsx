@@ -325,8 +325,6 @@ const Chat: React.FC<ChatProps> = ({
   const [locationPromptHandled, setLocationPromptHandled] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [directionsPromptHandled, setDirectionsPromptHandled] = useState(false);
-  const [directionsError, setDirectionsError] = useState("");
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
   const initialMenuFetched = useRef(false);
@@ -360,8 +358,6 @@ const Chat: React.FC<ChatProps> = ({
     setInputValue("");
     setLocationPromptHandled(false);
     setLocationError("");
-    setDirectionsPromptHandled(false);
-    setDirectionsError("");
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
   }, [isSending, onStartNewChat]);
@@ -458,21 +454,10 @@ const Chat: React.FC<ChatProps> = ({
     if (lastMsg.meta?.kind === "location_prompt") {
       setLocationPromptHandled(false);
       setLocationError("");
-      setDirectionsPromptHandled(true);
-      setDirectionsError("");
-      return;
-    }
-
-    if (lastMsg.meta?.kind === "directions_prompt") {
-      setDirectionsPromptHandled(false);
-      setDirectionsError("");
-      setLocationPromptHandled(true);
-      setLocationError("");
       return;
     }
 
     setLocationPromptHandled(true);
-    setDirectionsPromptHandled(true);
   }, [chat.messages.length]);
 
   const sendMessage = useCallback(
@@ -596,20 +581,11 @@ const Chat: React.FC<ChatProps> = ({
     (message: ChatMessage) => {
       if (isSending) return;
       const directions = message.meta.directions;
-      if (!directions) {
-        setDirectionsError("Keine Zielangaben verfügbar.");
-        return;
-      }
+      if (!directions) return;
 
       const { lat, lng } = directions;
-      if (typeof lat !== "number" || typeof lng !== "number") {
-        setDirectionsError("Keine Zielangaben verfügbar.");
-        return;
-      }
-
-      setDirectionsError("");
+      if (typeof lat !== "number" || typeof lng !== "number") return;
       openGoogleMaps(lat, lng);
-      setDirectionsPromptHandled(true);
     },
     [isSending]
   );
@@ -1104,7 +1080,7 @@ const Chat: React.FC<ChatProps> = ({
               const shouldShowLocationActions =
                 message.meta.kind === "location_prompt" && isLast && !locationPromptHandled;
               const shouldShowDirectionsActions =
-                message.meta.kind === "directions_prompt" && isLast && !directionsPromptHandled;
+                message.meta.kind === "directions_prompt";
               const actions: MessageAction[] = shouldShowLocationActions
                 ? [
                   {
@@ -1134,9 +1110,7 @@ const Chat: React.FC<ChatProps> = ({
 
               const actionsNote = shouldShowLocationActions
                 ? locationError || undefined
-                : shouldShowDirectionsActions
-                  ? directionsError || undefined
-                  : undefined;
+                : undefined;
 
               return (
                 <ChatBubble
