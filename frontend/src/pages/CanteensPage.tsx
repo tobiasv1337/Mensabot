@@ -9,7 +9,7 @@ const PER_PAGE = 24;
 
 interface CanteensPageProps {
   onSelectCanteen: (canteen: Canteen) => void;
-  selectedCanteenId?: number | null;
+  selectedCanteenIds?: number[];
 }
 
 const openGoogleMaps = (e: React.MouseEvent, lat: number, lng: number) => {
@@ -21,7 +21,7 @@ const openGoogleMaps = (e: React.MouseEvent, lat: number, lng: number) => {
 
 const CanteensPage: React.FC<CanteensPageProps> = ({
   onSelectCanteen,
-  selectedCanteenId = null,
+  selectedCanteenIds = [],
 }) => {
   const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
   const requestId = useRef(0);
@@ -250,10 +250,10 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                 <S.CanteenCard
                   key={canteen.id}
                   onClick={() => onSelectCanteen(canteen)}
-                  $selected={selectedCanteenId === canteen.id}
+                  $selected={selectedCanteenIds.includes(canteen.id)}
                   role="button"
                   tabIndex={0}
-                  aria-pressed={selectedCanteenId === canteen.id}
+                  aria-pressed={selectedCanteenIds.includes(canteen.id)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -268,7 +268,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                       <S.CardCity>{canteen.city}</S.CardCity>
                       <S.CardAddress>{canteen.address}</S.CardAddress>
                     </div>
-                    {selectedCanteenId === canteen.id && (
+                    {selectedCanteenIds.includes(canteen.id) && (
                       <S.CardTag>Ausgewählt</S.CardTag>
                     )}
                   </S.CardHeader>
