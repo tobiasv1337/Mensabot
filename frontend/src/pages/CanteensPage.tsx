@@ -3,6 +3,7 @@ import type { Canteen, CanteenSearchResult, PageInfo } from "../services/api";
 import { MensaBotClient } from "../services/api";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
+import { openGoogleMaps } from "../services/maps";
 
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -12,13 +13,6 @@ interface CanteensPageProps {
   onSelectCanteen: (canteen: Canteen) => void;
   selectedCanteenIds?: number[];
 }
-
-const openGoogleMaps = (e: React.MouseEvent, lat: number, lng: number) => {
-  e.stopPropagation();
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, "_blank");
-};
-
-
 
 const CanteensPage: React.FC<CanteensPageProps> = ({
   onSelectCanteen,
@@ -279,7 +273,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                     <S.FooterRight>
                       {showDistance && (
                         <S.DistancePill
-                          onClick={(e) => canteen.lat && canteen.lng && openGoogleMaps(e, canteen.lat, canteen.lng)}
+                          onClick={(e) => canteen.lat && canteen.lng && openGoogleMaps(canteen.lat, canteen.lng, e)}
                           $clickable={!!(canteen.lat && canteen.lng)}
                           title="Route in Google Maps öffnen"
                         >
