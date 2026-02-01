@@ -103,18 +103,18 @@ export const DesktopNav = styled.nav`
   }
 `;
 
-export const NavItem = styled.button<{ active?: boolean }>`
+export const NavItem = styled.button<{ $active?: boolean }>`
   all: unset;
   cursor: pointer;
   padding: 8px 14px;
   border-radius: 12px;
   font-size: 15px;
 
-  color: ${({ active, theme }) =>
-    active ? theme.textOnAccent : theme.textSecondary};
+  color: ${({ $active, theme }) =>
+    $active ? theme.textOnAccent : theme.textSecondary};
 
-  background: ${({ active, theme }) =>
-    active ? theme.surfaceAccent : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.surfaceAccent : "transparent"};
 
   transition: background 0.18s ease, color 0.18s ease;
 

@@ -43,7 +43,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 )}
 
                 {/* if iconOnly size, don't render text */}
-                {size === 'iconOnly' ? null : (children ? children : <ButtonTextWrapper collapsed={collapsed}>{content}</ButtonTextWrapper>)}
+                {size === 'iconOnly' ? null : (children ? children : <ButtonTextWrapper $collapsed={collapsed}>{content}</ButtonTextWrapper>)}
 
                 {iconRight && (
                     React.isValidElement(iconRight) && (iconRight as any).type === 'img' ? (
