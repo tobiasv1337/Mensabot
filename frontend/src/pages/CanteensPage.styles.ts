@@ -196,17 +196,34 @@ export const SearchButton = styled.button`
 `;
 
 export const SortSelect = styled.select`
-  padding: 10px 14px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 40px 0 14px;
   border-radius: 12px;
-  background: ${({ theme }) => theme.surfaceInset};
+  background-color: ${({ theme }) => theme.surfaceInset};
   color: ${({ theme }) => theme.textOnInset};
   font-size: 13px;
+  font-weight: 600;
   border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
   cursor: pointer;
-  
-  &:focus {
+  line-height: 1.1;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, ${({ theme }) => theme.textMuted} 50%),
+    linear-gradient(135deg, ${({ theme }) => theme.textMuted} 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 55%,
+    calc(100% - 14px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+
+  &:focus-visible {
     outline: none;
     border-color: ${({ theme }) => theme.accent2};
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent2}33`};
   }
 `;
 
