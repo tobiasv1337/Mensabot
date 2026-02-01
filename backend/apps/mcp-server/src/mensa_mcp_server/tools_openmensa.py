@@ -11,6 +11,8 @@ from pydantic import Field
 
 from openmensa_sdk import OpenMensaAPIError, OpenMensaClient, CanteenIndexStore
 from .server import mcp, make_openmensa_client, settings
+from .cache import shared_cache
+from .cache_keys import openmensa_canteen_key, openmensa_canteens_near_key, openmensa_menu_key, osm_opening_hours_key
 from .schemas import (
     # OpenMensa DTOs
     CanteenDTO,
@@ -57,6 +59,11 @@ _WEEKDAY_BY_INDEX: tuple[WeekdayName, ...] = (
     WeekdayName.saturday,
     WeekdayName.sunday,
 )
+
+CACHE_TTL_MENU_S = 60 * 60
+CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
+CACHE_TTL_CANTEEN_LIST_S = 60 * 60 * 24
+CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
 
 def _local_now() -> dt.datetime:
     return dt.datetime.now(ZoneInfo(settings.timezone))
@@ -156,12 +163,17 @@ def _fetch_single_menu(
 ) -> MenuResponseDTO:
     """Fetch a single menu and map OpenMensa errors to MenuResponseDTO statuses."""
 
+    cache_key = openmensa_menu_key(canteen_id=canteen_id, date=normalized_date, diet_filter=diet_filter, price_category=price_category, exclude_allergens=exclude_allergens)
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return MenuResponseDTO.model_validate(cached)
+
     try:
         meals = client.list_meals(canteen_id, normalized_date)
     except OpenMensaAPIError as e:
         # OpenMensa uses 404 to indicate "no plan published yet"
         if e.status_code == 404:
-            return MenuResponseDTO(
+            response = MenuResponseDTO(
                 canteen_id=canteen_id,
                 date=normalized_date,
                 status=MenuStatusDTO.no_menu_published,
@@ -169,6 +181,8 @@ def _fetch_single_menu(
                 total_meals=0,
                 returned_meals=0,
             )
+            shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+            return response
 
         return MenuResponseDTO(
             canteen_id=canteen_id,
@@ -180,7 +194,7 @@ def _fetch_single_menu(
         )
     
     if not meals:
-        return MenuResponseDTO(
+        response = MenuResponseDTO(
             canteen_id=canteen_id,
             date=normalized_date,
             status=MenuStatusDTO.empty_menu,
@@ -188,6 +202,8 @@ def _fetch_single_menu(
             total_meals=0,
             returned_meals=0,
         )
+        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+        return response
     total_meals = len(meals)
     filtered_meals = _filter_meals(
         [_meal_to_dto(m, price_category) for m in meals],
@@ -197,7 +213,7 @@ def _fetch_single_menu(
 
     status = MenuStatusDTO.ok if filtered_meals else MenuStatusDTO.filtered_out
 
-    return MenuResponseDTO(
+    response = MenuResponseDTO(
         canteen_id=canteen_id,
         date=normalized_date,
         status=status,
@@ -205,6 +221,8 @@ def _fetch_single_menu(
         total_meals=total_meals,
         returned_meals=len(filtered_meals),
     )
+    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+    return response
 
 
 _INDEX_STORE: CanteenIndexStore | None = None
@@ -298,6 +316,11 @@ def list_canteens_near(
     Returns paginated list of nearby canteens. For more results, call again with
     `page = page_info.next_page` while `page_info.has_next` is true.
     """
+    cache_key = openmensa_canteens_near_key(lat=lat, lng=lng, radius_km=radius_km, page=page, per_page=per_page)
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return CanteenListResponseDTO.model_validate(cached)
+
     with make_openmensa_client() as client:
         canteens, next_page = client.list_canteens(
             near_lat=lat,
@@ -307,7 +330,7 @@ def list_canteens_near(
             page=page,
         )
 
-    return CanteenListResponseDTO(
+    response = CanteenListResponseDTO(
         canteens=[_canteen_to_dto(c) for c in canteens],
         page_info=PageInfoDTO(
             current_page=page,
@@ -316,6 +339,8 @@ def list_canteens_near(
             has_next=next_page is not None,
         ),
     )
+    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_LIST_S)
+    return response
 
 
 @mcp.tool()
@@ -327,6 +352,11 @@ def get_canteen_info(
     
     Use after discovering a canteen ID from list_canteens_near to get full details.
     """
+    cache_key = openmensa_canteen_key(canteen_id)
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return CanteenDTO.model_validate(cached)
+
     with make_openmensa_client() as client:
         try:
             canteen = client.get_canteen(canteen_id)
@@ -335,7 +365,9 @@ def get_canteen_info(
                 raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
             raise
 
-    return _canteen_to_dto(canteen)
+    dto = _canteen_to_dto(canteen)
+    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
+    return dto
 
 
 @mcp.tool()
@@ -468,6 +500,11 @@ def get_opening_hours_osm_for_canteen(
     If you use opening hours returned by this tool in a user-facing response,
     include the provided attribution (usually: "© OpenStreetMap contributors").
     """
+    cache_key = osm_opening_hours_key(canteen_id=canteen_id)
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return OSMResolveForCanteenResponseDTO.model_validate(cached)
+
     with make_openmensa_client() as client:
         try:
             canteen = client.get_canteen(canteen_id)
@@ -511,4 +548,6 @@ def get_opening_hours_osm_for_canteen(
         lng=dto.lng,
     ).model_dump(exclude_none=True)
 
-    return OSMResolveForCanteenResponseDTO.model_validate(res)
+    dto = OSMResolveForCanteenResponseDTO.model_validate(res)
+    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
+    return dto
