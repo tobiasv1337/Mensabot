@@ -1,6 +1,11 @@
 import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
 
-type MessageKind = "normal" | "location_prompt";
+type MessageKind = "normal" | "location_prompt" | "directions_prompt";
+
+type DirectionsMeta = {
+	lat?: number;
+	lng?: number;
+};
 
 const CHAT_STORAGE_PREFIX = "chat-";
 const CHAT_INDEX_KEY = "mensabot-chats-index";
@@ -16,6 +21,7 @@ export type ChatMessageData = {
 	meta: {
 		kind: MessageKind;
 		toolCalls?: ToolCallTrace[];
+		directions?: DirectionsMeta;
 	};
 };
 
@@ -89,7 +95,7 @@ export class ChatMessage implements ChatMessageData {
 	constructor(role: "user" | "assistant", content: string, meta: ChatMessageData["meta"] = { kind: "normal" }) {
 		this.role = role;
 		this.content = content;
-		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls };
+		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions };
 	}
 
 	toJSON(): ChatMessageData {
@@ -102,7 +108,7 @@ export class ChatMessage implements ChatMessageData {
 
 	static fromJSON(json: ChatMessageData) {
 		const meta: ChatMessageData["meta"] = json.meta ?? { kind: "normal" };
-		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls });
+		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions });
 	}
 }
 
@@ -215,6 +221,20 @@ export class Chat {
 
 		if (response.status === "needs_location") {
 			this.addMessage(new ChatMessage("assistant", response.prompt, { kind: "location_prompt", toolCalls }));
+			return response;
+		}
+
+		if (response.status === "needs_directions") {
+			this.addMessage(
+				new ChatMessage("assistant", response.prompt, {
+					kind: "directions_prompt",
+					toolCalls,
+					directions: {
+						lat: response.lat ?? undefined,
+						lng: response.lng ?? undefined,
+					},
+				})
+			);
 			return response;
 		}
 

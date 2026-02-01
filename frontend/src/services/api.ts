@@ -30,7 +30,8 @@ export type ToolCallTrace = {
 
 export type ChatApiResponse =
 	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
-	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] };
+	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
+	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
 	id: number;
@@ -156,6 +157,16 @@ export class MensaBotClient {
 		const res = response as ChatApiResponse;
 		if (res.status === "needs_location") {
 			return { status: "needs_location", prompt: res.prompt, tool_calls: res.tool_calls };
+		}
+
+		if (res.status === "needs_directions") {
+			return {
+				status: "needs_directions",
+				prompt: res.prompt,
+				lat: res.lat,
+				lng: res.lng,
+				tool_calls: res.tool_calls,
+			};
 		}
 
 		if (res.status === "ok") {
