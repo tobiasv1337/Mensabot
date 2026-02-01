@@ -57,6 +57,16 @@ const ChatPage: React.FC = () => {
 
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
+  useEffect(() => {
+    const className = "chat-lock-scroll";
+    if (activeNav === "ChatBot") {
+      document.body.classList.add(className);
+    } else {
+      document.body.classList.remove(className);
+    }
+    return () => document.body.classList.remove(className);
+  }, [activeNav]);
+
   const refreshChatList = useCallback((pages: number) => {
     const items = Chats.listPage(0, pages * CHAT_PAGE_SIZE);
     setRecentChats(items);
