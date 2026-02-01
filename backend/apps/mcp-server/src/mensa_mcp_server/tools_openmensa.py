@@ -4,18 +4,16 @@ Author: Tobias Veselsky
 Description: Provides OpenMensa-related tools for the MCP server.
 """
 
-import datetime as dt
 import anyio
-from zoneinfo import ZoneInfo
 from typing import Annotated, Optional
 from pydantic import Field
 
-from openmensa_sdk import OpenMensaAPIError, OpenMensaClient, CanteenIndexStore
+from openmensa_sdk import CanteenIndexStore
 from .concurrency import IO_SEMAPHORE
 from .server import mcp, make_openmensa_client
 from .settings import settings
 from .cache import shared_cache
-from .cache_keys import openmensa_canteen_key, openmensa_canteens_near_key, openmensa_menu_key, osm_opening_hours_key
+from .cache_keys import openmensa_canteen_key, openmensa_canteens_near_key, osm_opening_hours_key
 from .schemas import (
     # OpenMensa DTOs
     CanteenDTO,
@@ -25,20 +23,11 @@ from .schemas import (
     CanteenSearchResultDTO,
     CanteenSearchResponseDTO,
     MenuResponseDTO,
-    MenuStatusDTO,
     MenuBatchRequestDTO,
     MenuBatchResponseDTO,
     MenuDietFilter,
-    DietType,
-    MealDTO,
     PriceCategory,
     _canteen_to_dto,
-    _meal_to_dto,
-    _canonicalize_allergen_label,
-    DateEntryDTO,
-    WeekRangeDTO,
-    DateContextDTO,
-    WeekdayName,
 
     # OSM opening-hours DTOs
     OSMResolveForCanteenResponseDTO,
@@ -50,182 +39,13 @@ from .osm_opening_hours import (
     OSMRef,
     fetch_osm_element,
 )
+from .services.openmensa import fetch_single_menu, normalize_menu_date
 
 # ------------------------------ internal helpers ------------------------------
 
-_WEEKDAY_BY_INDEX: tuple[WeekdayName, ...] = (
-    WeekdayName.monday,
-    WeekdayName.tuesday,
-    WeekdayName.wednesday,
-    WeekdayName.thursday,
-    WeekdayName.friday,
-    WeekdayName.saturday,
-    WeekdayName.sunday,
-)
-
-CACHE_TTL_MENU_S = 60 * 60
 CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 CACHE_TTL_CANTEEN_LIST_S = 60 * 60 * 24
 CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
-
-def _local_now() -> dt.datetime:
-    return dt.datetime.now(ZoneInfo(settings.timezone))
-
-def _local_today() -> dt.date:
-    return _local_now().date()
-
-def _week_start(date: dt.date) -> dt.date:
-    return date - dt.timedelta(days=date.weekday())
-
-def _date_entry(date: dt.date) -> DateEntryDTO:
-    weekday = _WEEKDAY_BY_INDEX[date.weekday()]
-    return DateEntryDTO(
-        date=date.isoformat(),
-        weekday=weekday,
-        is_weekend=date.weekday() >= 5,
-    )
-
-def _week_range(start_date: dt.date) -> WeekRangeDTO:
-    days = [_date_entry(start_date + dt.timedelta(days=offset)) for offset in range(7)]
-    return WeekRangeDTO(
-        start_date=start_date.isoformat(),
-        end_date=(start_date + dt.timedelta(days=6)).isoformat(),
-        days=days,
-        weekdays=days[:5],
-    )
-
-def _normalize_menu_date(
-    canteen_id: int,
-    date: Optional[str],
-) -> tuple[str | None, MenuResponseDTO | None]:
-    """
-    Normalize/validate a menu date.
-
-    Returns (normalized_date, error_response):
-    - If the date is None, normalized_date is today's ISO date and error_response is None.
-    - If the date is invalid, normalized_date is None and error_response is a MenuResponseDTO
-      with status=invalid_date.
-    - If the date is valid, normalized_date is the same string and error_response is None.
-    """
-    if date is None:
-        return _local_today().isoformat(), None
-
-    try:
-        dt.date.fromisoformat(date)
-    except ValueError:
-        # keep the original invalid input in the response
-        return None, MenuResponseDTO(
-            canteen_id=canteen_id,
-            date=date,
-            status=MenuStatusDTO.invalid_date,
-            meals=[],
-            total_meals=0,
-            returned_meals=0,
-        )
-
-    return date, None
-
-
-def _filter_meals(
-    meals: list[MealDTO],
-    diet_filter: MenuDietFilter,
-    exclude_allergens: list[str],
-) -> list[MealDTO]:
-    """Apply diet and allergen filters to meal DTOs."""
-
-    excluded: set[str] = set()
-    for label in exclude_allergens:
-        canon = _canonicalize_allergen_label(label)
-        if canon:
-            excluded.add(canon)
-
-    filtered: list[MealDTO] = []
-    for meal in meals:
-        if diet_filter == MenuDietFilter.vegan and meal.diet_type != DietType.vegan:
-            continue
-        if diet_filter == MenuDietFilter.vegetarian and meal.diet_type not in {DietType.vegan, DietType.vegetarian}:
-            continue
-        if diet_filter == MenuDietFilter.meat_only and meal.diet_type != DietType.meat:
-            continue
-
-        if excluded and set(meal.allergens) & excluded:
-            continue
-
-        filtered.append(meal)
-
-    return filtered
-
-
-def _fetch_single_menu(
-    client: OpenMensaClient,
-    canteen_id: int,
-    normalized_date: str,
-    diet_filter: MenuDietFilter,
-    exclude_allergens: list[str],
-    price_category: PriceCategory | None = None,
-) -> MenuResponseDTO:
-    """Fetch a single menu and map OpenMensa errors to MenuResponseDTO statuses."""
-
-    cache_key = openmensa_menu_key(canteen_id=canteen_id, date=normalized_date, diet_filter=diet_filter, price_category=price_category, exclude_allergens=exclude_allergens)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return MenuResponseDTO.model_validate(cached)
-
-    try:
-        meals = client.list_meals(canteen_id, normalized_date)
-    except OpenMensaAPIError as e:
-        # OpenMensa uses 404 to indicate "no plan published yet"
-        if e.status_code == 404:
-            response = MenuResponseDTO(
-                canteen_id=canteen_id,
-                date=normalized_date,
-                status=MenuStatusDTO.no_menu_published,
-                meals=[],
-                total_meals=0,
-                returned_meals=0,
-            )
-            shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
-            return response
-
-        return MenuResponseDTO(
-            canteen_id=canteen_id,
-            date=normalized_date,
-            status=MenuStatusDTO.api_error,
-            meals=[],
-            total_meals=0,
-            returned_meals=0,
-        )
-    
-    if not meals:
-        response = MenuResponseDTO(
-            canteen_id=canteen_id,
-            date=normalized_date,
-            status=MenuStatusDTO.empty_menu,
-            meals=[],
-            total_meals=0,
-            returned_meals=0,
-        )
-        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
-        return response
-    total_meals = len(meals)
-    filtered_meals = _filter_meals(
-        [_meal_to_dto(m, price_category) for m in meals],
-        diet_filter,
-        exclude_allergens,
-    )
-
-    status = MenuStatusDTO.ok if filtered_meals else MenuStatusDTO.filtered_out
-
-    response = MenuResponseDTO(
-        canteen_id=canteen_id,
-        date=normalized_date,
-        status=status,
-        meals=filtered_meals,
-        total_meals=total_meals,
-        returned_meals=len(filtered_meals),
-    )
-    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
-    return response
 
 
 _INDEX_STORE: CanteenIndexStore | None = None
@@ -414,13 +234,13 @@ async def get_menu_for_date(
         exclude_allergens = []
     # price_category remains None if not set
 
-    normalized_date, error_response = _normalize_menu_date(canteen_id, date)
+    normalized_date, error_response = normalize_menu_date(canteen_id, date)
     if error_response is not None:
         return error_response
 
     def _fetch_menu():
         with make_openmensa_client() as client:
-            return _fetch_single_menu(
+            return fetch_single_menu(
                 client,
                 canteen_id,
                 normalized_date,
@@ -473,7 +293,7 @@ async def get_menus_batch(
     def _fetch_batch():
         with make_openmensa_client() as client:
             for req in requests:
-                normalized_date, error_response = _normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
+                normalized_date, error_response = normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
 
                 if error_response is not None:
                     results.append(error_response)
@@ -483,7 +303,7 @@ async def get_menus_batch(
                 normalized_exclude_allergens = req.exclude_allergens or []
 
                 results.append(
-                    _fetch_single_menu(
+                    fetch_single_menu(
                         client,
                         req.canteen_id,
                         normalized_date,

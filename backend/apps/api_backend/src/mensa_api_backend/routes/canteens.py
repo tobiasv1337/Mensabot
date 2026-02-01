@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory
-from mensa_mcp_server.tools_openmensa import _fetch_single_menu, _normalize_menu_date
+from mensa_mcp_server.services.openmensa import fetch_single_menu, normalize_menu_date
 from mensa_mcp_server.server import make_openmensa_client
 from openmensa_sdk import OpenMensaAPIError
 
@@ -146,13 +146,13 @@ def get_canteen_menu_api(
     if exclude_allergens is None:
         exclude_allergens = []
 
-    normalized_date, error_response = _normalize_menu_date(canteen_id=canteen_id, date=date)
+    normalized_date, error_response = normalize_menu_date(canteen_id=canteen_id, date=date)
     if error_response is not None:
         return error_response
 
     def _fetch_menu():
         with make_openmensa_client() as client:
-            return _fetch_single_menu(
+            return fetch_single_menu(
                 client=client,
                 canteen_id=canteen_id,
                 normalized_date=normalized_date,
