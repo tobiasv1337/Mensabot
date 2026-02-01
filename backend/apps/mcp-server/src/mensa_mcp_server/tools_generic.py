@@ -81,8 +81,6 @@ async def get_date_context() -> DateContextDTO:
         next_week=_week_range(base_start + dt.timedelta(days=7)),
     )
 
-from .server import mcp
-
 @mcp.tool()
 async def health() -> dict:
     """Verify the MCP server is operational. Returns {\"ok\": true} if healthy."""
