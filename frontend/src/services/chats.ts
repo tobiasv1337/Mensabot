@@ -1,4 +1,4 @@
-import { MensaBotClient, type ChatApiResponse, type ToolCallTrace } from "./api";
+import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
 
 type MessageKind = "normal" | "location_prompt";
 
@@ -9,6 +9,20 @@ export type ChatMessageData = {
 		kind: MessageKind;
 		toolCalls?: ToolCallTrace[];
 	};
+};
+
+export type DietPreference = "vegetarian" | "vegan" | "meat" | null;
+
+export type ChatFilters = {
+	diet: DietPreference;
+	allergens: string[];
+	canteens: Canteen[];
+};
+
+export const defaultChatFilters: ChatFilters = {
+	diet: null,
+	allergens: [],
+	canteens: [],
 };
 
 export class ChatMessage implements ChatMessageData {
@@ -38,19 +52,24 @@ export class ChatMessage implements ChatMessageData {
 
 export class Chat {
 	#messages: ChatMessage[];
+	#filters: ChatFilters;
 	public readonly id: string;
 
-	constructor(id: string, messages: ChatMessage[] = []) {
+	constructor(id: string, messages: ChatMessage[] = [], filters: ChatFilters = defaultChatFilters) {
 		this.id = id;
 		this.#messages = messages;
+		this.#filters = filters;
 	}
 
 	get messages() {
 		return this.#messages;
 	}
 
-	addMessage(message: ChatMessage) {
-		this.#messages.push(message);
+	get filters() {
+		return this.#filters;
+	}
+
+	private persist() {
 		try {
 			localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
 		} catch (error) {
@@ -58,13 +77,19 @@ export class Chat {
 		}
 	}
 
+	addMessage(message: ChatMessage) {
+		this.#messages.push(message);
+		this.persist();
+	}
+
 	clear() {
 		this.#messages = [];
-		try {
-			localStorage.setItem(`chat-${this.id}`, JSON.stringify(this));
-		} catch (error) {
-			alert(`Due to a problem, your chat history could not be cleared.\n(Debug Information: ${error})`);
-		}
+		this.persist();
+	}
+
+	setFilters(filters: ChatFilters) {
+		this.#filters = { ...filters };
+		this.persist();
 	}
 
 	delete() {
@@ -97,6 +122,7 @@ export class Chat {
 		return {
 			id: this.id,
 			messages: this.#messages,
+			filters: this.#filters,
 		};
 	}
 }
@@ -106,20 +132,25 @@ export class Chats {
 		const chatData = localStorage.getItem(`chat-${id}`);
 		if (chatData) {
 			try {
+				const parsed = JSON.parse(chatData);
+				const filters = parsed.filters ?? defaultChatFilters;
 				return new Chat(
 					id,
-					JSON.parse(chatData).messages.map(
-						(message: ChatMessageData) => ChatMessage.fromJSON(message)
-					)
+					parsed.messages.map((message: ChatMessageData) => ChatMessage.fromJSON(message)),
+					{
+						diet: filters.diet ?? defaultChatFilters.diet,
+						allergens: Array.isArray(filters.allergens) ? filters.allergens : [],
+						canteens: Array.isArray(filters.canteens) ? filters.canteens : [],
+					}
 				);
 			} catch (error) {
 				alert(`Due to a problem, your chat history could not be restored.\n(Debug Information: ${error})`);
-				const chat = new Chat(id);
+				const chat = new Chat(id, [], defaultChatFilters);
 				localStorage.setItem(`chat-${id}`, JSON.stringify(chat));
 				return chat;
 			}
 		} else if (createIfMissing) {
-			const chat = new Chat(id);
+			const chat = new Chat(id, [], defaultChatFilters);
 			localStorage.setItem(`chat-${id}`, JSON.stringify(chat));
 			return chat;
 		} else return undefined;
