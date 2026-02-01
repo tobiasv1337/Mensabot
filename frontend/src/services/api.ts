@@ -41,6 +41,38 @@ export type Canteen = {
 	lng?: number;
 };
 
+export type DietType = "vegan" | "vegetarian" | "meat" | "unknown";
+
+export type MenuDietFilter = "all" | "meat_only" | "vegetarian" | "vegan";
+
+export type PriceCategory = "students" | "employees" | "pupils" | "others";
+
+export type PriceInfo = {
+	students?: number | null;
+	employees?: number | null;
+	pupils?: number | null;
+	others?: number | null;
+};
+
+export type Meal = {
+	name: string;
+	category?: string;
+	prices: PriceInfo;
+	diet_type: DietType;
+	allergens: string[];
+};
+
+export type MenuStatus = "ok" | "no_menu_published" | "empty_menu" | "filtered_out" | "invalid_date" | "api_error";
+
+export type MenuResponse = {
+	canteen_id: number;
+	date: string;
+	status: MenuStatus;
+	meals: Meal[];
+	total_meals: number;
+	returned_meals: number;
+};
+
 export type PageInfo = {
 	current_page: number;
 	per_page: number;
@@ -159,5 +191,26 @@ export class MensaBotClient {
 
 		const response = await this.getJson(url.pathname + url.search);
 		return response as CanteenSearchResponse;
+	}
+
+	async getCanteenInfo(canteenId: number): Promise<Canteen> {
+		const response = await this.getJson(`/api/canteens/${canteenId}`);
+		return response as Canteen;
+	}
+
+	async getCanteenMenu(
+		canteenId: number,
+		params: { date?: string; dietFilter?: MenuDietFilter; excludeAllergens?: string[]; priceCategory?: PriceCategory } = {}
+	): Promise<MenuResponse> {
+		const url = new URL(this.baseUrl + `/api/canteens/${canteenId}/menu`);
+		if (params.date) url.searchParams.set("date", params.date);
+		if (params.dietFilter) url.searchParams.set("diet_filter", params.dietFilter);
+		if (params.excludeAllergens && params.excludeAllergens.length > 0) {
+			params.excludeAllergens.forEach((item) => url.searchParams.append("exclude_allergens", item));
+		}
+		if (params.priceCategory) url.searchParams.set("price_category", params.priceCategory);
+
+		const response = await this.getJson(url.pathname + url.search);
+		return response as MenuResponse;
 	}
 }
