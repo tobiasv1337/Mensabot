@@ -63,7 +63,7 @@ def search_canteens(
     per_page: int = Query(20, ge=1, le=100),
     min_score: float = Query(60.0, ge=0.0, le=100.0),
     has_coordinates: bool | None = None,
-    sort_by: str = Query("auto", regex="^(auto|distance|name|city)$"),
+    sort_by: str = Query("auto", pattern="^(auto|distance|name|city)$"),
 ):
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
