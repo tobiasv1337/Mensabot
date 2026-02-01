@@ -87,8 +87,8 @@ export const darkTheme: Theme = {
   textOnCard: palette.white,
   surfaceInset: palette.greyShadowGrey,          // Inputs, wells (recessed areas)
   textOnInset: palette.white,
-  surfaceElevated: palette.greySilver,           // Modals, dropdowns (highest elevation)
-  textOnElevated: palette.black,
+  surfaceElevated: palette.greyCharcoalBlue,     // Modals, dropdowns (highest elevation)
+  textOnElevated: palette.white,
   surfaceAccent: palette.white,
   textOnAccent: palette.black,
 
