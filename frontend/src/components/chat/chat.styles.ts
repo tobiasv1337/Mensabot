@@ -390,34 +390,110 @@ export const Bubble = styled.div<{ $isUser?: boolean }>`
 `;
 
 export const MarkdownBody = styled.div`
-  font-size: 0.95rem;
   line-height: 1.6;
+  font-size: 0.95rem;
+  word-wrap: break-word;
 
-  p {
-    margin: 0 0 0.65rem 0;
+  > :first-child {
+    margin-top: 0;
   }
 
-  p:last-child {
+  > :last-child {
     margin-bottom: 0;
+  }
+
+  p {
+    margin: 0.5rem 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0.6rem 0 0.3rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  h4,
+  h5,
+  h6 {
+    margin: 0.4rem 0 0.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
   ul,
   ol {
-    margin: 0.5rem 0 0.7rem 1.2rem;
+    padding-left: 2.2rem;
+    margin: 0.35rem 0;
+  }
+
+  li + li {
+    margin-top: 0.15rem;
+  }
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 
   code {
-    background: ${({ theme }) => `${theme.textDark}12`};
-    padding: 0.15rem 0.35rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    font-size: 0.9em;
+    padding: 0.1rem 0.25rem;
+    border-radius: 0.25rem;
+    background: ${({ theme }) => theme.surfaceInset};
+  }
+
+  pre code {
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 0.9em;
   }
 
   pre {
-    background: ${({ theme }) => `${theme.textDark}18`};
-    padding: 0.8rem;
-    border-radius: 12px;
+    margin: 0.6rem 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    background: ${({ theme }) => theme.surfaceInset};
     overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+    font-size: 0.95em;
+    display: block;
+    overflow-x: auto;
+  }
+
+  th,
+  td {
+    padding: 0.55rem 0.6rem;
+    border: 1px solid ${({ theme }) => theme.textMuted};
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead {
+    background: ${({ theme }) => theme.surfaceInset};
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(odd) {
+    background: ${({ theme }) => `${theme.surfaceInset}40`};
+  }
+
+  blockquote {
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid ${({ theme }) => theme.accent2};
+    background: ${({ theme }) => `${theme.accent2}20`};
+    font-size: 0.9rem;
   }
 `;
 
