@@ -91,8 +91,9 @@ export const TextInput = styled.input`
   font-family: inherit;
 
   &:focus {
-    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline: 2px solid ${({ theme }) => theme.accent1};
     outline-offset: 1px;
+    border-color: ${({ theme }) => `${theme.accent1}99`};
   }
 `;
 
@@ -109,8 +110,9 @@ export const TextArea = styled.textarea`
   font-family: inherit;
 
   &:focus {
-    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline: 2px solid ${({ theme }) => theme.accent1};
     outline-offset: 1px;
+    border-color: ${({ theme }) => `${theme.accent1}99`};
   }
 `;
 
