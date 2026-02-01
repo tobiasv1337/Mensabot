@@ -1,1 +1,1 @@
-__all__ = ["openmensa"]
+__all__ = ["openmensa", "canteen_index"]

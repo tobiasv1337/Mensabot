@@ -8,7 +8,6 @@ import anyio
 from typing import Annotated, Optional
 from pydantic import Field
 
-from openmensa_sdk import CanteenIndexStore
 from .concurrency import IO_SEMAPHORE
 from .server import mcp, make_openmensa_client
 from .settings import settings
@@ -39,6 +38,7 @@ from .osm_opening_hours import (
     OSMRef,
     fetch_osm_element,
 )
+from .services.canteen_index import load_canteen_index
 from .services.openmensa import fetch_single_menu, normalize_menu_date
 
 # ------------------------------ internal helpers ------------------------------
@@ -47,22 +47,6 @@ CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 CACHE_TTL_CANTEEN_LIST_S = 60 * 60 * 24
 CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
 
-
-_INDEX_STORE: CanteenIndexStore | None = None
-
-
-def _get_index_store() -> CanteenIndexStore:
-    global _INDEX_STORE
-    if _INDEX_STORE is None:
-        path = settings.canteen_index_path
-        _INDEX_STORE = CanteenIndexStore(path=path) if path else CanteenIndexStore()
-    return _INDEX_STORE
-
-
-def _load_canteen_index():
-    store = _get_index_store()
-    with make_openmensa_client() as client:
-        return store.refresh_if_stale_or_cached(client, ttl_hours=settings.canteen_index_ttl_hours)
 
 # ------------------------------ OpenMensa tools ------------------------------
 
@@ -96,7 +80,7 @@ async def search_canteens(
         raise ValueError("near_lat and near_lng must be provided together.")
 
     async with IO_SEMAPHORE:
-        index = await anyio.to_thread.run_sync(_load_canteen_index)
+        index = await anyio.to_thread.run_sync(load_canteen_index)
     results, total = index.search(
         query,
         city=city,
