@@ -500,9 +500,9 @@ class CanteenIndex:
                 results.sort(
                     key=lambda r: (
                         -r.score,
-                        _normalize_text(r.canteen.name),
                         r.distance_km is None,
                         r.distance_km if r.distance_km is not None else float("inf"),
+                        _normalize_text(r.canteen.name),
                     )
                 )
             else:

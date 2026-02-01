@@ -47,8 +47,6 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
-          // Default to distance sort if location is found
-          setSortBy("distance");
         },
         (error) => {
           console.log("Location access denied or error:", error);
@@ -75,7 +73,6 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           nearLat: location?.lat,
           nearLng: location?.lng,
           sortBy: sort,
-          hasCoordinates: sort === "distance" ? true : undefined
         });
 
         if (currentRequest !== requestId.current) return;
