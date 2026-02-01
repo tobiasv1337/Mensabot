@@ -1,4 +1,5 @@
 import json
+import anyio
 from typing import Any, Dict, List
 
 from fastmcp import Client as MCPClient
@@ -208,9 +209,12 @@ async def handle_tool_calls(
                     lng = cached.get("lng")
 
                 if lat is None or lng is None:
-                    try:
+                    def _fetch_canteen():
                         with make_openmensa_client() as om_client:
-                            canteen = om_client.get_canteen(canteen_id)
+                            return om_client.get_canteen(canteen_id)
+
+                    try:
+                        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
                         lat = getattr(canteen, "latitude", None)
                         lng = getattr(canteen, "longitude", None)
                         shared_cache.set(

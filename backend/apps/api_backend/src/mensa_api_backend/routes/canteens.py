@@ -1,3 +1,4 @@
+import anyio
 from fastapi import APIRouter, HTTPException, Query
 
 from mensa_mcp_server.cache import shared_cache
@@ -29,7 +30,7 @@ def list_canteens(
     city: str | None = None,
     has_coordinates: bool | None = None,
 ):
-    index = load_canteen_index()
+    index = await anyio.to_thread.run_sync(load_canteen_index)
     canteens, total = index.list(page=page, per_page=per_page, city=city, has_coordinates=has_coordinates)
     next_page = page + 1 if page * per_page < total else None
     return CanteenListResponse(
@@ -65,7 +66,7 @@ def search_canteens(
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
 
-    index = load_canteen_index()
+    index = await anyio.to_thread.run_sync(load_canteen_index)
     results, total = index.search(
         query,
         city=city,
@@ -112,9 +113,12 @@ def get_canteen_info_api(canteen_id: int):
     if cached is not None:
         return CanteenOut.model_validate(cached)
 
-    try:
+    def _fetch_canteen():
         with make_openmensa_client() as client:
-            canteen = client.get_canteen(canteen_id)
+            return client.get_canteen(canteen_id)
+
+    try:
+        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
     except OpenMensaAPIError as exc:
         if getattr(exc, "status_code", None) == 404:
             raise HTTPException(status_code=404, detail="Canteen not found") from exc
@@ -142,12 +146,15 @@ def get_canteen_menu_api(
     if error_response is not None:
         return error_response
 
-    with make_openmensa_client() as client:
-        return _fetch_single_menu(
-            client=client,
-            canteen_id=canteen_id,
-            normalized_date=normalized_date,
-            diet_filter=diet_filter,
-            exclude_allergens=exclude_allergens,
-            price_category=price_category,
-        )
+    def _fetch_menu():
+        with make_openmensa_client() as client:
+            return _fetch_single_menu(
+                client=client,
+                canteen_id=canteen_id,
+                normalized_date=normalized_date,
+                diet_filter=diet_filter,
+                exclude_allergens=exclude_allergens,
+                price_category=price_category,
+            )
+
+    return await anyio.to_thread.run_sync(_fetch_menu)
