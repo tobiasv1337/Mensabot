@@ -74,6 +74,154 @@ const DIET_LABELS: Record<string, string> = {
   unknown: "unbekannt",
 };
 
+const WEEKDAY_INDEX: Record<string, number> = {
+  monday: 1,
+  montag: 1,
+  tuesday: 2,
+  dienstag: 2,
+  wednesday: 3,
+  mittwoch: 3,
+  thursday: 4,
+  donnerstag: 4,
+  friday: 5,
+  freitag: 5,
+  saturday: 6,
+  samstag: 6,
+  sunday: 0,
+  sonntag: 0,
+};
+
+const WEEKDAY_LABELS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+const normalizeDateToken = (token: string) =>
+  token
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z]/g, "");
+
+const toLocalISODate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const toLocalDateToken = (date: Date) => {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+const parseSlashCommand = (
+  rawInput: string
+): { query: string; rawQuery: string; dateISO?: string; dateToken?: string } => {
+  let working = rawInput.trim();
+  let dateISO: string | undefined;
+  let dateToken: string | undefined;
+
+  const today = new Date();
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const dateMatch = working.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
+  if (dateMatch) {
+    const day = Number.parseInt(dateMatch[1], 10);
+    const month = Number.parseInt(dateMatch[2], 10);
+    let year = dateMatch[3] ? Number.parseInt(dateMatch[3], 10) : todayDate.getFullYear();
+    if (dateMatch[3] && dateMatch[3].length === 2) {
+      year += 2000;
+    }
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      let candidate = new Date(year, month - 1, day);
+      if (!dateMatch[3] && candidate < todayDate) {
+        candidate = new Date(year + 1, month - 1, day);
+      }
+      if (
+        candidate.getFullYear() === (dateMatch[3] ? year : candidate.getFullYear()) &&
+        candidate.getMonth() === month - 1 &&
+        candidate.getDate() === day
+      ) {
+        dateISO = toLocalISODate(candidate);
+        dateToken = dateMatch[0];
+      }
+    }
+
+    working = working.replace(dateMatch[0], " ");
+    working = working.replace(/\s+/g, " ");
+  }
+
+  const tokens = working.split(/\s+/).filter(Boolean);
+  const remainingTokens: string[] = [];
+
+  for (const token of tokens) {
+    const cleaned = normalizeDateToken(token);
+    if (cleaned === "today" || cleaned === "heute") {
+      if (!dateISO) {
+        dateISO = toLocalISODate(todayDate);
+        dateToken = token;
+      }
+      continue;
+    }
+    if (cleaned === "tomorrow" || cleaned === "morgen") {
+      if (!dateISO) {
+        const tomorrow = new Date(todayDate);
+        tomorrow.setDate(todayDate.getDate() + 1);
+        dateISO = toLocalISODate(tomorrow);
+        dateToken = token;
+      }
+      continue;
+    }
+    if (cleaned === "uebermorgen" || cleaned === "dayaftertomorrow") {
+      if (!dateISO) {
+        const dayAfterTomorrow = new Date(todayDate);
+        dayAfterTomorrow.setDate(todayDate.getDate() + 2);
+        dateISO = toLocalISODate(dayAfterTomorrow);
+        dateToken = token;
+      }
+      continue;
+    }
+    if (WEEKDAY_INDEX[cleaned] !== undefined) {
+      if (!dateISO) {
+        const target = WEEKDAY_INDEX[cleaned];
+        const delta = (target - todayDate.getDay() + 7) % 7;
+        const targetDate = new Date(todayDate);
+        targetDate.setDate(todayDate.getDate() + delta);
+        dateISO = toLocalISODate(targetDate);
+        dateToken = token;
+      }
+      continue;
+    }
+    remainingTokens.push(token);
+  }
+
+  const rawQuery = remainingTokens.join(" ").trim();
+
+  return {
+    query: rawQuery.replace(/[_-]+/g, " ").trim(),
+    rawQuery,
+    dateISO,
+    dateToken,
+  };
+};
+
+const formatCanteenCommand = (canteen: Canteen) =>
+  canteen.name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^\p{L}\p{N}_-]/gu, "");
+
+const buildSlashInput = (base: string, dateToken?: string, options?: { trailingSpace?: boolean }) => {
+  const trimmed = base.trim();
+  const core = trimmed ? `/${trimmed}` : "/";
+  if (dateToken) return `${core} ${dateToken}`;
+  return options?.trailingSpace ? `${core} ` : core;
+};
+
 type MenuMeal = MenuResponse["meals"][number];
 
 const groupMealsByCategory = (meals: MenuMeal[]) => {
@@ -207,10 +355,13 @@ const Chat: React.FC<ChatProps> = ({
   }, [isSending, onStartNewChat]);
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat: Chat) => {
+    async (canteen: Canteen, targetChat: Chat, dateOverride?: string) => {
       const requestId = ++menuRequestId.current;
       try {
-        const menu = await client.getCanteenMenu(canteen.id);
+        const menu = await client.getCanteenMenu(
+          canteen.id,
+          dateOverride ? { date: dateOverride } : {}
+        );
         if (requestId !== menuRequestId.current) return;
         const message = buildMenuMarkdown(canteen, menu);
         shouldAutoScrollRef.current = true;
@@ -304,6 +455,43 @@ const Chat: React.FC<ChatProps> = ({
       const trimmed = text.trim();
       if (!trimmed) return;
 
+      if (trimmed.startsWith("/")) {
+        const parsed = parseSlashCommand(trimmed.slice(1));
+        if (!parsed.query) return;
+
+        setIsSending(true);
+        try {
+          const response = await client.searchCanteens({
+            query: parsed.query,
+            perPage: 1,
+            minScore: 30,
+            sortBy: "auto",
+            nearLat: commandUserLocation?.lat,
+            nearLng: commandUserLocation?.lng,
+          });
+
+          const selected = response.results[0]?.canteen;
+          if (!selected) {
+            chat.addMessage(
+              new ChatMessage("assistant", "❌ Keine passende Mensa gefunden. Bitte prüfe den Namen.")
+            );
+            setVersion((v) => v + 1);
+            return;
+          }
+
+          updateFiltersPartial({ canteens: [selected] });
+          await fetchAndAppendMenu(selected, chat, parsed.dateISO);
+        } catch (error) {
+          chat.addMessage(
+            new ChatMessage("assistant", "❌ Mensa konnte nicht geladen werden. Bitte versuche es erneut.")
+          );
+          setVersion((v) => v + 1);
+        } finally {
+          setIsSending(false);
+        }
+        return;
+      }
+
       setIsSending(true);
       try {
         shouldAutoScrollRef.current = true;
@@ -322,7 +510,7 @@ const Chat: React.FC<ChatProps> = ({
         setIsSending(false);
       }
     },
-    [chat, client, isSending]
+    [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu]
   );
 
   const handleShareLocation = useCallback(() => {
@@ -444,13 +632,27 @@ const Chat: React.FC<ChatProps> = ({
     const trimmed = inputValue.trimStart();
     if (!trimmed.startsWith("/")) return null;
     const raw = trimmed.slice(1);
-    const normalized = raw.replace(/[_-]+/g, " ").trim();
-    return { raw, normalized };
+    const parsed = parseSlashCommand(raw);
+    return {
+      raw,
+      rawQuery: parsed.rawQuery,
+      normalized: parsed.query,
+      dateISO: parsed.dateISO,
+      dateToken: parsed.dateToken,
+    };
   }, [inputValue]);
 
   const slashActive = Boolean(slashState);
   const slashQuery = slashState?.normalized ?? "";
+  const slashDateToken = slashState?.dateToken;
+  const slashRawQuery = slashState?.rawQuery ?? "";
   const shortcutQuery = slashQuery.toLowerCase();
+  const isResolvedSlashCommand = useMemo(
+    () => slashRawQuery.trim().toLowerCase().startsWith("mensa_"),
+    [slashRawQuery]
+  );
+
+  const commandCaptureEnter = !slashDateToken;
 
   const requestSlashLocation = useCallback(() => {
     if (!("geolocation" in navigator)) {
@@ -478,7 +680,7 @@ const Chat: React.FC<ChatProps> = ({
   }, [slashActive, slashQuery, commandLocationStatus, requestSlashLocation]);
 
   useEffect(() => {
-    if (!slashActive || slashQuery.length === 0) {
+    if (!slashActive || slashQuery.length === 0 || isResolvedSlashCommand) {
       commandRequestId.current += 1;
       setCommandCanteenResults([]);
       setCommandCanteenLoading(false);
@@ -515,7 +717,7 @@ const Chat: React.FC<ChatProps> = ({
     }, 280);
 
     return () => window.clearTimeout(timer);
-  }, [slashActive, slashQuery, client, commandUserLocation]);
+  }, [slashActive, slashQuery, isResolvedSlashCommand, client, commandUserLocation]);
 
   useEffect(() => {
     if (!slashActive) {
@@ -573,8 +775,54 @@ const Chat: React.FC<ChatProps> = ({
     [commandCanteenResults]
   );
 
+  const dateItems: CommandMenuItem[] = useMemo(() => {
+    const today = new Date();
+    const baseDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const items: CommandMenuItem[] = [];
+
+    for (let index = 0; index < 7; index += 1) {
+      const date = new Date(baseDate);
+      date.setDate(baseDate.getDate() + index);
+      const dateToken = toLocalDateToken(date);
+      const dateISO = toLocalISODate(date);
+      let label = WEEKDAY_LABELS[date.getDay()];
+      let token = dateToken;
+
+      if (index === 0) {
+        label = "Heute";
+        token = "heute";
+      } else if (index === 1) {
+        label = "Morgen";
+        token = "morgen";
+      } else if (index === 2) {
+        label = "Übermorgen";
+        token = "übermorgen";
+      }
+
+      items.push({
+        id: `date-${dateISO}`,
+        label,
+        meta: dateToken,
+        kind: "date",
+        payload: token,
+      });
+    }
+
+    return items;
+  }, []);
+
   const commandGroups: CommandMenuGroup[] = useMemo(() => {
     if (!slashActive) return [];
+
+    if (isResolvedSlashCommand) {
+      return [
+        {
+          id: "dates",
+          label: "Datum",
+          items: dateItems,
+        },
+      ];
+    }
 
     const shortcutEmptyLabel = shortcuts.length === 0
       ? "Noch keine Shortcuts gespeichert."
@@ -609,11 +857,13 @@ const Chat: React.FC<ChatProps> = ({
     ];
   }, [
     slashActive,
+    isResolvedSlashCommand,
     shortcutQuery,
     shortcuts.length,
     slashQuery.length,
     shortcutItems,
     canteenItems,
+    dateItems,
     commandCanteenLoading,
     commandCanteenError,
   ]);
@@ -659,14 +909,25 @@ const Chat: React.FC<ChatProps> = ({
 
       if (item.kind === "canteen") {
         const canteen = item.payload as Canteen;
-        updateFiltersPartial({ canteens: [canteen] });
-        setFiltersOpen(false);
+        const commandBase = formatCanteenCommand(canteen);
+        setInputValue(
+          buildSlashInput(commandBase, slashDateToken, { trailingSpace: !slashDateToken })
+        );
+        setFocusSignal((prev) => prev + 1);
+        return;
+      }
+
+      if (item.kind === "date") {
+        const token = String(item.payload ?? "").trim();
+        const base = slashRawQuery.trim();
+        if (!base) return;
+        const commandText = buildSlashInput(base, token);
         setInputValue("");
         setFocusSignal((prev) => prev + 1);
-        fetchAndAppendMenu(canteen, chat);
+        void sendMessage(commandText);
       }
     },
-    [handleApplyShortcut, updateFiltersPartial, fetchAndAppendMenu, chat]
+    [handleApplyShortcut, slashDateToken, slashRawQuery, sendMessage]
   );
 
   const handleCommandClose = useCallback(() => {
@@ -683,6 +944,7 @@ const Chat: React.FC<ChatProps> = ({
       onSelect: handleCommandSelect,
       onNavigate: handleCommandNavigate,
       onClose: handleCommandClose,
+      captureEnter: commandCaptureEnter,
     }
     : undefined;
 

@@ -7,7 +7,7 @@ export type CommandMenuItem = {
   id: string;
   label: string;
   meta?: string;
-  kind: "shortcut" | "canteen";
+  kind: "shortcut" | "canteen" | "date";
   payload?: unknown;
 };
 
@@ -26,6 +26,7 @@ type CommandMenuState = {
   onSelect: (item: CommandMenuItem) => void;
   onNavigate: (direction: "next" | "prev") => void;
   onClose: () => void;
+  captureEnter?: boolean;
 };
 
 type ChatInputProps = {
@@ -97,15 +98,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
   }, [commandMenu?.activeId, commandMenu?.open]);
 
   const submit = useCallback(() => {
-    if (commandMenu?.open) {
+    if (commandMenu?.open && commandMenu.captureEnter !== false) {
       if (commandMenu.activeItem) {
         commandMenu.onSelect(commandMenu.activeItem);
       }
       return;
     }
     const text = value.trim();
-    if (!text || disabled) return;
-    onSend(text);
+    if (disabled) return;
+    if (!text) return;
+    onSend(value);
     onChange("");
     requestAnimationFrame(() => focusTextarea());
   }, [commandMenu, value, disabled, onSend, onChange, focusTextarea]);
@@ -135,9 +137,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 }
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
-                  if (commandMenu.activeItem) {
+                  if (commandMenu.captureEnter !== false && commandMenu.activeItem) {
                     commandMenu.onSelect(commandMenu.activeItem);
+                    return;
                   }
+                  submit();
                   return;
                 }
                 if (event.key === "Escape") {
@@ -157,7 +161,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
               }
             }}
           />
-          <S.SendButton type="button" aria-label="Senden" onClick={submit} disabled={disabled || !value.trim()}>
+          <S.SendButton
+            type="button"
+            aria-label="Senden"
+            onClick={submit}
+            disabled={disabled || !value.trim()}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
                 d="M22 2L11 13"
@@ -197,7 +206,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         <S.CommandLabel>{item.label}</S.CommandLabel>
                         {item.meta && <S.CommandMeta>{item.meta}</S.CommandMeta>}
                       </div>
-                      <S.CommandBadge>{item.kind === "shortcut" ? "Shortcut" : "Mensa"}</S.CommandBadge>
+                      <S.CommandBadge>
+                        {item.kind === "shortcut" ? "Shortcut" : item.kind === "date" ? "Datum" : "Mensa"}
+                      </S.CommandBadge>
                     </S.CommandItem>
                   ))
                 ) : (
