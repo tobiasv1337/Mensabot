@@ -12,7 +12,7 @@ maintainers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "fastmcp>=2.13.0.2",
+    "fastmcp>=2.14.4",
     "anyio>=4.12.1",
     "openmensa-sdk",
 ]

@@ -743,13 +743,15 @@ name = "mensa-mcp-server"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "fastmcp" },
     { name = "openmensa-sdk" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = ">=2.13.0.2" },
+    { name = "anyio", specifier = ">=4.12.1" },
+    { name = "fastmcp", specifier = ">=2.14.4" },
     { name = "openmensa-sdk", editable = "../../libs/openmensa" },
 ]
 
