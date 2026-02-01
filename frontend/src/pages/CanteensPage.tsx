@@ -254,7 +254,15 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                   key={canteen.id}
                   onClick={() => onSelectCanteen(canteen)}
                   $selected={selectedCanteenId === canteen.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedCanteenId === canteen.id}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelectCanteen(canteen);
+                    }
+                  }}
                   style={{ animationDelay: `${Math.min(index * 0.03, 0.45)}s` }}
                 >
                   <S.CardHeader>

@@ -650,6 +650,7 @@ export const ComposerRow = styled.div`
 
 export const ComposerInputShell = styled.div`
   flex: 1;
+  position: relative;
   display: grid;
   gap: 0;
   padding: 0;
@@ -692,6 +693,96 @@ export const ComposerTextarea = styled.textarea`
   &::placeholder {
     color: ${({ theme }) => theme.textMuted};
   }
+`;
+
+export const CommandMenu = styled.div`
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 10px);
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}2A`};
+  background: ${({ theme }) => theme.surfaceInset};
+  display: grid;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 12;
+  box-shadow: 0 18px 32px ${({ theme }) => `${theme.textDark}24`};
+`;
+
+export const CommandGroup = styled.div`
+  display: grid;
+  gap: 6px;
+`;
+
+export const CommandGroupTitle = styled.div`
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+  padding: 0 4px;
+`;
+
+export const CommandItem = styled.button<{ $active?: boolean }>`
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid
+    ${({ theme, $active }) => ($active ? `${theme.accent1}88` : `${theme.textMuted}22`)};
+  background: ${({ theme, $active }) => ($active ? `${theme.accent1}22` : theme.surfacePage)};
+  transition: transform 0.16s ease, border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => `${theme.accent1}77`};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const CommandLabel = styled.div`
+  font-size: 13px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+`;
+
+export const CommandMeta = styled.div`
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+  margin-top: 2px;
+`;
+
+export const CommandBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: ${({ theme }) => theme.accent1};
+  background: ${({ theme }) => `${theme.accent1}1A`};
+  border: 1px solid ${({ theme }) => `${theme.accent1}44`};
+  white-space: nowrap;
+`;
+
+export const CommandEmpty = styled.div`
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed ${({ theme }) => `${theme.textMuted}2A`};
+  background: ${({ theme }) => theme.surfacePage};
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const ShortcutRow = styled.div`
