@@ -108,7 +108,8 @@ def request_canteen_directions(
     lng: Optional[float] = None,
 ) -> dict:
     """
-    Ask the user to open directions to a canteen in Google Maps.
+    Allows the user to open directions to a canteen in Google Maps.
+    Use this tool when the user wants to navigate to a canteen or when the user wants to know where a canteen is located exactly.
     Provide either a canteen_id or a lat/lng pair (preferred: canteen_id).
 
     The backend will interrupt the tool loop and instruct the frontend to show
