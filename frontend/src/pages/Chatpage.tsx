@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../types/navigation";
@@ -6,26 +6,66 @@ import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
 import ShortcutsPage from "./ShortcutsPage";
+import SettingsPage from "./SettingsPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
-import { Chats, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
+import { Chats, type Chat as ChatSession, type ChatFilters, type ChatSummary, defaultChatFilters } from "../services/chats";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Mensen", "Über Uns", "Kontakt"];
-const DEFAULT_CHAT_ID = "default";
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "Contact", "Shortcuts", "Settings"];
+const CHAT_PAGE_SIZE = 10;
+
+const resolveInitialChatId = () => {
+  const activeId = Chats.getActiveId();
+  if (activeId && Chats.exists(activeId)) return activeId;
+  const recent = Chats.listPage(0, 1)[0]?.id;
+  if (recent) return recent;
+  return Chats.create().id;
+};
 
 const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // HIER: State für das Einklappen
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [chat, setChat] = useState<ChatSession>(() => Chats.getById(DEFAULT_CHAT_ID, true)!);
+  const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId());
+  const [chat, setChat] = useState<ChatSession>(() => Chats.getById(activeChatId, true)!);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
+  const pendingMenuCanteen = useRef<Canteen | null>(null);
+
+  const [chatPages, setChatPages] = useState(1);
+  const [recentChats, setRecentChats] = useState<ChatSummary[]>(() =>
+    Chats.listPage(0, CHAT_PAGE_SIZE)
+  );
+  const [hasMoreChats, setHasMoreChats] = useState(() =>
+    Chats.listPage(CHAT_PAGE_SIZE, 1).length > 0
+  );
+
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
+  const refreshChatList = useCallback((pages: number) => {
+    const items = Chats.listPage(0, pages * CHAT_PAGE_SIZE);
+    setRecentChats(items);
+    setHasMoreChats(Chats.listPage(items.length, 1).length > 0);
+  }, []);
+
   useEffect(() => {
-    setFilters(chat.filters ?? defaultChatFilters);
-  }, [chat]);
+    refreshChatList(chatPages);
+  }, [chatPages, refreshChatList]);
+
+  useEffect(() => {
+    const unsubscribe = Chats.subscribe(() => refreshChatList(chatPages));
+    return unsubscribe;
+  }, [chatPages, refreshChatList]);
+
+  useEffect(() => {
+    const nextChat = Chats.getById(activeChatId, true)!;
+    nextChat.touch();
+    setChat(nextChat);
+    setFilters(nextChat.filters ?? defaultChatFilters);
+    setMenuCanteen(pendingMenuCanteen.current);
+    pendingMenuCanteen.current = null;
+    Chats.setActiveId(activeChatId);
+  }, [activeChatId]);
 
   const updateChatFilters = useCallback(
     (next: ChatFilters) => {
@@ -35,27 +75,56 @@ const ChatPage: React.FC = () => {
     [chat]
   );
 
+  const loadMoreChats = useCallback(() => {
+    if (!hasMoreChats) return;
+    setChatPages((prev) => prev + 1);
+  }, [hasMoreChats]);
+
   const startNewChat = useCallback(
     (options?: { preselectedCanteen?: Canteen | null }) => {
-      Chats.deleteById(DEFAULT_CHAT_ID);
-      const fresh = Chats.getById(DEFAULT_CHAT_ID, true)!;
+      const fresh = Chats.create();
+      const baseFilters = filters ?? defaultChatFilters;
       const nextFilters: ChatFilters = {
-        ...defaultChatFilters,
-        canteens: options?.preselectedCanteen ? [options.preselectedCanteen] : [],
+        ...baseFilters,
+        canteens: options?.preselectedCanteen
+          ? [options.preselectedCanteen]
+          : baseFilters.canteens ?? [],
       };
       fresh.setFilters(nextFilters);
-      setChat(fresh);
-      setFilters(nextFilters);
-      setMenuCanteen(options?.preselectedCanteen ?? null);
+      pendingMenuCanteen.current = options?.preselectedCanteen ?? null;
+      setActiveChatId(fresh.id);
+      setActiveNav("ChatBot");
+    },
+    [filters]
+  );
+
+  const handleDeleteAllChats = useCallback(() => {
+    Chats.deleteAll();
+    const fresh = Chats.create();
+    setChatPages(1);
+    pendingMenuCanteen.current = null;
+    setActiveChatId(fresh.id);
+    setActiveNav("ChatBot");
+    setDrawerOpen(false);
+  }, []);
+
+  const handleSelectChat = useCallback(
+    (id: string) => {
+      setActiveChatId(id);
+      setActiveNav("ChatBot");
+      setDrawerOpen(false);
     },
     []
   );
 
-  const handleSelectCanteen = (canteen: Canteen) => {
-    startNewChat({ preselectedCanteen: canteen });
-    setActiveNav("ChatBot");
-    setDrawerOpen(false);
-  };
+  const handleSelectCanteen = useCallback(
+    (canteen: Canteen) => {
+      startNewChat({ preselectedCanteen: canteen });
+      setActiveNav("ChatBot");
+      setDrawerOpen(false);
+    },
+    [startNewChat]
+  );
 
   return (
     <S.PageRoot>
@@ -67,23 +136,27 @@ const ChatPage: React.FC = () => {
       />
 
       <S.Shell>
-        {/* WICHTIG: $collapsed Prop an das Grid geben */}
         <S.BodyGrid $collapsed={isCollapsed}>
           <S.SidebarSlot>
             <Sidebar
               mode="desktop"
               drawerOpen={true}
-              isCollapsed={isCollapsed} // Prop weitergeben
-              onToggleCollapse={() => setIsCollapsed(!isCollapsed)} // Toggle-Funktion
-              onCloseDrawer={() => { }}
+              isCollapsed={isCollapsed}
+              onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+              onCloseDrawer={() => {}}
               navItems={NAV_ITEMS}
               activeNav={activeNav}
               onNavClick={setActiveNav}
+              chats={recentChats}
+              activeChatId={activeChatId}
+              onSelectChat={handleSelectChat}
+              onLoadMoreChats={loadMoreChats}
+              hasMoreChats={hasMoreChats}
             />
           </S.SidebarSlot>
 
           <S.Content>
-            {activeNav === "Mensen" ? (
+            {activeNav === "Canteens" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
@@ -95,6 +168,8 @@ const ChatPage: React.FC = () => {
                 onUpdateShortcut={updateShortcut}
                 onDeleteShortcut={deleteShortcut}
               />
+            ) : activeNav === "Settings" ? (
+              <SettingsPage onDeleteAllChats={handleDeleteAllChats} />
             ) : (
               <Chat
                 chat={chat}
@@ -116,11 +191,15 @@ const ChatPage: React.FC = () => {
           navItems={NAV_ITEMS}
           activeNav={activeNav}
           onNavClick={setActiveNav}
+          chats={recentChats}
+          activeChatId={activeChatId}
+          onSelectChat={handleSelectChat}
+          onLoadMoreChats={loadMoreChats}
+          hasMoreChats={hasMoreChats}
         />
       </S.Shell>
     </S.PageRoot>
   );
 };
-
 
 export default ChatPage;
