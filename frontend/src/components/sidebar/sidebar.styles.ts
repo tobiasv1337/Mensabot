@@ -2,19 +2,19 @@ import styled from "styled-components";
 
 /* BACKDROP – only Drawer */
 export const Backdrop = styled.div<{
-  isOpen: boolean;
+  $isOpen: boolean;
   $mode: "desktop" | "drawer";
 }>`
   display: none;
 
-  ${({ $mode, isOpen }) =>
+  ${({ $mode, $isOpen }) =>
     $mode === "drawer" &&
     `
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.55);
-    opacity: ${isOpen ? 1 : 0};
-    pointer-events: ${isOpen ? "auto" : "none"};
+    opacity: ${$isOpen ? 1 : 0};
+    pointer-events: ${$isOpen ? "auto" : "none"};
     transition: opacity 0.2s ease;
     z-index: 1990;
 
@@ -26,7 +26,7 @@ export const Backdrop = styled.div<{
 
 /* SIDEBAR */
 export const Sidebar = styled.aside<{
-  isOpen: boolean;
+  $isOpen: boolean;
   $mode: "desktop" | "drawer";
   $isCollapsed?: boolean;
 }>`
@@ -52,7 +52,7 @@ export const Sidebar = styled.aside<{
   `}
 
   /* ===== DRAWER ===== */
-  ${({ $mode, isOpen }) =>
+  ${({ $mode, $isOpen }) =>
     $mode === "drawer" &&
     `
     position: fixed;
@@ -62,9 +62,9 @@ export const Sidebar = styled.aside<{
     height: calc(100vh - 80px);
     z-index: 1995;
 
-    transform: translateX(${isOpen ? "0" : "-100%"});
+    transform: translateX(${$isOpen ? "0" : "-100%"});
     transition: transform 0.25s ease;
-    box-shadow: ${isOpen ? "0 12px 30px rgba(0,0,0,0.35)" : "none"};
+    box-shadow: ${$isOpen ? "0 12px 30px rgba(0,0,0,0.35)" : "none"};
 
     @media (min-width: 1024px) {
       display: none;
@@ -137,8 +137,8 @@ export const SectionTitle = styled.div`
 `;
 
 export const NavButton = styled.button<{
-  active?: boolean;
-  collapsed?: boolean;
+  $active?: boolean;
+  $collapsed?: boolean;
 }>`
   all: unset;
   cursor: pointer;
@@ -147,16 +147,16 @@ export const NavButton = styled.button<{
 
   display: flex;
   align-items: center;
-  justify-content: ${({ collapsed }) =>
-    collapsed ? "center" : "flex-start"};
+  justify-content: ${({ $collapsed }) =>
+    $collapsed ? "center" : "flex-start"};
 
-  padding: ${({ collapsed }) => (collapsed ? "0" : "0 12px")};
+  padding: ${({ $collapsed }) => ($collapsed ? "0" : "0 12px")};
 
-  background: ${({ active, theme }) =>
-    active ? theme.surfaceAccent : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.surfaceAccent : "transparent"};
 
-  color: ${({ active, theme }) =>
-    active ? theme.textOnAccent : theme.textSecondary};
+  color: ${({ $active, theme }) =>
+    $active ? theme.textOnAccent : theme.textSecondary};
 
   &:hover {
     background: ${({ theme }) => theme.surfaceInset};
@@ -171,12 +171,12 @@ export const IconWrapper = styled.span`
   font-size: 20px;
 `;
 
-export const ButtonText = styled.span<{ collapsed?: boolean }>`
+export const ButtonText = styled.span<{ $collapsed?: boolean }>`
   white-space: nowrap;
   margin-left: 6px;
 
-  ${({ collapsed }) =>
-    collapsed &&
+  ${({ $collapsed }) =>
+    $collapsed &&
     `
     display: none;
   `}
@@ -207,7 +207,7 @@ export const ThemeButtonGroup = styled.div<{ $isCollapsed?: boolean }>`
     $isCollapsed ? "column" : "row"};
 `;
 
-export const SegmentButton = styled.button<{ active: boolean }>`
+export const SegmentButton = styled.button<{ $active: boolean }>`
   all: unset;
   cursor: pointer;
   flex: 1;
@@ -222,15 +222,15 @@ export const SegmentButton = styled.button<{ active: boolean }>`
   transition: all 0.2s ease;
   white-space: nowrap;
 
-  background: ${({ active, theme }) =>
-    active ? theme.surfaceElevated : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.surfaceElevated : "transparent"};
 
-  color: ${({ active, theme }) =>
-    active ? theme.textOnElevated : `${theme.textOnInset}99`};
+  color: ${({ $active, theme }) =>
+    $active ? theme.textOnElevated : `${theme.textOnInset}99`};
 
   &:hover {
-    ${({ active, theme }) =>
-      !active &&
+    ${({ $active, theme }) =>
+      !$active &&
       `
       background: ${theme.surfaceCard};
       color: ${theme.textOnCard};

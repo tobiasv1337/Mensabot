@@ -41,9 +41,9 @@ const Header: React.FC<HeaderProps> = ({
           {navItems.map((n) => (
             <Button
               key={n}
-              variant="default"
-              size="hug"
-              active={activeNav === n}
+              $variant="default"
+              $size="hug"
+              $active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
               {n}

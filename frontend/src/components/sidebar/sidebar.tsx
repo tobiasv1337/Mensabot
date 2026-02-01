@@ -206,10 +206,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <S.Backdrop isOpen={drawerOpen} $mode={mode} onClick={onCloseDrawer} />
+      <S.Backdrop $isOpen={drawerOpen} $mode={mode} onClick={onCloseDrawer} />
 
       <S.Sidebar
-        isOpen={drawerOpen}
+        $isOpen={drawerOpen}
         $mode={mode}
         $isCollapsed={isCollapsed}
       >
@@ -218,8 +218,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div style={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
             {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
                   <Button
-                    variant="default"
-                    size="iconOnly"
+                    $variant="default"
+                    $size="iconOnly"
                     onClick={onToggleCollapse}
                     title="Toggle Sidebar"
                     iconLeft={<SideBarIcon />}
@@ -234,10 +234,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((n) => (
             <Button
               key={n}
-              variant="default"
-              size="fill"
-              active={activeNav === n}
-              collapsed={isCollapsed}
+              $variant="default"
+              $size="fill"
+              $active={activeNav === n}
+              $collapsed={isCollapsed}
               onClick={() => {
                 onNavClick(n);
                 if (mode === "drawer") {
@@ -247,7 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               title={isCollapsed ? n : undefined}
             >
               <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
-              <ButtonTextWrapper collapsed={isCollapsed}>
+              <ButtonTextWrapper $collapsed={isCollapsed}>
                 {n}
               </ButtonTextWrapper>
             </Button>
@@ -260,41 +260,41 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     <S.NavSection>
       <Button 
-        variant="default" 
-        size="fill"
-        collapsed={isCollapsed}>
+        $variant="default" 
+        $size="fill"
+        $collapsed={isCollapsed}>
         <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
-        <ButtonTextWrapper collapsed={isCollapsed}>
+        <ButtonTextWrapper $collapsed={isCollapsed}>
           Einstellungen
         </ButtonTextWrapper>
       </Button>
 
       <Button 
-        variant="default" 
-        size="fill"
-        collapsed={isCollapsed}>
+        $variant="default" 
+        $size="fill"
+        $collapsed={isCollapsed}>
         <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
-        <ButtonTextWrapper collapsed={isCollapsed}>
+        <ButtonTextWrapper $collapsed={isCollapsed}>
           Shortcuts
         </ButtonTextWrapper>
       </Button>
 
       <Button 
-        variant="default" 
-        size="fill"
-        collapsed={isCollapsed}>
+        $variant="default" 
+        $size="fill"
+        $collapsed={isCollapsed}>
         <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
-        <ButtonTextWrapper collapsed={isCollapsed}>
+        <ButtonTextWrapper $collapsed={isCollapsed}>
           Karte
         </ButtonTextWrapper>
       </Button>
 
       <Button 
-        variant="default" 
-        size="fill"
-        collapsed={isCollapsed}>
+        $variant="default" 
+        $size="fill"
+        $collapsed={isCollapsed}>
         <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
-        <ButtonTextWrapper collapsed={isCollapsed}>
+        <ButtonTextWrapper $collapsed={isCollapsed}>
           Neuen Chat starten
         </ButtonTextWrapper>
       </Button>
@@ -308,7 +308,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <S.ThemeButtonGroup $isCollapsed={isCollapsed}>
             <S.SegmentButton
-              active={themeMode === "light"}
+              $active={themeMode === "light"}
               onClick={() => toggleMode("light")}
               title="Light Mode"
             >
@@ -316,7 +316,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </S.SegmentButton>
 
             <S.SegmentButton
-              active={themeMode === "system"}
+              $active={themeMode === "system"}
               onClick={() => toggleMode("system")}
               title="System Mode"
             >
@@ -324,7 +324,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </S.SegmentButton>
 
             <S.SegmentButton
-              active={themeMode === "dark"}
+              $active={themeMode === "dark"}
               onClick={() => toggleMode("dark")}
               title="Dark Mode"
             >

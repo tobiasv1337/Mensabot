@@ -87,10 +87,10 @@ export const ButtonIconWrapper = styled.span`
 `;
 
 // Text wrapper for fill size buttons
-export const ButtonTextWrapper = styled.span<{ collapsed?: boolean }>`
+export const ButtonTextWrapper = styled.span<{ $collapsed?: boolean }>`
   white-space: nowrap;
-  ${({ collapsed }) =>
-    collapsed &&
+  ${({ $collapsed }) =>
+    $collapsed &&
     `
     display: none;
   `}
