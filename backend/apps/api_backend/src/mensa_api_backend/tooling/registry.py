@@ -3,8 +3,13 @@ from typing import Any, Dict, List
 from fastmcp import Client as MCPClient
 
 from mensa_mcp_server import mcp
+from mensa_mcp_server.cache import shared_cache
+from mensa_mcp_server.cache_keys import mcp_tools_key
 
 from ..logging import logger
+
+
+TOOLS_CACHE_TTL_S = 60 * 60 * 24
 
 
 async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
@@ -14,6 +19,11 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: List of tool definitions in OpenAI function calling format.
         Each tool has the structure: {"type": "function", "function": {...}}
     """
+    cache_key = mcp_tools_key()
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     async with MCPClient(mcp) as mcp_client:
         raw_tools = await mcp_client.list_tools()
         tool_list = list(raw_tools)
@@ -43,4 +53,5 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
                     },
                 }
             )
+        shared_cache.set(cache_key, openai_tools, ttl_s=TOOLS_CACHE_TTL_S)
         return openai_tools

@@ -17,13 +17,14 @@ import logging
 import math
 import re
 import time
-from collections import OrderedDict
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from .cache import shared_cache
+from .cache_keys import overpass_query_key
 from .server import settings
 
 logger = logging.getLogger("mensa_mcp_server")
@@ -34,33 +35,6 @@ logger = logging.getLogger("mensa_mcp_server")
 DEFAULT_ATTRIBUTION = "© OpenStreetMap contributors"
 DEFAULT_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright"
 DEFAULT_LICENSE = "ODbL 1.0"
-
-
-# ------------------------------ small TTL cache ------------------------------
-
-class _TTLCache:
-    """Minimal TTL cache for Overpass responses (in-memory)."""
-
-    def __init__(self, ttl_s: int, max_items: int = 2048) -> None:
-        self.ttl_s = ttl_s
-        self.max_items = max_items
-        self._store: OrderedDict[str, Tuple[float, Any]] = OrderedDict()
-
-    def get(self, key: str) -> Any | None:
-        item = self._store.get(key)
-        if item is None:
-            return None
-        ts, val = item
-        if time.time() - ts > self.ttl_s:
-            self._store.pop(key, None)
-            return None
-        return val
-
-    def set(self, key: str, val: Any) -> None:
-        if len(self._store) >= self.max_items:
-            # FIFO eviction: remove oldest item
-            self._store.popitem(last=False)
-        self._store[key] = (time.time(), val)
 
 
 # ------------------------------ geometry + string helpers ------------------------------
@@ -227,7 +201,8 @@ class OSMOpeningHoursResolver:
         self.overpass_url = overpass_url
         self.user_agent = user_agent
         self.timeout_s = timeout_s
-        self.cache = _TTLCache(ttl_s=cache_ttl_s)
+        self.cache = shared_cache
+        self.cache_ttl_s = cache_ttl_s
 
     def _should_retry(self, exception: Exception, status_code: Optional[int] = None) -> bool:
         """Determine if an error is retryable."""
@@ -324,14 +299,14 @@ class OSMOpeningHoursResolver:
 
     def _post_overpass(self, query: str) -> Dict[str, Any]:
         """Fetch from Overpass with caching. Failed requests are never cached."""
-        cache_key = f"overpass:{hash(query)}"
+        cache_key = overpass_query_key(query)
         cached = self.cache.get(cache_key)
         if cached is not None:
             logger.debug("Overpass cache hit")
             return cached
 
         data = self._post_overpass_with_retry(query)
-        self.cache.set(cache_key, data)
+        self.cache.set(cache_key, data, ttl_s=self.cache_ttl_s)
         return data
 
     def fetch_element(self, ref: OSMRef) -> Dict[str, Any] | None:

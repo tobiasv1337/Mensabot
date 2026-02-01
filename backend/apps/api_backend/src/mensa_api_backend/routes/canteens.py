@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 
+from mensa_mcp_server.cache import shared_cache
+from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory
 from mensa_mcp_server.tools_openmensa import _fetch_single_menu, _normalize_menu_date
 from mensa_mcp_server.server import make_openmensa_client
@@ -18,6 +20,7 @@ from ..services.canteen_index import canteen_to_out, load_canteen_index
 
 router = APIRouter()
 
+CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 
 @router.get("/api/canteens", response_model=CanteenListResponse)
 def list_canteens(
@@ -104,6 +107,11 @@ def search_canteens(
 
 @router.get("/api/canteens/{canteen_id}", response_model=CanteenOut)
 def get_canteen_info_api(canteen_id: int):
+    cache_key = openmensa_canteen_key(canteen_id)
+    cached = shared_cache.get(cache_key)
+    if cached is not None:
+        return CanteenOut.model_validate(cached)
+
     try:
         with make_openmensa_client() as client:
             canteen = client.get_canteen(canteen_id)
@@ -112,7 +120,9 @@ def get_canteen_info_api(canteen_id: int):
             raise HTTPException(status_code=404, detail="Canteen not found") from exc
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    return canteen_to_out(canteen)
+    response = canteen_to_out(canteen)
+    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
+    return response
 
 
 @router.get("/api/canteens/{canteen_id}/menu", response_model=MenuResponseDTO)

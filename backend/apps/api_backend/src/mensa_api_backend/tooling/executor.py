@@ -5,6 +5,8 @@ from fastmcp import Client as MCPClient
 from openmensa_sdk import OpenMensaAPIError
 
 from mensa_mcp_server import mcp
+from mensa_mcp_server.cache import shared_cache
+from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.server import make_openmensa_client
 
 from ..config import settings
@@ -16,6 +18,8 @@ from ..prompts import (
     LOCATION_FALLBACK_PROMPT,
     LOCATION_TOOL_NAME,
 )
+
+CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 
 
 def try_repair_json(s: str) -> str:
@@ -197,39 +201,58 @@ async def handle_tool_calls(
                 continue
 
             if canteen_id is not None and lat is None and lng is None:
-                try:
-                    with make_openmensa_client() as om_client:
-                        canteen = om_client.get_canteen(canteen_id)
-                    lat = getattr(canteen, "latitude", None)
-                    lng = getattr(canteen, "longitude", None)
-                except OpenMensaAPIError as exc:
-                    tool_trace.ok = False
-                    tool_trace.error = f"Failed to resolve canteen {canteen_id}: {exc}"
-                    tool_traces.append(tool_trace)
-                    result_payload = {"error": tool_trace.error}
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "name": tool_name,
-                            "content": json.dumps(result_payload),
-                        }
-                    )
-                    continue
-                except Exception as exc:
-                    tool_trace.ok = False
-                    tool_trace.error = f"Unexpected error while resolving canteen {canteen_id}: {exc}"
-                    tool_traces.append(tool_trace)
-                    result_payload = {"error": tool_trace.error}
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "name": tool_name,
-                            "content": json.dumps(result_payload),
-                        }
-                    )
-                    continue
+                cache_key = openmensa_canteen_key(canteen_id)
+                cached = shared_cache.get(cache_key)
+                if cached is not None:
+                    lat = cached.get("lat")
+                    lng = cached.get("lng")
+
+                if lat is None or lng is None:
+                    try:
+                        with make_openmensa_client() as om_client:
+                            canteen = om_client.get_canteen(canteen_id)
+                        lat = getattr(canteen, "latitude", None)
+                        lng = getattr(canteen, "longitude", None)
+                        shared_cache.set(
+                            cache_key,
+                            {
+                                "id": canteen_id,
+                                "name": getattr(canteen, "name", None),
+                                "city": getattr(canteen, "city", None),
+                                "address": getattr(canteen, "address", None),
+                                "lat": lat,
+                                "lng": lng,
+                            },
+                            ttl_s=CACHE_TTL_CANTEEN_INFO_S,
+                        )
+                    except OpenMensaAPIError as exc:
+                        tool_trace.ok = False
+                        tool_trace.error = f"Failed to resolve canteen {canteen_id}: {exc}"
+                        tool_traces.append(tool_trace)
+                        result_payload = {"error": tool_trace.error}
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "name": tool_name,
+                                "content": json.dumps(result_payload),
+                            }
+                        )
+                        continue
+                    except Exception as exc:
+                        tool_trace.ok = False
+                        tool_trace.error = f"Unexpected error while resolving canteen {canteen_id}: {exc}"
+                        tool_traces.append(tool_trace)
+                        result_payload = {"error": tool_trace.error}
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "name": tool_name,
+                                "content": json.dumps(result_payload),
+                            }
+                        )
+                        continue
 
             if lat is None or lng is None:
                 tool_trace.ok = False
