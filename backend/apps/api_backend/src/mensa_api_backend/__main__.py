@@ -15,7 +15,9 @@ from openai import OpenAI, RateLimitError
 from fastmcp import Client as MCPClient
 from mensa_mcp_server import mcp
 from mensa_mcp_server.server import make_openmensa_client
-from openmensa_sdk import CanteenIndexStore
+from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory
+from mensa_mcp_server.tools_openmensa import _fetch_single_menu, _normalize_menu_date
+from openmensa_sdk import CanteenIndexStore, OpenMensaAPIError
 
 class APIBackendSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="API_BACKEND_", env_file="src/mensa_api_backend/.env", env_file_encoding="utf-8", extra="forbid", case_sensitive=False)
@@ -677,6 +679,44 @@ async def search_canteens(
             total_cities=index.city_count,
         ),
     )
+
+@app.get("/api/canteens/{canteen_id}", response_model=CanteenOut)
+async def get_canteen_info_api(canteen_id: int):
+    try:
+        with make_openmensa_client() as client:
+            canteen = client.get_canteen(canteen_id)
+    except OpenMensaAPIError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    return _canteen_to_out(canteen)
+
+
+@app.get("/api/canteens/{canteen_id}/menu", response_model=MenuResponseDTO)
+async def get_canteen_menu_api(
+    canteen_id: int,
+    date: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    diet_filter: MenuDietFilter | None = Query(None),
+    exclude_allergens: list[str] | None = Query(None),
+    price_category: PriceCategory | None = Query(None),
+):
+    if diet_filter is None:
+        diet_filter = MenuDietFilter.all
+    if exclude_allergens is None:
+        exclude_allergens = []
+
+    normalized_date, error_response = _normalize_menu_date(canteen_id=canteen_id, date=date)
+    if error_response is not None:
+        return error_response
+
+    with make_openmensa_client() as client:
+        return _fetch_single_menu(
+            client=client,
+            canteen_id=canteen_id,
+            normalized_date=normalized_date,
+            diet_filter=diet_filter,
+            exclude_allergens=exclude_allergens,
+            price_category=price_category,
+        )
 
 @app.get("/api/health")
 async def health():
