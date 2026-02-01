@@ -2,7 +2,8 @@ import datetime as dt
 from zoneinfo import ZoneInfo
 from typing import Optional
 
-from .server import mcp, settings
+from .server import mcp
+from .settings import settings
 from .schemas import DateContextDTO, DateEntryDTO, WeekRangeDTO, WeekdayName
 
 _WEEKDAY_BY_INDEX: tuple[WeekdayName, ...] = (
@@ -44,7 +45,7 @@ def _week_range(start_date: dt.date) -> WeekRangeDTO:
 
 
 @mcp.tool()
-def get_date_context() -> DateContextDTO:
+async def get_date_context() -> DateContextDTO:
     """
     Return canonical date references in the configured timezone.
 
@@ -83,13 +84,13 @@ def get_date_context() -> DateContextDTO:
 from .server import mcp
 
 @mcp.tool()
-def health() -> dict:
+async def health() -> dict:
     """Verify the MCP server is operational. Returns {\"ok\": true} if healthy."""
     return {"ok": True}
 
 
 @mcp.tool()
-def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brauche ich deinen Standort. Möchtest du ihn freigeben?") -> dict:
+async def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brauche ich deinen Standort. Möchtest du ihn freigeben?") -> dict:
     """
     Ask the user for permission to share their location. Returns the prompt text to display.
     The backend will use this to interrupt the tool loop and ask the frontend to collect the location.
@@ -101,7 +102,7 @@ def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brau
 
 
 @mcp.tool()
-def request_canteen_directions(
+async def request_canteen_directions(
     prompt: str = "Möchtest du die Route zur Mensa in Google Maps öffnen?",
     canteen_id: Optional[int] = None,
     lat: Optional[float] = None,

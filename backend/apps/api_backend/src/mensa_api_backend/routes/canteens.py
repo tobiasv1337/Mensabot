@@ -8,6 +8,7 @@ from mensa_mcp_server.tools_openmensa import _fetch_single_menu, _normalize_menu
 from mensa_mcp_server.server import make_openmensa_client
 from openmensa_sdk import OpenMensaAPIError
 
+from ..concurrency import IO_SEMAPHORE
 from ..models import (
     CanteenIndexInfo,
     CanteenListResponse,
@@ -30,7 +31,8 @@ def list_canteens(
     city: str | None = None,
     has_coordinates: bool | None = None,
 ):
-    index = await anyio.to_thread.run_sync(load_canteen_index)
+    async with IO_SEMAPHORE:
+        index = await anyio.to_thread.run_sync(load_canteen_index)
     canteens, total = index.list(page=page, per_page=per_page, city=city, has_coordinates=has_coordinates)
     next_page = page + 1 if page * per_page < total else None
     return CanteenListResponse(
@@ -66,7 +68,8 @@ def search_canteens(
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
 
-    index = await anyio.to_thread.run_sync(load_canteen_index)
+    async with IO_SEMAPHORE:
+        index = await anyio.to_thread.run_sync(load_canteen_index)
     results, total = index.search(
         query,
         city=city,
@@ -118,7 +121,8 @@ def get_canteen_info_api(canteen_id: int):
             return client.get_canteen(canteen_id)
 
     try:
-        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
+        async with IO_SEMAPHORE:
+            canteen = await anyio.to_thread.run_sync(_fetch_canteen)
     except OpenMensaAPIError as exc:
         if getattr(exc, "status_code", None) == 404:
             raise HTTPException(status_code=404, detail="Canteen not found") from exc
@@ -157,4 +161,5 @@ def get_canteen_menu_api(
                 price_category=price_category,
             )
 
-    return await anyio.to_thread.run_sync(_fetch_menu)
+    async with IO_SEMAPHORE:
+        return await anyio.to_thread.run_sync(_fetch_menu)

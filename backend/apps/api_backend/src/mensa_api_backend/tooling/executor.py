@@ -8,6 +8,8 @@ from openmensa_sdk import OpenMensaAPIError
 from mensa_mcp_server import mcp
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
+
+from ..concurrency import IO_SEMAPHORE
 from mensa_mcp_server.server import make_openmensa_client
 
 from ..config import settings
@@ -214,7 +216,8 @@ async def handle_tool_calls(
                             return om_client.get_canteen(canteen_id)
 
                     try:
-                        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
+                        async with IO_SEMAPHORE:
+                            canteen = await anyio.to_thread.run_sync(_fetch_canteen)
                         lat = getattr(canteen, "latitude", None)
                         lng = getattr(canteen, "longitude", None)
                         shared_cache.set(

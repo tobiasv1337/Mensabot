@@ -6,6 +6,7 @@ from openai import AsyncOpenAI, RateLimitError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from ..config import settings
+from ..concurrency import LLM_SEMAPHORE
 from ..logging import logger
 from ..models import ChatMessage, ChatResponse, ToolCallTrace
 from ..prompts import EMPTY_REPLY_NUDGE, LLM_BASE_SYSTEM_PROMPT, MISSING_TOOL_CALLS_NUDGE
@@ -42,13 +43,14 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
     last_error: Exception | None = None
     for attempt in range(1, settings.llm_max_retries + 1):
         try:
-            return await client.chat.completions.create(
-                model=settings.llm_model,
-                messages=[sanitize_message(m) for m in messages],
-                tools=tools,
-                tool_choice="auto",
-                stream=False,
-            )
+            async with LLM_SEMAPHORE:
+                return await client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[sanitize_message(m) for m in messages],
+                    tools=tools,
+                    tool_choice="auto",
+                    stream=False,
+                )
         except RateLimitError as err:
             last_error = err
             retry_after = None
