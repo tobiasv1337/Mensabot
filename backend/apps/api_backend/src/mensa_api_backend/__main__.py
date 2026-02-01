@@ -63,9 +63,11 @@ class ToolCallTrace(BaseModel):
     iteration: int | None = None
 
 class ChatResponse(BaseModel):
-    status: Literal["ok", "needs_location"]
+    status: Literal["ok", "needs_location", "needs_directions"]
     reply: str | None = None
     prompt: str | None = None
+    lat: float | None = None
+    lng: float | None = None
     tool_calls: list[ToolCallTrace] | None = None
 
 
@@ -403,6 +405,8 @@ def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMe
 
 LOCATION_TOOL_NAME = "request_user_location"
 LOCATION_FALLBACK_PROMPT = "To answer your question, I need your location. Would you like to share it?"
+DIRECTIONS_TOOL_NAME = "request_canteen_directions"
+DIRECTIONS_FALLBACK_PROMPT = "Möchtest du die Route zur Mensa in Google Maps öffnen?"
 
 
 async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
@@ -533,6 +537,96 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                 tool_trace.result = {"needs_location": True, "prompt": prompt_text}
                 tool_traces.append(tool_trace)
                 return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
+
+            if tool_name == DIRECTIONS_TOOL_NAME:
+                prompt = args.get("prompt") if isinstance(args, dict) else None
+                prompt_text = prompt or DIRECTIONS_FALLBACK_PROMPT
+                canteen_id = args.get("canteen_id") if isinstance(args, dict) else None
+                lat = args.get("lat") if isinstance(args, dict) else None
+                lng = args.get("lng") if isinstance(args, dict) else None
+
+                if (lat is None) != (lng is None):
+                    tool_trace.ok = False
+                    tool_trace.error = "lat and lng must be provided together"
+                    tool_traces.append(tool_trace)
+                    result_payload = {"error": tool_trace.error}
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "name": tool_name,
+                            "content": json.dumps(result_payload),
+                        }
+                    )
+                    continue
+
+                if canteen_id is None and (lat is None or lng is None):
+                    tool_trace.ok = False
+                    tool_trace.error = "Provide canteen_id or lat/lng"
+                    tool_traces.append(tool_trace)
+                    result_payload = {"error": tool_trace.error}
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "name": tool_name,
+                            "content": json.dumps(result_payload),
+                        }
+                    )
+                    continue
+
+                if canteen_id is not None and lat is None and lng is None:
+                    try:
+                        with make_openmensa_client() as client:
+                            canteen = client.get_canteen(canteen_id)
+                        lat = getattr(canteen, "latitude", None)
+                        lng = getattr(canteen, "longitude", None)
+                    except OpenMensaAPIError as exc:
+                        tool_trace.ok = False
+                        tool_trace.error = f"Failed to resolve canteen {canteen_id}: {exc}"
+                        tool_traces.append(tool_trace)
+                        result_payload = {"error": tool_trace.error}
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "name": tool_name,
+                                "content": json.dumps(result_payload),
+                            }
+                        )
+                        continue
+
+                if lat is None or lng is None:
+                    tool_trace.ok = False
+                    tool_trace.error = "Canteen coordinates unavailable"
+                    tool_traces.append(tool_trace)
+                    result_payload = {"error": tool_trace.error}
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "name": tool_name,
+                            "content": json.dumps(result_payload),
+                        }
+                    )
+                    continue
+
+                logger.info("Directions request tool triggered with prompt: %s (lat=%s, lng=%s)", prompt_text, lat, lng)
+                tool_trace.ok = True
+                tool_trace.result = {
+                    "needs_directions": True,
+                    "prompt": prompt_text,
+                    "lat": lat,
+                    "lng": lng,
+                }
+                tool_traces.append(tool_trace)
+                return ChatResponse(
+                    status="needs_directions",
+                    prompt=prompt_text,
+                    lat=lat,
+                    lng=lng,
+                    tool_calls=(tool_traces or None) if include_tool_calls else None,
+                )
 
             # Delegate to MCP: allow no-argument tool calls by treating None as {}
             if args is None:
