@@ -344,6 +344,12 @@ const Chat: React.FC<ChatProps> = ({
     [onFiltersChange]
   );
 
+  const scrollToBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, []);
+
   const updateFiltersPartial = useCallback(
     (partial: Partial<ChatFilters>) => {
       updateFilters({ ...filters, ...partial });
@@ -407,7 +413,10 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
-  }, [chat]);
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+  }, [chat, scrollToBottom]);
 
 
   useEffect(() => {
@@ -432,8 +441,8 @@ const Chat: React.FC<ChatProps> = ({
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
-    shouldAutoScrollRef.current = isNearBottom(el);
-    setShowScrollToLatest(!shouldAutoScrollRef.current);
+    shouldAutoScrollRef.current = true;
+    setShowScrollToLatest(false);
 
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
@@ -443,9 +452,11 @@ const Chat: React.FC<ChatProps> = ({
     if (!el) return;
 
     if (shouldAutoScrollRef.current) {
-      el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
     }
-  }, [version, chat.messages.length, isSending]);
+  }, [version, chat.messages.length, isSending, chat.id, scrollToBottom]);
 
   useEffect(() => {
     const lastMsg = chat.messages[chat.messages.length - 1];
