@@ -31,7 +31,6 @@ type ChatProps = {
   onFiltersChange: (filters: ChatFilters) => void;
   onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
   menuCanteen?: Canteen | null;
-  menuRequestToken?: number;
   shortcuts: Shortcut[];
   onCreateShortcut: (shortcut: ShortcutInput) => void;
 };
@@ -147,7 +146,6 @@ const Chat: React.FC<ChatProps> = ({
   onFiltersChange,
   onStartNewChat,
   menuCanteen = null,
-  menuRequestToken = 0,
   shortcuts,
   onCreateShortcut,
 }) => {
@@ -182,7 +180,6 @@ const Chat: React.FC<ChatProps> = ({
   const [commandCanteenError, setCommandCanteenError] = useState<string | null>(null);
   const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const lastHandledMenuToken = useRef(0);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -233,9 +230,13 @@ const Chat: React.FC<ChatProps> = ({
 
   useEffect(() => {
     if (chat.messages.length > 0) return;
+    if (menuCanteen) {
+      fetchAndAppendMenu(menuCanteen, chat);
+      return;
+    }
     chat.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
     setVersion((v) => v + 1);
-  }, [chat]);
+  }, [chat, menuCanteen, fetchAndAppendMenu]);
 
   useEffect(() => {
     setFiltersOpen(false);
@@ -246,12 +247,6 @@ const Chat: React.FC<ChatProps> = ({
     shouldAutoScrollRef.current = true;
   }, [chat]);
 
-  useEffect(() => {
-    if (!menuCanteen || menuRequestToken === 0) return;
-    if (lastHandledMenuToken.current === menuRequestToken) return;
-    lastHandledMenuToken.current = menuRequestToken;
-    fetchAndAppendMenu(menuCanteen, chat);
-  }, [menuCanteen, menuRequestToken, fetchAndAppendMenu, chat]);
 
   useEffect(() => {
     if (filters.allergens.length === 0) return;
@@ -668,10 +663,10 @@ const Chat: React.FC<ChatProps> = ({
         setFiltersOpen(false);
         setInputValue("");
         setFocusSignal((prev) => prev + 1);
-        fetchAndAppendMenu(canteen);
+        fetchAndAppendMenu(canteen, chat);
       }
     },
-    [handleApplyShortcut, updateFiltersPartial, fetchAndAppendMenu]
+    [handleApplyShortcut, updateFiltersPartial, fetchAndAppendMenu, chat]
   );
 
   const handleCommandClose = useCallback(() => {

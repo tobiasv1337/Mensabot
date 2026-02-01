@@ -20,7 +20,6 @@ const ChatPage: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [chat, setChat] = useState<ChatSession>(() => Chats.getById(DEFAULT_CHAT_ID, true)!);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
-  const [menuRequestToken, setMenuRequestToken] = useState(0);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
@@ -47,14 +46,13 @@ const ChatPage: React.FC = () => {
       fresh.setFilters(nextFilters);
       setChat(fresh);
       setFilters(nextFilters);
+      setMenuCanteen(options?.preselectedCanteen ?? null);
     },
     []
   );
 
   const handleSelectCanteen = (canteen: Canteen) => {
     startNewChat({ preselectedCanteen: canteen });
-    setMenuCanteen(canteen);
-    setMenuRequestToken((prev) => prev + 1);
     setActiveNav("ChatBot");
     setDrawerOpen(false);
   };
@@ -104,7 +102,6 @@ const ChatPage: React.FC = () => {
                 onFiltersChange={updateChatFilters}
                 onStartNewChat={startNewChat}
                 menuCanteen={menuCanteen}
-                menuRequestToken={menuRequestToken}
                 shortcuts={shortcuts}
                 onCreateShortcut={addShortcut}
               />
