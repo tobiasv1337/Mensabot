@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../types/navigation";
@@ -8,21 +8,53 @@ import CanteensPage from "./CanteensPage";
 import ShortcutsPage from "./ShortcutsPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
+import { Chats, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Mensen", "Über Uns", "Kontakt"];
+const DEFAULT_CHAT_ID = "default";
 
 const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   // HIER: State für das Einklappen
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selectedCanteen, setSelectedCanteen] = useState<Canteen | null>(null);
-  const [chatResetKey, setChatResetKey] = useState(0);
+  const [chat, setChat] = useState<ChatSession>(() => Chats.getById(DEFAULT_CHAT_ID, true)!);
+  const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
+  const [menuRequestToken, setMenuRequestToken] = useState(0);
+  const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
+  useEffect(() => {
+    setFilters(chat.filters ?? defaultChatFilters);
+  }, [chat]);
+
+  const updateChatFilters = useCallback(
+    (next: ChatFilters) => {
+      chat.setFilters(next);
+      setFilters(next);
+    },
+    [chat]
+  );
+
+  const startNewChat = useCallback(
+    (options?: { preselectedCanteen?: Canteen | null }) => {
+      Chats.deleteById(DEFAULT_CHAT_ID);
+      const fresh = Chats.getById(DEFAULT_CHAT_ID, true)!;
+      const nextFilters: ChatFilters = {
+        ...defaultChatFilters,
+        canteens: options?.preselectedCanteen ? [options.preselectedCanteen] : [],
+      };
+      fresh.setFilters(nextFilters);
+      setChat(fresh);
+      setFilters(nextFilters);
+    },
+    []
+  );
+
   const handleSelectCanteen = (canteen: Canteen) => {
-    setSelectedCanteen(canteen);
-    setChatResetKey((prev) => prev + 1);
+    startNewChat({ preselectedCanteen: canteen });
+    setMenuCanteen(canteen);
+    setMenuRequestToken((prev) => prev + 1);
     setActiveNav("ChatBot");
     setDrawerOpen(false);
   };
@@ -56,7 +88,7 @@ const ChatPage: React.FC = () => {
             {activeNav === "Mensen" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}
-                selectedCanteenId={selectedCanteen?.id ?? null}
+                selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
             ) : activeNav === "Shortcuts" ? (
               <ShortcutsPage
@@ -67,8 +99,12 @@ const ChatPage: React.FC = () => {
               />
             ) : (
               <Chat
-                selectedCanteen={selectedCanteen}
-                resetKey={chatResetKey}
+                chat={chat}
+                filters={filters}
+                onFiltersChange={updateChatFilters}
+                onStartNewChat={startNewChat}
+                menuCanteen={menuCanteen}
+                menuRequestToken={menuRequestToken}
                 shortcuts={shortcuts}
                 onCreateShortcut={addShortcut}
               />

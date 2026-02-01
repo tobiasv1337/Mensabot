@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult, MenuResponse, PriceInfo } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
-import { Chats, ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
+import { ChatMessage, type Chat, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
@@ -13,7 +13,6 @@ import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import * as S from "./chat.styles";
 
-const CHAT_ID = "default";
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
 const WELCOME_TEXT =
@@ -27,8 +26,12 @@ const isNearBottom = (el: HTMLDivElement) => {
 };
 
 type ChatProps = {
-  selectedCanteen?: Canteen | null;
-  resetKey?: number;
+  chat: Chat;
+  filters: ChatFilters;
+  onFiltersChange: (filters: ChatFilters) => void;
+  onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
+  menuCanteen?: Canteen | null;
+  menuRequestToken?: number;
   shortcuts: Shortcut[];
   onCreateShortcut: (shortcut: ShortcutInput) => void;
 };
@@ -139,8 +142,12 @@ const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
 };
 
 const Chat: React.FC<ChatProps> = ({
-  selectedCanteen = null,
-  resetKey = 0,
+  chat,
+  filters,
+  onFiltersChange,
+  onStartNewChat,
+  menuCanteen = null,
+  menuRequestToken = 0,
   shortcuts,
   onCreateShortcut,
 }) => {
@@ -148,17 +155,8 @@ const Chat: React.FC<ChatProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
-  const [chat, setChat] = useState<ChatType>(() => {
-    const existing = Chats.getById(CHAT_ID, true)!;
-    if (existing.messages.length === 0) {
-      existing.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
-    }
-    return existing;
-  });
-  const chatRef = useRef(chat);
 
   const [version, setVersion] = useState(0);
-  const [filters, setFilters] = useState<ChatFilters>(chat.filters ?? defaultChatFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
@@ -184,14 +182,13 @@ const Chat: React.FC<ChatProps> = ({
   const [commandCanteenError, setCommandCanteenError] = useState<string | null>(null);
   const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const lastHandledResetKey = useRef(0);
+  const lastHandledMenuToken = useRef(0);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
-      chat.setFilters(next);
-      setFilters(next);
+      onFiltersChange(next);
     },
-    [chat]
+    [onFiltersChange]
   );
 
   const updateFiltersPartial = useCallback(
@@ -201,46 +198,31 @@ const Chat: React.FC<ChatProps> = ({
     [filters, updateFilters]
   );
 
-  const startNewChat = useCallback(
-    (options?: { preselectedCanteen?: Canteen | null }) => {
-      if (isSending) return null;
-      Chats.deleteById(CHAT_ID);
-      const fresh = Chats.getById(CHAT_ID, true)!;
-      const nextFilters: ChatFilters = {
-        ...defaultChatFilters,
-        canteens: options?.preselectedCanteen ? [options.preselectedCanteen] : [],
-      };
-      fresh.setFilters(nextFilters);
-      fresh.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
-      setChat(fresh);
-      setFilters(nextFilters);
-      setVersion((v) => v + 1);
-      setFiltersOpen(false);
-      setInputValue("");
-      setLocationPromptHandled(false);
-      setLocationError("");
-      setShowScrollToLatest(false);
-      shouldAutoScrollRef.current = true;
-      return fresh;
-    },
-    [isSending]
-  );
+  const handleStartNewChat = useCallback(() => {
+    if (isSending) return;
+    onStartNewChat();
+    setFiltersOpen(false);
+    setInputValue("");
+    setLocationPromptHandled(false);
+    setLocationError("");
+    setShowScrollToLatest(false);
+    shouldAutoScrollRef.current = true;
+  }, [isSending, onStartNewChat]);
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat?: Chat) => {
+    async (canteen: Canteen, targetChat: Chat) => {
       const requestId = ++menuRequestId.current;
-      const activeChat = targetChat ?? chatRef.current;
       try {
         const menu = await client.getCanteenMenu(canteen.id);
         if (requestId !== menuRequestId.current) return;
         const message = buildMenuMarkdown(canteen, menu);
         shouldAutoScrollRef.current = true;
-        activeChat.addMessage(new ChatMessage("assistant", message));
+        targetChat.addMessage(new ChatMessage("assistant", message));
         setVersion((v) => v + 1);
       } catch (error) {
         if (requestId !== menuRequestId.current) return;
         shouldAutoScrollRef.current = true;
-        activeChat.addMessage(
+        targetChat.addMessage(
           new ChatMessage("assistant", "❌ Der Speiseplan konnte nicht geladen werden. Bitte versuche es erneut.")
         );
         setVersion((v) => v + 1);
@@ -250,19 +232,26 @@ const Chat: React.FC<ChatProps> = ({
   );
 
   useEffect(() => {
-    if (resetKey === 0) return;
-    if (lastHandledResetKey.current === resetKey) return;
-    lastHandledResetKey.current = resetKey;
-    const fresh = startNewChat({ preselectedCanteen: selectedCanteen });
-    if (fresh && selectedCanteen) {
-      fetchAndAppendMenu(selectedCanteen, fresh);
-    }
-  }, [resetKey, selectedCanteen, startNewChat, fetchAndAppendMenu]);
+    if (chat.messages.length > 0) return;
+    chat.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
+    setVersion((v) => v + 1);
+  }, [chat]);
 
   useEffect(() => {
-    chatRef.current = chat;
-    setFilters(chat.filters ?? defaultChatFilters);
+    setFiltersOpen(false);
+    setInputValue("");
+    setLocationPromptHandled(false);
+    setLocationError("");
+    setShowScrollToLatest(false);
+    shouldAutoScrollRef.current = true;
   }, [chat]);
+
+  useEffect(() => {
+    if (!menuCanteen || menuRequestToken === 0) return;
+    if (lastHandledMenuToken.current === menuRequestToken) return;
+    lastHandledMenuToken.current = menuRequestToken;
+    fetchAndAppendMenu(menuCanteen, chat);
+  }, [menuCanteen, menuRequestToken, fetchAndAppendMenu, chat]);
 
   useEffect(() => {
     if (filters.allergens.length === 0) return;
@@ -692,14 +681,14 @@ const Chat: React.FC<ChatProps> = ({
 
   const commandMenu = slashActive
     ? {
-        open: true,
-        groups: commandGroups,
-        activeId: activeCommandId,
-        activeItem: activeCommandItem,
-        onSelect: handleCommandSelect,
-        onNavigate: handleCommandNavigate,
-        onClose: handleCommandClose,
-      }
+      open: true,
+      groups: commandGroups,
+      activeId: activeCommandId,
+      activeItem: activeCommandItem,
+      onSelect: handleCommandSelect,
+      onNavigate: handleCommandNavigate,
+      onClose: handleCommandClose,
+    }
     : undefined;
 
   return (
@@ -753,7 +742,7 @@ const Chat: React.FC<ChatProps> = ({
           <S.IconButton
             type="button"
             $variant="primary"
-            onClick={() => startNewChat()}
+            onClick={handleStartNewChat}
             disabled={isSending}
             title="Neuer Chat"
             aria-label="Neuer Chat"
@@ -815,7 +804,7 @@ const Chat: React.FC<ChatProps> = ({
 
               return (
                 <ChatBubble
-                  key={`${CHAT_ID}-${index}`}
+                  key={`${chat.id}-${index}`}
                   message={message}
                   avatarSrc={mensabotLogo}
                   actions={actions}
