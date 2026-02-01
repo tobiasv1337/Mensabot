@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Canteen } from "../../services/api";
+import type { Canteen, CanteenSearchResult, MenuResponse, PriceInfo } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
 import { Chats, ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
-import ChatInput from "./ChatInput";
+import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
 import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
 import ShortcutModal from "../shortcuts/ShortcutModal";
@@ -39,6 +39,105 @@ const cloneFilters = (filters: ChatFilters): ChatFilters => ({
   canteens: [...filters.canteens],
 });
 
+const PRICE_FORMATTER = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 2,
+});
+
+const formatPrice = (value?: number | null) => {
+  if (value === null || value === undefined) return null;
+  return PRICE_FORMATTER.format(value);
+};
+
+const formatPriceLine = (prices: PriceInfo) => {
+  const parts: string[] = [];
+  const pushPrice = (label: string, value?: number | null) => {
+    const formatted = formatPrice(value);
+    if (formatted) parts.push(`${label} ${formatted}`);
+  };
+
+  pushPrice("Studierende", prices.students);
+  pushPrice("Mitarbeitende", prices.employees);
+  pushPrice("Schüler:innen", prices.pupils);
+  pushPrice("Gäste", prices.others);
+
+  return parts.length > 0 ? parts.join(" · ") : null;
+};
+
+const DIET_LABELS: Record<string, string> = {
+  vegan: "vegan",
+  vegetarian: "vegetarisch",
+  meat: "mit Fleisch",
+  unknown: "unbekannt",
+};
+
+type MenuMeal = MenuResponse["meals"][number];
+
+const groupMealsByCategory = (meals: MenuMeal[]) => {
+  const groups = new Map<string, MenuMeal[]>();
+  meals.forEach((meal) => {
+    const key = meal.category?.trim() || "Weitere Gerichte";
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(meal);
+    } else {
+      groups.set(key, [meal]);
+    }
+  });
+  return Array.from(groups.entries());
+};
+
+const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
+  const lines: string[] = [`### ${canteen.name}`];
+  const metaParts = [canteen.city, canteen.address].filter(Boolean);
+  if (metaParts.length > 0) {
+    lines.push(`_${metaParts.join(" · ")}_`);
+  }
+  lines.push(`**Speiseplan für ${menu.date}**`);
+  lines.push("");
+
+  if (menu.status !== "ok") {
+    const statusMessages: Record<MenuResponse["status"], string> = {
+      ok: "",
+      no_menu_published: "Für dieses Datum ist noch kein Speiseplan veröffentlicht.",
+      empty_menu: "Für dieses Datum sind keine Gerichte eingetragen.",
+      filtered_out: "Alle Gerichte wurden durch Filter ausgeschlossen.",
+      invalid_date: "Das Datum ist ungültig.",
+      api_error: "Der Speiseplan konnte gerade nicht geladen werden.",
+    };
+    const severity = menu.status === "api_error" || menu.status === "invalid_date" ? "⚠️" : "ℹ️";
+    lines.push(`> ${severity} **Info:** ${statusMessages[menu.status]}`);
+    return lines.join("\n");
+  }
+
+  if (menu.meals.length === 0) {
+    lines.push("> ℹ️ **Info:** Für dieses Datum sind keine Gerichte eingetragen.");
+    return lines.join("\n");
+  }
+
+  const grouped = groupMealsByCategory(menu.meals);
+  grouped.forEach(([category, meals], groupIndex) => {
+    if (groupIndex > 0) lines.push("");
+    lines.push(`#### ${category}`);
+    meals.forEach((meal) => {
+      const dietLabel = DIET_LABELS[meal.diet_type] ?? meal.diet_type;
+      const dietTag = meal.diet_type !== "unknown" ? ` _(${dietLabel})_` : "";
+      lines.push(`- **${meal.name}**${dietTag}`);
+      const priceLine = formatPriceLine(meal.prices);
+      if (priceLine) {
+        lines.push(`  - Preise: ${priceLine}`);
+      }
+      if (meal.allergens && meal.allergens.length > 0) {
+        const allergenLabels = meal.allergens.map((item) => getAllergenLabel(item));
+        lines.push(`  - Allergene: ${allergenLabels.join(", ")}`);
+      }
+    });
+  });
+
+  return lines.join("\n");
+};
+
 const Chat: React.FC<ChatProps> = ({
   selectedCanteen = null,
   resetKey = 0,
@@ -56,6 +155,7 @@ const Chat: React.FC<ChatProps> = ({
     }
     return existing;
   });
+  const chatRef = useRef(chat);
 
   const [version, setVersion] = useState(0);
   const [filters, setFilters] = useState<ChatFilters>(chat.filters ?? defaultChatFilters);
@@ -75,6 +175,16 @@ const Chat: React.FC<ChatProps> = ({
   const [locationPromptHandled, setLocationPromptHandled] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const menuRequestId = useRef(0);
+  const commandRequestId = useRef(0);
+
+  const [commandActiveIndex, setCommandActiveIndex] = useState(0);
+  const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
+  const [commandCanteenLoading, setCommandCanteenLoading] = useState(false);
+  const [commandCanteenError, setCommandCanteenError] = useState<string | null>(null);
+  const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const lastHandledResetKey = useRef(0);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -93,7 +203,7 @@ const Chat: React.FC<ChatProps> = ({
 
   const startNewChat = useCallback(
     (options?: { preselectedCanteen?: Canteen | null }) => {
-      if (isSending) return;
+      if (isSending) return null;
       Chats.deleteById(CHAT_ID);
       const fresh = Chats.getById(CHAT_ID, true)!;
       const nextFilters: ChatFilters = {
@@ -111,16 +221,46 @@ const Chat: React.FC<ChatProps> = ({
       setLocationError("");
       setShowScrollToLatest(false);
       shouldAutoScrollRef.current = true;
+      return fresh;
     },
     [isSending]
   );
 
-  useEffect(() => {
-    if (resetKey === 0) return;
-    startNewChat({ preselectedCanteen: selectedCanteen });
-  }, [resetKey, selectedCanteen, startNewChat]);
+  const fetchAndAppendMenu = useCallback(
+    async (canteen: Canteen, targetChat?: Chat) => {
+      const requestId = ++menuRequestId.current;
+      const activeChat = targetChat ?? chatRef.current;
+      try {
+        const menu = await client.getCanteenMenu(canteen.id);
+        if (requestId !== menuRequestId.current) return;
+        const message = buildMenuMarkdown(canteen, menu);
+        shouldAutoScrollRef.current = true;
+        activeChat.addMessage(new ChatMessage("assistant", message));
+        setVersion((v) => v + 1);
+      } catch (error) {
+        if (requestId !== menuRequestId.current) return;
+        shouldAutoScrollRef.current = true;
+        activeChat.addMessage(
+          new ChatMessage("assistant", "❌ Der Speiseplan konnte nicht geladen werden. Bitte versuche es erneut.")
+        );
+        setVersion((v) => v + 1);
+      }
+    },
+    [client]
+  );
 
   useEffect(() => {
+    if (resetKey === 0) return;
+    if (lastHandledResetKey.current === resetKey) return;
+    lastHandledResetKey.current = resetKey;
+    const fresh = startNewChat({ preselectedCanteen: selectedCanteen });
+    if (fresh && selectedCanteen) {
+      fetchAndAppendMenu(selectedCanteen, fresh);
+    }
+  }, [resetKey, selectedCanteen, startNewChat, fetchAndAppendMenu]);
+
+  useEffect(() => {
+    chatRef.current = chat;
     setFilters(chat.filters ?? defaultChatFilters);
   }, [chat]);
 
@@ -316,6 +456,252 @@ const Chat: React.FC<ChatProps> = ({
     [updateFilters]
   );
 
+  const slashState = useMemo(() => {
+    const trimmed = inputValue.trimStart();
+    if (!trimmed.startsWith("/")) return null;
+    const raw = trimmed.slice(1);
+    const normalized = raw.replace(/[_-]+/g, " ").trim();
+    return { raw, normalized };
+  }, [inputValue]);
+
+  const slashActive = Boolean(slashState);
+  const slashQuery = slashState?.normalized ?? "";
+  const shortcutQuery = slashQuery.toLowerCase();
+
+  const requestSlashLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      setCommandLocationStatus("error");
+      return;
+    }
+
+    setCommandLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCommandUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setCommandLocationStatus("ready");
+      },
+      () => {
+        setCommandLocationStatus("error");
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!slashActive || slashQuery.length === 0) return;
+    if (commandLocationStatus !== "idle") return;
+    requestSlashLocation();
+  }, [slashActive, slashQuery, commandLocationStatus, requestSlashLocation]);
+
+  useEffect(() => {
+    if (!slashActive || slashQuery.length === 0) {
+      commandRequestId.current += 1;
+      setCommandCanteenResults([]);
+      setCommandCanteenLoading(false);
+      setCommandCanteenError(null);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      const requestId = ++commandRequestId.current;
+      setCommandCanteenLoading(true);
+      setCommandCanteenError(null);
+      setCommandCanteenResults([]);
+
+      try {
+        const response = await client.searchCanteens({
+          query: slashQuery,
+          perPage: 10,
+          minScore: 30,
+          sortBy: "auto",
+          nearLat: commandUserLocation?.lat,
+          nearLng: commandUserLocation?.lng,
+        });
+
+        if (requestId !== commandRequestId.current) return;
+        setCommandCanteenResults(response.results);
+      } catch (error) {
+        if (requestId !== commandRequestId.current) return;
+        setCommandCanteenError("Mensen konnten nicht geladen werden.");
+      } finally {
+        if (requestId === commandRequestId.current) {
+          setCommandCanteenLoading(false);
+        }
+      }
+    }, 280);
+
+    return () => window.clearTimeout(timer);
+  }, [slashActive, slashQuery, client, commandUserLocation]);
+
+  useEffect(() => {
+    if (!slashActive) {
+      setCommandActiveIndex(0);
+      return;
+    }
+    setCommandActiveIndex(0);
+  }, [slashActive, slashQuery]);
+
+  const filteredShortcuts = useMemo(() => {
+    if (!slashActive) return [];
+    if (!shortcutQuery) return shortcuts;
+    return shortcuts.filter((shortcut) => shortcut.name.toLowerCase().includes(shortcutQuery));
+  }, [slashActive, shortcutQuery, shortcuts]);
+
+  const describeShortcut = useCallback((shortcut: Shortcut) => {
+    const prompt = shortcut.prompt.trim();
+    if (prompt) {
+      return prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt;
+    }
+    const parts: string[] = [];
+    if (shortcut.filters.diet) parts.push(`Ernährung: ${shortcut.filters.diet}`);
+    if (shortcut.filters.allergens.length > 0) parts.push(`Allergene: ${shortcut.filters.allergens.length}`);
+    if (shortcut.filters.canteens.length > 0) parts.push(`Mensen: ${shortcut.filters.canteens.length}`);
+    return parts.length > 0 ? parts.join(" · ") : "Gespeicherter Shortcut";
+  }, []);
+
+  const shortcutItems: CommandMenuItem[] = useMemo(
+    () =>
+      filteredShortcuts.map((shortcut) => ({
+        id: `shortcut-${shortcut.id}`,
+        label: shortcut.name,
+        meta: describeShortcut(shortcut),
+        kind: "shortcut",
+        payload: shortcut,
+      })),
+    [filteredShortcuts, describeShortcut]
+  );
+
+  const canteenItems: CommandMenuItem[] = useMemo(
+    () =>
+      commandCanteenResults.map((result) => {
+        const metaParts = [result.canteen.city].filter(Boolean);
+        if (result.distance_km !== undefined) {
+          metaParts.push(`${result.distance_km.toFixed(1)} km`);
+        }
+        return {
+          id: `canteen-${result.canteen.id}`,
+          label: result.canteen.name,
+          meta: metaParts.join(" · "),
+          kind: "canteen",
+          payload: result.canteen,
+        };
+      }),
+    [commandCanteenResults]
+  );
+
+  const commandGroups: CommandMenuGroup[] = useMemo(() => {
+    if (!slashActive) return [];
+
+    const shortcutEmptyLabel = shortcuts.length === 0
+      ? "Noch keine Shortcuts gespeichert."
+      : shortcutQuery
+        ? "Keine passenden Shortcuts gefunden."
+        : "Keine Shortcuts verfügbar.";
+
+    let canteenEmptyLabel = "Tippe, um eine Mensa zu suchen.";
+    if (slashQuery.length > 0) {
+      if (commandCanteenLoading) {
+        canteenEmptyLabel = "Suche läuft...";
+      } else if (commandCanteenError) {
+        canteenEmptyLabel = commandCanteenError;
+      } else if (canteenItems.length === 0) {
+        canteenEmptyLabel = "Keine Mensen gefunden.";
+      }
+    }
+
+    return [
+      {
+        id: "shortcuts",
+        label: "Shortcuts",
+        items: shortcutItems,
+        emptyLabel: shortcutItems.length === 0 ? shortcutEmptyLabel : undefined,
+      },
+      {
+        id: "canteens",
+        label: "Mensen",
+        items: canteenItems,
+        emptyLabel: canteenItems.length === 0 ? canteenEmptyLabel : undefined,
+      },
+    ];
+  }, [
+    slashActive,
+    shortcutQuery,
+    shortcuts.length,
+    slashQuery.length,
+    shortcutItems,
+    canteenItems,
+    commandCanteenLoading,
+    commandCanteenError,
+  ]);
+
+  const flatCommandItems = useMemo(
+    () => commandGroups.flatMap((group) => group.items),
+    [commandGroups]
+  );
+
+  useEffect(() => {
+    if (!slashActive) return;
+    if (flatCommandItems.length === 0) {
+      setCommandActiveIndex(0);
+      return;
+    }
+    if (commandActiveIndex >= flatCommandItems.length) {
+      setCommandActiveIndex(0);
+    }
+  }, [slashActive, flatCommandItems.length, commandActiveIndex]);
+
+  const activeCommandItem = flatCommandItems[commandActiveIndex];
+  const activeCommandId = activeCommandItem?.id;
+
+  const handleCommandNavigate = useCallback(
+    (direction: "next" | "prev") => {
+      if (flatCommandItems.length === 0) return;
+      setCommandActiveIndex((prev) => {
+        const next = direction === "next" ? prev + 1 : prev - 1;
+        if (next < 0) return flatCommandItems.length - 1;
+        if (next >= flatCommandItems.length) return 0;
+        return next;
+      });
+    },
+    [flatCommandItems.length]
+  );
+
+  const handleCommandSelect = useCallback(
+    (item: CommandMenuItem) => {
+      if (item.kind === "shortcut") {
+        handleApplyShortcut(item.payload as Shortcut);
+        return;
+      }
+
+      if (item.kind === "canteen") {
+        const canteen = item.payload as Canteen;
+        updateFiltersPartial({ canteens: [canteen] });
+        setFiltersOpen(false);
+        setInputValue("");
+        setFocusSignal((prev) => prev + 1);
+        fetchAndAppendMenu(canteen);
+      }
+    },
+    [handleApplyShortcut, updateFiltersPartial, fetchAndAppendMenu]
+  );
+
+  const handleCommandClose = useCallback(() => {
+    setInputValue("");
+    setFocusSignal((prev) => prev + 1);
+  }, []);
+
+  const commandMenu = slashActive
+    ? {
+        open: true,
+        groups: commandGroups,
+        activeId: activeCommandId,
+        activeItem: activeCommandItem,
+        onSelect: handleCommandSelect,
+        onNavigate: handleCommandNavigate,
+        onClose: handleCommandClose,
+      }
+    : undefined;
+
   return (
     <S.ChatShell>
       <S.HeaderCard>
@@ -471,6 +857,7 @@ const Chat: React.FC<ChatProps> = ({
           onShortcutAdd={handleOpenShortcutModal}
           onShortcutSelect={handleApplyShortcut}
           focusSignal={focusSignal}
+          commandMenu={commandMenu}
         />
         <AiWarningText />
       </S.ComposerCard>

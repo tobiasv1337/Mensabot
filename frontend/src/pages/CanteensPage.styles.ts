@@ -317,7 +317,7 @@ export const CanteenGrid = styled.div`
   gap: 16px;
 `;
 
-export const CanteenCard = styled.button<{ $selected?: boolean }>`
+export const CanteenCard = styled.div<{ $selected?: boolean }>`
   all: unset;
   cursor: pointer;
   display: flex;

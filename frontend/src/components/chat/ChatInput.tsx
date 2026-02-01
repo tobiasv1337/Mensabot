@@ -3,6 +3,31 @@ import type { Shortcut } from "../../services/shortcuts";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./chat.styles";
 
+export type CommandMenuItem = {
+  id: string;
+  label: string;
+  meta?: string;
+  kind: "shortcut" | "canteen";
+  payload?: unknown;
+};
+
+export type CommandMenuGroup = {
+  id: string;
+  label: string;
+  items: CommandMenuItem[];
+  emptyLabel?: string;
+};
+
+type CommandMenuState = {
+  open: boolean;
+  groups: CommandMenuGroup[];
+  activeId?: string;
+  activeItem?: CommandMenuItem;
+  onSelect: (item: CommandMenuItem) => void;
+  onNavigate: (direction: "next" | "prev") => void;
+  onClose: () => void;
+};
+
 type ChatInputProps = {
   value: string;
   onChange: (value: string) => void;
@@ -13,6 +38,7 @@ type ChatInputProps = {
   onShortcutAdd: () => void;
   onShortcutSelect: (shortcut: Shortcut) => void;
   focusSignal?: number;
+  commandMenu?: CommandMenuState;
 };
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -25,8 +51,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onShortcutAdd,
   onShortcutSelect,
   focusSignal,
+  commandMenu,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const commandMenuRef = useRef<HTMLDivElement>(null);
   const skipInitialFocus = useRef(true);
   const focusTextarea = useCallback(() => {
     const el = textareaRef.current;
@@ -58,13 +86,29 @@ const ChatInput: React.FC<ChatInputProps> = ({
     focusTextarea();
   }, [focusSignal, focusTextarea]);
 
+  useEffect(() => {
+    if (!commandMenu?.open || !commandMenu.activeId) return;
+    const menu = commandMenuRef.current;
+    if (!menu) return;
+    const activeEl = menu.querySelector(`[data-command-id="${commandMenu.activeId}"]`);
+    if (activeEl instanceof HTMLElement) {
+      activeEl.scrollIntoView({ block: "nearest" });
+    }
+  }, [commandMenu?.activeId, commandMenu?.open]);
+
   const submit = useCallback(() => {
+    if (commandMenu?.open) {
+      if (commandMenu.activeItem) {
+        commandMenu.onSelect(commandMenu.activeItem);
+      }
+      return;
+    }
     const text = value.trim();
     if (!text || disabled) return;
     onSend(text);
     onChange("");
     requestAnimationFrame(() => focusTextarea());
-  }, [value, disabled, onSend, onChange, focusTextarea]);
+  }, [commandMenu, value, disabled, onSend, onChange, focusTextarea]);
 
   return (
     <S.ComposerRow>
@@ -78,12 +122,37 @@ const ChatInput: React.FC<ChatInputProps> = ({
             readOnly={disabled}
             aria-disabled={disabled}
             onKeyDown={(event) => {
+              if (commandMenu?.open) {
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  commandMenu.onNavigate("next");
+                  return;
+                }
+                if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  commandMenu.onNavigate("prev");
+                  return;
+                }
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  if (commandMenu.activeItem) {
+                    commandMenu.onSelect(commandMenu.activeItem);
+                  }
+                  return;
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  commandMenu.onClose();
+                  return;
+                }
+              }
+
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-              if (disabled) {
-                requestAnimationFrame(() => focusTextarea());
-                return;
-              }
+                if (disabled) {
+                  requestAnimationFrame(() => focusTextarea());
+                  return;
+                }
                 submit();
               }
             }}
@@ -107,6 +176,37 @@ const ChatInput: React.FC<ChatInputProps> = ({
             </svg>
           </S.SendButton>
         </S.ComposerTopRow>
+        {commandMenu?.open && (
+          <S.CommandMenu ref={commandMenuRef} role="listbox" aria-label="Slash Commands">
+            {commandMenu.groups.map((group) => (
+              <S.CommandGroup key={group.id}>
+                <S.CommandGroupTitle>{group.label}</S.CommandGroupTitle>
+                {group.items.length > 0 ? (
+                  group.items.map((item) => (
+                    <S.CommandItem
+                      key={item.id}
+                      type="button"
+                      $active={item.id === commandMenu.activeId}
+                      data-command-id={item.id}
+                      role="option"
+                      aria-selected={item.id === commandMenu.activeId}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => commandMenu.onSelect(item)}
+                    >
+                      <div>
+                        <S.CommandLabel>{item.label}</S.CommandLabel>
+                        {item.meta && <S.CommandMeta>{item.meta}</S.CommandMeta>}
+                      </div>
+                      <S.CommandBadge>{item.kind === "shortcut" ? "Shortcut" : "Mensa"}</S.CommandBadge>
+                    </S.CommandItem>
+                  ))
+                ) : (
+                  <S.CommandEmpty>{group.emptyLabel ?? "Keine Treffer"}</S.CommandEmpty>
+                )}
+              </S.CommandGroup>
+            ))}
+          </S.CommandMenu>
+        )}
         <S.ShortcutRow>
           <S.ShortcutAddButton
             type="button"
