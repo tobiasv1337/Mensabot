@@ -6,7 +6,6 @@ import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
 import mensabotLogo from '../../assets/react.svg';
-//import sideBarIcon from '../../assets/left-sidebar-icon.svg';
 
 const SideBarIcon = () => (
   <svg

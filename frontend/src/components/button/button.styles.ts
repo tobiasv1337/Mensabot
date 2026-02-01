@@ -32,12 +32,6 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textOnInset,
         },
-        iconOnly: { // for icon-only buttons
-            bg: 'transparent',
-            color: theme.textSecondary,
-            hoverBg: theme.surfaceInset,
-            hoverColor: theme.textPrimary,
-        },
     };
     return variantStyles[variant ?? 'default'];
 };
