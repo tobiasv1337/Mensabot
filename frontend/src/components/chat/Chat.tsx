@@ -12,6 +12,7 @@ import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import * as S from "./chat.styles";
+import { openGoogleMaps } from "../../services/maps";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -324,6 +325,8 @@ const Chat: React.FC<ChatProps> = ({
   const [locationPromptHandled, setLocationPromptHandled] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [directionsPromptHandled, setDirectionsPromptHandled] = useState(false);
+  const [directionsError, setDirectionsError] = useState("");
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
   const initialMenuFetched = useRef(false);
@@ -357,6 +360,8 @@ const Chat: React.FC<ChatProps> = ({
     setInputValue("");
     setLocationPromptHandled(false);
     setLocationError("");
+    setDirectionsPromptHandled(false);
+    setDirectionsError("");
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
   }, [isSending, onStartNewChat]);
@@ -453,10 +458,21 @@ const Chat: React.FC<ChatProps> = ({
     if (lastMsg.meta?.kind === "location_prompt") {
       setLocationPromptHandled(false);
       setLocationError("");
+      setDirectionsPromptHandled(true);
+      setDirectionsError("");
+      return;
+    }
+
+    if (lastMsg.meta?.kind === "directions_prompt") {
+      setDirectionsPromptHandled(false);
+      setDirectionsError("");
+      setLocationPromptHandled(true);
+      setLocationError("");
       return;
     }
 
     setLocationPromptHandled(true);
+    setDirectionsPromptHandled(true);
   }, [chat.messages.length]);
 
   const sendMessage = useCallback(
@@ -575,6 +591,28 @@ const Chat: React.FC<ChatProps> = ({
     setLocationPromptHandled(true);
     setVersion((v) => v + 1);
   }, [chat, isSending, isRequestingLocation]);
+
+  const handleOpenDirections = useCallback(
+    (message: ChatMessage) => {
+      if (isSending) return;
+      const directions = message.meta.directions;
+      if (!directions) {
+        setDirectionsError("Keine Zielangaben verfügbar.");
+        return;
+      }
+
+      const { lat, lng } = directions;
+      if (typeof lat !== "number" || typeof lng !== "number") {
+        setDirectionsError("Keine Zielangaben verfügbar.");
+        return;
+      }
+
+      setDirectionsError("");
+      openGoogleMaps(lat, lng);
+      setDirectionsPromptHandled(true);
+    },
+    [isSending]
+  );
 
   const handleResetFilters = useCallback(() => {
     updateFilters(defaultChatFilters);
@@ -1065,6 +1103,8 @@ const Chat: React.FC<ChatProps> = ({
               const isLast = index === chat.messages.length - 1;
               const shouldShowLocationActions =
                 message.meta.kind === "location_prompt" && isLast && !locationPromptHandled;
+              const shouldShowDirectionsActions =
+                message.meta.kind === "directions_prompt" && isLast && !directionsPromptHandled;
               const actions: MessageAction[] = shouldShowLocationActions
                 ? [
                   {
@@ -1081,7 +1121,22 @@ const Chat: React.FC<ChatProps> = ({
                     disabled: isSending || isRequestingLocation,
                   },
                 ]
-                : [];
+                : shouldShowDirectionsActions
+                  ? [
+                    {
+                      id: "open-directions",
+                      label: "Route öffnen",
+                      onClick: () => handleOpenDirections(message),
+                      disabled: isSending,
+                    },
+                  ]
+                  : [];
+
+              const actionsNote = shouldShowLocationActions
+                ? locationError || undefined
+                : shouldShowDirectionsActions
+                  ? directionsError || undefined
+                  : undefined;
 
               return (
                 <ChatBubble
@@ -1089,7 +1144,7 @@ const Chat: React.FC<ChatProps> = ({
                   message={message}
                   avatarSrc={mensabotLogo}
                   actions={actions}
-                  actionsNote={shouldShowLocationActions && locationError ? locationError : undefined}
+                  actionsNote={actionsNote}
                 />
               );
             })}
