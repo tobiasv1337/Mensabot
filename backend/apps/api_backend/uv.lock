@@ -861,6 +861,7 @@ name = "mensa-api-backend"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "fastapi" },
     { name = "fastmcp" },
     { name = "mensa-mcp-server" },
@@ -870,6 +871,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=4.12.1" },
     { name = "fastapi", specifier = ">=0.121.2" },
     { name = "fastmcp", specifier = ">=2.13.0.2" },
     { name = "mensa-mcp-server", editable = "../mcp-server" },
