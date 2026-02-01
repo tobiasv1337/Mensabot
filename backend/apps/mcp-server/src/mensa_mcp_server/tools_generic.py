@@ -98,3 +98,20 @@ def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brau
     Prefer this tool for requesting the users location over just asking manually via your response for better user experience and more accurate location data.
     """
     return {"prompt": prompt}
+
+
+@mcp.tool()
+def request_canteen_directions(
+    prompt: str = "Möchtest du die Route zur Mensa in Google Maps öffnen?",
+    canteen_id: Optional[int] = None,
+    lat: Optional[float] = None,
+    lng: Optional[float] = None,
+) -> dict:
+    """
+    Ask the user to open directions to a canteen in Google Maps.
+    Provide either a canteen_id or a lat/lng pair (preferred: canteen_id).
+
+    The backend will interrupt the tool loop and instruct the frontend to show
+    a directions button with this prompt.
+    """
+    return {"prompt": prompt, "canteen_id": canteen_id, "lat": lat, "lng": lng}
