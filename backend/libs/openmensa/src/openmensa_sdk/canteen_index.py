@@ -396,6 +396,7 @@ class CanteenIndex:
         sort_by: str = "auto",  # auto, distance, name, city
     ) -> tuple[list[CanteenSearchResult], int]:
         query_norm = _normalize_query(query or "")
+        has_query = bool(query_norm)
         if not query_norm and not city and near_lat is None and near_lng is None:
             return [], 0
 
@@ -495,14 +496,23 @@ class CanteenIndex:
         elif sort_by == "name":
             results.sort(key=lambda r: _normalize_text(r.canteen.name))
         else: # auto / default
-            results.sort(
-                key=lambda r: (
-                    -r.score,
-                    r.distance_km is None,
-                    r.distance_km if r.distance_km is not None else float("inf"),
-                    _normalize_text(r.canteen.name),
+            if has_query:
+                results.sort(
+                    key=lambda r: (
+                        -r.score,
+                        _normalize_text(r.canteen.name),
+                        r.distance_km is None,
+                        r.distance_km if r.distance_km is not None else float("inf"),
+                    )
                 )
-            )
+            else:
+                results.sort(
+                    key=lambda r: (
+                        r.distance_km is None,
+                        r.distance_km if r.distance_km is not None else float("inf"),
+                        _normalize_text(r.canteen.name),
+                    )
+                )
 
         start = (page - 1) * per_page
         end = start + per_page

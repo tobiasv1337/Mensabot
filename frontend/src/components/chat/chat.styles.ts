@@ -1,0 +1,701 @@
+import styled, { keyframes } from "styled-components";
+
+const fadeUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 80%, 100% {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+`;
+
+export const ChatShell = styled.section`
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  background: ${({ theme }) => theme.surfacePage};
+  gap: 0;
+
+  @media (max-width: 768px) {
+    height: calc(100vh - 120px);
+  }
+`;
+
+export const HeaderCard = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 8px 0 10px;
+  background: linear-gradient(180deg, ${({ theme }) => theme.surfacePage} 75%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}14`};
+`;
+
+export const HeaderActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+`;
+
+export const IconButton = styled.button<{ $variant?: "primary" | "ghost" }>`
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid
+    ${({ theme, $variant }) =>
+      $variant === "primary" ? "transparent" : `${theme.textMuted}30`};
+  background: ${({ theme, $variant }) =>
+    $variant === "primary" ? theme.accent1 : theme.surfacePage};
+  color: ${({ theme, $variant }) =>
+    $variant === "primary" ? theme.textOnAccent1 : theme.textPrimary};
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: ${({ theme, $variant }) =>
+      $variant === "primary" ? "transparent" : `${theme.accent1}55`};
+    box-shadow: ${({ theme, $variant }) =>
+      $variant === "primary"
+        ? `0 10px 20px ${theme.accent1}33`
+        : `0 8px 16px ${theme.textDark}12`};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const IconButtonLabel = styled.span`
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  @media (max-width: 720px) {
+    display: none;
+  }
+`;
+
+export const IconButtonLabelAlways = styled(IconButtonLabel)`
+  @media (max-width: 720px) {
+    display: inline;
+  }
+`;
+
+export const FilterCard = styled.div<{ $open?: boolean }>`
+  position: sticky;
+  top: 40px;
+  z-index: 5;
+  overflow: ${({ $open }) => ($open ? "visible" : "hidden")};
+  max-height: ${({ $open }) => ($open ? "360px" : "0")};
+  opacity: ${({ $open }) => ($open ? 1 : 0)};
+  transform: ${({ $open }) => ($open ? "none" : "translateY(-6px)")};
+  transition: max-height 0.35s ease, opacity 0.2s ease, transform 0.2s ease;
+  background: ${({ theme }) => theme.surfacePage};
+  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}1F`};
+`;
+
+export const FilterBody = styled.div`
+  display: grid;
+  gap: 14px;
+  padding: 10px 0 16px;
+`;
+
+export const FilterSection = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+export const FilterLabel = styled.div`
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const PillRow = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 4px 0 6px;
+  scrollbar-width: thin;
+  cursor: grab;
+
+  &.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  &.is-dragging * {
+    user-select: none;
+  }
+`;
+
+export const PillButton = styled.button<{ $selected?: boolean; $removable?: boolean }>`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1.5px solid ${({ theme, $selected }) => ($selected ? `${theme.accent1}D9` : `${theme.accent1}55`)};
+  background: ${({ theme, $selected }) => ($selected ? `${theme.accent1}3B` : "transparent")};
+  color: ${({ theme, $selected }) => ($selected ? theme.accent1 : `${theme.accent1}B0`)};
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  box-shadow: ${({ theme, $selected }) =>
+    $selected
+      ? `0 6px 14px -6px ${theme.accent1}4D, inset 0 0 0 1px ${theme.accent1}40`
+      : `inset 0 0 0 1px ${theme.accent1}06`};
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: ${({ theme, $selected }) =>
+      $selected
+        ? `0 8px 16px -8px ${theme.accent1}55, inset 0 0 0 1px ${theme.accent1}4D`
+        : `0 6px 12px -6px ${theme.accent1}22`};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const PillIcon = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+
+  img {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+`;
+
+export const PillRemove = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.accent1};
+  font-size: 14px;
+  line-height: 1;
+`;
+
+export const PillInputShell = styled.label<{ $active?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed ${({ theme, $active }) => ($active ? `${theme.accent1}AA` : `${theme.accent1}66`)};
+  background: ${({ theme, $active }) => ($active ? `${theme.accent1}1F` : `${theme.accent1}12`)};
+  color: ${({ theme }) => theme.accent1};
+  cursor: text;
+  transition: border-color 0.2s ease, background 0.2s ease;
+`;
+
+export const PillInput = styled.input`
+  border: none;
+  outline: none;
+  background: transparent;
+  color: ${({ theme }) => theme.textPrimary};
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 120px;
+`;
+
+export const CanteenSearchWrap = styled.div`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+`;
+
+export const SearchDropdown = styled.div`
+  position: fixed;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}26`};
+  background: ${({ theme }) => theme.surfaceInset};
+  display: grid;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 18px 32px ${({ theme }) => `${theme.textDark}1F`};
+`;
+
+export const SearchDropdownItem = styled.button<{ $muted?: boolean }>`
+  all: unset;
+  cursor: ${({ $muted }) => ($muted ? "default" : "pointer")};
+  padding: 7px 10px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: ${({ theme, $muted }) => ($muted ? theme.textSecondary : theme.textPrimary)};
+  background: ${({ theme }) => theme.surfacePage};
+  border: 1px solid ${({ theme }) => `${theme.textMuted}18`};
+
+  &:hover {
+    ${({ $muted, theme }) =>
+      !$muted &&
+      `
+      background: ${theme.surfaceCard};
+      border-color: ${theme.accent1}55;
+    `}
+  }
+`;
+
+export const SearchDropdownMeta = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const ActiveFiltersRow = styled(PillRow)`
+  position: sticky;
+  top: 40px;
+  z-index: 4;
+  background: ${({ theme }) => theme.surfacePage};
+  padding: 6px 0 8px;
+  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}12`};
+`;
+
+export const MessagesCard = styled.section`
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: ${({ theme }) => theme.surfacePage};
+`;
+
+export const MessagesScroll = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 0 24px;
+  scroll-behavior: smooth;
+`;
+
+export const MessageList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+`;
+
+export const MessageRow = styled.div<{ $isUser?: boolean }>`
+  display: flex;
+  align-items: flex-start;
+  justify-content: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
+  gap: 12px;
+  animation: ${fadeUp} 0.35s ease both;
+`;
+
+export const Avatar = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: transparent;
+  box-shadow: none;
+  margin-top: 0.25rem;
+  align-self: flex-end;
+`;
+
+export const MessageContent = styled.div<{ $isUser?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
+  max-width: min(78%, 680px);
+  gap: 6px;
+`;
+
+export const NameTag = styled.div`
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const Bubble = styled.div<{ $isUser?: boolean }>`
+  position: relative;
+  background: ${({ $isUser, theme }) => ($isUser ? theme.accent1 : theme.surfaceInset)};
+  color: ${({ $isUser, theme }) => ($isUser ? theme.textOnAccent1 : theme.textOnInset)};
+  padding: 1rem 1.1rem;
+  border-radius: ${({ $isUser }) => ($isUser ? "1.35rem 1.35rem 0.45rem 1.35rem" : "1.35rem 1.35rem 1.35rem 0.45rem")};
+  border: 1px solid ${({ $isUser, theme }) => ($isUser ? `${theme.textOnAccent1}33` : `${theme.textMuted}33`)};
+  box-shadow: 0 12px 28px ${({ theme }) => `${theme.textDark}1F`}, 0 2px 8px ${({ theme }) => `${theme.textDark}12`};
+  width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 36px ${({ theme }) => `${theme.textDark}24`}, 0 4px 12px ${({ theme }) => `${theme.textDark}1C`};
+  }
+`;
+
+export const MarkdownBody = styled.div`
+  font-size: 0.95rem;
+  line-height: 1.6;
+
+  p {
+    margin: 0 0 0.65rem 0;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  ul,
+  ol {
+    margin: 0.5rem 0 0.7rem 1.2rem;
+  }
+
+  code {
+    background: ${({ theme }) => `${theme.textDark}12`};
+    padding: 0.15rem 0.35rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  pre {
+    background: ${({ theme }) => `${theme.textDark}18`};
+    padding: 0.8rem;
+    border-radius: 12px;
+    overflow-x: auto;
+  }
+`;
+
+export const ToolTraceGroup = styled.div`
+  margin-bottom: 0.75rem;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+`;
+
+export const ToolTraceTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+
+  &::before {
+    content: '';
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: ${({ theme }) => theme.accent3};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.surfaceInset};
+  }
+`;
+
+export const ToolCallDetails = styled.details`
+  margin-top: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+
+  summary {
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    list-style: none;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.65rem;
+    background: ${({ theme }) => theme.surfacePage};
+    border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '▾';
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+    justify-self: end;
+  }
+
+  &[open] summary {
+    border-color: ${({ theme }) => `${theme.accent2}66`};
+  }
+
+  &[open] summary::after {
+    transform: rotate(180deg);
+  }
+`;
+
+export const ToolCallBody = styled.div`
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+`;
+
+export const ToolCallSectionTitle = styled.div`
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const ToolCallCode = styled.pre`
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.7rem;
+  background: ${({ theme }) => theme.surfacePage};
+  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+`;
+
+export const ToolCallName = styled.span`
+  font-weight: 600;
+`;
+
+export const ToolCallMeta = styled.span`
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  opacity: 0.7;
+`;
+
+export const ToolCallStatus = styled.span<{ $status: "ok" | "error" | "info" }>`
+  background: ${({ theme, $status }) =>
+    $status === "ok"
+      ? theme.accent3
+      : $status === "error"
+      ? theme.accent1
+      : theme.surfaceAccent};
+  color: ${({ theme, $status }) =>
+    $status === "ok" ? theme.textOnAccent3 : $status === "error" ? theme.textOnAccent1 : theme.textOnAccent};
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.6rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+`;
+
+export const ActionRow = styled.div`
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+`;
+
+export const ActionButton = styled.button<{ $variant?: "primary" | "secondary" }>`
+  background: ${({ theme, $variant }) => ($variant === "secondary" ? theme.surfaceAccent : theme.accent1)};
+  color: ${({ theme, $variant }) => ($variant === "secondary" ? theme.textOnAccent : theme.textOnAccent1)};
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const InlineError = styled.span`
+  color: ${({ theme }) => theme.accent1};
+  font-size: 0.8rem;
+  font-weight: 600;
+`;
+
+export const TypingBubble = styled(Bubble)`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  padding: 0.85rem 1.1rem;
+`;
+
+export const TypingDot = styled.span`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: ${pulse} 1.3s infinite ease-in-out;
+
+  &:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+`;
+
+export const ScrollToLatest = styled.button`
+  position: absolute;
+  right: 6px;
+  bottom: 86px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+  background: ${({ theme }) => theme.surfacePage};
+  color: ${({ theme }) => theme.textPrimary};
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 20px ${({ theme }) => `${theme.textDark}18`};
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 24px ${({ theme }) => `${theme.textDark}24`};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const ComposerCard = styled.div`
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 8px;
+  background: linear-gradient(180deg, transparent, ${({ theme }) => theme.surfacePage} 25%);
+  border-top: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+`;
+
+export const ComposerRow = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+`;
+
+export const ComposerInputShell = styled.div`
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}30`};
+  background: ${({ theme }) => theme.surfaceInset};
+`;
+
+export const ComposerTextarea = styled.textarea`
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  min-height: 42px;
+  max-height: 160px;
+  background: transparent;
+  color: ${({ theme }) => theme.textOnInset};
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+
+  &::placeholder {
+    color: ${({ theme }) => theme.textMuted};
+  }
+`;
+
+export const SendButton = styled.button`
+  height: 42px;
+  width: 46px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 14px;
+  background: ${({ theme }) => theme.accent1};
+  color: ${({ theme }) => theme.textOnAccent1};
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px ${({ theme }) => `${theme.accent1}30`};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
