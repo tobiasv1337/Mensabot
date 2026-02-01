@@ -204,6 +204,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { mode: themeMode, toggleMode } = useTheme();
 
+  const handleNavSelection = (target: NavItem) => {
+    onNavClick(target);
+
+    if (mode === "drawer") {
+      onCloseDrawer();
+    }
+
+    if (mode === "desktop" && !isCollapsed) {
+      onToggleCollapse?.();
+    }
+  };
+
   return (
     <>
       <S.Backdrop $isOpen={drawerOpen} $mode={mode} onClick={onCloseDrawer} />
@@ -238,12 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               size="fill"
               active={activeNav === n}
               collapsed={isCollapsed}
-              onClick={() => {
-                onNavClick(n);
-                if (mode === "drawer") {
-                  onCloseDrawer();
-                }
-              }}
+              onClick={() => handleNavSelection(n)}
               title={isCollapsed ? n : undefined}
             >
               <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
@@ -272,7 +279,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Button 
         variant="default"
         size="fill"
-        collapsed={isCollapsed}>
+        collapsed={isCollapsed}
+        onClick={() => handleNavSelection("Shortcuts")}>
         <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
         <ButtonTextWrapper $collapsed={isCollapsed}>
           Shortcuts
