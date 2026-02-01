@@ -26,13 +26,13 @@ export const ChatShell = styled.section`
   position: relative;
   display: grid;
   grid-template-rows: auto auto auto 1fr auto;
-  height: calc(100vh - 140px);
+  height: calc(100vh - 104px);
   min-height: 560px;
   background: ${({ theme }) => theme.surfacePage};
   gap: 0;
 
-  @media (max-width: 768px) {
-    height: calc(100vh - 120px);
+  @media (max-width: 480px) {
+    height: calc(100vh - 96px);
   }
 `;
 
@@ -720,8 +720,8 @@ export const ComposerCard = styled.div`
   bottom: 0;
   z-index: 6;
   display: grid;
-  gap: 4px;
-  padding: 12px 0 4px;
+  gap: 10px;
+  padding: 12px 0 8px;
   background: linear-gradient(180deg, transparent, ${({ theme }) => theme.surfacePage} 25%);
   border-top: none;
 `;

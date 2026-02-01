@@ -33,8 +33,8 @@ export const SidebarSlot = styled.div`
   }
 `;
 
-export const Content = styled.main`
-  padding: 24px;
+export const Content = styled.main<{ $chat?: boolean }>`
+  padding: ${({ $chat }) => ($chat ? "24px 24px 0" : "24px")};
   min-width: 0;
 
   background: ${({ theme }) => theme.surfacePage};

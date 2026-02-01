@@ -172,7 +172,7 @@ const ChatPage: React.FC = () => {
             />
           </S.SidebarSlot>
 
-          <S.Content>
+          <S.Content $chat={activeNav === "ChatBot"}>
             {activeNav === "Canteens" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}
