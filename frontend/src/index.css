@@ -43,6 +43,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.chat-lock-scroll {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 #root {
   display: contents;
 }

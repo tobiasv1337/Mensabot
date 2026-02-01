@@ -26,14 +26,10 @@ export const ChatShell = styled.section`
   position: relative;
   display: grid;
   grid-template-rows: auto auto auto 1fr auto;
-  height: calc(100vh - 104px);
-  min-height: 560px;
+  height: 100%;
+  min-height: 0;
   background: ${({ theme }) => theme.surfacePage};
   gap: 0;
-
-  @media (max-width: 480px) {
-    height: calc(100vh - 96px);
-  }
 `;
 
 export const HeaderCard = styled.div`
@@ -691,7 +687,7 @@ export const TypingDot = styled.span`
 export const ScrollToLatest = styled.button`
   position: absolute;
   right: 18px;
-  bottom: 64px;
+  bottom: 44px;
   height: 44px;
   width: 44px;
   border-radius: 14px;
