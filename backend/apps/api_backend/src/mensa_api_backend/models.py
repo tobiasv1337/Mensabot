@@ -1,0 +1,75 @@
+from typing import Any, Dict, Literal
+
+from pydantic import BaseModel
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    include_tool_calls: bool = False
+
+
+class ToolCallTrace(BaseModel):
+    id: str | None = None
+    name: str
+    args: Dict[str, Any] | None = None
+    raw_args: str | None = None
+    result: Any | None = None
+    ok: bool | None = None
+    error: str | None = None
+    iteration: int | None = None
+
+
+class ChatResponse(BaseModel):
+    status: Literal["ok", "needs_location", "needs_directions"]
+    reply: str | None = None
+    prompt: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    tool_calls: list[ToolCallTrace] | None = None
+
+
+class CanteenOut(BaseModel):
+    id: int
+    name: str
+    city: str | None = None
+    address: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+
+
+class PageInfo(BaseModel):
+    current_page: int
+    per_page: int
+    next_page: int | None = None
+    has_next: bool
+
+
+class CanteenIndexInfo(BaseModel):
+    updated_at: str
+    total_canteens: int
+    total_cities: int
+
+
+class CanteenListResponse(BaseModel):
+    canteens: list[CanteenOut]
+    page_info: PageInfo
+    index: CanteenIndexInfo
+    total_results: int
+
+
+class CanteenSearchResultOut(BaseModel):
+    canteen: CanteenOut
+    score: float
+    distance_km: float | None = None
+
+
+class CanteenSearchResponse(BaseModel):
+    results: list[CanteenSearchResultOut]
+    total_results: int
+    page_info: PageInfo
+    index: CanteenIndexInfo
