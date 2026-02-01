@@ -87,7 +87,7 @@ export const HeroCard = styled.div`
     right: -20%;
     width: 60%;
     height: 140%;
-    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}30`}, transparent);
+    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}40`}, transparent);
     transform: rotate(12deg);
   }
 `;
@@ -204,8 +204,8 @@ export const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${({ theme }) => `${theme.accent2}99`};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent2}30`};
+    border-color: ${({ theme }) => `${theme.accent1}99`};
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}30`};
   }
 `;
 
@@ -218,8 +218,8 @@ export const SearchActions = styled.div`
 export const SearchButton = styled.button`
   padding: 10px 16px;
   border-radius: 12px;
-  background: ${({ theme }) => theme.accent2};
-  color: ${({ theme }) => theme.textOnAccent2};
+  background: ${({ theme }) => theme.accent1};
+  color: ${({ theme }) => theme.textOnAccent1};
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -227,7 +227,7 @@ export const SearchButton = styled.button`
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px ${({ theme }) => `${theme.accent2}33`};
+    box-shadow: 0 10px 22px ${({ theme }) => `${theme.accent1}33`};
   }
 
   &:disabled {
@@ -443,10 +443,10 @@ export const DistancePill = styled.button<{ $clickable?: boolean }>`
     `
     &:hover {
       background: ${theme.surfaceCard};
-      border-color: ${theme.accent2};
+      border-color: ${theme.accent1};
       transform: translateY(-1px);
       color: ${theme.textPrimary};
-      box-shadow: 0 4px 12px ${theme.accent2}33;
+      box-shadow: 0 4px 12px ${theme.accent1}33;
     }
   `}
 `;
@@ -472,10 +472,10 @@ export const ActionLabel = styled.span`
   transition: background-color 0.2s ease, transform 0.2s ease;
   
   ${CanteenCard}:hover & {
-    background: ${({ theme }) => theme.accent2};
-    color: ${({ theme }) => theme.textOnAccent2};
+    background: ${({ theme }) => theme.accent1};
+    color: ${({ theme }) => theme.textOnAccent1};
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px ${({ theme }) => `${theme.accent2}40`};
+    box-shadow: 0 4px 12px ${({ theme }) => `${theme.accent1}40`};
   }
 `;
 

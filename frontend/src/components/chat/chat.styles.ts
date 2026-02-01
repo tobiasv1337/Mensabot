@@ -654,9 +654,17 @@ export const ComposerInputShell = styled.div`
   gap: 0;
   padding: 0;
   border-radius: 18px;
-  border: 1.5px solid ${({ theme }) => `${theme.accent1}66`};
+  border: 1.5px solid ${({ theme }) => `${theme.textMuted}44`};
   background: ${({ theme }) => theme.surfaceInset};
   box-shadow: 0 10px 24px ${({ theme }) => `${theme.textDark}18`};
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus-within {
+    border-color: ${({ theme }) => `${theme.accent1}CC`};
+    box-shadow:
+      0 0 0 2px ${({ theme }) => `${theme.accent1}22`},
+      0 12px 26px ${({ theme }) => `${theme.accent1}2B`};
+  }
 `;
 
 export const ComposerTopRow = styled.div`
