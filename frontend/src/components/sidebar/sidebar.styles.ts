@@ -75,6 +75,13 @@ export const Sidebar = styled.aside<{
 export const Main = styled.div`
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 `;
 
 export const CollapseToggle = styled.button`
