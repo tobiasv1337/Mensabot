@@ -5,8 +5,6 @@ import { useTheme } from "../../theme/themeProvider";
 import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
-import mensabotLogo from '../../assets/react.svg';
-
 const SideBarIcon = () => (
   <svg
     width="20"

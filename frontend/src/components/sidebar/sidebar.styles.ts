@@ -64,7 +64,7 @@ export const Sidebar = styled.aside<{
 
     transform: translateX(${isOpen ? "0" : "-100%"});
     transition: transform 0.25s ease;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.35);
+    box-shadow: ${isOpen ? "0 12px 30px rgba(0,0,0,0.35)" : "none"};
 
     @media (min-width: 1024px) {
       display: none;
