@@ -118,17 +118,21 @@ class PriceInfoDTO(DTO):
 
 
 class MealDTO(DTO):
-    id: int = Field(description="Unique identifier of the meal.", exclude=True)
+    id: int = Field(description="Unique identifier of the meal.")
     name: str = Field(description="Name of the meal.")
     category: str | None = Field(default=None, description="Category of the meal.")
     prices: PriceInfoDTO
     diet_type: DietType = Field(description="Normalized diet type inferred from notes and title (unknown if no signal).")
     allergens: list[str] = Field(default_factory=list, description="Canonical allergens detected from notes.")
-    raw_notes: list[str] = Field(
-        default_factory=list,
-        description="Raw notes from OpenMensa (kept for traceability, excluded from tool output).",
-        exclude=True,
-    )
+    raw_notes: list[str] = Field(default_factory=list, description="Raw notes from OpenMensa.")
+
+
+class MealPublicDTO(DTO):
+    name: str = Field(description="Name of the meal.")
+    category: str | None = Field(default=None, description="Category of the meal.")
+    prices: PriceInfoDTO
+    diet_type: DietType = Field(description="Normalized diet type inferred from notes and title (unknown if no signal).")
+    allergens: list[str] = Field(default_factory=list, description="Canonical allergens detected from notes.")
 
 
 class CanteenDTO(DTO):
@@ -194,6 +198,26 @@ class MenuResponseDTO(DTO):
         description="Number of meals returned after applying diet/allergen filters.",
     )
 
+
+class MenuResponsePublicDTO(DTO):
+    canteen_id: int = Field(ge=1, description="Unique identifier of the canteen.")
+    date: str = Field(
+        description=(
+            "Date (YYYY-MM-DD). For status 'ok' / 'no_menu_published' / 'empty_menu' / 'api_error' "
+            "this is a valid ISO date. For 'invalid_date' it contains the original invalid input."
+        ),
+    )
+    status: MenuStatusDTO
+    meals: list[MealPublicDTO] = Field(default_factory=list, description="List of meals for the given date.")
+    total_meals: int = Field(
+        ge=0,
+        description="Number of meals the source menu contained before filtering.",
+    )
+    returned_meals: int = Field(
+        ge=0,
+        description="Number of meals returned after applying diet/allergen filters.",
+    )
+
 class MenuBatchRequestDTO(DTO):
     canteen_id: int = Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin).")
     date: str | None = Field(default=None, description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")
@@ -212,6 +236,15 @@ class MenuBatchRequestDTO(DTO):
 
 class MenuBatchResponseDTO(DTO):
     results: list[MenuResponseDTO] = Field(
+        description=(
+            "One entry per requested (canteen_id, date) pair. "
+            "The order matches the input list."
+        ),
+    )
+
+
+class MenuBatchResponsePublicDTO(DTO):
+    results: list[MenuResponsePublicDTO] = Field(
         description=(
             "One entry per requested (canteen_id, date) pair. "
             "The order matches the input list."
