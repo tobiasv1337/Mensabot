@@ -67,6 +67,8 @@ def search_canteens(
 ):
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
+    if near_lat is not None and near_lng is not None and radius_km is None:
+        radius_km = 10.0
 
     async with IO_SEMAPHORE:
         index = await anyio.to_thread.run_sync(load_canteen_index)

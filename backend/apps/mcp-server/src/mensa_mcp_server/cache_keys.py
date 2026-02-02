@@ -29,17 +29,6 @@ def openmensa_menu_key(
     return f"openmensa:menu:{canteen_id}:{date}:{diet_key}:{price_key}:{allergens_key}"
 
 
-def openmensa_canteens_near_key(
-    *,
-    lat: float,
-    lng: float,
-    radius_km: float,
-    page: int,
-    per_page: int,
-) -> str:
-    return f"openmensa:canteens_near:{lat:.5f}:{lng:.5f}:{radius_km:.2f}:{page}:{per_page}"
-
-
 def osm_opening_hours_key(*, canteen_id: int) -> str:
     return f"osm:opening_hours:{canteen_id}"
 

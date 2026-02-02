@@ -12,12 +12,10 @@ from .concurrency import IO_SEMAPHORE
 from .server import mcp, make_openmensa_client
 from .settings import settings
 from .cache import shared_cache
-from .cache_keys import openmensa_canteen_key, openmensa_canteens_near_key, osm_opening_hours_key
+from .cache_keys import openmensa_canteen_key, osm_opening_hours_key
 from .schemas import (
     # OpenMensa DTOs
     CanteenDTO,
-    PageInfoDTO,
-    CanteenListResponseDTO,
     CanteenIndexInfoDTO,
     CanteenSearchResultDTO,
     CanteenSearchResponseDTO,
@@ -44,7 +42,6 @@ from .services.openmensa import fetch_single_menu, normalize_menu_date
 # ------------------------------ internal helpers ------------------------------
 
 CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
-CACHE_TTL_CANTEEN_LIST_S = 60 * 60 * 24
 CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
 
 
@@ -57,7 +54,7 @@ async def search_canteens(
     city: Annotated[Optional[str], Field(default=None, description="Base city. All canteens in this city are always included.")] = None,
     near_lat: Annotated[Optional[float], Field(default=None, ge=-90.0, le=90.0, description="Latitude of the expansion center (used with radius_km).")] = None,
     near_lng: Annotated[Optional[float], Field(default=None, ge=-180.0, le=180.0, description="Longitude of the expansion center (used with radius_km).")] = None,
-    radius_km: Annotated[Optional[float], Field(default=None, gt=0.0, description="Radius in kilometers to include nearby canteens outside the base city.")] = None,
+    radius_km: Annotated[Optional[float], Field(default=None, gt=0.0, description="Radius in kilometers to include nearby canteens outside the base city. If near_lat/near_lng are provided and radius_km is omitted, a default of 10 km is used.")] = None,
     limit: Annotated[int, Field(ge=1, le=100, description="Max number of results to return.")] = 20,
     min_score: Annotated[float, Field(ge=0.0, le=100.0, description="Minimum text score (0-100). Set to 0 for broad results.")] = 60.0,
 ) -> CanteenSearchResponseDTO:
@@ -75,9 +72,21 @@ async def search_canteens(
     - If `near_lat/lng` are set without `radius_km`, a default radius of 10 km is used.
     - If both `city` and `near_lat/lng` are set, the city is the base set and the radius uses the coordinates.
     - If `query` is omitted, score is 0 and results are ordered by distance (if available).
+
+    Examples:
+    - Nearby lookup:
+      {"tool": "search_canteens", "parameters": {"near_lat": 52.52, "near_lng": 13.405, "radius_km": 5}}
+    - Name lookup:
+      {"tool": "search_canteens", "parameters": {"query": "mensa hardenberg"}}
+    - City lookup:
+      {"tool": "search_canteens", "parameters": {"city": "Berlin"}}
+    - Name + city:
+      {"tool": "search_canteens", "parameters": {"query": "TU", "city": "Berlin"}}
     """
     if (near_lat is None) != (near_lng is None):
         raise ValueError("near_lat and near_lng must be provided together.")
+    if near_lat is not None and near_lng is not None and radius_km is None:
+        radius_km = 10.0
 
     async with IO_SEMAPHORE:
         index = await anyio.to_thread.run_sync(load_canteen_index)
@@ -111,58 +120,13 @@ async def search_canteens(
 
 
 @mcp.tool()
-async def list_canteens_near(
-    lat: Annotated[float, Field(ge=-90.0, le=90.0, description="Latitude in decimal degrees (WGS84)")],
-    lng: Annotated[float, Field(ge=-180.0, le=180.0, description="Longitude in decimal degrees (WGS84)")],
-    radius_km: Annotated[float, Field(gt=0.0, description="Search radius in kilometers")],
-    page: Annotated[int, Field(ge=1, description="1-based page number")] = 1,
-    per_page: Annotated[int, Field(ge=1, description="Number of results per page")] = 20,
-) -> CanteenListResponseDTO:
-    """
-    Find canteens by geographic coordinates with pagination.
-    
-    Returns paginated list of nearby canteens. For more results, call again with
-    `page = page_info.next_page` while `page_info.has_next` is true.
-    """
-    cache_key = openmensa_canteens_near_key(lat=lat, lng=lng, radius_km=radius_km, page=page, per_page=per_page)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return CanteenListResponseDTO.model_validate(cached)
-
-    def _fetch_list():
-        with make_openmensa_client() as client:
-            return client.list_canteens(
-                near_lat=lat,
-                near_lng=lng,
-                near_dist=radius_km,
-                per_page=per_page,
-                page=page,
-            )
-
-    async with IO_SEMAPHORE:
-        canteens, next_page = await anyio.to_thread.run_sync(_fetch_list)
-
-    response = CanteenListResponseDTO(
-        canteens=[_canteen_to_dto(c) for c in canteens],
-        page_info=PageInfoDTO(
-            current_page=page,
-            per_page=per_page,
-            next_page=next_page,
-            has_next=next_page is not None,
-        ),
-    )
-    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_LIST_S)
-    return response
-
-
-@mcp.tool()
 async def get_canteen_info(
     canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
 ) -> CanteenDTO:
     """
     Get canteen metadata: name, address, city, and GPS coordinates.
     
-    Use after discovering a canteen ID from list_canteens_near to get full details.
+    Use after discovering a canteen ID from search_canteens to get full details.
     """
     cache_key = openmensa_canteen_key(canteen_id)
     cached = shared_cache.get(cache_key)
@@ -258,14 +222,14 @@ async def get_menus_batch(
     The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     Responses preserve input order with same statuses as get_menu_for_date.
 
-            Example (OpenAI tool call):
+            Example (all parameters used):
             ```json
             {
                 "tool": "get_menus_batch",
                 "parameters": {
                     "requests": [
-                        {"canteen_id": 2019, "date": "2024-06-01"},
-                        {"canteen_id": 42, "date": null, "diet_filter": "vegan", "exclude_allergens": ["sesame", "peanut"], "price_category": "students"}
+                        {"canteen_id": 2019, "date": "2024-06-01", "diet_filter": "vegetarian", "exclude_allergens": ["gluten", "soy"], "price_category": "employees"},
+                        {"canteen_id": 42, "date": "2024-06-02", "diet_filter": "meat_only", "exclude_allergens": [], "price_category": "students"}
                     ]
                 }
             }
