@@ -474,7 +474,7 @@ class CanteenIndex:
         
         # Sort results
         if sort_by == "distance":
-             results.sort(
+            results.sort(
                 key=lambda r: (
                     r.distance_km is None,
                     r.distance_km if r.distance_km is not None else float("inf"),
@@ -482,14 +482,14 @@ class CanteenIndex:
                 )
             )
         elif sort_by == "city":
-             results.sort(
+            results.sort(
                 key=lambda r: (
                     _normalize_text(r.canteen.city or ""),
                     _normalize_text(r.canteen.name),
                 )
             )
         elif sort_by == "name":
-             results.sort(key=lambda r: _normalize_text(r.canteen.name))
+            results.sort(key=lambda r: _normalize_text(r.canteen.name))
         else: # auto / default
             results.sort(
                 key=lambda r: (

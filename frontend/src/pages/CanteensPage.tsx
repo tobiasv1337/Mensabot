@@ -216,7 +216,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
             <span>
               {isSearching ? `Suche nach "${query.trim()}"` : ""}
             </span>
-            {loadingState === "more" && <S.MetaPill>Laedt mehr ...</S.MetaPill>}
+            {loadingState === "more" && <S.MetaPill>Lädt mehr ...</S.MetaPill>}
           </S.SearchMeta>
         </S.SearchCard>
 
@@ -241,7 +241,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           <S.EmptyState>
             <S.EmptyTitle>Keine Mensen gefunden</S.EmptyTitle>
             <S.EmptyBody>
-              Passe deine Suche an oder pruefe, ob der Name korrekt ist.
+              Passe deine Suche an oder prüfe, ob der Name korrekt ist.
             </S.EmptyBody>
           </S.EmptyState>
         ) : (
