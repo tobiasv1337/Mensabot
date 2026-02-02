@@ -215,6 +215,7 @@ export const SegmentButton = styled.button<{ active: boolean }>`
   align-items: center;
   justify-content: center;
   padding: 8px 4px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 500;
   border-radius: 8px;
