@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult, PageInfo } from "../services/api";
-import { MensaBotClient } from "../services/api";
+import { getApiClient } from "../services/apiClient";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
 import { openGoogleMaps } from "../services/maps";
 
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 const PER_PAGE = 24;
 
 interface CanteensPageProps {
@@ -18,7 +17,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
   onSelectCanteen,
   selectedCanteenIds = [],
 }) => {
-  const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
+  const client = useMemo(() => getApiClient(), []);
   const requestId = useRef(0);
 
   const [query, setQuery] = useState("");
