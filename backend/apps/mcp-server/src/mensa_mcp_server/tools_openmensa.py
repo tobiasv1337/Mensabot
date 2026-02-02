@@ -20,11 +20,13 @@ from .schemas import (
     CanteenSearchResultDTO,
     CanteenSearchResponseDTO,
     MenuResponseDTO,
+    MenuResponsePublicDTO,
     MenuBatchRequestDTO,
-    MenuBatchResponseDTO,
+    MenuBatchResponsePublicDTO,
     MenuDietFilter,
     PriceCategory,
     _canteen_to_dto,
+    MealPublicDTO,
 
     # OSM opening-hours DTOs
     OSMResolveForCanteenResponseDTO,
@@ -43,6 +45,26 @@ from .services.openmensa import fetch_single_menu, normalize_menu_date
 
 CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
+
+
+def _to_public_menu(menu: MenuResponseDTO) -> MenuResponsePublicDTO:
+    return MenuResponsePublicDTO(
+        canteen_id=menu.canteen_id,
+        date=menu.date,
+        status=menu.status,
+        meals=[
+            MealPublicDTO(
+                name=meal.name,
+                category=meal.category,
+                prices=meal.prices,
+                diet_type=meal.diet_type,
+                allergens=meal.allergens,
+            )
+            for meal in menu.meals
+        ],
+        total_meals=menu.total_meals,
+        returned_meals=menu.returned_meals,
+    )
 
 
 # ------------------------------ OpenMensa tools ------------------------------
@@ -153,7 +175,7 @@ async def get_menu_for_date(
     diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.")] = None,
     price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Null = no filter.")] = None,
-) -> MenuResponseDTO:
+) -> MenuResponsePublicDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
     
@@ -180,7 +202,7 @@ async def get_menu_for_date(
 
     normalized_date, error_response = normalize_menu_date(canteen_id, date)
     if error_response is not None:
-        return error_response
+        return _to_public_menu(error_response)
 
     def _fetch_menu():
         with make_openmensa_client() as client:
@@ -194,7 +216,8 @@ async def get_menu_for_date(
             )
 
     async with get_io_semaphore():
-        return await anyio.to_thread.run_sync(_fetch_menu)
+        menu = await anyio.to_thread.run_sync(_fetch_menu)
+        return _to_public_menu(menu)
 
 
 @mcp.tool()
@@ -209,7 +232,7 @@ async def get_menus_batch(
             ),
         ),
     ],
-) -> MenuBatchResponseDTO:
+) -> MenuBatchResponsePublicDTO:
     """
     Fetch menus for multiple canteens/dates in one efficient call.
 
@@ -232,7 +255,7 @@ async def get_menus_batch(
             ```
     """
 
-    results: list[MenuResponseDTO] = []
+    results: list[MenuResponsePublicDTO] = []
 
     def _fetch_batch() -> list[MenuResponseDTO]:
         _results: list[MenuResponseDTO] = []
@@ -241,20 +264,22 @@ async def get_menus_batch(
                 normalized_date, error_response = normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
 
                 if error_response is not None:
-                    _results.append(error_response)
+                    results.append(_to_public_menu(error_response))
                     continue
 
                 normalized_diet_filter = req.diet_filter or MenuDietFilter.all
                 normalized_exclude_allergens = req.exclude_allergens or []
 
-                _results.append(
-                    fetch_single_menu(
-                        client,
-                        req.canteen_id,
-                        normalized_date,
-                        normalized_diet_filter,
-                        normalized_exclude_allergens,
-                        req.price_category,
+                results.append(
+                    _to_public_menu(
+                        fetch_single_menu(
+                            client,
+                            req.canteen_id,
+                            normalized_date,
+                            normalized_diet_filter,
+                            normalized_exclude_allergens,
+                            req.price_category,
+                        )
                     )
                 )
         return _results
@@ -262,7 +287,7 @@ async def get_menus_batch(
     async with get_io_semaphore():
         results = await anyio.to_thread.run_sync(_fetch_batch)
 
-    return MenuBatchResponseDTO(results=results)
+    return MenuBatchResponsePublicDTO(results=results)
 
 
 # ------------------------------ OSM opening hours tools ------------------------------
