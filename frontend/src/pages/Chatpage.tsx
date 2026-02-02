@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../types/navigation";
@@ -60,19 +60,11 @@ const ChatPage: React.FC = () => {
     return () => document.body.classList.remove(className);
   }, [activeNav]);
 
-  const chatsVersion = useSyncExternalStore(
-    Chats.subscribe,
-    Chats.getVersion,
-    Chats.getVersion
-  );
-  const recentChats: ChatSummary[] = useMemo(
-    () => Chats.listPage(0, chatPages * CHAT_PAGE_SIZE),
-    [chatPages, chatsVersion]
-  );
-  const hasMoreChats = useMemo(
-    () => Chats.listPage(recentChats.length, 1).length > 0,
-    [recentChats.length, chatsVersion]
-  );
+
+  useSyncExternalStore(Chats.subscribe, Chats.getVersion, Chats.getVersion);
+
+  const recentChats = Chats.listPage(0, chatPages * CHAT_PAGE_SIZE);
+  const hasMoreChats = Chats.listPage(recentChats.length, 1).length > 0;
 
   const activateChat = useCallback((id: string, options?: { menuCanteen?: Canteen | null }) => {
     const nextChat = Chats.getById(id, true)!;

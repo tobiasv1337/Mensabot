@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { getApiClient } from "../../services/apiClient";
-import { ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
+import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
@@ -35,7 +35,7 @@ const isNearBottom = (el: HTMLDivElement) => {
 };
 
 type ChatProps = {
-  chat: ChatType;
+  chat: ChatModel;
   filters: ChatFilters;
   onFiltersChange: (filters: ChatFilters) => void;
   onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
@@ -127,12 +127,11 @@ const Chat: React.FC<ChatProps> = ({
   }, [isSending, onStartNewChat]);
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat: ChatType, dateOverride?: string, dateLabel?: string) => {
+    async (canteen: Canteen, targetChat: ChatModel, dateOverride?: string, dateLabel?: string) => {
       const dateText = dateLabel ? ` für ${dateLabel}` : " für heute";
       targetChat.addMessage(
         new ChatMessage("user", `Zeige mir den Speiseplan der Mensa ${canteen.name}${dateText}.`)
       );
-
       const requestId = ++menuRequestId.current;
       try {
         const menu = await client.getCanteenMenu(
