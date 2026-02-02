@@ -12,7 +12,6 @@ import { MensaBotClient } from './services/api'
 import ChatPage from './pages/Chatpage'
 import mensabotLogo from './assets/mensabot-logo-gradient-round.svg'
 import { Button } from './components/button/button';
-import mensabotLogo from './assets/react.svg';
 import { lightTheme } from './theme/colors.ts';
 
 const AppContainer = styled.main`
