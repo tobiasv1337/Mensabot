@@ -144,15 +144,15 @@ interface SidebarProps {
 const getIcon = (item: string) => {
   switch (item) {
     case "Home":
-      return "🏠";
+      return <HomeIcon />;
     case "ChatBot":
-      return "💬";
+      return <ChatIcon />;
     case "Mensen":
-      return "🍴";
+      return <MensenIcon />;
     case "Über Uns":
-      return "👤";
+      return <AboutUsIcon />;
     case "Kontakt":
-      return "📇";
+      return <ContactIcon />;
     default:
       return "•";
   }
@@ -196,34 +196,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         <S.Content>
           {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
         
-        {/* TODO Entfernen Delete when finished
-        <S.NavSection>
-          {navItems.map((n) => (
-            <S.NavButton
-              key={n}
-              active={activeNav === n}
-              collapsed={isCollapsed}
-              onClick={() => {
-                onNavClick(n);
-
-                if (mode === "drawer") {
-                  onCloseDrawer();
-                }
-
-                if (mode === "desktop" && !isCollapsed) {
-                  onToggleCollapse?.();
-                }
-              }}
-              title={isCollapsed ? n : undefined}
-            >
-              <S.IconWrapper>{getIcon(n)}</S.IconWrapper>
-              <S.ButtonText collapsed={isCollapsed}>
-                {n}
-              </S.ButtonText>
-            </S.NavButton>
-          ))}
-        </S.NavSection>*/}
-
         <S.NavSection>
           {navItems.map((n) => (
             <Button
@@ -253,43 +225,44 @@ const Sidebar: React.FC<SidebarProps> = ({
     <S.SectionTitle>Einstellungen</S.SectionTitle>
 
     <S.NavSection>
-      <S.NavButton collapsed={isCollapsed}>
-        <S.IconWrapper>⭐</S.IconWrapper>
-        <S.ButtonText collapsed={isCollapsed}>
-          Favoriten
-        </S.ButtonText>
-      </S.NavButton>
-
-      <S.NavButton collapsed={isCollapsed}>
-        <S.IconWrapper>⚙️</S.IconWrapper>
-        <S.ButtonText collapsed={isCollapsed}>
+      <Button 
+        variant="default" 
+        size="fill"
+        collapsed={isCollapsed}>
+        <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
+        <ButtonTextWrapper collapsed={isCollapsed}>
           Einstellungen
-        </S.ButtonText>
-      </S.NavButton>
-
-      <S.NavButton collapsed={isCollapsed}>
-        <S.IconWrapper>🔀</S.IconWrapper>
-        <S.ButtonText collapsed={isCollapsed}>
-          Shortcuts
-        </S.ButtonText>
-      </S.NavButton>
-
-      <S.NavButton collapsed={isCollapsed}>
-        <S.IconWrapper>📍</S.IconWrapper>
-        <S.ButtonText collapsed={isCollapsed}>
-          Karte
-        </S.ButtonText>
-      </S.NavButton>
+        </ButtonTextWrapper>
+      </Button>
 
       <Button 
         variant="default" 
         size="fill"
-        onClick={() => toggleMode("dark")}
-      >
-        <ButtonIconWrapper>
-          <img src={mensabotLogo} alt="Mensabot" />
-        </ButtonIconWrapper>
-        <ButtonTextWrapper>Chathistorie</ButtonTextWrapper>
+        collapsed={isCollapsed}>
+        <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
+        <ButtonTextWrapper collapsed={isCollapsed}>
+          Shortcuts
+        </ButtonTextWrapper>
+      </Button>
+
+      <Button 
+        variant="default" 
+        size="fill"
+        collapsed={isCollapsed}>
+        <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
+        <ButtonTextWrapper collapsed={isCollapsed}>
+          Karte
+        </ButtonTextWrapper>
+      </Button>
+
+      <Button 
+        variant="default" 
+        size="fill"
+        collapsed={isCollapsed}>
+        <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
+        <ButtonTextWrapper collapsed={isCollapsed}>
+          Neuen Chat starten
+        </ButtonTextWrapper>
       </Button>
     </S.NavSection>
   </>
