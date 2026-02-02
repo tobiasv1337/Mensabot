@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult, MenuResponse, PriceInfo } from "../../services/api";
-import { MensaBotClient } from "../../services/api";
+import { getApiClient } from "../../services/apiClient";
 import { ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
@@ -13,8 +13,6 @@ import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
 const WELCOME_TEXT =
   "Hallo! Ich bin dein Mensabot.\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nWelche Präferenzen hast du?";
@@ -303,7 +301,7 @@ const Chat: React.FC<ChatProps> = ({
   shortcuts,
   onCreateShortcut,
 }) => {
-  const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
+  const client = useMemo(() => getApiClient(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 

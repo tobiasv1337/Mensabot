@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { MensaBotClient } from "../services/api";
+import { getApiClient } from "../services/apiClient";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
 import { defaultChatFilters } from "../services/chats";
 import ShortcutModal from "../components/shortcuts/ShortcutModal";
 import ConfirmModal from "../components/modal/ConfirmModal";
 import { DIET_OPTIONS, getAllergenLabel } from "../components/chat/filterData";
 import * as S from "./ShortcutsPage.styles";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
 type ShortcutsPageProps = {
   shortcuts: Shortcut[];
@@ -22,7 +20,7 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
   onUpdateShortcut,
   onDeleteShortcut,
 }) => {
-  const client = useMemo(() => new MensaBotClient(API_BASE_URL), [API_BASE_URL]);
+  const client = useMemo(() => getApiClient(), []);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [editingId, setEditingId] = useState<string | null>(null);
