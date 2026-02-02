@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import * as S from "./sidebar.styles";
-import type { NavItem } from "../../types/navigation";
-import { useTheme } from "../../theme/themeProvider";
+import type { NavItem } from "../header/header";
+import { useTheme } from "../../theme/useTheme";
 import type { ChatSummary } from "../../services/chats";
 import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";

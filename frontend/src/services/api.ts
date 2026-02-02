@@ -128,7 +128,7 @@ export class MensaBotClient {
 
 		try {
 			return await request.json();
-		} catch (err) {
+		} catch {
 			throw new Error("API returned invalid JSON");
 		}
 	}
@@ -150,7 +150,7 @@ export class MensaBotClient {
 		let response: unknown;
 		try {
 			response = await request.json();
-		} catch (err) {
+		} catch {
 			throw new Error("Chat API returned invalid JSON");
 		}
 

@@ -1,4 +1,4 @@
-import { useTheme } from '../theme/themeProvider'
+import { useTheme } from '../theme/useTheme'
 import styled from 'styled-components'
 
 const DemoContainer = styled.div`

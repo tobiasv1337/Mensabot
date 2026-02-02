@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import type { MensaBotClient } from "../../services/api";
 import type { ChatFilters } from "../../services/chats";
 import type { ShortcutInput } from "../../services/shortcuts";
@@ -11,7 +11,8 @@ import * as S from "../modal/modal.styles";
 type ShortcutModalProps = {
   isOpen: boolean;
   mode: "create" | "edit";
-  initialData: ShortcutInput;
+  value: ShortcutInput;
+  onChange: (next: ShortcutInput) => void;
   client: MensaBotClient;
   onSave: (data: ShortcutInput) => void;
   onCancel: () => void;
@@ -20,40 +21,39 @@ type ShortcutModalProps = {
 const ShortcutModal: React.FC<ShortcutModalProps> = ({
   isOpen,
   mode,
-  initialData,
+  value,
+  onChange,
   client,
   onSave,
   onCancel,
 }) => {
-  const [name, setName] = useState(initialData.name);
-  const [prompt, setPrompt] = useState(initialData.prompt);
-  const [filters, setFilters] = useState<ChatFilters>(initialData.filters);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setName(initialData.name);
-    setPrompt(initialData.prompt);
-    setFilters(initialData.filters);
-    setError("");
-  }, [isOpen, initialData]);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const handleSave = useCallback(() => {
-    const trimmedName = name.trim();
+    const trimmedName = value.name.trim();
     if (!trimmedName) {
-      setError("Bitte gib einen Namen für den Shortcut an.");
+      setHasSubmitted(true);
       return;
     }
-    setError("");
+    setHasSubmitted(false);
     onSave({
       name: trimmedName,
-      prompt,
+      prompt: value.prompt,
       filters: {
-        ...filters,
-        allergens: normalizeAllergenList(filters.allergens),
+        ...value.filters,
+        allergens: normalizeAllergenList(value.filters.allergens),
       },
     });
-  }, [name, prompt, filters, onSave]);
+  }, [value, onSave]);
+
+  const handleCancel = useCallback(() => {
+    setHasSubmitted(false);
+    onCancel();
+  }, [onCancel]);
+
+  const clearSubmitted = useCallback(() => {
+    if (hasSubmitted) setHasSubmitted(false);
+  }, [hasSubmitted]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -69,11 +69,12 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
   }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
+  const nameError = hasSubmitted ? "Bitte gib einen Namen für den Shortcut an." : "";
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onCancel}
+      onClose={handleCancel}
       ariaLabel={mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}
     >
       <S.ModalHeader>
@@ -83,7 +84,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
             Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.
           </S.ModalSubtitle>
         </div>
-        <S.CloseButton type="button" onClick={onCancel}>
+        <S.CloseButton type="button" onClick={handleCancel}>
           Schließen
         </S.CloseButton>
       </S.ModalHeader>
@@ -93,10 +94,13 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
           <S.FieldLabel htmlFor="shortcut-name">Name</S.FieldLabel>
           <S.TextInput
             id="shortcut-name"
-            value={name}
+            value={value.name}
             onChange={(event) => {
-              setName(event.target.value);
-              if (error) setError("");
+              clearSubmitted();
+              onChange({
+                ...value,
+                name: event.target.value,
+              });
             }}
             placeholder="z. B. Mensa Dienstag"
           />
@@ -106,22 +110,38 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
           <S.FieldLabel htmlFor="shortcut-prompt">Prompt</S.FieldLabel>
           <S.TextArea
             id="shortcut-prompt"
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
+            value={value.prompt}
+            onChange={(event) => {
+              clearSubmitted();
+              onChange({
+                ...value,
+                prompt: event.target.value,
+              });
+            }}
             placeholder="Nachricht, die im Chat eingefügt wird"
           />
         </S.FieldGrid>
 
         <S.FiltersSection>
-          <FiltersEditor filters={filters} onChange={setFilters} client={client} />
+          <FiltersEditor
+            filters={value.filters}
+            onChange={(nextFilters: ChatFilters) => {
+              clearSubmitted();
+              onChange({
+                ...value,
+                filters: nextFilters,
+              });
+            }}
+            client={client}
+          />
         </S.FiltersSection>
 
-        {error && <ChatStyles.InlineError>{error}</ChatStyles.InlineError>}
+        {nameError && <ChatStyles.InlineError>{nameError}</ChatStyles.InlineError>}
       </S.ModalBody>
 
       <S.ModalFooter>
         <S.FooterNote>Shortcuts werden lokal im Browser gespeichert.</S.FooterNote>
-        <ChatStyles.ActionButton type="button" $variant="secondary" onClick={onCancel}>
+        <ChatStyles.ActionButton type="button" $variant="secondary" onClick={handleCancel}>
           Abbrechen
         </ChatStyles.ActionButton>
         <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleSave}>

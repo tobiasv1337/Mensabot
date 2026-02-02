@@ -115,7 +115,7 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
 
         if (requestId !== canteenRequestId.current) return;
         setCanteenResults(response.results);
-      } catch (error) {
+      } catch {
         if (requestId !== canteenRequestId.current) return;
         setCanteenError("Mensen konnten nicht geladen werden.");
       } finally {

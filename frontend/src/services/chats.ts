@@ -256,6 +256,7 @@ export class Chat {
 
 export class Chats {
 	private static listeners = new Set<() => void>();
+	private static version = 0;
 
 	static subscribe(listener: () => void) {
 		Chats.listeners.add(listener);
@@ -265,13 +266,12 @@ export class Chats {
 	}
 
 	private static notify() {
-		Chats.listeners.forEach((listener) => {
-			try {
-				listener();
-			} catch (error) {
-				console.error("Error in chat listener:", error);
-			}
-		});
+		Chats.version += 1;
+		Chats.listeners.forEach((listener) => listener());
+	}
+
+	static getVersion() {
+		return Chats.version;
 	}
 
 	private static saveIndex(index: ChatIndex) {

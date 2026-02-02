@@ -1,24 +1,7 @@
-import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from "react"
+import React, { useCallback, useEffect, useState, useMemo } from "react"
 import { ThemeProvider as StyledThemeProvider } from "styled-components"
 import { themes } from "./colors"
-
-type ThemeMode = "light" | "system" | "dark"
-
-interface ThemeContextType {
-    mode: ThemeMode;
-    currentTheme: typeof themes.light;
-    toggleMode: (mode: ThemeMode) => void;
-    // boolean to indicate if light/dark mode is active and block system changes
-    lightMode: boolean;
-    darkMode: boolean;
-}
-
-const ThemeContext = createContext<ThemeContextType>({ 
-    mode: "system", 
-    currentTheme: themes.light, 
-    toggleMode: () => {}, 
-    lightMode: false, 
-    darkMode: false, })
+import { ThemeContext, type ThemeMode } from "./themeContext"
 
 // helper function to get system preference
 const getSystemPreference = (): "light" | "dark" => {
@@ -69,7 +52,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         toggleMode,
         lightMode: mode === "light" || (mode === "system" && systemMode === "light"),
         darkMode: mode === "dark" || (mode === "system" && systemMode === "dark"),
-    }), [mode, systemMode, activeTheme]);
+    }), [mode, systemMode, activeTheme, toggleMode]);
 
     return (
         <ThemeContext.Provider value={contextValue}>
@@ -79,5 +62,3 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         </ThemeContext.Provider>
     )
 };
-
-export const useTheme = () => useContext(ThemeContext)
