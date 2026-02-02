@@ -284,6 +284,10 @@ class CanteenIndex:
         self._cities = {e.city_norm for e in self._entries if e.city_norm}
         self._city_centroids = self._build_city_centroids(self._entries)
 
+    @property
+    def city_count(self) -> int:
+        return len(self._cities)
+
     @classmethod
     def from_dict(cls, payload: dict) -> CanteenIndex:
         if not isinstance(payload, dict):

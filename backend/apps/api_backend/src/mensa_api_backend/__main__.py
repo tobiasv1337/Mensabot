@@ -617,7 +617,7 @@ async def list_canteens(
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
-            total_cities=len(index._cities),
+            total_cities=index.city_count,
         ),
         total_results=total,
     )
@@ -674,7 +674,7 @@ async def search_canteens(
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
-            total_cities=len(index._cities),
+            total_cities=index.city_count,
         ),
     )
 
