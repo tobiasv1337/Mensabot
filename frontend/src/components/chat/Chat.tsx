@@ -144,7 +144,7 @@ const Chat: React.FC<ChatProps> = ({
         shouldAutoScrollRef.current = true;
         targetChat.addMessage(new ChatMessage("assistant", message));
         setVersion((v) => v + 1);
-      } catch (error) {
+      } catch {
         if (requestId !== menuRequestId.current) return;
         shouldAutoScrollRef.current = true;
         targetChat.addMessage(
@@ -232,7 +232,7 @@ const Chat: React.FC<ChatProps> = ({
     }
 
     setLocationPromptHandled(true);
-  }, [chat.messages.length]);
+  }, [version, chat]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -278,7 +278,7 @@ const Chat: React.FC<ChatProps> = ({
 
           updateFiltersPartial({ canteens: [selected] });
           await fetchAndAppendMenu(selected, chat, parsed.dateISO, parsed.dateToken);
-        } catch (error) {
+        } catch {
           chat.addMessage(
             new ChatMessage("assistant", "❌ Mensa konnte nicht geladen werden. Bitte versuche es erneut.")
           );
@@ -294,8 +294,8 @@ const Chat: React.FC<ChatProps> = ({
         shouldAutoScrollRef.current = true;
         await chat.send(client, trimmed, { includeToolCalls: true });
         setVersion((v) => v + 1);
-      } catch (error) {
-        console.error("Chat send failed:", error);
+      } catch (err) {
+        console.error("Chat send failed:", err);
         chat.addMessage(
           new ChatMessage(
             "assistant",
@@ -516,7 +516,7 @@ const Chat: React.FC<ChatProps> = ({
 
         if (requestId !== commandRequestId.current) return;
         setCommandCanteenResults(response.results);
-      } catch (error) {
+      } catch {
         if (requestId !== commandRequestId.current) return;
         setCommandCanteenError("Mensen konnten nicht geladen werden.");
       } finally {
@@ -946,7 +946,8 @@ const Chat: React.FC<ChatProps> = ({
         <ShortcutModal
           isOpen={shortcutModalOpen}
           mode="create"
-          initialData={shortcutDraft}
+          value={shortcutDraft}
+          onChange={setShortcutDraft}
           client={client}
           onCancel={() => setShortcutModalOpen(false)}
           onSave={handleSaveShortcut}

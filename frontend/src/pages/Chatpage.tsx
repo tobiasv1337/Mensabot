@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../types/navigation";
@@ -45,15 +45,8 @@ const ChatPage: React.FC = () => {
   }, [activeChatId]);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
-  const pendingMenuCanteen = useRef<Canteen | null>(null);
 
   const [chatPages, setChatPages] = useState(1);
-  const [recentChats, setRecentChats] = useState<ChatSummary[]>(() =>
-    Chats.listPage(0, CHAT_PAGE_SIZE)
-  );
-  const [hasMoreChats, setHasMoreChats] = useState(() =>
-    Chats.listPage(CHAT_PAGE_SIZE, 1).length > 0
-  );
 
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
 
@@ -67,31 +60,33 @@ const ChatPage: React.FC = () => {
     return () => document.body.classList.remove(className);
   }, [activeNav]);
 
-  const refreshChatList = useCallback((pages: number) => {
-    const items = Chats.listPage(0, pages * CHAT_PAGE_SIZE);
-    setRecentChats(items);
-    setHasMoreChats(Chats.listPage(items.length, 1).length > 0);
+  const chatsVersion = useSyncExternalStore(
+    Chats.subscribe,
+    Chats.getVersion,
+    Chats.getVersion
+  );
+  const recentChats: ChatSummary[] = useMemo(
+    () => Chats.listPage(0, chatPages * CHAT_PAGE_SIZE),
+    [chatPages, chatsVersion]
+  );
+  const hasMoreChats = useMemo(
+    () => Chats.listPage(recentChats.length, 1).length > 0,
+    [recentChats.length, chatsVersion]
+  );
+
+  const activateChat = useCallback((id: string, options?: { menuCanteen?: Canteen | null }) => {
+    const nextChat = Chats.getById(id, true)!;
+    setActiveChatId(id);
+    setChat(nextChat);
+    setFilters(nextChat.filters ?? defaultChatFilters);
+    setMenuCanteen(options?.menuCanteen ?? null);
   }, []);
 
   useEffect(() => {
-    refreshChatList(chatPages);
-  }, [chatPages, refreshChatList]);
-
-  useEffect(() => {
-    const unsubscribe = Chats.subscribe(() => refreshChatList(chatPages));
-    return unsubscribe;
-  }, [chatPages, refreshChatList]);
-
-  useEffect(() => {
-    if (activeChatId === "init_pending") return;
-
-    const nextChat = Chats.getById(activeChatId, true)!;
-    setChat(nextChat);
-    setFilters(nextChat.filters ?? defaultChatFilters);
-    setMenuCanteen(pendingMenuCanteen.current);
-    pendingMenuCanteen.current = null;
+    chat.touch();
     Chats.setActiveId(activeChatId);
-  }, [activeChatId]);
+  }, [chat, activeChatId]);
+
 
   const updateChatFilters = useCallback(
     (next: ChatFilters) => {
@@ -117,30 +112,28 @@ const ChatPage: React.FC = () => {
           : baseFilters.canteens ?? [],
       };
       fresh.setFilters(nextFilters);
-      pendingMenuCanteen.current = options?.preselectedCanteen ?? null;
-      setActiveChatId(fresh.id);
+      activateChat(fresh.id, { menuCanteen: options?.preselectedCanteen ?? null });
       setActiveNav("ChatBot");
     },
-    [filters]
+    [filters, activateChat]
   );
 
   const handleDeleteAllChats = useCallback(() => {
     Chats.deleteAll();
     const fresh = Chats.create();
     setChatPages(1);
-    pendingMenuCanteen.current = null;
-    setActiveChatId(fresh.id);
+    activateChat(fresh.id);
     setActiveNav("ChatBot");
     setDrawerOpen(false);
-  }, []);
+  }, [activateChat]);
 
   const handleSelectChat = useCallback(
     (id: string) => {
-      setActiveChatId(id);
+      activateChat(id);
       setActiveNav("ChatBot");
       setDrawerOpen(false);
     },
-    []
+    [activateChat]
   );
 
   const handleSelectCanteen = useCallback(

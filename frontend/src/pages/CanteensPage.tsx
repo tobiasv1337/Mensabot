@@ -77,7 +77,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
         setTotalResults(response.total_results);
         setTotalCanteens(response.index.total_canteens);
         setTotalCities(response.index.total_cities);
-      } catch (err) {
+      } catch {
         if (currentRequest !== requestId.current) return;
         setError("Mensen konnten nicht geladen werden. Bitte versuche es erneut.");
       } finally {
@@ -97,10 +97,10 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
     return () => window.clearTimeout(timer);
   }, [query, sortBy, userLocation, fetchData]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!pageInfo?.next_page || loadingState) return;
     fetchData(query, pageInfo.next_page, true, sortBy, userLocation);
-  };
+  }, [pageInfo?.next_page, loadingState, fetchData, query, sortBy, userLocation]);
 
   const isSearching = query.trim().length > 0;
   const hasMore = pageInfo?.has_next;
@@ -122,7 +122,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
     }
 
     return () => observer.disconnect();
-  }, [hasMore, loadingState, pageInfo, handleLoadMore]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasMore, loadingState, handleLoadMore]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();

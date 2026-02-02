@@ -150,7 +150,8 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
         <ShortcutModal
           isOpen={modalOpen}
           mode={modalMode}
-          initialData={draft}
+          value={draft}
+          onChange={setDraft}
           client={client}
           onCancel={() => setModalOpen(false)}
           onSave={handleSave}
