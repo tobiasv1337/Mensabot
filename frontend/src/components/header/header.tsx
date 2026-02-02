@@ -30,8 +30,8 @@ const Header: React.FC<HeaderProps> = ({
       {/* Center: Brand immer mittig */}
       <S.Left>
         <S.Brand>
-          <S.LogoImg src={mensaLogo} alt="MensaMatch Logo" />
-          <S.Title>MensaMatch</S.Title>
+          <S.LogoImg src={mensaLogo} alt="Mensabot Logo" />
+          <S.Title>Mensabot</S.Title>
         </S.Brand>
       </S.Left>
 
