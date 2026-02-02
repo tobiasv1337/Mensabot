@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Canteen, CanteenSearchResult, MenuResponse, PriceInfo } from "../../services/api";
+import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { getApiClient } from "../../services/apiClient";
 import { ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
@@ -11,6 +11,15 @@ import ShortcutModal from "../shortcuts/ShortcutModal";
 import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
+import {
+  buildSlashInput,
+  formatCanteenCommand,
+  parseSlashCommand,
+  toLocalDateToken,
+  toLocalISODate,
+  WEEKDAY_LABELS,
+} from "./chatCommands";
+import { buildMenuMarkdown } from "./chatFormatting";
 import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
 
@@ -41,256 +50,7 @@ const cloneFilters = (filters: ChatFilters): ChatFilters => ({
   canteens: [...filters.canteens],
 });
 
-const PRICE_FORMATTER = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 2,
-});
 
-const formatPrice = (value?: number | null) => {
-  if (value === null || value === undefined) return null;
-  return PRICE_FORMATTER.format(value);
-};
-
-const formatPriceCompact = (prices: PriceInfo) => {
-  const values = [
-    prices.students,
-    prices.employees,
-    prices.pupils,
-    prices.others,
-  ]
-    .map((price) => formatPrice(price))
-    .filter((value): value is string => Boolean(value));
-
-  return values.length > 0 ? ` (${values.join(", ")})` : "";
-};
-
-const DIET_SYMBOLS: Record<string, string> = {
-  vegan: "🌱",
-  vegetarian: "🥕",
-  meat: "🥩",
-  unknown: "🍽️",
-};
-
-const WEEKDAY_INDEX: Record<string, number> = {
-  monday: 1,
-  montag: 1,
-  tuesday: 2,
-  dienstag: 2,
-  wednesday: 3,
-  mittwoch: 3,
-  thursday: 4,
-  donnerstag: 4,
-  friday: 5,
-  freitag: 5,
-  saturday: 6,
-  samstag: 6,
-  sunday: 0,
-  sonntag: 0,
-};
-
-const WEEKDAY_LABELS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-
-const normalizeDateToken = (token: string) =>
-  token
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z]/g, "");
-
-const toLocalISODate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const toLocalDateToken = (date: Date) => {
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}.${month}.${year}`;
-};
-
-const parseSlashCommand = (
-  rawInput: string
-): { query: string; rawQuery: string; dateISO?: string; dateToken?: string } => {
-  let working = rawInput.trim();
-  let dateISO: string | undefined;
-  let dateToken: string | undefined;
-
-  const today = new Date();
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-  const dateMatch = working.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
-  if (dateMatch) {
-    const day = Number.parseInt(dateMatch[1], 10);
-    const month = Number.parseInt(dateMatch[2], 10);
-    let year = dateMatch[3] ? Number.parseInt(dateMatch[3], 10) : todayDate.getFullYear();
-    if (dateMatch[3] && dateMatch[3].length === 2) {
-      year += 2000;
-    }
-
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      let candidate = new Date(year, month - 1, day);
-      if (!dateMatch[3] && candidate < todayDate) {
-        candidate = new Date(year + 1, month - 1, day);
-      }
-      if (
-        candidate.getFullYear() === (dateMatch[3] ? year : candidate.getFullYear()) &&
-        candidate.getMonth() === month - 1 &&
-        candidate.getDate() === day
-      ) {
-        dateISO = toLocalISODate(candidate);
-        dateToken = dateMatch[0];
-      }
-    }
-
-    working = working.replace(dateMatch[0], " ");
-    working = working.replace(/\s+/g, " ");
-  }
-
-  const tokens = working.split(/\s+/).filter(Boolean);
-  const remainingTokens: string[] = [];
-
-  for (const token of tokens) {
-    const cleaned = normalizeDateToken(token);
-    if (cleaned === "today" || cleaned === "heute") {
-      if (!dateISO) {
-        dateISO = toLocalISODate(todayDate);
-        dateToken = token;
-      }
-      continue;
-    }
-    if (cleaned === "tomorrow" || cleaned === "morgen") {
-      if (!dateISO) {
-        const tomorrow = new Date(todayDate);
-        tomorrow.setDate(todayDate.getDate() + 1);
-        dateISO = toLocalISODate(tomorrow);
-        dateToken = token;
-      }
-      continue;
-    }
-    if (cleaned === "uebermorgen" || cleaned === "dayaftertomorrow") {
-      if (!dateISO) {
-        const dayAfterTomorrow = new Date(todayDate);
-        dayAfterTomorrow.setDate(todayDate.getDate() + 2);
-        dateISO = toLocalISODate(dayAfterTomorrow);
-        dateToken = token;
-      }
-      continue;
-    }
-    if (WEEKDAY_INDEX[cleaned] !== undefined) {
-      if (!dateISO) {
-        const target = WEEKDAY_INDEX[cleaned];
-        const delta = (target - todayDate.getDay() + 7) % 7 || 7;
-        const targetDate = new Date(todayDate);
-        targetDate.setDate(todayDate.getDate() + delta);
-        dateISO = toLocalISODate(targetDate);
-        dateToken = token;
-      }
-      continue;
-    }
-    remainingTokens.push(token);
-  }
-
-  const rawQuery = remainingTokens.join(" ").trim();
-
-  return {
-    query: rawQuery.replace(/[_-]+/g, " ").trim(),
-    rawQuery,
-    dateISO,
-    dateToken,
-  };
-};
-
-const formatCanteenCommand = (canteen: Canteen) =>
-  canteen.name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^\p{L}\p{N}_-]/gu, "");
-
-const buildSlashInput = (base: string, dateToken?: string, options?: { trailingSpace?: boolean }) => {
-  const trimmed = base.trim();
-  const core = trimmed ? `/${trimmed}` : "/";
-  if (dateToken) return `${core} ${dateToken}`;
-  return options?.trailingSpace ? `${core} ` : core;
-};
-
-type MenuMeal = MenuResponse["meals"][number];
-
-const groupMealsByCategory = (meals: MenuMeal[]) => {
-  const groups = new Map<string, MenuMeal[]>();
-  meals.forEach((meal) => {
-    const key = meal.category?.trim() || "Weitere Gerichte";
-    const existing = groups.get(key);
-    if (existing) {
-      existing.push(meal);
-    } else {
-      groups.set(key, [meal]);
-    }
-  });
-  return Array.from(groups.entries());
-};
-
-const formatGermanMenuDate = (isoDate?: string) => {
-  if (!isoDate) return "";
-  const date = new Date(`${isoDate}T00:00:00`);
-  if (Number.isNaN(date.getTime())) {
-    return isoDate;
-  }
-  const weekday = WEEKDAY_LABELS[date.getDay()];
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${weekday}, ${day}.${month}.${year}`;
-};
-
-const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
-  const lines: string[] = [`### ${canteen.name ?? "Mensa"}`];
-  const metaParts = [canteen.city, canteen.address].filter(Boolean);
-  if (metaParts.length > 0) {
-    lines.push(`_${metaParts.join(" · ")}_`);
-  }
-  const formattedDate = formatGermanMenuDate(menu.date) || menu.date;
-  lines.push(`Speiseplan für **${formattedDate}**`);
-  lines.push("");
-
-  if (menu.status !== "ok") {
-    const statusMessages: Record<MenuResponse["status"], string> = {
-      ok: "",
-      no_menu_published: "Für dieses Datum ist noch kein Speiseplan veröffentlicht.",
-      empty_menu: "Für dieses Datum sind keine Gerichte eingetragen.",
-      filtered_out: "Alle Gerichte wurden durch Filter ausgeschlossen.",
-      invalid_date: "Das Datum ist ungültig.",
-      api_error: "Der Speiseplan konnte gerade nicht geladen werden.",
-    };
-    const severity = menu.status === "api_error" || menu.status === "invalid_date" ? "⚠️" : "ℹ️";
-    lines.push(`> ${severity} **Info:** ${statusMessages[menu.status]}`);
-    return lines.join("\n");
-  }
-
-  if (menu.meals.length === 0) {
-    lines.push("> ℹ️ **Info:** Für dieses Datum sind keine Gerichte eingetragen.");
-    return lines.join("\n");
-  }
-
-  const grouped = groupMealsByCategory(menu.meals);
-  grouped.forEach(([category, meals], groupIndex) => {
-    if (groupIndex > 0) lines.push("");
-    lines.push(`#### ${category}`);
-    meals.forEach((meal) => {
-      const dietSymbol = DIET_SYMBOLS[meal.diet_type] ?? "🍽️";
-      const priceSuffix = formatPriceCompact(meal.prices);
-      lines.push(`- ${dietSymbol} **${meal.name}**${priceSuffix}`);
-    });
-  });
-
-  return lines.join("\n");
-};
 
 const Chat: React.FC<ChatProps> = ({
   chat,
@@ -959,7 +719,7 @@ const Chat: React.FC<ChatProps> = ({
 
       if (item.kind === "canteen") {
         const canteen = item.payload as Canteen;
-        const commandBase = formatCanteenCommand(canteen);
+        const commandBase = formatCanteenCommand(canteen.name);
         setInputValue(
           buildSlashInput(commandBase, slashDateToken, { trailingSpace: !slashDateToken })
         );
