@@ -5,7 +5,8 @@ import type { ShortcutInput } from "../../services/shortcuts";
 import FiltersEditor from "../chat/FiltersEditor";
 import { normalizeAllergenList } from "../chat/filterData";
 import * as ChatStyles from "../chat/chat.styles";
-import * as S from "./shortcuts.styles";
+import Modal from "../modal/Modal";
+import * as S from "../modal/modal.styles";
 
 type ShortcutModalProps = {
   isOpen: boolean;
@@ -70,68 +71,64 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <S.ModalBackdrop onClick={onCancel}>
-      <S.ModalCard
-        role="dialog" aria-modal="true" aria-labelledby="shortcut-modal-title" aria-describedby="shortcut-modal-desc"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <S.ModalHeader>
-          <div>
-            <S.ModalTitle id="shortcut-modal-title">
-              {mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}
-            </S.ModalTitle>
-            <S.ModalSubtitle id="shortcut-modal-desc">
-              Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.
-            </S.ModalSubtitle>
-          </div>
-          <S.CloseButton type="button" onClick={onCancel} aria-label="Schließen">
-            Schließen
-          </S.CloseButton>
-        </S.ModalHeader>
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      ariaLabel={mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}
+    >
+      <S.ModalHeader>
+        <div>
+          <S.ModalTitle>{mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}</S.ModalTitle>
+          <S.ModalSubtitle>
+            Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.
+          </S.ModalSubtitle>
+        </div>
+        <S.CloseButton type="button" onClick={onCancel}>
+          Schließen
+        </S.CloseButton>
+      </S.ModalHeader>
 
-        <S.ModalBody>
-          <S.FieldGrid>
-            <S.FieldLabel htmlFor="shortcut-name">Name</S.FieldLabel>
-            <S.TextInput
-              id="shortcut-name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                if (error) setError("");
-              }}
-              placeholder="z. B. Mensa Dienstag"
-              autoFocus
-            />
-          </S.FieldGrid>
+      <S.ModalBody>
+        <S.FieldGrid>
+          <S.FieldLabel htmlFor="shortcut-name">Name</S.FieldLabel>
+          <S.TextInput
+            id="shortcut-name"
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (error) setError("");
+            }}
+            placeholder="z. B. Mensa Dienstag"
+          />
+        </S.FieldGrid>
 
-          <S.FieldGrid>
-            <S.FieldLabel htmlFor="shortcut-prompt">Prompt</S.FieldLabel>
-            <S.TextArea
-              id="shortcut-prompt"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Nachricht, die im Chat eingefügt wird"
-            />
-          </S.FieldGrid>
+        <S.FieldGrid>
+          <S.FieldLabel htmlFor="shortcut-prompt">Prompt</S.FieldLabel>
+          <S.TextArea
+            id="shortcut-prompt"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="Nachricht, die im Chat eingefügt wird"
+          />
+        </S.FieldGrid>
 
-          <S.FiltersSection>
-            <FiltersEditor filters={filters} onChange={setFilters} client={client} />
-          </S.FiltersSection>
+        <S.FiltersSection>
+          <FiltersEditor filters={filters} onChange={setFilters} client={client} />
+        </S.FiltersSection>
 
-          {error && <ChatStyles.InlineError role="alert" aria-live="polite">{error}</ChatStyles.InlineError>}
-        </S.ModalBody>
+        {error && <ChatStyles.InlineError>{error}</ChatStyles.InlineError>}
+      </S.ModalBody>
 
-        <S.ModalFooter>
-          <S.FooterNote>Shortcuts werden lokal im Browser gespeichert.</S.FooterNote>
-          <ChatStyles.ActionButton type="button" $variant="secondary" onClick={onCancel}>
-            Abbrechen
-          </ChatStyles.ActionButton>
-          <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleSave}>
-            {mode === "create" ? "Shortcut speichern" : "Änderungen speichern"}
-          </ChatStyles.ActionButton>
-        </S.ModalFooter>
-      </S.ModalCard>
-    </S.ModalBackdrop>
+      <S.ModalFooter>
+        <S.FooterNote>Shortcuts werden lokal im Browser gespeichert.</S.FooterNote>
+        <ChatStyles.ActionButton type="button" $variant="secondary" onClick={onCancel}>
+          Abbrechen
+        </ChatStyles.ActionButton>
+        <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleSave}>
+          {mode === "create" ? "Shortcut speichern" : "Änderungen speichern"}
+        </ChatStyles.ActionButton>
+      </S.ModalFooter>
+    </Modal>
   );
 };
 

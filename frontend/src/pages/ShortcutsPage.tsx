@@ -3,9 +3,8 @@ import { MensaBotClient } from "../services/api";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
 import { defaultChatFilters } from "../services/chats";
 import ShortcutModal from "../components/shortcuts/ShortcutModal";
-import * as ModalStyles from "../components/shortcuts/shortcuts.styles";
+import ConfirmModal from "../components/modal/ConfirmModal";
 import { DIET_OPTIONS, getAllergenLabel } from "../components/chat/filterData";
-import * as ChatStyles from "../components/chat/chat.styles";
 import * as S from "./ShortcutsPage.styles";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -161,43 +160,17 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
       )}
 
       {deleteTarget && (
-        <ModalStyles.ModalBackdrop
-          onClick={() => setDeleteTarget(null)}
-        >
-          <ModalStyles.ModalCard
-            role="alertdialog" aria-modal="true" aria-labelledby="delete-confirmation-title" aria-describedby="delete-confirmation-desc"
-            onClick={(event) => event.stopPropagation()} tabIndex={-1} ref={(node) => node?.focus()}
-          >
-            <ModalStyles.ModalHeader>
-              <div>
-                <ModalStyles.ModalTitle id="delete-confirmation-title">Shortcut löschen</ModalStyles.ModalTitle>
-                <ModalStyles.ModalSubtitle id="delete-confirmation-desc">
-                  "{deleteTarget.name}" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
-                </ModalStyles.ModalSubtitle>
-              </div>
-              <ModalStyles.CloseButton type="button" onClick={() => setDeleteTarget(null)}>
-                Schließen
-              </ModalStyles.CloseButton>
-            </ModalStyles.ModalHeader>
-
-            <ModalStyles.ModalBody>
-              <ModalStyles.FieldGrid>
-                <ModalStyles.FieldLabel>Zu löschender Shortcut</ModalStyles.FieldLabel>
-                <ModalStyles.DeleteName>{deleteTarget.name}</ModalStyles.DeleteName>
-              </ModalStyles.FieldGrid>
-            </ModalStyles.ModalBody>
-
-            <ModalStyles.ModalFooter>
-              <ModalStyles.FooterNote>Shortcuts werden lokal im Browser gespeichert.</ModalStyles.FooterNote>
-              <ChatStyles.ActionButton type="button" $variant="secondary" onClick={() => setDeleteTarget(null)}>
-                Abbrechen
-              </ChatStyles.ActionButton>
-              <ChatStyles.ActionButton type="button" $variant="primary" onClick={confirmDelete}>
-                Löschen
-              </ChatStyles.ActionButton>
-            </ModalStyles.ModalFooter>
-          </ModalStyles.ModalCard>
-        </ModalStyles.ModalBackdrop>
+        <ConfirmModal
+          isOpen={Boolean(deleteTarget)}
+          title="Shortcut löschen"
+          subtitle={`"${deleteTarget.name}" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.`}
+          summary={{ label: "Zu löschender Shortcut", value: deleteTarget.name }}
+          note="Shortcuts werden lokal im Browser gespeichert."
+          confirmLabel="Löschen"
+          cancelLabel="Abbrechen"
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
       )}
     </S.Page>
   );

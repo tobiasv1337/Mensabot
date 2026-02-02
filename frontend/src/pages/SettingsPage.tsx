@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Page, Content } from "./PageLayout.styles";
-import * as ModalStyles from "../components/shortcuts/shortcuts.styles";
-import * as ChatStyles from "../components/chat/chat.styles";
+import ConfirmModal from "../components/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
 
 type SettingsPageProps = {
@@ -69,49 +68,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
       </Content>
 
       {deleteOpen && (
-        <ModalStyles.ModalBackdrop onClick={() => setDeleteOpen(false)}>
-          <ModalStyles.ModalCard
-            onClick={(event) => event.stopPropagation()}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-modal-title"
-            aria-describedby="delete-modal-desc"
-          >
-            <ModalStyles.ModalHeader>
-              <div>
-                <ModalStyles.ModalTitle id="delete-modal-title">Alle Chats löschen</ModalStyles.ModalTitle>
-                <ModalStyles.ModalSubtitle id="delete-modal-desc">
-                  Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
-                </ModalStyles.ModalSubtitle>
-              </div>
-              <ModalStyles.CloseButton type="button" onClick={() => setDeleteOpen(false)}>
-                Schließen
-              </ModalStyles.CloseButton>
-            </ModalStyles.ModalHeader>
-
-            <ModalStyles.ModalBody>
-              <ModalStyles.FieldGrid>
-                <ModalStyles.FieldLabel>Zu löschende Daten</ModalStyles.FieldLabel>
-                <ModalStyles.DeleteName>Alle Chats</ModalStyles.DeleteName>
-              </ModalStyles.FieldGrid>
-            </ModalStyles.ModalBody>
-
-            <ModalStyles.ModalFooter>
-              <ModalStyles.FooterNote>Chats werden lokal im Browser gespeichert.</ModalStyles.FooterNote>
-              <ChatStyles.ActionButton
-                type="button"
-                $variant="secondary"
-                onClick={() => setDeleteOpen(false)}
-                ref={cancelButtonRef}
-              >
-                Abbrechen
-              </ChatStyles.ActionButton>
-              <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleConfirmDelete}>
-                Löschen
-              </ChatStyles.ActionButton>
-            </ModalStyles.ModalFooter>
-          </ModalStyles.ModalCard>
-        </ModalStyles.ModalBackdrop>
+        <ConfirmModal
+          isOpen={deleteOpen}
+          title="Alle Chats löschen"
+          subtitle="Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden."
+          summary={{ label: "Zu löschende Daten", value: "Alle Chats" }}
+          note="Chats werden lokal im Browser gespeichert."
+          confirmLabel="Löschen"
+          cancelLabel="Abbrechen"
+          onCancel={() => setDeleteOpen(false)}
+          onConfirm={handleConfirmDelete}
+        />
       )}
     </Page>
   );
