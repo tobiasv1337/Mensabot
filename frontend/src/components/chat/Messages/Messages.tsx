@@ -1,3 +1,4 @@
+import ChatMessageBubble from "../Bubbles/ChatMessageBubble";
 import React, { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 import { List, ScrollArea } from "./Messages.styles";
@@ -25,8 +26,8 @@ const Messages: React.FC<MessagesProps> = ({ messages }) => {
     return (
         <ScrollArea>
             <List>
-                {messages.map((m) => (
-                    <MessageBubble key={m.id} role={m.role} content={m.content} />
+                {messages.map((message, idx) => (
+                    <ChatMessageBubble key={idx} message={message} />
                 ))}
                 <div ref={endRef} />
             </List>
