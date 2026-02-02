@@ -32,7 +32,7 @@ type ChatProps = {
     resetKey?: number;
 };
 
-const ChatPage: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => {
+const ChatPage: React.FC<ChatProps> = () => {
     const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
 
     const scrollRef = useRef<HTMLDivElement>(null);
