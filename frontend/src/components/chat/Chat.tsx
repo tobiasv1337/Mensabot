@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult, MenuResponse, PriceInfo } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
-import { ChatMessage, type Chat, type ChatFilters, defaultChatFilters } from "../../services/chats";
+import { ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
@@ -26,7 +26,7 @@ const isNearBottom = (el: HTMLDivElement) => {
 };
 
 type ChatProps = {
-  chat: Chat;
+  chat: ChatType;
   filters: ChatFilters;
   onFiltersChange: (filters: ChatFilters) => void;
   onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
@@ -355,7 +355,7 @@ const Chat: React.FC<ChatProps> = ({
   }, [isSending, onStartNewChat]);
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat: Chat, dateOverride?: string) => {
+    async (canteen: Canteen, targetChat: ChatType, dateOverride?: string) => {
       const requestId = ++menuRequestId.current;
       try {
         const menu = await client.getCanteenMenu(
