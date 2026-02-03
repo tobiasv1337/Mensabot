@@ -25,7 +25,7 @@ router = APIRouter()
 CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 
 @router.get("/api/canteens", response_model=CanteenListResponse)
-def list_canteens(
+async def list_canteens(
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=500),
     city: str | None = None,
@@ -53,7 +53,7 @@ def list_canteens(
 
 
 @router.get("/api/canteens/search", response_model=CanteenSearchResponse)
-def search_canteens(
+async def search_canteens(
     query: str | None = None,
     city: str | None = None,
     near_lat: float | None = Query(None, ge=-90.0, le=90.0),
@@ -112,7 +112,7 @@ def search_canteens(
 
 
 @router.get("/api/canteens/{canteen_id}", response_model=CanteenOut)
-def get_canteen_info_api(canteen_id: int):
+async def get_canteen_info_api(canteen_id: int):
     cache_key = openmensa_canteen_key(canteen_id)
     cached = shared_cache.get(cache_key)
     if cached is not None:
@@ -136,7 +136,7 @@ def get_canteen_info_api(canteen_id: int):
 
 
 @router.get("/api/canteens/{canteen_id}/menu", response_model=MenuResponseDTO)
-def get_canteen_menu_api(
+async def get_canteen_menu_api(
     canteen_id: int,
     date: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     diet_filter: MenuDietFilter | None = Query(None),
