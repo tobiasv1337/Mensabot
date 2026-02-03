@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useEffect, useState } from "react";
 import * as S from "./chat.styles";
 
 type ScrollablePillRowProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -17,6 +17,8 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
   ...rest
 }) => {
   const Component = (component ?? S.PillRow) as React.ElementType;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: false });
   const dragState = useRef({
     el: null as HTMLDivElement | null,
     startX: 0,
@@ -25,6 +27,36 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
     isDragging: false,
   });
   const dragThreshold = 8;
+
+  const updateScrollState = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const canScrollLeft = el.scrollLeft > 0;
+    const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 1;
+    setScrollState({ canScrollLeft, canScrollRight });
+    
+    // Update classes for styling
+    el.classList.toggle("can-scroll-left", canScrollLeft);
+    el.classList.toggle("can-scroll-right", canScrollRight);
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    updateScrollState();
+    
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+      observer.disconnect();
+    };
+  }, [updateScrollState]);
 
   const handleWheel = useCallback(
     (event: React.WheelEvent<HTMLDivElement>) => {
@@ -161,6 +193,7 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
 
   return (
     <Component
+      ref={containerRef}
       {...rest}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
