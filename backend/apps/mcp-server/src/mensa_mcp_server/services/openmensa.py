@@ -22,6 +22,7 @@ from ..settings import settings
 
 
 CACHE_TTL_MENU_S = 60 * 60
+CACHE_TTL_ERROR_S = 30
 
 
 def _local_today() -> dt.date:
@@ -113,6 +114,8 @@ def fetch_single_menu(
 
     try:
         meals = client.list_meals(canteen_id, normalized_date)
+
+
     except OpenMensaAPIError as e:
         # OpenMensa uses 404 to indicate "no plan published yet"
         if e.status_code == 404:
@@ -127,7 +130,7 @@ def fetch_single_menu(
             shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
             return response
 
-        return MenuResponseDTO(
+        response = MenuResponseDTO(
             canteen_id=canteen_id,
             date=normalized_date,
             status=MenuStatusDTO.api_error,
@@ -135,6 +138,8 @@ def fetch_single_menu(
             total_meals=0,
             returned_meals=0,
         )
+        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_ERROR_S)
+        return response
 
     if not meals:
         response = MenuResponseDTO(

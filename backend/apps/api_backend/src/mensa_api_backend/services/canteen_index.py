@@ -22,7 +22,7 @@ def get_canteen_index_store() -> CanteenIndexStore:
 def load_canteen_index():
     store = get_canteen_index_store()
     with make_openmensa_client() as client:
-        return store.refresh_if_stale(client, ttl_hours=settings.canteen_index_ttl_hours)
+        return store.refresh_if_stale_or_cached(client, ttl_hours=settings.canteen_index_ttl_hours)
 
 
 def canteen_to_out(canteen) -> CanteenOut:
