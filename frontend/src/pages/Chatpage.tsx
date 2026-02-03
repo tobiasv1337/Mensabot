@@ -9,7 +9,7 @@ import ShortcutsPage from "./ShortcutsPage";
 import SettingsPage from "./SettingsPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
-import { Chats, type Chat as ChatSession, type ChatFilters, type ChatSummary, defaultChatFilters } from "../services/chats";
+import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, type ChatSummary, defaultChatFilters } from "../services/chats";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "About", "Contact"];
 const CHAT_PAGE_SIZE = 10;
@@ -19,15 +19,30 @@ const resolveInitialChatId = () => {
   if (activeId && Chats.exists(activeId)) return activeId;
   const recent = Chats.listPage(0, 1)[0]?.id;
   if (recent) return recent;
-  return Chats.create().id;
+  return null;
 };
 
 const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId());
-  const [chat, setChat] = useState<ChatSession>(() => Chats.getById(activeChatId, true)!);
+
+  const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
+
+  const [chat, setChat] = useState<ChatSession>(() => {
+    if (activeChatId === "init_pending") {
+      return new ChatModel("init_pending", [], defaultChatFilters);
+    }
+    return Chats.getById(activeChatId, true)!;
+  });
+
+  // Handle lazy creation of the initial chat to avoid side-effects in render
+  useEffect(() => {
+    if (activeChatId === "init_pending") {
+      const fresh = Chats.create();
+      setActiveChatId(fresh.id);
+    }
+  }, [activeChatId]);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
   const pendingMenuCanteen = useRef<Canteen | null>(null);
@@ -58,6 +73,8 @@ const ChatPage: React.FC = () => {
   }, [chatPages, refreshChatList]);
 
   useEffect(() => {
+    if (activeChatId === "init_pending") return;
+
     const nextChat = Chats.getById(activeChatId, true)!;
     setChat(nextChat);
     setFilters(nextChat.filters ?? defaultChatFilters);

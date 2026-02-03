@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Page, Content } from "./PageLayout.styles";
 import * as ModalStyles from "../components/shortcuts/shortcuts.styles";
 import * as ChatStyles from "../components/chat/chat.styles";
@@ -15,6 +15,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
     setDeleteOpen(false);
     onDeleteAllChats();
   };
+
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (deleteOpen) {
+      cancelButtonRef.current?.focus();
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setDeleteOpen(false);
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [deleteOpen]);
 
   return (
     <Page>
@@ -53,11 +70,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
 
       {deleteOpen && (
         <ModalStyles.ModalBackdrop onClick={() => setDeleteOpen(false)}>
-          <ModalStyles.ModalCard onClick={(event) => event.stopPropagation()}>
+          <ModalStyles.ModalCard
+            onClick={(event) => event.stopPropagation()}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            aria-describedby="delete-modal-desc"
+          >
             <ModalStyles.ModalHeader>
               <div>
-                <ModalStyles.ModalTitle>Alle Chats löschen</ModalStyles.ModalTitle>
-                <ModalStyles.ModalSubtitle>
+                <ModalStyles.ModalTitle id="delete-modal-title">Alle Chats löschen</ModalStyles.ModalTitle>
+                <ModalStyles.ModalSubtitle id="delete-modal-desc">
                   Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
                 </ModalStyles.ModalSubtitle>
               </div>
@@ -75,7 +98,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
 
             <ModalStyles.ModalFooter>
               <ModalStyles.FooterNote>Chats werden lokal im Browser gespeichert.</ModalStyles.FooterNote>
-              <ChatStyles.ActionButton type="button" $variant="secondary" onClick={() => setDeleteOpen(false)}>
+              <ChatStyles.ActionButton
+                type="button"
+                $variant="secondary"
+                onClick={() => setDeleteOpen(false)}
+                ref={cancelButtonRef}
+              >
                 Abbrechen
               </ChatStyles.ActionButton>
               <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleConfirmDelete}>
