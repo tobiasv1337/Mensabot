@@ -151,11 +151,26 @@ export const PillRow = styled.div`
   overflow-x: auto;
   overflow-y: visible;
   padding: 4px 20px 6px;
-  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  mask-image: none;
+  -webkit-mask-image: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
+
+  &.can-scroll-left {
+    mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), black);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), black);
+  }
+
+  &.can-scroll-right {
+    mask-image: linear-gradient(to right, black, black calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black, black calc(100% - 20px), transparent);
+  }
+
+  &.can-scroll-left.can-scroll-right {
+    mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  }
 
   &::-webkit-scrollbar {
     width: 0;
