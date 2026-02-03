@@ -19,6 +19,7 @@ const WELCOME_TEXT =
   "Hallo! Ich bin dein Mensabot.\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nWelche Präferenzen hast du?";
 
 const NEAR_BOTTOM_PX = 120;
+const DEBOUNCE_DELAY_MS = 280;
 
 const isNearBottom = (el: HTMLDivElement) => {
   const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -239,7 +240,7 @@ const groupMealsByCategory = (meals: MenuMeal[]) => {
 };
 
 const buildMenuMarkdown = (canteen: Canteen, menu: MenuResponse) => {
-  const lines: string[] = [`### ${canteen.name}`];
+  const lines: string[] = [`### ${canteen.name ?? "Mensa"}`];
   const metaParts = [canteen.city, canteen.address].filter(Boolean);
   if (metaParts.length > 0) {
     lines.push(`_${metaParts.join(" · ")}_`);
@@ -321,6 +322,7 @@ const Chat: React.FC<ChatProps> = ({
   const [locationError, setLocationError] = useState("");
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
+  const initialMenuFetched = useRef(false);
 
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
@@ -382,7 +384,10 @@ const Chat: React.FC<ChatProps> = ({
   useEffect(() => {
     if (chat.messages.length > 0) return;
     if (menuCanteen) {
-      fetchAndAppendMenu(menuCanteen, chat);
+      if (!initialMenuFetched.current) {
+        initialMenuFetched.current = true;
+        fetchAndAppendMenu(menuCanteen, chat);
+      }
       return;
     }
     chat.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
@@ -714,7 +719,7 @@ const Chat: React.FC<ChatProps> = ({
           setCommandCanteenLoading(false);
         }
       }
-    }, 280);
+    }, DEBOUNCE_DELAY_MS);
 
     return () => window.clearTimeout(timer);
   }, [slashActive, slashQuery, isResolvedSlashCommand, client, commandUserLocation]);
