@@ -70,7 +70,6 @@ const DIET_SYMBOLS: Record<string, string> = {
   vegan: "🌱",
   vegetarian: "🥕",
   meat: "🥩",
-  fish: "🐟",
   unknown: "🍽️",
 };
 
