@@ -150,12 +150,18 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
       )}
 
       {deleteTarget && (
-        <ModalStyles.ModalBackdrop onClick={() => setDeleteTarget(null)}>
-          <ModalStyles.ModalCard onClick={(event) => event.stopPropagation()}>
+        <ModalStyles.ModalBackdrop
+          onClick={() => setDeleteTarget(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setDeleteTarget(null); }}
+        >
+          <ModalStyles.ModalCard
+            role="alertdialog" aria-modal="true" aria-labelledby="delete-confirmation-title" aria-describedby="delete-confirmation-desc"
+            onClick={(event) => event.stopPropagation()} tabIndex={-1} ref={(node) => node?.focus()}
+          >
             <ModalStyles.ModalHeader>
               <div>
-                <ModalStyles.ModalTitle>Shortcut löschen</ModalStyles.ModalTitle>
-                <ModalStyles.ModalSubtitle>
+                <ModalStyles.ModalTitle id="delete-confirmation-title">Shortcut löschen</ModalStyles.ModalTitle>
+                <ModalStyles.ModalSubtitle id="delete-confirmation-desc">
                   "{deleteTarget.name}" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
                 </ModalStyles.ModalSubtitle>
               </div>

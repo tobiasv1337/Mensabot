@@ -56,17 +56,35 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
 
   if (!isOpen) return null;
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCancel();
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onCancel]);
+
   return (
     <S.ModalBackdrop onClick={onCancel}>
-      <S.ModalCard onClick={(event) => event.stopPropagation()}>
+      <S.ModalCard
+        role="dialog" aria-modal="true" aria-labelledby="shortcut-modal-title" aria-describedby="shortcut-modal-desc"
+        onClick={(event) => event.stopPropagation()}
+      >
         <S.ModalHeader>
           <div>
-            <S.ModalTitle>{mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}</S.ModalTitle>
-            <S.ModalSubtitle>
+            <S.ModalTitle id="shortcut-modal-title">
+              {mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}
+            </S.ModalTitle>
+            <S.ModalSubtitle id="shortcut-modal-desc">
               Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.
             </S.ModalSubtitle>
           </div>
-          <S.CloseButton type="button" onClick={onCancel}>
+          <S.CloseButton type="button" onClick={onCancel} aria-label="Schließen">
             Schließen
           </S.CloseButton>
         </S.ModalHeader>
@@ -82,6 +100,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
                 if (error) setError("");
               }}
               placeholder="z. B. Mensa Dienstag"
+              autoFocus
             />
           </S.FieldGrid>
 
@@ -99,7 +118,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
             <FiltersEditor filters={filters} onChange={setFilters} client={client} />
           </S.FiltersSection>
 
-          {error && <ChatStyles.InlineError>{error}</ChatStyles.InlineError>}
+          {error && <ChatStyles.InlineError role="alert" aria-live="polite">{error}</ChatStyles.InlineError>}
         </S.ModalBody>
 
         <S.ModalFooter>
