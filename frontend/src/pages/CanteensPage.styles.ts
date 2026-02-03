@@ -161,7 +161,7 @@ export const SearchInput = styled.input`
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-  &:focus {
+  &:focus-visible {
     outline: none;
     border-color: ${({ theme }) => `${theme.accent1}99`};
     box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}30`};

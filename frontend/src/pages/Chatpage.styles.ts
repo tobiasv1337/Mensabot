@@ -41,6 +41,6 @@ export const Content = styled.main<{ $chat?: boolean }>`
   color: ${({ theme }) => theme.textOnPage};
 
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: ${({ $chat }) => ($chat ? "16px 16px 0" : "16px")};
   }
 `;
