@@ -68,6 +68,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           nearLat: location?.lat,
           nearLng: location?.lng,
           sortBy: sort,
+          minScore: 0,
         });
 
         if (currentRequest !== requestId.current) return;

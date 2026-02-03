@@ -498,7 +498,7 @@ const Chat: React.FC<ChatProps> = ({
           const response = await client.searchCanteens({
             query: searchQuery,
             perPage: 1,
-            minScore: 30,
+            minScore: 0,
             sortBy: "auto",
             nearLat: commandUserLocation?.lat,
             nearLng: commandUserLocation?.lng,
@@ -727,7 +727,7 @@ const Chat: React.FC<ChatProps> = ({
   }, [slashActive, slashQuery, commandLocationStatus, requestSlashLocation]);
 
   useEffect(() => {
-    if (!slashActive || slashQuery.length === 0 || isResolvedSlashCommand) {
+    if (!slashActive || isResolvedSlashCommand) {
       commandRequestId.current += 1;
       setCommandCanteenResults([]);
       setCommandCanteenLoading(false);
@@ -745,7 +745,7 @@ const Chat: React.FC<ChatProps> = ({
         const response = await client.searchCanteens({
           query: slashQuery,
           perPage: 10,
-          minScore: 30,
+          minScore: 0,
           sortBy: "auto",
           nearLat: commandUserLocation?.lat,
           nearLng: commandUserLocation?.lng,
@@ -808,7 +808,7 @@ const Chat: React.FC<ChatProps> = ({
     () =>
       commandCanteenResults.map((result) => {
         const metaParts = [result.canteen.city].filter(Boolean);
-        if (result.distance_km !== undefined) {
+        if (result.distance_km != null) {
           metaParts.push(`${result.distance_km.toFixed(1)} km`);
         }
         return {
