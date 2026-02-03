@@ -9,7 +9,7 @@ import ShortcutsPage from "./ShortcutsPage";
 import SettingsPage from "./SettingsPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
-import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, type ChatSummary, defaultChatFilters } from "../services/chats";
+import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "About", "Contact"];
 const CHAT_PAGE_SIZE = 10;
