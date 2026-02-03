@@ -255,7 +255,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                   tabIndex={0}
                   aria-pressed={selectedCanteenIds.includes(canteen.id)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
+                    if (event.key === "Enter") {
                       event.preventDefault();
                       onSelectCanteen(canteen);
                     }

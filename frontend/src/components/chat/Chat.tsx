@@ -187,7 +187,7 @@ const parseSlashCommand = (
     if (WEEKDAY_INDEX[cleaned] !== undefined) {
       if (!dateISO) {
         const target = WEEKDAY_INDEX[cleaned];
-        const delta = (target - todayDate.getDay() + 7) % 7;
+        const delta = (target - todayDate.getDay() + 7) % 7 || 7;
         const targetDate = new Date(todayDate);
         targetDate.setDate(todayDate.getDate() + delta);
         dateISO = toLocalISODate(targetDate);
