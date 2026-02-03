@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect, useState } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import * as S from "./chat.styles";
 
 type ScrollablePillRowProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -18,7 +18,7 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
 }) => {
   const Component = (component ?? S.PillRow) as React.ElementType;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: false });
+
   const dragState = useRef({
     el: null as HTMLDivElement | null,
     startX: 0,
@@ -33,8 +33,7 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
     if (!el) return;
     const canScrollLeft = el.scrollLeft > 0;
     const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 1;
-    setScrollState({ canScrollLeft, canScrollRight });
-    
+
     // Update classes for styling
     el.classList.toggle("can-scroll-left", canScrollLeft);
     el.classList.toggle("can-scroll-right", canScrollRight);
@@ -45,7 +44,7 @@ const ScrollablePillRow: React.FC<ScrollablePillRowProps> = ({
     if (!el) return;
 
     updateScrollState();
-    
+
     el.addEventListener("scroll", updateScrollState, { passive: true });
     window.addEventListener("resize", updateScrollState);
     const observer = new ResizeObserver(updateScrollState);
