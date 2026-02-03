@@ -681,18 +681,20 @@ async def search_canteens(
     )
 
 @app.get("/api/canteens/{canteen_id}", response_model=CanteenOut)
-async def get_canteen_info_api(canteen_id: int):
+def get_canteen_info_api(canteen_id: int):
     try:
         with make_openmensa_client() as client:
             canteen = client.get_canteen(canteen_id)
     except OpenMensaAPIError as exc:
+        if getattr(exc, "status_code", None) == 404:
+            raise HTTPException(status_code=404, detail="Canteen not found") from exc
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
     return _canteen_to_out(canteen)
 
 
 @app.get("/api/canteens/{canteen_id}/menu", response_model=MenuResponseDTO)
-async def get_canteen_menu_api(
+def get_canteen_menu_api(
     canteen_id: int,
     date: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     diet_filter: MenuDietFilter | None = Query(None),

@@ -328,7 +328,12 @@ def get_canteen_info(
     Use after discovering a canteen ID from list_canteens_near to get full details.
     """
     with make_openmensa_client() as client:
-        canteen = client.get_canteen(canteen_id)
+        try:
+            canteen = client.get_canteen(canteen_id)
+        except OpenMensaAPIError as e:
+            if e.status_code == 404:
+                raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
+            raise
 
     return _canteen_to_dto(canteen)
 
@@ -464,7 +469,12 @@ def get_opening_hours_osm_for_canteen(
     include the provided attribution (usually: "© OpenStreetMap contributors").
     """
     with make_openmensa_client() as client:
-        canteen = client.get_canteen(canteen_id)
+        try:
+            canteen = client.get_canteen(canteen_id)
+        except OpenMensaAPIError as e:
+            if e.status_code == 404:
+                raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
+            raise
 
     dto = _canteen_to_dto(canteen)
 
