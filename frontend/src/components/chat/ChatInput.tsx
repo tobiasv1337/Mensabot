@@ -107,7 +107,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const text = value.trim();
     if (disabled) return;
     if (!text) return;
-    onSend(value);
+    onSend(text);
     onChange("");
     requestAnimationFrame(() => focusTextarea());
   }, [commandMenu, value, disabled, onSend, onChange, focusTextarea]);
