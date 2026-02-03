@@ -59,7 +59,6 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => {
     const nextChat = Chats.getById(activeChatId, true)!;
-    nextChat.touch();
     setChat(nextChat);
     setFilters(nextChat.filters ?? defaultChatFilters);
     setMenuCanteen(pendingMenuCanteen.current);
