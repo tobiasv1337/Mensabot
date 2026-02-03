@@ -245,7 +245,13 @@ export class Chats {
 	}
 
 	private static notify() {
-		Chats.listeners.forEach((listener) => listener());
+		Chats.listeners.forEach((listener) => {
+			try {
+				listener();
+			} catch (error) {
+				console.error("Error in chat listener:", error);
+			}
+		});
 	}
 
 	private static saveIndex(index: ChatIndex) {
@@ -405,8 +411,18 @@ export class Chats {
 					},
 					{
 						title: typeof parsed.title === "string" ? parsed.title : DEFAULT_CHAT_TITLE,
-						createdAt: typeof parsed.createdAt === "number" ? parsed.createdAt : Date.now(),
-						updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : Date.now(),
+						createdAt:
+							typeof parsed.createdAt === "number"
+								? parsed.createdAt
+								: typeof parsed.updatedAt === "number"
+									? parsed.updatedAt
+									: Date.now(),
+						updatedAt:
+							typeof parsed.updatedAt === "number"
+								? parsed.updatedAt
+								: typeof parsed.createdAt === "number"
+									? parsed.createdAt
+									: Date.now(),
 					}
 				);
 				Chats.ensureIndexed(chat);
@@ -465,7 +481,12 @@ export class Chats {
 	}
 
 	static deleteAll() {
-		const keys = Object.keys(localStorage).filter((key) => key.startsWith(CHAT_STORAGE_PREFIX));
+		let keys: string[] = [];
+		try {
+			keys = Object.keys(localStorage).filter((key) => key.startsWith(CHAT_STORAGE_PREFIX));
+		} catch {
+			// Ignore storage access errors
+		}
 		for (const key of keys) {
 			try {
 				localStorage.removeItem(key);

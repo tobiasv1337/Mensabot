@@ -158,6 +158,11 @@ export const NavButton = styled.button<{
     background: ${({ theme }) => theme.surfaceInset};
     color: ${({ theme }) => theme.textPrimary};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent1};
+    outline-offset: -2px;
+  }
 `;
 
 export const IconWrapper = styled.span`
@@ -226,8 +231,8 @@ export const SegmentButton = styled.button<{ $active: boolean }>`
 
   &:hover {
     ${({ $active, theme }) =>
-      !$active &&
-      `
+    !$active &&
+    `
       background: ${theme.surfaceCard};
       color: ${theme.textOnCard};
     `}
@@ -254,6 +259,11 @@ export const ChatButton = styled.button<{ $active?: boolean }>`
   &:hover {
     background: ${({ theme }) => theme.surfaceInset};
     color: ${({ theme }) => theme.textPrimary};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent1};
+    outline-offset: -2px;
   }
 `;
 

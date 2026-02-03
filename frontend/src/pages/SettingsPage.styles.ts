@@ -126,6 +126,11 @@ export const DangerButton = styled.button`
   &:hover {
     filter: brightness(0.96);
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.textOnAccent1};
+    outline-offset: 3px;
+  }
 `;
 
 export const MutedNote = styled.div`
