@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
-import { Chats, ChatMessage, type Chat, type ChatFilters, defaultChatFilters } from "../../services/chats";
+import { Chats, ChatMessage, type Chat as ChatType, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatInput from "./ChatInput";
 import ScrollablePillRow from "./ScrollablePillRow";
@@ -25,22 +25,22 @@ const DIET_OPTIONS: Array<{
   label: string;
   iconSrc: string;
 }> = [
-  {
-    value: "vegetarian",
-    label: "Vegetarisch",
-    iconSrc: vegetarianIcon,
-  },
-  {
-    value: "vegan",
-    label: "Vegan",
-    iconSrc: veganIcon,
-  },
-  {
-    value: "meat",
-    label: "Fleisch",
-    iconSrc: meatIcon,
-  },
-];
+    {
+      value: "vegetarian",
+      label: "Vegetarisch",
+      iconSrc: vegetarianIcon,
+    },
+    {
+      value: "vegan",
+      label: "Vegan",
+      iconSrc: veganIcon,
+    },
+    {
+      value: "meat",
+      label: "Fleisch",
+      iconSrc: meatIcon,
+    },
+  ];
 
 const ALLERGENS = [
   { key: "gluten", label: "Gluten" },
@@ -122,7 +122,7 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
   const canteenRequestId = useRef(0);
   const canteenAnchorRef = useRef<HTMLDivElement>(null);
 
-  const [chat, setChat] = useState<Chat>(() => {
+  const [chat, setChat] = useState<ChatType>(() => {
     const existing = Chats.getById(CHAT_ID, true)!;
     if (existing.messages.length === 0) {
       existing.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
@@ -470,12 +470,12 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
   const activeFilterItems = [
     ...(filters.diet
       ? [
-          {
-            key: `diet-${filters.diet}`,
-            label: DIET_OPTIONS.find((option) => option.value === filters.diet)?.label ?? "Ernährung",
-            onRemove: () => updateFiltersPartial({ diet: null }),
-          },
-        ]
+        {
+          key: `diet-${filters.diet}`,
+          label: DIET_OPTIONS.find((option) => option.value === filters.diet)?.label ?? "Ernährung",
+          onRemove: () => updateFiltersPartial({ diet: null }),
+        },
+      ]
       : []),
     ...filters.allergens.map((allergenKey) => ({
       key: `allergen-${allergenKey}`,
@@ -706,20 +706,20 @@ const Chat: React.FC<ChatProps> = ({ selectedCanteen = null, resetKey = 0 }) => 
                 message.meta.kind === "location_prompt" && isLast && !locationPromptHandled;
               const actions: MessageAction[] = shouldShowLocationActions
                 ? [
-                    {
-                      id: "share-location",
-                      label: isRequestingLocation ? "Frage Standort ab..." : "Aktuellen Standort teilen",
-                      onClick: handleShareLocation,
-                      disabled: isSending || isRequestingLocation,
-                    },
-                    {
-                      id: "manual-location",
-                      label: "Manuell eingeben",
-                      onClick: handleSelfLocation,
-                      variant: "secondary",
-                      disabled: isSending || isRequestingLocation,
-                    },
-                  ]
+                  {
+                    id: "share-location",
+                    label: isRequestingLocation ? "Frage Standort ab..." : "Aktuellen Standort teilen",
+                    onClick: handleShareLocation,
+                    disabled: isSending || isRequestingLocation,
+                  },
+                  {
+                    id: "manual-location",
+                    label: "Manuell eingeben",
+                    onClick: handleSelfLocation,
+                    variant: "secondary",
+                    disabled: isSending || isRequestingLocation,
+                  },
+                ]
                 : [];
 
               return (
