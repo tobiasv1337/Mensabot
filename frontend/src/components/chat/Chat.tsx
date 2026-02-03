@@ -369,7 +369,12 @@ const Chat: React.FC<ChatProps> = ({
   }, [isSending, onStartNewChat]);
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat: ChatType, dateOverride?: string) => {
+    async (canteen: Canteen, targetChat: ChatType, dateOverride?: string, dateLabel?: string) => {
+      const dateText = dateLabel ? ` für ${dateLabel}` : " für heute";
+      targetChat.addMessage(
+        new ChatMessage("user", `Zeige mir den Speiseplan der Mensa ${canteen.name}${dateText}.`)
+      );
+
       const requestId = ++menuRequestId.current;
       try {
         const menu = await client.getCanteenMenu(
@@ -487,7 +492,7 @@ const Chat: React.FC<ChatProps> = ({
           const normalizedCommand = parsed.rawQuery.trim().toLowerCase();
           if (resolved && normalizedCommand === resolved.command) {
             updateFiltersPartial({ canteens: [resolved.canteen] });
-            await fetchAndAppendMenu(resolved.canteen, chat, parsed.dateISO);
+            await fetchAndAppendMenu(resolved.canteen, chat, parsed.dateISO, parsed.dateToken);
             resolvedCanteenRef.current = null;
             return;
           }
@@ -514,7 +519,7 @@ const Chat: React.FC<ChatProps> = ({
           }
 
           updateFiltersPartial({ canteens: [selected] });
-          await fetchAndAppendMenu(selected, chat, parsed.dateISO);
+          await fetchAndAppendMenu(selected, chat, parsed.dateISO, parsed.dateToken);
         } catch (error) {
           chat.addMessage(
             new ChatMessage("assistant", "❌ Mensa konnte nicht geladen werden. Bitte versuche es erneut.")
