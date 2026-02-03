@@ -541,28 +541,38 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             if tool_name == DIRECTIONS_TOOL_NAME:
                 prompt = args.get("prompt") if isinstance(args, dict) else None
                 prompt_text = prompt or DIRECTIONS_FALLBACK_PROMPT
-                canteen_id = args.get("canteen_id") if isinstance(args, dict) else None
-                lat = args.get("lat") if isinstance(args, dict) else None
-                lng = args.get("lng") if isinstance(args, dict) else None
+                args_dict = args if isinstance(args, dict) else {}
+                raw_canteen_id = args_dict.get("canteen_id")
+                raw_lat = args_dict.get("lat")
+                raw_lng = args_dict.get("lng")
 
-                if (lat is None) != (lng is None):
-                    tool_trace.ok = False
-                    tool_trace.error = "lat and lng must be provided together"
-                    tool_traces.append(tool_trace)
-                    result_payload = {"error": tool_trace.error}
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": call.id,
-                            "name": tool_name,
-                            "content": json.dumps(result_payload),
-                        }
-                    )
-                    continue
+                canteen_id = None
+                lat = None
+                lng = None
 
-                if canteen_id is None and (lat is None or lng is None):
+                validation_error = None
+
+                if raw_canteen_id is not None:
+                    try:
+                        canteen_id = int(raw_canteen_id)
+                    except (TypeError, ValueError):
+                        validation_error = "canteen_id must be an integer"
+
+                if not validation_error and (raw_lat is not None or raw_lng is not None):
+                    try:
+                        lat = float(raw_lat)
+                        lng = float(raw_lng)
+                        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+                            validation_error = "Coordinates out of range"
+                    except (TypeError, ValueError):
+                        validation_error = "Invalid or incomplete coordinates"
+
+                if not validation_error and canteen_id is None and lat is None:
+                    validation_error = "Provide canteen_id or lat/lng"
+
+                if validation_error:
                     tool_trace.ok = False
-                    tool_trace.error = "Provide canteen_id or lat/lng"
+                    tool_trace.error = validation_error
                     tool_traces.append(tool_trace)
                     result_payload = {"error": tool_trace.error}
                     messages.append(
@@ -584,6 +594,20 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                     except OpenMensaAPIError as exc:
                         tool_trace.ok = False
                         tool_trace.error = f"Failed to resolve canteen {canteen_id}: {exc}"
+                        tool_traces.append(tool_trace)
+                        result_payload = {"error": tool_trace.error}
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": call.id,
+                                "name": tool_name,
+                                "content": json.dumps(result_payload),
+                            }
+                        )
+                        continue
+                    except Exception as exc:
+                        tool_trace.ok = False
+                        tool_trace.error = f"Unexpected error while resolving canteen {canteen_id}: {exc}"
                         tool_traces.append(tool_trace)
                         result_payload = {"error": tool_trace.error}
                         messages.append(
