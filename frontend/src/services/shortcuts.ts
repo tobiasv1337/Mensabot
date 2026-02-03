@@ -64,6 +64,7 @@ const writeShortcuts = (items: Shortcut[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (error) {
     console.error("Failed to write shortcuts to storage:", error);
+    alert(`Due to a problem, your shortcuts could not be saved.\n(Debug Information: ${error})`);
   }
 };
 
@@ -102,12 +103,12 @@ export const useShortcuts = () => {
         prev.map((shortcut) =>
           shortcut.id === id
             ? {
-                ...shortcut,
-                name: input.name.trim() || shortcut.name,
-                prompt: input.prompt ?? "",
-                filters: normalizeFilters(input.filters),
-                updatedAt: now,
-              }
+              ...shortcut,
+              name: input.name.trim() || shortcut.name,
+              prompt: input.prompt ?? "",
+              filters: normalizeFilters(input.filters),
+              updatedAt: now,
+            }
             : shortcut
         )
       );
