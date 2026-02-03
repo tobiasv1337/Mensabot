@@ -65,7 +65,7 @@ export const IconButton = styled.button<{ $variant?: "primary" | "ghost" }>`
   border-radius: 12px;
   border: 1px solid
     ${({ theme, $variant }) =>
-      $variant === "primary" ? "transparent" : `${theme.textMuted}30`};
+    $variant === "primary" ? "transparent" : `${theme.textMuted}30`};
   background: ${({ theme, $variant }) =>
     $variant === "primary" ? theme.accent1 : theme.surfacePage};
   color: ${({ theme, $variant }) =>
@@ -79,11 +79,11 @@ export const IconButton = styled.button<{ $variant?: "primary" | "ghost" }>`
   &:hover:not(:disabled) {
     transform: translateY(-1px);
     border-color: ${({ theme, $variant }) =>
-      $variant === "primary" ? "transparent" : `${theme.accent1}55`};
+    $variant === "primary" ? "transparent" : `${theme.accent1}55`};
     box-shadow: ${({ theme, $variant }) =>
-      $variant === "primary"
-        ? `0 10px 20px ${theme.accent1}33`
-        : `0 8px 16px ${theme.textDark}12`};
+    $variant === "primary"
+      ? `0 10px 20px ${theme.accent1}33`
+      : `0 8px 16px ${theme.textDark}12`};
   }
 
   &:disabled {
@@ -154,7 +154,9 @@ export const PillRow = styled.div`
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: visible;
-  padding: 4px 0 6px;
+  padding: 4px 20px 6px;
+  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
@@ -198,9 +200,9 @@ export const PillButton = styled.button<{ $selected?: boolean; $removable?: bool
   &:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: ${({ theme, $selected }) =>
-      $selected
-        ? `0 8px 16px -8px ${theme.accent1}55, inset 0 0 0 1px ${theme.accent1}4D`
-        : `0 6px 12px -6px ${theme.accent1}22`};
+    $selected
+      ? `0 8px 16px -8px ${theme.accent1}55, inset 0 0 0 1px ${theme.accent1}4D`
+      : `0 6px 12px -6px ${theme.accent1}22`};
   }
 
   &:disabled {
@@ -295,8 +297,8 @@ export const SearchDropdownItem = styled.button<{ $muted?: boolean }>`
 
   &:hover {
     ${({ $muted, theme }) =>
-      !$muted &&
-      `
+    !$muted &&
+    `
       background: ${theme.surfaceCard};
       border-color: ${theme.accent1}55;
     `}
@@ -314,7 +316,7 @@ export const ActiveFiltersRow = styled(PillRow)`
   top: 40px;
   z-index: 4;
   background: ${({ theme }) => theme.surfacePage};
-  padding: 6px 0 8px;
+  padding: 6px 20px 8px;
   border-bottom: none;
 `;
 
@@ -611,8 +613,8 @@ export const ToolCallStatus = styled.span<{ $status: "ok" | "error" | "info" }>`
     $status === "ok"
       ? theme.accent3
       : $status === "error"
-      ? theme.accent1
-      : theme.surfaceAccent};
+        ? theme.accent1
+        : theme.surfaceAccent};
   color: ${({ theme, $status }) =>
     $status === "ok" ? theme.textOnAccent3 : $status === "error" ? theme.textOnAccent1 : theme.textOnAccent};
   padding: 0.15rem 0.5rem;
