@@ -54,8 +54,6 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
     });
   }, [name, prompt, filters, onSave]);
 
-  if (!isOpen) return null;
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCancel();
@@ -68,6 +66,8 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
 
   return (
     <S.ModalBackdrop onClick={onCancel}>

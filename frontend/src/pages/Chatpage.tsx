@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
-import type { NavItem } from "../components/header/header";
+import type { NavItem } from "../types/navigation";
 import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
@@ -9,7 +9,7 @@ import ShortcutsPage from "./ShortcutsPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 
-const NAV_ITEMS: NavItem[] = ["Home","ChatBot", "Mensen", "Über Uns", "Kontakt"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Mensen", "Über Uns", "Kontakt"];
 
 const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
@@ -45,7 +45,7 @@ const ChatPage: React.FC = () => {
               drawerOpen={true}
               isCollapsed={isCollapsed} // Prop weitergeben
               onToggleCollapse={() => setIsCollapsed(!isCollapsed)} // Toggle-Funktion
-              onCloseDrawer={() => {}}
+              onCloseDrawer={() => { }}
               navItems={NAV_ITEMS}
               activeNav={activeNav}
               onNavClick={setActiveNav}
