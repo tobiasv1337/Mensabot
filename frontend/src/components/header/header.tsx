@@ -3,7 +3,7 @@ import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
 import { Button } from "../button/button";
 
-export type NavItem = string;
+import type { NavItem } from "../../types/navigation";
 
 interface HeaderProps {
   activeNav: NavItem;

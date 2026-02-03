@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MensaBotClient } from "../services/api";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
 import { defaultChatFilters } from "../services/chats";
@@ -23,7 +23,7 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
   onUpdateShortcut,
   onDeleteShortcut,
 }) => {
-  const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
+  const client = useMemo(() => new MensaBotClient(API_BASE_URL), [API_BASE_URL]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -80,6 +80,17 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
     setDeleteTarget(null);
   };
 
+  useEffect(() => {
+    if (!deleteTarget) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeleteTarget(null);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [deleteTarget]);
+
   return (
     <S.Page>
       <S.HeaderRow>
@@ -117,10 +128,10 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
                     <S.CardPrompt>{shortcut.prompt.trim() || "Kein Prompt hinterlegt."}</S.CardPrompt>
                   </div>
                   <S.CardActions>
-                    <S.ActionButton type="button" onClick={() => openEdit(shortcut)}>
+                    <S.ActionButton type="button" onClick={() => openEdit(shortcut)} aria-label={`${shortcut.name} bearbeiten`}>
                       Bearbeiten
                     </S.ActionButton>
-                    <S.ActionButton type="button" $variant="danger" onClick={() => handleDelete(shortcut)}>
+                    <S.ActionButton type="button" $variant="danger" onClick={() => handleDelete(shortcut)} aria-label={`${shortcut.name} löschen`}>
                       Löschen
                     </S.ActionButton>
                   </S.CardActions>
@@ -152,7 +163,6 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
       {deleteTarget && (
         <ModalStyles.ModalBackdrop
           onClick={() => setDeleteTarget(null)}
-          onKeyDown={(e) => { if (e.key === "Escape") setDeleteTarget(null); }}
         >
           <ModalStyles.ModalCard
             role="alertdialog" aria-modal="true" aria-labelledby="delete-confirmation-title" aria-describedby="delete-confirmation-desc"
