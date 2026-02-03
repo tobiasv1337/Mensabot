@@ -55,10 +55,15 @@ export class Chat {
 	#filters: ChatFilters;
 	public readonly id: string;
 
-	constructor(id: string, messages: ChatMessage[] = [], filters: ChatFilters = defaultChatFilters) {
+	constructor(id: string, messages: ChatMessage[] = [], filters?: ChatFilters) {
 		this.id = id;
 		this.#messages = messages;
-		this.#filters = filters;
+		const sourceFilters = filters ?? defaultChatFilters;
+		this.#filters = {
+			diet: sourceFilters.diet,
+			allergens: [...sourceFilters.allergens],
+			canteens: [...sourceFilters.canteens],
+		};
 	}
 
 	get messages() {
@@ -88,7 +93,11 @@ export class Chat {
 	}
 
 	setFilters(filters: ChatFilters) {
-		this.#filters = { ...filters };
+		this.#filters = {
+			...filters,
+			allergens: [...filters.allergens],
+			canteens: [...filters.canteens],
+		};
 		this.persist();
 	}
 
