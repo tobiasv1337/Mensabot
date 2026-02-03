@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
         <S.BurgerButton onClick={onToggleSidebar} aria-label="Toggle menu">
           ☰
         </S.BurgerButton>
-      </S.Left> 
+      </S.Left>
 
       {/* Center: Brand immer mittig */}
       <S.Left>
@@ -41,9 +41,9 @@ const Header: React.FC<HeaderProps> = ({
           {navItems.map((n) => (
             <Button
               key={n}
-              $variant="default"
-              $size="hug"
-              $active={activeNav === n}
+              variant="default"
+              size="hug"
+              active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
               {n}

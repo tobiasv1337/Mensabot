@@ -217,13 +217,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         {mode === "desktop" && (
           <div style={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
             {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
-                  <Button
-                    $variant="default"
-                    $size="iconOnly"
-                    onClick={onToggleCollapse}
-                    title="Toggle Sidebar"
-                    iconLeft={<SideBarIcon />}
-                  />
+              <Button
+                variant="default"
+                size="iconOnly"
+                onClick={onToggleCollapse}
+                title="Toggle Sidebar"
+                iconLeft={<SideBarIcon />}
+              />
           </div>
         )}
 
@@ -234,10 +234,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((n) => (
             <Button
               key={n}
-              $variant="default"
-              $size="fill"
-              $active={activeNav === n}
-              $collapsed={isCollapsed}
+              variant="default"
+              size="fill"
+              active={activeNav === n}
+              collapsed={isCollapsed}
               onClick={() => {
                 onNavClick(n);
                 if (mode === "drawer") {
@@ -260,9 +260,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     <S.NavSection>
       <Button 
-        $variant="default" 
-        $size="fill"
-        $collapsed={isCollapsed}>
+        variant="default"
+        size="fill"
+        collapsed={isCollapsed}>
         <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
         <ButtonTextWrapper $collapsed={isCollapsed}>
           Einstellungen
@@ -270,9 +270,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Button>
 
       <Button 
-        $variant="default" 
-        $size="fill"
-        $collapsed={isCollapsed}>
+        variant="default"
+        size="fill"
+        collapsed={isCollapsed}>
         <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
         <ButtonTextWrapper $collapsed={isCollapsed}>
           Shortcuts
@@ -280,9 +280,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Button>
 
       <Button 
-        $variant="default" 
-        $size="fill"
-        $collapsed={isCollapsed}>
+        variant="default"
+        size="fill"
+        collapsed={isCollapsed}>
         <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
         <ButtonTextWrapper $collapsed={isCollapsed}>
           Karte
@@ -290,9 +290,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Button>
 
       <Button 
-        $variant="default" 
-        $size="fill"
-        $collapsed={isCollapsed}>
+        variant="default"
+        size="fill"
+        collapsed={isCollapsed}>
         <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
         <ButtonTextWrapper $collapsed={isCollapsed}>
           Neuen Chat starten
