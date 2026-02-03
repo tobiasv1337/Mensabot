@@ -210,10 +210,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (mode === "drawer") {
       onCloseDrawer();
     }
-
-    if (mode === "desktop" && !isCollapsed) {
-      onToggleCollapse?.();
-    }
   };
 
   return (
