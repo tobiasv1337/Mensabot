@@ -8,7 +8,7 @@ import anyio
 from typing import Annotated, Optional
 from pydantic import Field
 
-from .concurrency import IO_SEMAPHORE
+from .concurrency import get_io_semaphore
 from .server import mcp, make_openmensa_client
 from .settings import settings
 from .cache import shared_cache
@@ -84,7 +84,7 @@ async def search_canteens(
         raise ValueError("near_lat and near_lng must be provided together.")
 
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
     results, total = index.search(
         query,
@@ -138,7 +138,7 @@ async def get_canteen_info(
                     raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
                 raise
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         canteen = await anyio.to_thread.run_sync(_fetch_canteen)
 
     dto = _canteen_to_dto(canteen)
@@ -193,7 +193,7 @@ async def get_menu_for_date(
                 price_category,
             )
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         return await anyio.to_thread.run_sync(_fetch_menu)
 
 
@@ -234,19 +234,20 @@ async def get_menus_batch(
 
     results: list[MenuResponseDTO] = []
 
-    def _fetch_batch():
+    def _fetch_batch() -> list[MenuResponseDTO]:
+        _results: list[MenuResponseDTO] = []
         with make_openmensa_client() as client:
             for req in requests:
                 normalized_date, error_response = normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
 
                 if error_response is not None:
-                    results.append(error_response)
+                    _results.append(error_response)
                     continue
 
                 normalized_diet_filter = req.diet_filter or MenuDietFilter.all
                 normalized_exclude_allergens = req.exclude_allergens or []
 
-                results.append(
+                _results.append(
                     fetch_single_menu(
                         client,
                         req.canteen_id,
@@ -256,9 +257,10 @@ async def get_menus_batch(
                         req.price_category,
                     )
                 )
+        return _results
 
-    async with IO_SEMAPHORE:
-        await anyio.to_thread.run_sync(_fetch_batch)
+    async with get_io_semaphore():
+        results = await anyio.to_thread.run_sync(_fetch_batch)
 
     return MenuBatchResponseDTO(results=results)
 
@@ -298,7 +300,7 @@ async def get_opening_hours_osm_for_canteen(
                     raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
                 raise
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         canteen = await anyio.to_thread.run_sync(_fetch_canteen)
 
     dto = _canteen_to_dto(canteen)
@@ -330,7 +332,7 @@ async def get_opening_hours_osm_for_canteen(
                 max_candidates=max_candidates,
             )
 
-        async with IO_SEMAPHORE:
+        async with get_io_semaphore():
             res = await anyio.to_thread.run_sync(_resolve)
 
     res["openmensa"] = OpenMensaCanteenRefDTO(

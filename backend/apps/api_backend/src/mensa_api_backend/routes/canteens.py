@@ -8,7 +8,7 @@ from mensa_mcp_server.services.openmensa import fetch_single_menu, normalize_men
 from mensa_mcp_server.server import make_openmensa_client
 from openmensa_sdk import OpenMensaAPIError
 
-from ..concurrency import IO_SEMAPHORE
+from ..concurrency import get_io_semaphore
 from ..models import (
     CanteenIndexInfo,
     CanteenListResponse,
@@ -31,7 +31,7 @@ async def list_canteens(
     city: str | None = None,
     has_coordinates: bool | None = None,
 ):
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
     canteens, total = index.list(page=page, per_page=per_page, city=city, has_coordinates=has_coordinates)
     next_page = page + 1 if page * per_page < total else None
@@ -46,7 +46,7 @@ async def list_canteens(
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
-            total_cities=len(index._cities),
+            total_cities=index.city_count,
         ),
         total_results=total,
     )
@@ -68,7 +68,7 @@ async def search_canteens(
     if (near_lat is None) != (near_lng is None):
         raise HTTPException(status_code=400, detail="near_lat and near_lng must be provided together.")
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
     results, total = index.search(
         query,
@@ -104,7 +104,7 @@ async def search_canteens(
         index=CanteenIndexInfo(
             updated_at=index.updated_at.isoformat(),
             total_canteens=len(index.canteens),
-            total_cities=len(index._cities),
+            total_cities=index.city_count,
         ),
     )
 
@@ -121,7 +121,7 @@ async def get_canteen_info_api(canteen_id: int):
             return client.get_canteen(canteen_id)
 
     try:
-        async with IO_SEMAPHORE:
+        async with get_io_semaphore():
             canteen = await anyio.to_thread.run_sync(_fetch_canteen)
     except OpenMensaAPIError as exc:
         if getattr(exc, "status_code", None) == 404:
@@ -161,5 +161,5 @@ async def get_canteen_menu_api(
                 price_category=price_category,
             )
 
-    async with IO_SEMAPHORE:
+    async with get_io_semaphore():
         return await anyio.to_thread.run_sync(_fetch_menu)

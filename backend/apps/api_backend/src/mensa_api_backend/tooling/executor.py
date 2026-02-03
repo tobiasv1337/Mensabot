@@ -11,7 +11,7 @@ from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.server import make_openmensa_client
 
-from ..concurrency import IO_SEMAPHORE
+from ..concurrency import get_io_semaphore
 from ..config import settings
 from ..logging import logger
 from ..models import ChatResponse, ToolCallTrace
@@ -271,7 +271,7 @@ async def _handle_directions_tool(
                     return om_client.get_canteen(canteen_id)
 
             try:
-                async with IO_SEMAPHORE:
+                async with get_io_semaphore():
                     canteen = await anyio.to_thread.run_sync(_fetch_canteen)
                 lat = getattr(canteen, "latitude", None)
                 lng = getattr(canteen, "longitude", None)

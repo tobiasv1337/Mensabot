@@ -40,13 +40,5 @@ class TTLCache:
                 self._store.popitem(last=False)
             self._store[key] = (expires_at, value)
 
-    def get_or_set(self, key: str, factory: Callable[[], T], *, ttl_s: float | None = None) -> T:
-        cached = self.get(key)
-        if cached is not None:
-            return cached
-        value = factory()
-        self.set(key, value, ttl_s=ttl_s)
-        return value
-
 
 shared_cache = TTLCache()
