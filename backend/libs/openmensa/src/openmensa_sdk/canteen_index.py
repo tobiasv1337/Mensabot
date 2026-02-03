@@ -397,8 +397,6 @@ class CanteenIndex:
     ) -> tuple[list[CanteenSearchResult], int]:
         query_norm = _normalize_query(query or "")
         has_query = bool(query_norm)
-        if not query_norm and not city and near_lat is None and near_lng is None:
-            return [], 0
 
         # Phase 1: resolve city (explicit or inferred)
         explicit_city = city is not None
