@@ -11,7 +11,7 @@ import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, type Chat as ChatSession, type ChatFilters, type ChatSummary, defaultChatFilters } from "../services/chats";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "Contact", "Shortcuts", "Settings"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "About", "Contact"];
 const CHAT_PAGE_SIZE = 10;
 
 const resolveInitialChatId = () => {
@@ -143,13 +143,14 @@ const ChatPage: React.FC = () => {
               drawerOpen={true}
               isCollapsed={isCollapsed}
               onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-              onCloseDrawer={() => {}}
+              onCloseDrawer={() => { }}
               navItems={NAV_ITEMS}
               activeNav={activeNav}
               onNavClick={setActiveNav}
               chats={recentChats}
               activeChatId={activeChatId}
               onSelectChat={handleSelectChat}
+              onNewChat={startNewChat}
               onLoadMoreChats={loadMoreChats}
               hasMoreChats={hasMoreChats}
             />
@@ -194,6 +195,7 @@ const ChatPage: React.FC = () => {
           chats={recentChats}
           activeChatId={activeChatId}
           onSelectChat={handleSelectChat}
+          onNewChat={startNewChat}
           onLoadMoreChats={loadMoreChats}
           hasMoreChats={hasMoreChats}
         />

@@ -174,6 +174,7 @@ interface SidebarProps {
   chats: ChatSummary[];
   activeChatId: string | null;
   onSelectChat: (id: string) => void;
+  onNewChat: () => void;
   onLoadMoreChats: () => void;
   hasMoreChats: boolean;
 
@@ -188,11 +189,11 @@ const getIcon = (item: string) => {
       return <HomeIcon />;
     case "ChatBot":
       return <ChatIcon />;
-    case "Mensen":
+    case "Canteens":
       return <MensenIcon />;
-    case "Über Uns":
+    case "About":
       return <AboutUsIcon />;
-    case "Kontakt":
+    case "Contact":
       return <ContactIcon />;
     default:
       return "•";
@@ -209,6 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   chats,
   activeChatId,
   onSelectChat,
+  onNewChat,
   onLoadMoreChats,
   hasMoreChats,
   isCollapsed = false,
@@ -227,6 +229,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleChatSelection = (id: string) => {
     onSelectChat(id);
 
+    if (mode === "drawer") {
+      onCloseDrawer();
+    }
+  };
+
+  const handleNewChat = () => {
+    onNewChat();
     if (mode === "drawer") {
       onCloseDrawer();
     }
@@ -268,26 +277,26 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <S.Main onScroll={handleScroll}>
-          {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
+          {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
 
-            <S.NavSection>
-              {navItems.map((n) => (
-                <Button
-                  key={n}
-                  variant="default"
-                  size="fill"
-                  active={activeNav === n}
-                  collapsed={isCollapsed}
-                  onClick={() => handleNavSelection(n)}
-                  title={isCollapsed ? n : undefined}
-                >
-                  <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    {n}
-                  </ButtonTextWrapper>
-                </Button>
-              ))}
-            </S.NavSection>
+          <S.NavSection>
+            {navItems.map((n) => (
+              <Button
+                key={n}
+                variant="default"
+                size="fill"
+                active={activeNav === n}
+                collapsed={isCollapsed}
+                onClick={() => handleNavSelection(n)}
+                title={isCollapsed ? n : undefined}
+              >
+                <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
+                <ButtonTextWrapper $collapsed={isCollapsed}>
+                  {n}
+                </ButtonTextWrapper>
+              </Button>
+            ))}
+          </S.NavSection>
 
           {!isCollapsed && (
             <>
@@ -309,7 +318,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   variant="default"
                   size="fill"
                   collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Einstellungen")}>
+                  onClick={() => handleNavSelection("Settings")}>
                   <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
                     Einstellungen
@@ -320,21 +329,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                   variant="default"
                   size="fill"
                   collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Karte")}>
+                  onClick={() => handleNavSelection("Map")}>
                   <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
                     Karte
-                  </ButtonTextWrapper>
-                </Button>
-
-                <Button
-                  variant="default"
-                  size="fill"
-                  collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Neuen Chat starten")}>
-                  <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Neuen Chat starten
                   </ButtonTextWrapper>
                 </Button>
               </S.NavSection>
@@ -344,6 +342,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {chats.length === 0 && (
                   <S.ChatHint>Keine Chats gefunden.</S.ChatHint>
                 )}
+                <Button
+                  variant="default"
+                  size="fill"
+                  collapsed={isCollapsed}
+                  onClick={handleNewChat}>
+                  <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
+                  <ButtonTextWrapper $collapsed={isCollapsed}>
+                    Neuen Chat starten
+                  </ButtonTextWrapper>
+                </Button>
                 {chats.map((chat) => (
                   <S.ChatButton
                     key={chat.id}
