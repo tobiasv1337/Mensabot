@@ -54,39 +54,35 @@ async def search_canteens(
     city: Annotated[Optional[str], Field(default=None, description="Base city. All canteens in this city are always included.")] = None,
     near_lat: Annotated[Optional[float], Field(default=None, ge=-90.0, le=90.0, description="Latitude of the expansion center (used with radius_km).")] = None,
     near_lng: Annotated[Optional[float], Field(default=None, ge=-180.0, le=180.0, description="Longitude of the expansion center (used with radius_km).")] = None,
-    radius_km: Annotated[Optional[float], Field(default=None, gt=0.0, description="Radius in kilometers to include nearby canteens outside the base city. If near_lat/near_lng are provided and radius_km is omitted, a default of 10 km is used.")] = None,
+    radius_km: Annotated[Optional[float], Field(default=None, gt=0.0, description="Radius in kilometers to include nearby canteens outside the base city. If near_lat/near_lng are provided and radius_km is omitted, no distance limit is applied.")] = None,
     limit: Annotated[int, Field(ge=1, le=100, description="Max number of results to return.")] = 20,
     min_score: Annotated[float, Field(ge=0.0, le=100.0, description="Minimum text score (0-100). Set to 0 for broad results.")] = 60.0,
 ) -> CanteenSearchResponseDTO:
     """
     Search canteens by name and/or location.
-    If you provide the exact user location (near_lat + near_lng), it also gives approximate distances to each canteen.
-    If you only provide a city, the distances are only to the approximated city center, not to the user location.
 
-    How it works:
-    - If `city` is set: all canteens in that city are always included.
-    - `radius_km` expands beyond the city:
-      - if `near_lat` + `near_lng` are set, they define the center
-      - otherwise the city centroid is used (if available)
-    - If no center can be determined, `radius_km` is ignored.
-    - If `near_lat/lng` are set without `radius_km`, a default radius of 10 km is used.
-    - If both `city` and `near_lat/lng` are set, the city is the base set and the radius uses the coordinates.
-    - If `query` is omitted, score is 0 and results are ordered by distance (if available).
+    **Location Logic:**
+    - **Sort by Distance:** Provide `near_lat` and `near_lng`. Results will be sorted closest-first.
+    - **Filter by Distance:** Add `radius_km` to restricts results to a specific range.
+    - **Filter by City:** Provide `city`. Returns all canteens in that city (strict match).
 
-    Examples:
-    - Nearby lookup:
-      {"tool": "search_canteens", "parameters": {"near_lat": 52.52, "near_lng": 13.405, "radius_km": 5}}
-    - Name lookup:
-      {"tool": "search_canteens", "parameters": {"query": "mensa hardenberg"}}
-    - City lookup:
-      {"tool": "search_canteens", "parameters": {"city": "Berlin"}}
-    - Name + city:
-      {"tool": "search_canteens", "parameters": {"query": "TU", "city": "Berlin"}}
+    **How parameters interact:**
+    - `near_lat`/`near_lng` WITHOUT `radius_km`: Returns the closest canteens (up to `limit`). No distance cutoff.
+    - `city` combined with `radius_km`: Returns canteens in the city PLUS any others within the radius of the center.
+
+    **Examples:**
+    - "Find canteens near me":
+      `{"near_lat": 52.5, "near_lng": 13.4}` (Returns closest 20 canteens)
+    - "Find canteens in Berlin":
+      `{"city": "Berlin"}`
+    - "Find canteens within 5km of me":
+      `{"near_lat": 52.5, "near_lng": 13.4, "radius_km": 5}`
+    - "Complex search (All in Munich + everything within 20km of the provided coordinates, max 50 results)":
+      `{"city": "Munich", "near_lat": 48.13, "near_lng": 11.58, "radius_km": 20, "limit": 50}`
     """
     if (near_lat is None) != (near_lng is None):
         raise ValueError("near_lat and near_lng must be provided together.")
-    if near_lat is not None and near_lng is not None and radius_km is None:
-        radius_km = 10.0
+
 
     async with IO_SEMAPHORE:
         index = await anyio.to_thread.run_sync(load_canteen_index)
