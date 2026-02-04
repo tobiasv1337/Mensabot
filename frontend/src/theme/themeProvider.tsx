@@ -12,8 +12,11 @@ const getSystemPreference = (): "light" | "dark" => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // saves button theme value defined by user (default: "system")
-    const [mode, setMode] = useState<ThemeMode>("system"); 
-    
+    const [mode, setMode] = useState<ThemeMode>(() => {
+        const stored = localStorage.getItem("theme");
+        return (stored as ThemeMode) || "system";
+    });
+
     // systemmode
     const [systemMode, setSystemMode] = useState<"light" | "dark">(() => getSystemPreference());
 
@@ -31,6 +34,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     const toggleMode = useCallback((newMode: ThemeMode) => {
         setMode(newMode);
+        localStorage.setItem("theme", newMode);
     }, []);
 
     // logic to determine the active theme based on mode and systemMode
@@ -43,7 +47,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             return themes.light;
         }
         return systemMode === "dark" ? themes.dark : themes.light;
-        
+
     }, [mode, systemMode]);
 
     const contextValue = useMemo(() => ({
