@@ -9,7 +9,7 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from ..config import settings
 from ..concurrency import get_llm_semaphore
 from ..logging import logger
-from ..models import ChatMessage, ChatResponse, ToolCallTrace
+from ..models import ChatFilters, ChatMessage, ChatResponse, ToolCallTrace
 from ..prompts import EMPTY_REPLY_NUDGE, LLM_BASE_SYSTEM_PROMPT, MISSING_TOOL_CALLS_NUDGE
 from ..services.time_context import get_time_context
 from .executor import handle_tool_calls
@@ -185,7 +185,7 @@ def _nudge_missing_tool_calls(iteration: int, messages: list[Dict[str, Any]]) ->
     messages.append({"role": "system", "content": MISSING_TOOL_CALLS_NUDGE})
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
+async def run_tool_calling_loop(message_log: List[ChatMessage], filters: ChatFilters, include_tool_calls: bool = False) -> ChatResponse:
     messages = prepare_message_log(message_log)
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -228,6 +228,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             tool_calls,
             messages,
             tool_traces,
+            filters=filters,
             iteration=iteration,
             include_tool_calls=include_tool_calls,
         )

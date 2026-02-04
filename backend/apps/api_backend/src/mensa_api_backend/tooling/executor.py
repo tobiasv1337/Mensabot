@@ -14,7 +14,7 @@ from mensa_mcp_server.server import make_openmensa_client
 from ..concurrency import get_io_semaphore
 from ..config import settings
 from ..logging import logger
-from ..models import ChatResponse, ToolCallTrace
+from ..models import ChatFilters, ChatResponse, ToolCallTrace
 from ..prompts import (
     DIRECTIONS_FALLBACK_PROMPT,
     DIRECTIONS_TOOL_NAME,
@@ -23,6 +23,13 @@ from ..prompts import (
 )
 
 CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
+
+# Map frontend diet preference to backend MenuDietFilter values
+_DIET_TO_FILTER = {
+    "vegetarian": "vegetarian",
+    "vegan": "vegan",
+    "meat": "meat_only",
+}
 
 
 @dataclass
@@ -399,6 +406,7 @@ async def handle_tool_calls(
     messages: List[Dict[str, Any]],
     tool_traces: list[ToolCallTrace],
     *,
+    filters: ChatFilters,
     iteration: int,
     include_tool_calls: bool,
 ) -> ChatResponse | None:
@@ -440,6 +448,27 @@ async def handle_tool_calls(
             if response is not None:
                 return response
             continue
+
+        # Merge user filters into menu tool args
+        if parsed.tool_name == "get_menu_for_date" and isinstance(args, dict):
+            # Merge allergens (no duplicates)
+            llm_allergens = set(args.get("exclude_allergens") or [])
+            user_allergens = set(filters.allergens)
+            args["exclude_allergens"] = list(llm_allergens | user_allergens) or None
+            # User diet takes priority if set
+            if filters.diet is not None:
+                args["diet_filter"] = _DIET_TO_FILTER.get(filters.diet, filters.diet)
+        elif parsed.tool_name == "get_menus_batch" and isinstance(args, dict):
+            requests = args.get("requests", [])
+            for req in requests:
+                if isinstance(req, dict):
+                    # Merge allergens (no duplicates)
+                    llm_allergens = set(req.get("exclude_allergens") or [])
+                    user_allergens = set(filters.allergens)
+                    req["exclude_allergens"] = list(llm_allergens | user_allergens) or None
+                    # User diet takes priority if set
+                    if filters.diet is not None:
+                        req["diet_filter"] = _DIET_TO_FILTER.get(filters.diet, filters.diet)
 
         await _handle_mcp_tool(
             tool_name=parsed.tool_name,
