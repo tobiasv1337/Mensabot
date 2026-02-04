@@ -14,7 +14,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // saves button theme value defined by user (default: "system")
     const [mode, setMode] = useState<ThemeMode>(() => {
         const stored = localStorage.getItem("theme");
-        return (stored as ThemeMode) || "system";
+        return ["light", "dark", "system"].includes(stored as string) ? (stored as ThemeMode) : "system";
     });
 
     // systemmode
