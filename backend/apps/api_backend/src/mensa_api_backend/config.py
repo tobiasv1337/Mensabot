@@ -4,9 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class APIBackendSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="API_BACKEND_",
-        env_file="src/mensa_api_backend/.env",
+        env_file=(".env", "../../../.env"),
         env_file_encoding="utf-8",
-        extra="forbid",
+        extra="ignore",
         case_sensitive=False,
     )
 
@@ -24,9 +24,6 @@ class APIBackendSettings(BaseSettings):
         "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
         "attempts. Please try rephrasing your question or ask something else."
     )
-
-    canteen_index_path: str | None = None
-    canteen_index_ttl_hours: float = 24.0
 
     io_max_concurrency: int = 10
     llm_max_concurrency: int = 10

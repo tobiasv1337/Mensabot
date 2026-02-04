@@ -33,11 +33,7 @@ from .schemas import (
     OpenMensaCanteenRefDTO,
 )
 
-from .osm_opening_hours import (
-    resolve_opening_hours_osm,
-    OSMRef,
-    fetch_osm_element,
-)
+from .osm_opening_hours import resolve_opening_hours_osm
 from .services.canteen_index import load_canteen_index
 from .services.openmensa import fetch_single_menu, normalize_menu_date
 

@@ -1,7 +1,7 @@
 from mensa_mcp_server.server import make_openmensa_client
+from mensa_mcp_server.settings import settings
 from openmensa_sdk import CanteenIndexStore
 
-from ..config import settings
 from ..models import CanteenOut
 
 

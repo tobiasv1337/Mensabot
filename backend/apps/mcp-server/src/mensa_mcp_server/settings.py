@@ -4,9 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class MCPServerSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="MENSA_MCP_",
-        env_file=".env",
+        env_file=(".env", "../../../.env"),
         env_file_encoding="utf-8",
-        extra="forbid",
+        extra="ignore",
         case_sensitive=False,
     )
 
