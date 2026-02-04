@@ -75,7 +75,6 @@ const ChatPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    chat.touch();
     Chats.setActiveId(activeChatId);
   }, [chat, activeChatId]);
 
