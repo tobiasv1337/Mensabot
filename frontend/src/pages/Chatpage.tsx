@@ -40,7 +40,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     if (activeChatId === "init_pending") {
       const fresh = Chats.create();
-      setActiveChatId(fresh.id);
+      setTimeout(() => setActiveChatId(fresh.id), 0);
     }
   }, [activeChatId]);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
