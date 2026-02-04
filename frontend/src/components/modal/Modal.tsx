@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import * as S from "./modal.styles";
 
 type ModalProps = {
@@ -9,6 +9,17 @@ type ModalProps = {
 };
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, ariaLabel }) => {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const node = cardRef.current;
+    if (!node) return;
+    // Only move focus on open if nothing inside the modal is already focused.
+    if (document.activeElement && node.contains(document.activeElement)) return;
+    node.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -18,7 +29,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, ariaLabel }) =
         aria-modal="true"
         aria-label={ariaLabel}
         tabIndex={-1}
-        ref={(node) => node?.focus()}
+        ref={cardRef}
         onClick={(event) => event.stopPropagation()}
       >
         {children}
