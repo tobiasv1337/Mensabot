@@ -78,6 +78,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
           cancelLabel="Abbrechen"
           onCancel={() => setDeleteOpen(false)}
           onConfirm={handleConfirmDelete}
+          cancelButtonRef={cancelButtonRef}
         />
       )}
     </Page>

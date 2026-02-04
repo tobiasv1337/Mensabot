@@ -267,7 +267,13 @@ export class Chats {
 
 	private static notify() {
 		Chats.version += 1;
-		Chats.listeners.forEach((listener) => listener());
+		Chats.listeners.forEach((listener) => {
+			try {
+				listener();
+			} catch (error) {
+				console.error("Error in Chats listener", error);
+			}
+		});
 	}
 
 	static getVersion() {
