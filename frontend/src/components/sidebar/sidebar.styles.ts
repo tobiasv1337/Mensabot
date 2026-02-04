@@ -18,7 +18,7 @@ export const Backdrop = styled.div<{
     transition: opacity 0.2s ease;
     z-index: 1990;
 
-    @media (max-width: 1023px) {
+    @media (max-width: 1023px), (hover: none) and (pointer: coarse) {
       display: block;
     }
   `}
@@ -37,6 +37,7 @@ export const Sidebar = styled.aside<{
   flex-direction: column;
   /* Overall sidebar does not scroll itself; content area will */
   overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 
   /* ===== DESKTOP ===== */
   ${({ $mode, $isCollapsed }) =>
@@ -46,7 +47,7 @@ export const Sidebar = styled.aside<{
     height: calc(100vh - 80px);
     transition: width 0.25s ease;
 
-    @media (max-width: 1023px) {
+    @media (max-width: 1023px), (hover: none) and (pointer: coarse) {
       display: none;
     }
   `}
@@ -59,14 +60,14 @@ export const Sidebar = styled.aside<{
     top: 80px;
     left: 0;
     width: 260px;
-    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     z-index: 1995;
 
     transform: translateX(${$isOpen ? "0" : "-100%"});
     transition: transform 0.25s ease;
     box-shadow: ${$isOpen ? "0 12px 30px rgba(0,0,0,0.35)" : "none"};
 
-    @media (min-width: 1024px) {
+    @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
       display: none;
     }
   `}
@@ -101,7 +102,7 @@ export const CollapseToggle = styled.button`
 export const MobileHeader = styled.div`
   display: none;
 
-  @media (max-width: 1023px) {
+  @media (max-width: 1023px), (hover: none) and (pointer: coarse) {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -193,6 +194,7 @@ export const ButtonText = styled.span<{ $collapsed?: boolean }>`
 export const Footer = styled.div<{ $isCollapsed?: boolean }>`
   margin-top: auto;
   padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid ${({ theme }) => theme.textMuted}22;
 `;
 

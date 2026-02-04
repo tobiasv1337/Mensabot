@@ -16,7 +16,7 @@ export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
   min-height: calc(100dvh - 80px);
   transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  @media (max-width: 1023px) {
+  @media (max-width: 1023px), (hover: none) and (pointer: coarse) {
     grid-template-columns: 1fr;
   }
 `;
@@ -24,7 +24,7 @@ export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
 export const SidebarSlot = styled.div`
   display: none;
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     display: block;
     position: sticky;
     top: 80px;

@@ -271,6 +271,10 @@ export const PillInput = styled.input`
   font-size: 12px;
   font-weight: 600;
   min-width: 120px;
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 export const CanteenSearchWrap = styled.div`
@@ -344,6 +348,7 @@ export const MessagesScroll = styled.div`
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 14px 0 24px;
   scroll-behavior: smooth;
   overflow-anchor: none;
@@ -361,6 +366,9 @@ export const MessageRow = styled.div<{ $isUser?: boolean }>`
   justify-content: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
   gap: 12px;
   animation: ${fadeUp} 0.35s ease both;
+  max-width: 100%;
+  overflow-x: hidden;
+  width: 100%;
 `;
 
 export const Avatar = styled.img`
@@ -378,7 +386,11 @@ export const MessageContent = styled.div<{ $isUser?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
-  max-width: min(78%, 680px);
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 78vw;
+  max-width: min(78vw, 680px);
+  overflow-x: hidden;
   gap: 6px;
 `;
 
@@ -400,6 +412,9 @@ export const Bubble = styled.div<{ $isUser?: boolean }>`
   border: 1px solid ${({ $isUser, theme }) => ($isUser ? `${theme.textOnAccent1}33` : `${theme.textMuted}33`)};
   box-shadow: 0 12px 28px ${({ theme }) => `${theme.textDark}1F`}, 0 2px 8px ${({ theme }) => `${theme.textDark}12`};
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -412,6 +427,9 @@ export const MarkdownBody = styled.div`
   line-height: 1.6;
   font-size: 0.95rem;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
 
   > :first-child {
     margin-top: 0;
@@ -478,15 +496,15 @@ export const MarkdownBody = styled.div`
     border-radius: 0.5rem;
     background: ${({ theme }) => theme.surfaceInset};
     overflow-x: auto;
+    max-width: 100%;
   }
 
   table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
-    margin: 0.75rem 0;
+    margin: 0;
     font-size: 0.95em;
-    display: block;
-    overflow-x: auto;
   }
 
   th,
@@ -494,7 +512,8 @@ export const MarkdownBody = styled.div`
     padding: 0.55rem 0.6rem;
     border: 1px solid ${({ theme }) => theme.textMuted};
     text-align: left;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   thead {
@@ -516,10 +535,27 @@ export const MarkdownBody = styled.div`
   }
 `;
 
+export const TableWrap = styled.div`
+  width: 100%;
+  max-width: 100%;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.6rem;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+  background: ${({ theme }) => theme.surfaceInset};
+  display: block;
+  min-width: 0;
+`;
+
 export const ToolTraceGroup = styled.div`
   margin-bottom: 0.75rem;
   padding: 0 0 0.75rem;
   border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}33`};
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 `;
 
 export const ToolTraceTitle = styled.div`
@@ -547,6 +583,7 @@ export const ToolCallDetails = styled.details`
   padding: 0;
   border: none;
   background: transparent;
+  max-width: 100%;
 
   summary {
     cursor: pointer;
@@ -562,6 +599,8 @@ export const ToolCallDetails = styled.details`
     background: ${({ theme }) => theme.surfacePage};
     border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
     transition: border-color 0.2s ease, background 0.2s ease;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   summary::-webkit-details-marker {
@@ -589,6 +628,7 @@ export const ToolCallBody = styled.div`
   margin-top: 0.6rem;
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
 `;
 
 export const ToolCallSectionTitle = styled.div`
@@ -607,10 +647,15 @@ export const ToolCallCode = styled.pre`
   font-size: 0.75rem;
   line-height: 1.4;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: auto;
+  max-width: 100%;
 `;
 
 export const ToolCallName = styled.span`
   font-weight: 600;
+  overflow-wrap: anywhere;
 `;
 
 export const ToolCallMeta = styled.span`
@@ -737,6 +782,7 @@ export const ComposerCard = styled.div`
   padding: 12px 0 8px;
   background: linear-gradient(180deg, transparent, ${({ theme }) => theme.surfacePage} 25%);
   border-top: none;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 `;
 
 export const ComposerRow = styled.div`
@@ -789,6 +835,10 @@ export const ComposerTextarea = styled.textarea`
 
   &::placeholder {
     color: ${({ theme }) => theme.textMuted};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
   }
 `;
 
