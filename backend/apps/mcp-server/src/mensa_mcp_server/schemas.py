@@ -452,6 +452,8 @@ _ALLERGEN_KEYWORDS: dict[str, set[str]] = {
     "laxative": {"abfuhrend", "laxative", "laksativ", "srodek przeczyszczajacy"},
 }
 
+Allergen = StrEnum("Allergen", {k: k for k in _ALLERGEN_KEYWORDS.keys()})
+
 
 def _normalize_text(text: str) -> str:
     stripped = unicodedata.normalize("NFKD", text)

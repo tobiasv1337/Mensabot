@@ -20,7 +20,7 @@ export const DIET_OPTIONS: Array<{
   },
   {
     value: "meat",
-    label: "Fleisch",
+    label: "Alles",
     iconSrc: meatIcon,
   },
 ];

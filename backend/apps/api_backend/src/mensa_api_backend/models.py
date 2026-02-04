@@ -8,8 +8,14 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class ChatFilters(BaseModel):
+    diet: Literal["vegetarian", "vegan", "meat"] | None = None
+    allergens: list[str] = []
+
+
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+    filters: ChatFilters = ChatFilters()
     include_tool_calls: bool = False
 
 
