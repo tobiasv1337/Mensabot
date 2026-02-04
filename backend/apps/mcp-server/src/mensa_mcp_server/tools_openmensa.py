@@ -251,22 +251,20 @@ async def get_menus_batch(
             ```
     """
 
-    results: list[MenuResponsePublicDTO] = []
-
-    def _fetch_batch() -> list[MenuResponseDTO]:
-        _results: list[MenuResponseDTO] = []
+    def _fetch_batch() -> list[MenuResponsePublicDTO]:
+        _results: list[MenuResponsePublicDTO] = []
         with make_openmensa_client() as client:
             for req in requests:
                 normalized_date, error_response = normalize_menu_date(canteen_id=req.canteen_id, date=req.date)
 
                 if error_response is not None:
-                    results.append(_to_public_menu(error_response))
+                    _results.append(_to_public_menu(error_response))
                     continue
 
                 normalized_diet_filter = req.diet_filter or MenuDietFilter.all
                 normalized_exclude_allergens = req.exclude_allergens or []
 
-                results.append(
+                _results.append(
                     _to_public_menu(
                         fetch_single_menu(
                             client,
