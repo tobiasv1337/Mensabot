@@ -13,8 +13,12 @@ const getSystemPreference = (): "light" | "dark" => {
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // saves button theme value defined by user (default: "system")
     const [mode, setMode] = useState<ThemeMode>(() => {
-        const stored = localStorage.getItem("theme");
-        return ["light", "dark", "system"].includes(stored as string) ? (stored as ThemeMode) : "system";
+        try {
+            const stored = localStorage.getItem("theme");
+            return ["light", "dark", "system"].includes(stored as string) ? (stored as ThemeMode) : "system";
+        } catch {
+            return "system";
+        }
     });
 
     // systemmode
@@ -34,7 +38,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     const toggleMode = useCallback((newMode: ThemeMode) => {
         setMode(newMode);
-        localStorage.setItem("theme", newMode);
+        try {
+            localStorage.setItem("theme", newMode);
+        } catch {
+            // best-effort persistence
+        }
     }, []);
 
     // logic to determine the active theme based on mode and systemMode
