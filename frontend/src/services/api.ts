@@ -33,6 +33,11 @@ export type ChatApiResponse =
 	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] };
 
+export type ChatApiFilters = {
+	diet: "vegetarian" | "vegan" | "meat" | null;
+	allergens: string[];
+};
+
 export type Canteen = {
 	id: number;
 	name: string;
@@ -133,14 +138,18 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], filters: ChatApiFilters, options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 		const request = await fetch(this.baseUrl + "/api/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ messages: payload, include_tool_calls: options.includeToolCalls ?? false })
+			body: JSON.stringify({
+				messages: payload,
+				filters: { diet: filters.diet, allergens: filters.allergens },
+				include_tool_calls: options.includeToolCalls ?? false,
+			})
 		});
 
 		if (!request.ok) {
