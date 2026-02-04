@@ -26,6 +26,7 @@ const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const isChatView = activeNav === "ChatBot" || activeNav === "Home";
 
   const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
 
@@ -52,13 +53,13 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => {
     const className = "chat-lock-scroll";
-    if (activeNav === "ChatBot") {
+    if (isChatView) {
       document.body.classList.add(className);
     } else {
       document.body.classList.remove(className);
     }
     return () => document.body.classList.remove(className);
-  }, [activeNav]);
+  }, [isChatView]);
 
 
   useSyncExternalStore(Chats.subscribe, Chats.getVersion, Chats.getVersion);
@@ -166,7 +167,7 @@ const ChatPage: React.FC = () => {
             />
           </S.SidebarSlot>
 
-          <S.Content $chat={activeNav === "ChatBot"}>
+          <S.Content $chat={isChatView}>
             {activeNav === "Canteens" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}

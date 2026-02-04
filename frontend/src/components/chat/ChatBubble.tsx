@@ -83,7 +83,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
-                a: ({ ...props }) => <a {...props} target="_blank" rel="noreferrer" />
+                a: ({ ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+                table: ({ node: _node, children, ...props }) => (
+                  <S.TableWrap>
+                    <table {...props}>{children}</table>
+                  </S.TableWrap>
+                ),
               }}
             >
               {message.content}

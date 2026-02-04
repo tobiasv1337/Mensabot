@@ -166,6 +166,10 @@ export const SearchInput = styled.input`
     border-color: ${({ theme }) => `${theme.accent1}99`};
     box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}30`};
   }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 export const SearchActions = styled.div`
@@ -224,6 +228,10 @@ export const SortSelect = styled.select`
     outline: none;
     border-color: ${({ theme }) => theme.accent2};
     box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent2}33`};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px;
   }
 `;
 

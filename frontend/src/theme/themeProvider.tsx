@@ -66,6 +66,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         darkMode: mode === "dark" || (mode === "system" && systemMode === "dark"),
     }), [mode, systemMode, activeTheme, toggleMode]);
 
+    useEffect(() => {
+        document.body.style.backgroundColor = activeTheme.surfacePage;
+        document.documentElement.style.backgroundColor = activeTheme.surfacePage;
+    }, [activeTheme]);
+
     return (
         <ThemeContext.Provider value={contextValue}>
             <StyledThemeProvider theme={activeTheme}>
