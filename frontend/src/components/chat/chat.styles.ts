@@ -983,3 +983,77 @@ export const SendButton = styled.button`
     outline-offset: 2px;
   }
 `;
+
+export const OnboardingContainer = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+`;
+
+export const OnboardingSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+`;
+
+export const OnboardingSectionLabel = styled.div`
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const OnboardingOptionsRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+export const OnboardingPill = styled.button<{ $selected?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1.5px solid ${({ theme, $selected }) => ($selected ? `${theme.accent1}D9` : `${theme.textMuted}44`)};
+  background: ${({ theme, $selected }) => ($selected ? `${theme.accent1}26` : `${theme.surfacePage}80`)};
+  color: ${({ theme, $selected }) => ($selected ? theme.accent1 : theme.textPrimary)};
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: ${({ theme, $selected }) => ($selected ? `${theme.accent1}` : `${theme.accent1}77`)};
+    box-shadow: 0 4px 10px ${({ theme }) => `${theme.textDark}14`};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+export const OnboardingFooter = styled.div`
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+`;
+
+export const OnboardingSkipHint = styled.p`
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0;
+  line-height: 1.5;
+`;

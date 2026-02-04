@@ -10,7 +10,7 @@ import ScrollablePillRow from "./ScrollablePillRow";
 import ShortcutModal from "../shortcuts/ShortcutModal";
 import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
-import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
+import { ALLERGENS, DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import {
   buildSlashInput,
   formatCanteenCommand,
@@ -24,7 +24,7 @@ import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
 
 const WELCOME_TEXT =
-  "Hallo! Ich bin dein Mensabot.\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nWelche Präferenzen hast du?";
+  "Hallo! Ich bin dein Mensabot.\nFrag' mich nach Speiseplänen, Öffnungszeiten oder Preisen.\n\nWenn Du möchtest, kannst Du hier direkt Deine Präferenzen angeben.";
 
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
@@ -369,6 +369,33 @@ const Chat: React.FC<ChatProps> = ({
 
   const hasActiveFilters =
     filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0;
+
+  const isOnboardingState =
+    chat.messages.length === 1 &&
+    chat.messages[0]?.role === "assistant" &&
+    chat.messages[0]?.content === WELCOME_TEXT;
+
+  const handleOnboardingDietToggle = useCallback(
+    (diet: ChatFilters["diet"]) => {
+      updateFiltersPartial({ diet: filters.diet === diet ? null : diet });
+    },
+    [filters.diet, updateFiltersPartial]
+  );
+
+  const handleOnboardingAllergenToggle = useCallback(
+    (allergen: string) => {
+      const newAllergens = filters.allergens.includes(allergen)
+        ? filters.allergens.filter((a) => a !== allergen)
+        : [...filters.allergens, allergen];
+      updateFiltersPartial({ allergens: newAllergens });
+    },
+    [filters.allergens, updateFiltersPartial]
+  );
+
+  const sortedAllergens = useMemo(
+    () => [...ALLERGENS].sort((a, b) => a.label.localeCompare(b.label, "de")),
+    []
+  );
 
   const activeFilterItems = [
     ...(filters.diet
@@ -885,6 +912,11 @@ const Chat: React.FC<ChatProps> = ({
                 ? locationError || undefined
                 : undefined;
 
+              const isWelcomeMessage =
+                message.role === "assistant" &&
+                message.content === WELCOME_TEXT &&
+                isOnboardingState;
+
               return (
                 <ChatBubble
                   key={`${chat.id}-${index}`}
@@ -892,7 +924,48 @@ const Chat: React.FC<ChatProps> = ({
                   avatarSrc={mensabotLogo}
                   actions={actions}
                   actionsNote={actionsNote}
-                />
+                >
+                  {isWelcomeMessage && (
+                    <S.OnboardingContainer>
+                      <S.OnboardingSection>
+                        <S.OnboardingSectionLabel>Ernährungsweise</S.OnboardingSectionLabel>
+                        <S.OnboardingOptionsRow>
+                          {DIET_OPTIONS.map((option) => (
+                            <S.OnboardingPill
+                              key={option.value}
+                              type="button"
+                              $selected={filters.diet === option.value}
+                              onClick={() => handleOnboardingDietToggle(option.value)}
+                            >
+                              <img src={option.iconSrc} alt="" aria-hidden="true" />
+                              {option.label}
+                            </S.OnboardingPill>
+                          ))}
+                        </S.OnboardingOptionsRow>
+                      </S.OnboardingSection>
+
+                      <S.OnboardingSection>
+                        <S.OnboardingSectionLabel>Allergien & Unverträglichkeiten</S.OnboardingSectionLabel>
+                        <S.OnboardingOptionsRow>
+                          {sortedAllergens.map(({ key: allergenKey, label }) => (
+                            <S.OnboardingPill
+                              key={allergenKey}
+                              type="button"
+                              $selected={filters.allergens.includes(allergenKey)}
+                              onClick={() => handleOnboardingAllergenToggle(allergenKey)}
+                            >
+                              {label}
+                            </S.OnboardingPill>
+                          ))}
+                        </S.OnboardingOptionsRow>
+                      </S.OnboardingSection>
+
+                      <S.OnboardingFooter>
+                        <S.OnboardingSkipHint>Schreibe einfach drauf los!</S.OnboardingSkipHint>
+                      </S.OnboardingFooter>
+                    </S.OnboardingContainer>
+                  )}
+                </ChatBubble>
               );
             })}
 

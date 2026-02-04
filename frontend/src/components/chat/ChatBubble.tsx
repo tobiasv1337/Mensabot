@@ -36,9 +36,10 @@ type ChatBubbleProps = {
   avatarSrc?: string;
   actions?: MessageAction[];
   actionsNote?: React.ReactNode;
+  children?: React.ReactNode;
 };
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [], actionsNote }) => {
+const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [], actionsNote, children }) => {
   const isUser = message.role === "user";
   const toolCalls = message.meta.toolCalls ?? [];
 
@@ -89,6 +90,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
               {message.content}
             </ReactMarkdown>
           </S.MarkdownBody>
+
+          {children}
 
           {(actions.length > 0 || actionsNote) && (
             <S.ActionRow>
