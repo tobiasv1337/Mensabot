@@ -200,6 +200,17 @@ const getIcon = (item: string) => {
   }
 };
 
+const LABELS: Record<string, string> = {
+  Home: "Home",
+  ChatBot: "Chatbot",
+  Canteens: "Mensen",
+  About: "Über Uns",
+  Contact: "Kontakt",
+  Shortcuts: "Shortcuts",
+  Settings: "Einstellungen",
+  Map: "Karte",
+};
+
 const Sidebar: React.FC<SidebarProps> = ({
   mode,
   drawerOpen,
@@ -288,11 +299,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 active={activeNav === n}
                 collapsed={isCollapsed}
                 onClick={() => handleNavSelection(n)}
-                title={isCollapsed ? n : undefined}
+                title={isCollapsed ? LABELS[n] : undefined}
               >
                 <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
                 <ButtonTextWrapper $collapsed={isCollapsed}>
-                  {n}
+                  {LABELS[n]}
                 </ButtonTextWrapper>
               </Button>
             ))}
@@ -306,6 +317,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="default"
                   size="fill"
+                  active={activeNav === "Shortcuts"}
                   collapsed={isCollapsed}
                   onClick={() => handleNavSelection("Shortcuts")}>
                   <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
@@ -317,6 +329,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="default"
                   size="fill"
+                  active={activeNav === "Settings"}
                   collapsed={isCollapsed}
                   onClick={() => handleNavSelection("Settings")}>
                   <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
@@ -328,6 +341,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="default"
                   size="fill"
+                  active={activeNav === "Map"}
                   collapsed={isCollapsed}
                   onClick={() => handleNavSelection("Map")}>
                   <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
