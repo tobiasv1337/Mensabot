@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import * as S from "./sidebar.styles";
-import type { NavItem } from "../../types/navigation";
+import { NAV_LABELS, type NavItem } from "../../types/navigation";
 import { useTheme } from "../../theme/useTheme";
 import type { ChatSummary } from "../../services/chats";
 import { Button } from "../button/button";
@@ -200,17 +200,6 @@ const getIcon = (item: string) => {
   }
 };
 
-const LABELS: Record<NavItem, string> = {
-  Home: "Home",
-  ChatBot: "Chatbot",
-  Canteens: "Mensen",
-  About: "Über Uns",
-  Contact: "Kontakt",
-  Shortcuts: "Shortcuts",
-  Settings: "Einstellungen",
-  Map: "Karte",
-};
-
 const Sidebar: React.FC<SidebarProps> = ({
   mode,
   drawerOpen,
@@ -299,11 +288,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 active={activeNav === n}
                 collapsed={isCollapsed}
                 onClick={() => handleNavSelection(n)}
-                title={isCollapsed ? (LABELS[n] ?? n) : undefined}
+                title={isCollapsed ? (NAV_LABELS[n] ?? n) : undefined}
               >
                 <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
                 <ButtonTextWrapper $collapsed={isCollapsed}>
-                  {LABELS[n] ?? n}
+                  {NAV_LABELS[n] ?? n}
                 </ButtonTextWrapper>
               </Button>
             ))}

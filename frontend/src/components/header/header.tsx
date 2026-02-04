@@ -3,7 +3,7 @@ import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
 import { Button } from "../button/button";
 
-import type { NavItem } from "../../types/navigation";
+import { NAV_LABELS, type NavItem } from "../../types/navigation";
 
 interface HeaderProps {
   activeNav: NavItem;
@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({
               active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
-              {n}
+              {NAV_LABELS[n] ?? n}
             </Button>
           ))}
         </S.DesktopNav>
