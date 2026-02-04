@@ -213,7 +213,6 @@ class OSMOpeningHoursResolver:
     def _post_overpass_with_retry(self, query: str) -> Dict[str, Any]:
         """POST to Overpass with exponential backoff retry logic."""
         backoff_s = self.INITIAL_BACKOFF_S
-        last_exception = None
 
         for attempt in range(1, self.MAX_RETRIES + 1):
             try:

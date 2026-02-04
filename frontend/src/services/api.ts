@@ -135,7 +135,7 @@ export class MensaBotClient {
 
 	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
-		const request = await fetch(this.baseUrl + "/api/chat", {
+		const request = await fetch(this.baseUrl + "/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -177,7 +177,7 @@ export class MensaBotClient {
 	}
 
 	async listCanteens(params: { page?: number; perPage?: number; city?: string; hasCoordinates?: boolean; } = {}): Promise<CanteenListResponse> {
-		const url = new URL(this.baseUrl + "/api/canteens");
+		const url = new URL(this.baseUrl + "/canteens", window.location.origin);
 		if (params.page) url.searchParams.set("page", String(params.page));
 		if (params.perPage) url.searchParams.set("per_page", String(params.perPage));
 		if (params.city) url.searchParams.set("city", params.city);
@@ -188,7 +188,7 @@ export class MensaBotClient {
 	}
 
 	async searchCanteens(params: { query?: string; city?: string; nearLat?: number; nearLng?: number; radiusKm?: number; page?: number; perPage?: number; minScore?: number; hasCoordinates?: boolean; sortBy?: "auto" | "distance" | "name" | "city" } = {}): Promise<CanteenSearchResponse> {
-		const url = new URL(this.baseUrl + "/api/canteens/search");
+		const url = new URL(this.baseUrl + "/canteens/search", window.location.origin);
 		if (params.query) url.searchParams.set("query", params.query);
 		if (params.city) url.searchParams.set("city", params.city);
 		if (params.nearLat !== undefined) url.searchParams.set("near_lat", String(params.nearLat));
@@ -205,7 +205,7 @@ export class MensaBotClient {
 	}
 
 	async getCanteenInfo(canteenId: number): Promise<Canteen> {
-		const response = await this.getJson(`/api/canteens/${canteenId}`);
+		const response = await this.getJson(`/canteens/${canteenId}`);
 		return response as Canteen;
 	}
 
@@ -213,7 +213,7 @@ export class MensaBotClient {
 		canteenId: number,
 		params: { date?: string; dietFilter?: MenuDietFilter; excludeAllergens?: string[]; priceCategory?: PriceCategory } = {}
 	): Promise<MenuResponse> {
-		const url = new URL(this.baseUrl + `/api/canteens/${canteenId}/menu`);
+		const url = new URL(this.baseUrl + `/canteens/${canteenId}/menu`, window.location.origin);
 		if (params.date) url.searchParams.set("date", params.date);
 		if (params.dietFilter) url.searchParams.set("diet_filter", params.dietFilter);
 		if (params.excludeAllergens && params.excludeAllergens.length > 0) {

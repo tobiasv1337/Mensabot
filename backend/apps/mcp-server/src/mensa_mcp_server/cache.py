@@ -3,10 +3,7 @@ from __future__ import annotations
 import time
 from collections import OrderedDict
 from threading import Lock
-from typing import Any, Callable, TypeVar
-
-
-T = TypeVar("T")
+from typing import Any
 
 
 class TTLCache:

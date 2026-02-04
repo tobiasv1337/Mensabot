@@ -4,9 +4,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - backend/apps/api_backend/src/mensa_api_backend/.env
+      - .env
     environment:
-      API_BACKEND_CANTEEN_INDEX_PATH: /data/canteens.json
+      MENSA_MCP_CANTEEN_INDEX_PATH: /data/canteens.json
     volumes:
       - canteen_data:/data
     expose:
@@ -16,6 +16,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     expose:
       - "8080"
     depends_on:
@@ -25,9 +27,8 @@ services:
     build:
       context: .
       dockerfile: nginx/Dockerfile
-      args:
-        BASIC_AUTH_USER: ${BASIC_AUTH_USER}
-        BASIC_AUTH_PASS: ${BASIC_AUTH_PASS}
+    env_file:
+      - .env
     ports:
       - "80:80"
       - "443:443"
