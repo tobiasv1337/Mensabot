@@ -200,7 +200,7 @@ const getIcon = (item: string) => {
   }
 };
 
-const LABELS: Record<string, string> = {
+const LABELS: Record<NavItem, string> = {
   Home: "Home",
   ChatBot: "Chatbot",
   Canteens: "Mensen",
@@ -299,11 +299,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 active={activeNav === n}
                 collapsed={isCollapsed}
                 onClick={() => handleNavSelection(n)}
-                title={isCollapsed ? LABELS[n] : undefined}
+                title={isCollapsed ? (LABELS[n] ?? n) : undefined}
               >
                 <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
                 <ButtonTextWrapper $collapsed={isCollapsed}>
-                  {LABELS[n]}
+                  {LABELS[n] ?? n}
                 </ButtonTextWrapper>
               </Button>
             ))}
