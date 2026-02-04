@@ -16,6 +16,7 @@ type ConfirmModalProps = {
   cancelLabel?: string;
   confirmDisabled?: boolean;
   cancelDisabled?: boolean;
+  cancelButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -30,6 +31,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   cancelLabel = "Abbrechen",
   confirmDisabled = false,
   cancelDisabled = false,
+  cancelButtonRef,
   onConfirm,
   onCancel,
 }) => {
@@ -61,6 +63,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           $variant="secondary"
           onClick={onCancel}
           disabled={cancelDisabled}
+          ref={cancelButtonRef}
         >
           {cancelLabel}
         </ChatStyles.ActionButton>

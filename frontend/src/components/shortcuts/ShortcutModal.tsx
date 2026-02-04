@@ -103,6 +103,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
               });
             }}
             placeholder="z. B. Mensa Dienstag"
+            autoFocus
           />
         </S.FieldGrid>
 

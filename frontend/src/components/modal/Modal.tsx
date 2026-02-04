@@ -17,6 +17,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, ariaLabel }) =
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
+        tabIndex={-1}
+        ref={(node) => node?.focus()}
         onClick={(event) => event.stopPropagation()}
       >
         {children}
