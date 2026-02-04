@@ -114,8 +114,11 @@ export class MensaBotClient {
 		this.baseUrl = baseUrl;
 	}
 
-	private async getJson(path: string): Promise<unknown> {
-		const request = await fetch(this.baseUrl + path, {
+	private async getJson(path: string, params?: URLSearchParams): Promise<unknown> {
+		const queryString = params?.toString();
+		const url = this.baseUrl + path + (queryString ? `?${queryString}` : "");
+
+		const request = await fetch(url, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -177,30 +180,30 @@ export class MensaBotClient {
 	}
 
 	async listCanteens(params: { page?: number; perPage?: number; city?: string; hasCoordinates?: boolean; } = {}): Promise<CanteenListResponse> {
-		const url = new URL(this.baseUrl + "/canteens", window.location.origin);
-		if (params.page) url.searchParams.set("page", String(params.page));
-		if (params.perPage) url.searchParams.set("per_page", String(params.perPage));
-		if (params.city) url.searchParams.set("city", params.city);
-		if (params.hasCoordinates !== undefined) url.searchParams.set("has_coordinates", String(params.hasCoordinates));
+		const searchParams = new URLSearchParams();
+		if (params.page) searchParams.set("page", String(params.page));
+		if (params.perPage) searchParams.set("per_page", String(params.perPage));
+		if (params.city) searchParams.set("city", params.city);
+		if (params.hasCoordinates !== undefined) searchParams.set("has_coordinates", String(params.hasCoordinates));
 
-		const response = await this.getJson(url.pathname + url.search);
+		const response = await this.getJson("/canteens", searchParams);
 		return response as CanteenListResponse;
 	}
 
 	async searchCanteens(params: { query?: string; city?: string; nearLat?: number; nearLng?: number; radiusKm?: number; page?: number; perPage?: number; minScore?: number; hasCoordinates?: boolean; sortBy?: "auto" | "distance" | "name" | "city" } = {}): Promise<CanteenSearchResponse> {
-		const url = new URL(this.baseUrl + "/canteens/search", window.location.origin);
-		if (params.query) url.searchParams.set("query", params.query);
-		if (params.city) url.searchParams.set("city", params.city);
-		if (params.nearLat !== undefined) url.searchParams.set("near_lat", String(params.nearLat));
-		if (params.nearLng !== undefined) url.searchParams.set("near_lng", String(params.nearLng));
-		if (params.radiusKm !== undefined) url.searchParams.set("radius_km", String(params.radiusKm));
-		if (params.page !== undefined) url.searchParams.set("page", String(params.page));
-		if (params.perPage !== undefined) url.searchParams.set("per_page", String(params.perPage));
-		if (params.minScore !== undefined) url.searchParams.set("min_score", String(params.minScore));
-		if (params.hasCoordinates !== undefined) url.searchParams.set("has_coordinates", String(params.hasCoordinates));
-		if (params.sortBy) url.searchParams.set("sort_by", params.sortBy);
+		const searchParams = new URLSearchParams();
+		if (params.query) searchParams.set("query", params.query);
+		if (params.city) searchParams.set("city", params.city);
+		if (params.nearLat !== undefined) searchParams.set("near_lat", String(params.nearLat));
+		if (params.nearLng !== undefined) searchParams.set("near_lng", String(params.nearLng));
+		if (params.radiusKm !== undefined) searchParams.set("radius_km", String(params.radiusKm));
+		if (params.page !== undefined) searchParams.set("page", String(params.page));
+		if (params.perPage !== undefined) searchParams.set("per_page", String(params.perPage));
+		if (params.minScore !== undefined) searchParams.set("min_score", String(params.minScore));
+		if (params.hasCoordinates !== undefined) searchParams.set("has_coordinates", String(params.hasCoordinates));
+		if (params.sortBy) searchParams.set("sort_by", params.sortBy);
 
-		const response = await this.getJson(url.pathname + url.search);
+		const response = await this.getJson("/canteens/search", searchParams);
 		return response as CanteenSearchResponse;
 	}
 
@@ -213,15 +216,15 @@ export class MensaBotClient {
 		canteenId: number,
 		params: { date?: string; dietFilter?: MenuDietFilter; excludeAllergens?: string[]; priceCategory?: PriceCategory } = {}
 	): Promise<MenuResponse> {
-		const url = new URL(this.baseUrl + `/canteens/${canteenId}/menu`, window.location.origin);
-		if (params.date) url.searchParams.set("date", params.date);
-		if (params.dietFilter) url.searchParams.set("diet_filter", params.dietFilter);
+		const searchParams = new URLSearchParams();
+		if (params.date) searchParams.set("date", params.date);
+		if (params.dietFilter) searchParams.set("diet_filter", params.dietFilter);
 		if (params.excludeAllergens && params.excludeAllergens.length > 0) {
-			params.excludeAllergens.forEach((item) => url.searchParams.append("exclude_allergens", item));
+			params.excludeAllergens.forEach((item) => searchParams.append("exclude_allergens", item));
 		}
-		if (params.priceCategory) url.searchParams.set("price_category", params.priceCategory);
+		if (params.priceCategory) searchParams.set("price_category", params.priceCategory);
 
-		const response = await this.getJson(url.pathname + url.search);
+		const response = await this.getJson(`/canteens/${canteenId}/menu`, searchParams);
 		return response as MenuResponse;
 	}
 }
