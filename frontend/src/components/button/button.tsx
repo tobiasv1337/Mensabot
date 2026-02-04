@@ -33,9 +33,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             >
                 {/* left icon */}
                 {iconLeft && (
-                    React.isValidElement(iconLeft) && (iconLeft as any).type === 'img' ? (
+                    React.isValidElement(iconLeft) && (iconLeft as React.ReactElement).type === 'img' ? (
                         <ButtonIconWrapper>
-                            <img src={(iconLeft as any).props.src} alt={(iconLeft as any).props.alt || ''} />
+                            <img
+                                src={(iconLeft as React.ReactElement<{ src?: string }>).props.src}
+                                alt={(iconLeft as React.ReactElement<{ alt?: string }>).props.alt || ''}
+                            />
                         </ButtonIconWrapper>
                     ) : (
                         <ButtonIconWrapper>{iconLeft}</ButtonIconWrapper>
@@ -46,9 +49,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 {size === 'iconOnly' ? null : (children ? children : <ButtonTextWrapper $collapsed={collapsed}>{content}</ButtonTextWrapper>)}
 
                 {iconRight && (
-                    React.isValidElement(iconRight) && (iconRight as any).type === 'img' ? (
+                    React.isValidElement(iconRight) && (iconRight as React.ReactElement).type === 'img' ? (
                         <ButtonIconWrapper>
-                            <img src={(iconRight as any).props.src} alt={(iconRight as any).props.alt || ''} />
+                            <img
+                                src={(iconRight as React.ReactElement<{ src?: string }>).props.src}
+                                alt={(iconRight as React.ReactElement<{ alt?: string }>).props.alt || ''}
+                            />
                         </ButtonIconWrapper>
                     ) : (
                         <ButtonIconWrapper>{iconRight}</ButtonIconWrapper>
