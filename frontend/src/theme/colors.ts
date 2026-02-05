@@ -23,6 +23,7 @@ const palette = {
 
 export interface Theme {
   // Surface colors - semantic, context-based naming
+  mode: 'light' | 'dark'; // Explicit mode flag
   surfacePage: string;           // Main page background
   textOnPage: string;            // Text color for surfacePage
   surfaceCard: string;           // Cards, panels (raised surfaces)
@@ -53,6 +54,7 @@ export interface Theme {
 
 // LIGHT MODE DEFINITION
 export const lightTheme: Theme = {
+  mode: 'light',
   surfacePage: palette.cleanOffWhite,            // Main background
   textOnPage: palette.black,
   surfaceCard: palette.pureWhite,                // Cards (raised/elevated surfaces)
@@ -81,6 +83,7 @@ export const lightTheme: Theme = {
 
 // DARK MODE DEFINITION
 export const darkTheme: Theme = {
+  mode: 'dark',
   surfacePage: palette.greyJetBlack,             // Main background
   textOnPage: palette.white,
   surfaceCard: palette.greyCharcoalBlue,         // Cards (raised/elevated surfaces)

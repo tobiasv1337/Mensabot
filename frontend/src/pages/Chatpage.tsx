@@ -6,13 +6,14 @@ import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
 import ShortcutsPage from "./ShortcutsPage";
+import ProjectFactsPage from "./ProjectFactsPage";
 import SettingsPage from "./SettingsPage";
 import MapPage from "./MapPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "Contact"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "About", "Contact"];
 const CHAT_PAGE_SIZE = 10;
 
 const resolveInitialChatId = () => {
@@ -174,6 +175,8 @@ const ChatPage: React.FC = () => {
                 onSelectCanteen={handleSelectCanteen}
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
+            ) : activeNav === "ProjectFacts" ? (
+              <ProjectFactsPage />
             ) : activeNav === "Shortcuts" ? (
               <ShortcutsPage
                 shortcuts={shortcuts}

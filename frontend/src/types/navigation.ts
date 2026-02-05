@@ -3,6 +3,7 @@ export type NavItem =
     | "ChatBot"
     | "Canteens"
     | "Map"
+    | "ProjectFacts"
     | "About"
     | "Contact"
     | "Shortcuts"
