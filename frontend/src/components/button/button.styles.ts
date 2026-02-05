@@ -19,18 +19,33 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
             color: theme.textSecondary,
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textPrimary,
-        }, 
-        surfaceAccent: { // darker surface background
+        },
+        surfaceAccent: { // two times darker surface background
             bg: theme.surfaceAccent,
             color: theme.textOnAccent,
             hoverBg: theme.surfaceAccent,
             hoverColor: theme.textOnAccent,
         },
-        surfaceInset: { // lighter surface background
+        surfaceInset: { // darker surface background
             bg: theme.surfaceInset,
             color: theme.textOnInset,
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textOnInset,
+        },
+        surfaceElevated: { // elevated surface background
+            bg: theme.surfaceElevated,
+            color: theme.textOnElevated,
+            hoverBg: theme.surfaceElevated,
+            hoverColor: theme.textOnElevated,
+        },
+        surfaceInsetBorder: { // elevated surface with border
+            bg: theme.mode === 'dark' ? theme.surfaceCard : theme.surfaceInset,
+            color: theme.mode === 'dark' ? theme.textOnCard : theme.textOnInset,
+            hoverBg: theme.mode === 'dark' ? theme.surfaceElevated : theme.surfaceInset,
+            hoverColor: theme.mode === 'dark' ? theme.textOnElevated : theme.textOnInset,
+            border: theme.mode === 'dark'
+                ? `1px solid ${theme.textOnCard}`
+                : `1px solid ${theme.textOnInset}`,
         },
     };
     return variantStyles[variant ?? 'default'];
@@ -90,8 +105,8 @@ export const ButtonIconWrapper = styled.span`
 export const ButtonTextWrapper = styled.span<{ $collapsed?: boolean }>`
   white-space: nowrap;
   ${({ $collapsed }) =>
-    $collapsed &&
-    `
+        $collapsed &&
+        `
     display: none;
   `}
 `;
@@ -116,6 +131,7 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
         return css`
             background: ${styles.bg};
             color: ${styles.color};
+            border: ${(styles as any).border || 'none'};
 
             &:hover:not(:disabled) {
                 background: ${styles.hoverBg};
