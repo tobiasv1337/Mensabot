@@ -24,7 +24,7 @@ import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
 
 const WELCOME_TEXT =
-  "Hallo! Ich bin dein Mensabot.\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nWelche Präferenzen hast du?";
+  "Hallo! Ich bin dein Mensabot. Wie kann ich dir helfen?\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nOder nutze /command für Schnellzugriffe.";
 
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
@@ -157,15 +157,11 @@ const Chat: React.FC<ChatProps> = ({
 
   useEffect(() => {
     if (chat.messages.length > 0) return;
-    if (menuCanteen) {
-      if (!initialMenuFetched.current) {
-        initialMenuFetched.current = true;
-        fetchAndAppendMenu(menuCanteen, chat);
-      }
-      return;
+    if (!menuCanteen) return;
+    if (!initialMenuFetched.current) {
+      initialMenuFetched.current = true;
+      fetchAndAppendMenu(menuCanteen, chat);
     }
-    chat.addMessage(new ChatMessage("assistant", WELCOME_TEXT));
-    setVersion((v) => v + 1);
   }, [chat, menuCanteen, fetchAndAppendMenu]);
 
   useEffect(() => {
@@ -759,6 +755,8 @@ const Chat: React.FC<ChatProps> = ({
     }
     : undefined;
 
+  const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen;
+
   return (
     <S.ChatShell>
       <S.HeaderCard>
@@ -848,6 +846,12 @@ const Chat: React.FC<ChatProps> = ({
       <S.MessagesCard>
         <S.MessagesScroll ref={scrollRef}>
           <S.MessageList>
+            {showWelcomeMessage && (
+              <ChatBubble
+                message={new ChatMessage("assistant", WELCOME_TEXT)}
+                avatarSrc={mensabotLogo}
+              />
+            )}
             {chat.messages.map((message, index) => {
               const isLast = index === chat.messages.length - 1;
               const shouldShowLocationActions =
