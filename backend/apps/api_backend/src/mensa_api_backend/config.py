@@ -28,5 +28,8 @@ class APIBackendSettings(BaseSettings):
     io_max_concurrency: int = 10
     llm_max_concurrency: int = 10
 
+    # Expose debugging endpoints (cache + external API metrics). Keep disabled in production.
+    enable_debug_endpoints: bool = False
+
 
 settings = APIBackendSettings()

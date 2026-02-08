@@ -25,6 +25,7 @@ import httpx
 
 from .cache import shared_cache
 from .cache_keys import overpass_query_key
+from .metrics import metrics
 from .settings import settings
 
 logger = logging.getLogger("mensa_mcp_server")
@@ -215,13 +216,17 @@ class OSMOpeningHoursResolver:
             for attempt in range(1, self.MAX_RETRIES + 1):
                 try:
                     logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
+                    metrics.inc("overpass.http.attempts_total")
                     resp = await client.post(
                         self.overpass_url,
                         content=query.encode("utf-8"),
                     )
+                    metrics.inc("overpass.http.responses_total")
+                    metrics.inc_labeled("overpass.http.status_total", str(resp.status_code))
 
                     # Check for HTTP errors
                     if resp.status_code == 429:
+                        metrics.inc("overpass.http.rate_limited_total")
                         retry_after = resp.headers.get("Retry-After")
                         if retry_after:
                             try:
@@ -232,6 +237,7 @@ class OSMOpeningHoursResolver:
 
                         if attempt < self.MAX_RETRIES:
                             logger.warning(f"Overpass rate limited (429), retrying in {backoff_s}s")
+                            metrics.inc("overpass.http.retries_total")
                             await anyio.sleep(backoff_s)
                             backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
                             continue
@@ -239,8 +245,10 @@ class OSMOpeningHoursResolver:
                         resp.raise_for_status()
 
                     if resp.status_code >= 500:
+                        metrics.inc("overpass.http.server_error_total")
                         if attempt < self.MAX_RETRIES:
                             logger.warning(f"Overpass server error ({resp.status_code}), retrying in {backoff_s}s")
+                            metrics.inc("overpass.http.retries_total")
                             await anyio.sleep(backoff_s)
                             backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
                             continue
@@ -252,17 +260,22 @@ class OSMOpeningHoursResolver:
                     try:
                         data = resp.json()
                     except ValueError as e:
+                        metrics.inc("overpass.http.invalid_json_total")
                         raise RuntimeError(f"Overpass returned invalid JSON: {e}") from e
 
                     if not isinstance(data, dict):
+                        metrics.inc("overpass.http.invalid_json_total")
                         raise RuntimeError("Overpass returned non-object JSON.")
 
                     logger.debug("Overpass request successful")
+                    metrics.inc("overpass.http.success_total")
                     return data
 
                 except httpx.TimeoutException:
+                    metrics.inc("overpass.http.timeout_total")
                     if attempt < self.MAX_RETRIES:
                         logger.warning(f"Overpass timeout, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
+                        metrics.inc("overpass.http.retries_total")
                         await anyio.sleep(backoff_s)
                         backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
                         continue
@@ -270,10 +283,12 @@ class OSMOpeningHoursResolver:
                     raise RuntimeError(f"Overpass API timeout after {self.MAX_RETRIES} attempts")
 
                 except httpx.ConnectError as e:
+                    metrics.inc("overpass.http.connect_error_total")
                     if attempt < self.MAX_RETRIES:
                         logger.warning(
                             f"Overpass connection error, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})"
                         )
+                        metrics.inc("overpass.http.retries_total")
                         await anyio.sleep(backoff_s)
                         backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
                         continue
@@ -283,6 +298,7 @@ class OSMOpeningHoursResolver:
                 except httpx.HTTPStatusError as e:
                     status_code = e.response.status_code
                     logger.error(f"Overpass HTTP error: {status_code}")
+                    metrics.inc("overpass.http.http_error_total")
                     if status_code == 400:
                         raise RuntimeError("Overpass query error (400): Check query syntax") from e
                     if status_code == 403:
@@ -296,6 +312,7 @@ class OSMOpeningHoursResolver:
 
                 except Exception as e:
                     logger.error(f"Unexpected Overpass error: {type(e).__name__}: {e}")
+                    metrics.inc_labeled("overpass.http.unexpected_error_total", type(e).__name__)
                     raise RuntimeError(f"Unexpected Overpass error: {type(e).__name__}: {e}") from e
 
         raise RuntimeError(f"Overpass request failed after {self.MAX_RETRIES} attempts")
