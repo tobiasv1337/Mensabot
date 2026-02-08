@@ -84,7 +84,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
                 a: ({ ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
-                table: ({ node: _node, children, ...props }) => (
+                table: ({ children, ...props }) => (
                   <S.TableWrap>
                     <table {...props}>{children}</table>
                   </S.TableWrap>

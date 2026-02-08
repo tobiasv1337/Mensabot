@@ -1,4 +1,6 @@
 import styled, { keyframes } from "styled-components";
+export { HeroCard, HeroEyebrow, HeroTitle, HeroSubtitle } from "../components/page/PageHero.styles";
+export { SearchCard, SearchRow, SearchInput, SearchActions, ClearButton, SearchMeta, MetaPill } from "../components/page/PageSearch.styles";
 
 const fadeUp = keyframes`
   from {
@@ -28,50 +30,6 @@ export const Hero = styled.section`
   @media (max-width: 980px) {
     grid-template-columns: 1fr;
   }
-`;
-
-export const HeroCard = styled.div`
-  position: relative;
-  overflow: hidden;
-  padding: 28px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}26`};
-  box-shadow: 0 24px 45px ${({ theme }) => `${theme.textDark}1F`};
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: -60%;
-    right: -20%;
-    width: 60%;
-    height: 140%;
-    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}40`}, transparent);
-    transform: rotate(12deg);
-  }
-`;
-
-export const HeroEyebrow = styled.div`
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: ${({ theme }) => theme.textSecondary};
-  margin-bottom: 12px;
-`;
-
-export const HeroTitle = styled.h1`
-  font-size: clamp(28px, 4vw, 40px);
-  margin: 0 0 12px 0;
-  color: ${({ theme }) => theme.textOnCard};
-`;
-
-export const HeroSubtitle = styled.p`
-  margin: 0;
-  max-width: 520px;
-  font-size: 15px;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
 `;
 
 export const HeroHighlights = styled.div`
@@ -134,50 +92,6 @@ export const StatText = styled.div`
   color: ${({ theme }) => theme.textSecondary};
 `;
 
-export const SearchCard = styled.form`
-  padding: 20px;
-  border-radius: 20px;
-  background: ${({ theme }) => theme.surfaceCard};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  display: grid;
-  gap: 14px;
-`;
-
-export const SearchRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-`;
-
-export const SearchInput = styled.input`
-  flex: 1;
-  min-width: 220px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}35`};
-  background: ${({ theme }) => theme.surfaceInset};
-  color: ${({ theme }) => theme.textOnInset};
-  font-size: 14px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus-visible {
-    outline: none;
-    border-color: ${({ theme }) => `${theme.accent1}99`};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}30`};
-  }
-
-  @media (max-width: 480px) {
-    font-size: 16px;
-  }
-`;
-
-export const SearchActions = styled.div`
-  display: flex;
-  gap: 10px;
-  align-items: center;
-`;
-
 export const SearchButton = styled.button`
   padding: 10px 16px;
   border-radius: 12px;
@@ -233,39 +147,6 @@ export const SortSelect = styled.select`
   @media (max-width: 480px) {
     font-size: 16px;
   }
-`;
-
-export const ClearButton = styled.button`
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: ${({ theme }) => theme.surfaceInset};
-  color: ${({ theme }) => theme.textOnInset};
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}33`};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 18px ${({ theme }) => `${theme.textDark}14`};
-  }
-`;
-
-export const SearchMeta = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  font-size: 13px;
-  color: ${({ theme }) => theme.textSecondary};
-`;
-
-export const MetaPill = styled.span`
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: ${({ theme }) => theme.surfaceInset};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  font-weight: 600;
 `;
 
 export const ResultsHeader = styled.div`
