@@ -23,6 +23,7 @@ const CLUSTER_MAX_ZOOM = 14;
 
 const PER_PAGE = 100;
 const MAX_PINS = 2000;
+const SEARCH_MIN_SCORE = 60;
 
 const coordKey = (pos: LngLat) => `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
 
@@ -55,6 +56,49 @@ const computeViewportRadiusKm = (map: maplibregl.Map) => {
     return Math.max(acc, d);
   }, 0);
   return Math.max(0.25, max * 1.05);
+};
+
+const fitMapToCanteens = (map: maplibregl.Map, items: Canteen[]) => {
+  const coords = items
+    .filter((c) => typeof c.lat === "number" && typeof c.lng === "number")
+    .map((c) => ({ lat: c.lat as number, lng: c.lng as number }));
+  if (coords.length === 0) return;
+
+  if (coords.length === 1) {
+    const p = coords[0];
+    map.easeTo({
+      center: [p.lng, p.lat],
+      zoom: Math.max(map.getZoom(), USER_ZOOM),
+      duration: 650,
+    });
+    return;
+  }
+
+  let minLat = Number.POSITIVE_INFINITY;
+  let maxLat = Number.NEGATIVE_INFINITY;
+  let minLng = Number.POSITIVE_INFINITY;
+  let maxLng = Number.NEGATIVE_INFINITY;
+  for (const p of coords) {
+    minLat = Math.min(minLat, p.lat);
+    maxLat = Math.max(maxLat, p.lat);
+    minLng = Math.min(minLng, p.lng);
+    maxLng = Math.max(maxLng, p.lng);
+  }
+
+  map.fitBounds(
+    [
+      [minLng, minLat],
+      [maxLng, maxLat],
+    ],
+    {
+      padding: { top: 80, right: 80, bottom: 280, left: 80 },
+      maxZoom: 16,
+      duration: 750,
+      bearing: map.getBearing(),
+      pitch: map.getPitch(),
+      linear: true,
+    }
+  );
 };
 
 const buildGeoJson = (canteens: Canteen[], selectedIds: Set<number>) => {
@@ -486,8 +530,6 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       const map = mapRef.current;
       if (!map) return;
 
-      const center = map.getCenter();
-      const radiusKm = computeViewportRadiusKm(map);
       void (async () => {
         const rid = ++requestId.current;
         if (destroyedRef.current) return;
@@ -499,24 +541,30 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
         closeSpider();
 
         const trimmed = queryRef.current.trim();
-        const queryParam = trimmed.length > 0 ? trimmed : undefined;
+        const hasQuery = trimmed.length > 0;
+        const queryParam = hasQuery ? trimmed : undefined;
 
         try {
           const results = new Map<number, Canteen>();
           let page = 1;
           let total: number | null = null;
+          let didFitToResults = false;
+          let scoreCutoff = SEARCH_MIN_SCORE;
+          let bestScore: number | null = null;
 
           while (results.size < MAX_PINS) {
+            const center = map.getCenter();
+            const radiusKm = hasQuery ? undefined : computeViewportRadiusKm(map);
             const response: CanteenSearchResponse = await client.searchCanteens({
               query: queryParam,
-              nearLat: center.lat,
-              nearLng: center.lng,
+              nearLat: hasQuery ? undefined : center.lat,
+              nearLng: hasQuery ? undefined : center.lng,
               radiusKm,
               page,
               perPage: PER_PAGE,
-              minScore: 0,
+              minScore: hasQuery ? SEARCH_MIN_SCORE : 0,
               hasCoordinates: true,
-              sortBy: "distance",
+              sortBy: hasQuery ? "auto" : "distance",
             });
 
             if (destroyedRef.current) return;
@@ -527,7 +575,19 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
               setTotalResults(total);
             }
 
+            if (hasQuery && bestScore === null && response.results.length > 0) {
+              bestScore = response.results[0].score;
+              // Keep only strong matches relative to the best one to avoid "TU" matching everything.
+              scoreCutoff = Math.max(SEARCH_MIN_SCORE, bestScore - 10);
+            }
+
+            let stopAfterThisPage = false;
             for (const row of response.results) {
+              if (hasQuery && row.score < scoreCutoff) {
+                // Results are sorted by score (sort_by=auto), so once we go below the cutoff we can stop paging.
+                stopAfterThisPage = true;
+                break;
+              }
               const c = row.canteen;
               if (typeof c.lat !== "number" || typeof c.lng !== "number") continue;
               results.set(c.id, c);
@@ -540,6 +600,12 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
               setIsCapped(true);
             }
 
+            if (hasQuery && !didFitToResults && items.length > 0) {
+              didFitToResults = true;
+              fitMapToCanteens(map, items);
+            }
+
+            if (hasQuery && stopAfterThisPage) break;
             if (!response.page_info.has_next) break;
             page = response.page_info.next_page ?? page + 1;
           }
@@ -548,6 +614,10 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
           setCanteens(finalItems);
           if (total !== null && finalItems.length >= MAX_PINS && total > finalItems.length) {
             setIsCapped(true);
+          }
+
+          if (hasQuery && finalItems.length > 0) {
+            fitMapToCanteens(map, finalItems);
           }
 
           setActiveCanteen((prev) => {
@@ -671,6 +741,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
 
     map.on("movestart", closeSpider);
     map.on("moveend", () => {
+      if (queryRef.current.trim().length > 0) return;
       scheduleRefresh();
     });
 
@@ -882,14 +953,15 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
 
   const statusText = useMemo(() => {
     const shown = canteens.length;
+    const hasQuery = query.trim().length > 0;
     if (loading && shown === 0) return "Lade Mensen ...";
     if (error) return error;
     if (totalResults !== null) {
-      if (isCapped) return `Zeige ${shown} von ${totalResults}. Bitte zoomen.`;
+      if (isCapped) return hasQuery ? `Zeige ${shown} von ${totalResults}. Bitte Suche eingrenzen.` : `Zeige ${shown} von ${totalResults}. Bitte zoomen.`;
       return `Zeige ${shown} von ${totalResults}`;
     }
     return `Zeige ${shown}`;
-  }, [canteens.length, error, isCapped, loading, totalResults]);
+  }, [canteens.length, error, isCapped, loading, query, totalResults]);
 
   const statusTone: "default" | "danger" = error ? "danger" : "default";
 
