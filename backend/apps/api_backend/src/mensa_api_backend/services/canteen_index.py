@@ -3,10 +3,13 @@ from mensa_mcp_server.settings import settings
 from mensa_mcp_server.metrics import metrics
 from openmensa_sdk import CanteenIndexStore, OpenMensaAPIError
 
+from threading import Lock
+
 from ..models import CanteenOut
 
 
 _canteen_index_store: CanteenIndexStore | None = None
+_canteen_index_refresh_lock = Lock()
 
 
 def get_canteen_index_store() -> CanteenIndexStore:
@@ -32,25 +35,32 @@ def load_canteen_index():
         metrics.inc("canteen_index.load.hit_total")
         return cached
 
-    if cached is None:
-        metrics.inc("canteen_index.load.miss_total")
-    else:
-        metrics.inc("canteen_index.load.stale_total")
+    # Avoid concurrent refreshes/writes
+    with _canteen_index_refresh_lock:
+        cached = store.load()
+        if cached is not None and not cached.is_stale(ttl_hours):
+            metrics.inc("canteen_index.load.hit_total")
+            return cached
 
-    with make_openmensa_client() as client:
-        metrics.inc("canteen_index.refresh.attempt_total")
-        metrics.inc_labeled("canteen_index.refresh.attempt_by_caller_total", "api")
-        try:
-            idx = store.refresh(client)
-        except OpenMensaAPIError:
-            metrics.inc("canteen_index.refresh.error_total")
-            if cached is not None:
-                metrics.inc("canteen_index.refresh.used_stale_total")
-                return cached
-            raise
+        if cached is None:
+            metrics.inc("canteen_index.load.miss_total")
+        else:
+            metrics.inc("canteen_index.load.stale_total")
 
-        metrics.inc("canteen_index.refresh.success_total")
-        return idx
+        with make_openmensa_client() as client:
+            metrics.inc("canteen_index.refresh.attempt_total")
+            metrics.inc_labeled("canteen_index.refresh.attempt_by_caller_total", "api")
+            try:
+                idx = store.refresh(client)
+            except OpenMensaAPIError:
+                metrics.inc("canteen_index.refresh.error_total")
+                if cached is not None:
+                    metrics.inc("canteen_index.refresh.used_stale_total")
+                    return cached
+                raise
+
+            metrics.inc("canteen_index.refresh.success_total")
+            return idx
 
 
 def canteen_to_out(canteen) -> CanteenOut:

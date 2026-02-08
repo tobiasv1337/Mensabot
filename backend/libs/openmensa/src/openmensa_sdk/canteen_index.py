@@ -12,6 +12,7 @@ import logging
 import math
 import os
 import re
+import tempfile
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
@@ -340,13 +341,21 @@ class CanteenIndex:
         }
 
     def to_file(self, path: str) -> None:
-        dir_path = os.path.dirname(path)
-        if dir_path:
-            os.makedirs(dir_path, exist_ok=True)
-        tmp_path = f"{path}.tmp"
-        with open(tmp_path, "w", encoding="utf-8") as handle:
-            json.dump(self.to_dict(), handle, ensure_ascii=True, indent=2, sort_keys=True)
-        os.replace(tmp_path, path)
+        dir_path = os.path.dirname(path) or "."
+        os.makedirs(dir_path, exist_ok=True)
+
+        fd, tmp_path = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=dir_path, text=True)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(self.to_dict(), handle, ensure_ascii=True, indent=2, sort_keys=True)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, path)
+        finally:
+            try:
+                os.remove(tmp_path)
+            except FileNotFoundError:
+                pass
 
     def is_stale(self, ttl_hours: float) -> bool:
         updated_at = self.updated_at
