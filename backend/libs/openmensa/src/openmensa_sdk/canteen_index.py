@@ -92,6 +92,7 @@ class _IndexedCanteen:
     canteen: Canteen
     name_norm: str
     city_norm: str | None
+    address_norm: str | None
     aliases: tuple[str, ...]
     acronym: str | None
 
@@ -208,10 +209,14 @@ def _build_query_variants(query_norm: str) -> list[tuple[str, float, float | Non
     if tokens and any(t in _STOP_TOKENS for t in tokens):
         filtered = [t for t in tokens if t not in _STOP_TOKENS]
         if filtered:
-            add_variant(" ".join(filtered), 0.75, 90.0)
+            # Stop tokens like "tu", "uni", "mensa" are very common and would otherwise
+            # make many unrelated canteens score >= min_score. When we have at least one
+            # informative token left, treat the filtered query as the primary signal so
+            # strong matches can still reach a high score (used by frontend cutoffs).
+            add_variant(" ".join(filtered), 1.0, None)
             prefix_variant = _prefix_acronym(filtered)
             if prefix_variant:
-                add_variant(prefix_variant, 0.8, 90.0)
+                add_variant(prefix_variant, 0.95, None)
 
     return variants
 
@@ -465,6 +470,9 @@ class CanteenIndex:
                 results.append(CanteenSearchResult(canteen=entry.canteen, score=0.0, distance_km=distance_km))
                 continue
 
+            if not _matches_any_important_token(query_norm, entry):
+                continue
+
             score = _score_entry(variants, entry)
             if in_city and (explicit_city or inferred_city):
                 score = min(100.0, score + 5.0)
@@ -523,6 +531,7 @@ class CanteenIndex:
         for canteen in ordered:
             name_norm = _normalize_text(canteen.name)
             city_norm = _normalize_city(canteen.city) if canteen.city else None
+            address_norm = _normalize_text(canteen.address) if canteen.address else None
             aliases = _generate_aliases(name_norm, city_norm)
             tokens = _tokenize(name_norm)
             ac = _acronym(tokens) if tokens else None
@@ -533,6 +542,7 @@ class CanteenIndex:
                     canteen=canteen,
                     name_norm=name_norm,
                     city_norm=city_norm,
+                    address_norm=address_norm,
                     aliases=aliases,
                     acronym=ac,
                 )
@@ -577,6 +587,21 @@ def _score_entry(variants: list[tuple[str, float, float | None]], entry: _Indexe
                 score = min(score, cap)
             best = max(best, score * weight)
 
+        # Also match against addresses so queries like "Hardenbergstraße" work as expected.
+        if entry.address_norm:
+            if query == entry.address_norm:
+                best = max(best, 100.0 * weight)
+            if query and query in entry.address_norm:
+                best = max(best, 90.0 * weight)
+            addr_scores = [
+                float(fuzz.token_set_ratio(query, entry.address_norm)),
+                float(fuzz.partial_ratio(query, entry.address_norm)),
+            ]
+            for score in addr_scores:
+                if cap is not None:
+                    score = min(score, cap)
+                best = max(best, score * weight)
+
         for alias in entry.aliases:
             if query == alias:
                 best = max(best, 100.0 * weight)
@@ -599,6 +624,38 @@ def _score_entry(variants: list[tuple[str, float, float | None]], entry: _Indexe
             if len(query) <= 3 and query in entry.acronym:
                 best = max(best, 95.0 * weight)
     return best
+
+
+def _matches_any_important_token(query_norm: str, entry: _IndexedCanteen) -> bool:
+    """
+    Guardrail against stop-token dominated matches.
+
+    Example: "TU Hardenbergstraße" contains the very common token "tu". If we
+    score everything purely by fuzzy ratios, many unrelated "TU ..." canteens
+    can end up above the min_score. For queries that include at least one
+    "informative" token (non-stop, length >= 4), require that at least one of
+    those tokens matches name/city/address reasonably well.
+    """
+
+    tokens = [t for t in _tokenize(query_norm) if t not in _STOP_TOKENS and len(t) >= 4]
+    if not tokens:
+        return True
+
+    haystacks: list[str] = [entry.name_norm]
+    if entry.city_norm:
+        haystacks.append(entry.city_norm)
+    if entry.address_norm:
+        haystacks.append(entry.address_norm)
+
+    for token in tokens:
+        for h in haystacks:
+            if token in h:
+                return True
+            # Keep this strict: it is only a gate, the real ranking happens later.
+            if float(fuzz.partial_ratio(token, h)) >= 90.0:
+                return True
+
+    return False
 
 
 class CanteenIndexStore:
