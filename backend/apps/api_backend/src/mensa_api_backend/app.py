@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routes.canteens import router as canteens_router
 from .routes.chat import router as chat_router
+from .routes.debug import router as debug_router
 
 
 def create_app() -> FastAPI:
@@ -24,6 +25,7 @@ def create_app() -> FastAPI:
 
     app.include_router(chat_router)
     app.include_router(canteens_router)
+    app.include_router(debug_router)
 
     @app.get("/api/health")
     async def health():
