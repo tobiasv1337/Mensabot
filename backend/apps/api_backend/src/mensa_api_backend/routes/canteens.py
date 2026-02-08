@@ -71,18 +71,23 @@ async def search_canteens(
 
     async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
-    results, total = index.search(
-        query,
-        city=city,
-        near_lat=near_lat,
-        near_lng=near_lng,
-        radius_km=radius_km,
-        page=page,
-        per_page=per_page,
-        min_score=min_score,
-        has_coordinates=has_coordinates,
-        sort_by=sort_by,
-    )
+
+    def _search():
+        return index.search(
+            query,
+            city=city,
+            near_lat=near_lat,
+            near_lng=near_lng,
+            radius_km=radius_km,
+            page=page,
+            per_page=per_page,
+            min_score=min_score,
+            has_coordinates=has_coordinates,
+            sort_by=sort_by,
+        )
+
+    # Can be a bit CPU-intensive, so run in thread to avoid blocking the event loop.
+    results, total = await anyio.to_thread.run_sync(_search)
 
     next_page = page + 1 if page * per_page < total else None
 

@@ -106,17 +106,22 @@ async def search_canteens(
 
     async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
-    results, total = index.search(
-        query,
-        city=city,
-        near_lat=near_lat,
-        near_lng=near_lng,
-        radius_km=radius_km,
-        per_page=limit, # Map limit -> per_page
-        page=1,         # Default to first page
-        min_score=min_score,
-        has_coordinates=None, # Don't expose this filter to the LLM
-    )
+
+    # Can be a bit CPU-intensive, so run in thread to avoid blocking the event loop.
+    def _search():
+        return index.search(
+            query,
+            city=city,
+            near_lat=near_lat,
+            near_lng=near_lng,
+            radius_km=radius_km,
+            per_page=limit, # Map limit -> per_page
+            page=1,         # Default to first page
+            min_score=min_score,
+            has_coordinates=None, # Don't expose this filter to the LLM
+        )
+
+    results, total = await anyio.to_thread.run_sync(_search)
 
     return CanteenSearchResponseDTO(
         results=[
