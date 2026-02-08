@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException, Query
 
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
-from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory
+from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory, OSMResolveForCanteenResponseDTO
+from mensa_mcp_server.services.opening_hours import fetch_opening_hours_osm_for_canteen
 from mensa_mcp_server.services.openmensa import fetch_single_menu, normalize_menu_date
 from mensa_mcp_server.server import make_openmensa_client
 from openmensa_sdk import OpenMensaAPIError
@@ -131,6 +132,21 @@ async def get_canteen_info_api(canteen_id: int):
     response = canteen_to_out(canteen)
     shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
     return response
+
+
+@router.get("/api/canteens/{canteen_id}/opening-hours", response_model=OSMResolveForCanteenResponseDTO)
+async def get_canteen_opening_hours_api(canteen_id: int):
+    try:
+        return await fetch_opening_hours_osm_for_canteen(canteen_id=canteen_id)
+    except ValueError as exc:
+        # Tool uses ValueError for "not found" (404-ish) conditions.
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except OpenMensaAPIError as exc:
+        if getattr(exc, "status_code", None) == 404:
+            raise HTTPException(status_code=404, detail="Canteen not found") from exc
+        raise HTTPException(status_code=getattr(exc, "status_code", 500), detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unable to resolve opening hours.") from exc
 
 
 @router.get("/api/canteens/{canteen_id}/menu", response_model=MenuResponseDTO)
