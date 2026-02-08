@@ -1,9 +1,13 @@
+import os
+
 from fastapi import APIRouter, HTTPException, Query
 
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.metrics import metrics
+from mensa_mcp_server.settings import settings as mcp_settings
 
 from ..config import settings
+from ..services.canteen_index import get_canteen_index_store
 
 
 router = APIRouter()
@@ -17,8 +21,27 @@ async def get_debug_metrics(
         # 404 so the endpoint is effectively hidden unless explicitly enabled.
         raise HTTPException(status_code=404, detail="Not found")
 
+    store = get_canteen_index_store()
+    index = store.load()
+    path = getattr(store, "path", None)
+    file_exists = bool(path) and os.path.exists(path)
+    file_size = os.path.getsize(path) if file_exists and path else None
+    file_mtime = os.path.getmtime(path) if file_exists and path else None
+
     return {
         "cache": shared_cache.stats(reset=reset),
         "external": metrics.snapshot(reset=reset),
+        "canteen_index": {
+            "path": path,
+            "ttl_hours": mcp_settings.canteen_index_ttl_hours,
+            "file_exists": file_exists,
+            "file_size": file_size,
+            "file_mtime": file_mtime,
+            "store_has_in_memory": getattr(store, "_index", None) is not None,
+            "store_file_mtime": getattr(store, "_file_mtime", None),
+            "updated_at": index.updated_at.isoformat() if index is not None else None,
+            "is_stale": index.is_stale(mcp_settings.canteen_index_ttl_hours) if index is not None else None,
+            "total_canteens": len(index.canteens) if index is not None else None,
+            "total_cities": index.city_count if index is not None else None,
+        },
     }
-
