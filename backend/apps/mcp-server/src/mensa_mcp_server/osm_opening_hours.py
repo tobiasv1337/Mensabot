@@ -16,12 +16,12 @@ from __future__ import annotations
 import logging
 import math
 import re
-import time
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
+import anyio
+import httpx
 
 from .cache import shared_cache
 from .cache_keys import overpass_query_key
@@ -204,99 +204,102 @@ class OSMOpeningHoursResolver:
         self.cache = shared_cache
         self.cache_ttl_s = cache_ttl_s
 
-    def _should_retry(self, exception: Exception, status_code: Optional[int] = None) -> bool:
-        """Determine if an error is retryable."""
-        if status_code is not None:
-            return status_code >= 500 or status_code == 429
-        return isinstance(exception, (requests.ConnectionError, requests.Timeout))
-
-    def _post_overpass_with_retry(self, query: str) -> Dict[str, Any]:
-        """POST to Overpass with exponential backoff retry logic."""
+    async def _post_overpass_with_retry(self, query: str) -> Dict[str, Any]:
+        """POST to Overpass with exponential backoff retry logic (async)."""
         backoff_s = self.INITIAL_BACKOFF_S
 
-        for attempt in range(1, self.MAX_RETRIES + 1):
-            try:
-                logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
-                resp = requests.post(
-                    self.overpass_url,
-                    data=query.encode("utf-8"),
-                    headers={"User-Agent": self.user_agent},
-                    timeout=self.timeout_s,
-                )
-
-                # Check for HTTP errors
-                if resp.status_code == 429:
-                    # Rate limited
-                    retry_after = resp.headers.get("Retry-After")
-                    if retry_after:
-                        backoff_s = min(self.MAX_BACKOFF_S, float(retry_after))
-                    if attempt < self.MAX_RETRIES:
-                        logger.warning(f"Overpass rate limited (429), retrying in {backoff_s}s")
-                        time.sleep(backoff_s)
-                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                        continue
-                    else:
-                        resp.raise_for_status()
-
-                if resp.status_code >= 500:
-                    # Server error, retryable
-                    if attempt < self.MAX_RETRIES:
-                        logger.warning(f"Overpass server error ({resp.status_code}), retrying in {backoff_s}s")
-                        time.sleep(backoff_s)
-                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                        continue
-                    else:
-                        resp.raise_for_status()
-
-                # Other HTTP errors are not retried
-                resp.raise_for_status()
-
-                # Successfully got a response, parse JSON
+        async with httpx.AsyncClient(
+            timeout=self.timeout_s,
+            headers={"User-Agent": self.user_agent},
+        ) as client:
+            for attempt in range(1, self.MAX_RETRIES + 1):
                 try:
-                    data = resp.json()
+                    logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
+                    resp = await client.post(
+                        self.overpass_url,
+                        content=query.encode("utf-8"),
+                    )
+
+                    # Check for HTTP errors
+                    if resp.status_code == 429:
+                        retry_after = resp.headers.get("Retry-After")
+                        if retry_after:
+                            try:
+                                backoff_s = min(self.MAX_BACKOFF_S, float(retry_after))
+                            except ValueError:
+                                pass
+
+                        if attempt < self.MAX_RETRIES:
+                            logger.warning(f"Overpass rate limited (429), retrying in {backoff_s}s")
+                            await anyio.sleep(backoff_s)
+                            backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                            continue
+
+                        resp.raise_for_status()
+
+                    if resp.status_code >= 500:
+                        if attempt < self.MAX_RETRIES:
+                            logger.warning(f"Overpass server error ({resp.status_code}), retrying in {backoff_s}s")
+                            await anyio.sleep(backoff_s)
+                            backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                            continue
+
+                        resp.raise_for_status()
+
+                    resp.raise_for_status()
+
+                    try:
+                        data = resp.json()
+                    except ValueError as e:
+                        raise RuntimeError(f"Overpass returned invalid JSON: {e}") from e
+
+                    if not isinstance(data, dict):
+                        raise RuntimeError("Overpass returned non-object JSON.")
+
                     logger.debug("Overpass request successful")
                     return data
-                except ValueError as e:
-                    raise RuntimeError(f"Overpass returned invalid JSON: {e}")
 
-            except requests.Timeout as e:
-                if attempt < self.MAX_RETRIES:
-                    logger.warning(f"Overpass timeout, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
-                    time.sleep(backoff_s)
-                    backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                    continue
-                logger.error(f"Overpass timeout after {self.MAX_RETRIES} attempts")
-                raise RuntimeError(f"Overpass API timeout after {self.MAX_RETRIES} attempts")
+                except httpx.TimeoutException:
+                    if attempt < self.MAX_RETRIES:
+                        logger.warning(f"Overpass timeout, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
+                        await anyio.sleep(backoff_s)
+                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                        continue
+                    logger.error(f"Overpass timeout after {self.MAX_RETRIES} attempts")
+                    raise RuntimeError(f"Overpass API timeout after {self.MAX_RETRIES} attempts")
 
-            except requests.ConnectionError as e:
-                if attempt < self.MAX_RETRIES:
-                    logger.warning(f"Overpass connection error, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})")
-                    time.sleep(backoff_s)
-                    backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                    continue
-                logger.error(f"Overpass connection failed after {self.MAX_RETRIES} attempts")
-                raise RuntimeError(f"Could not connect to Overpass API after {self.MAX_RETRIES} attempts: {e}")
+                except httpx.ConnectError as e:
+                    if attempt < self.MAX_RETRIES:
+                        logger.warning(
+                            f"Overpass connection error, retrying in {backoff_s}s (attempt {attempt}/{self.MAX_RETRIES})"
+                        )
+                        await anyio.sleep(backoff_s)
+                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                        continue
+                    logger.error(f"Overpass connection failed after {self.MAX_RETRIES} attempts")
+                    raise RuntimeError(f"Could not connect to Overpass API after {self.MAX_RETRIES} attempts: {e}") from e
 
-            except requests.HTTPError as e:
-                logger.error(f"Overpass HTTP error: {e.response.status_code}")
-                if e.response.status_code == 400:
-                    raise RuntimeError("Overpass query error (400): Check query syntax")
-                elif e.response.status_code == 403:
-                    raise RuntimeError("Overpass access denied (403): Check API credentials/access")
-                elif e.response.status_code == 404:
-                    raise RuntimeError("Overpass endpoint not found (404): Check Overpass URL configuration")
-                raise RuntimeError(f"Overpass HTTP error {e.response.status_code}: {e}")
+                except httpx.HTTPStatusError as e:
+                    status_code = e.response.status_code
+                    logger.error(f"Overpass HTTP error: {status_code}")
+                    if status_code == 400:
+                        raise RuntimeError("Overpass query error (400): Check query syntax") from e
+                    if status_code == 403:
+                        raise RuntimeError("Overpass access denied (403): Check API credentials/access") from e
+                    if status_code == 404:
+                        raise RuntimeError("Overpass endpoint not found (404): Check Overpass URL configuration") from e
+                    raise RuntimeError(f"Overpass HTTP error {status_code}: {e}") from e
 
-            except RuntimeError:
-                raise
+                except RuntimeError:
+                    raise
 
-            except Exception as e:
-                logger.error(f"Unexpected Overpass error: {type(e).__name__}: {e}")
-                raise RuntimeError(f"Unexpected Overpass error: {type(e).__name__}: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected Overpass error: {type(e).__name__}: {e}")
+                    raise RuntimeError(f"Unexpected Overpass error: {type(e).__name__}: {e}") from e
 
         raise RuntimeError(f"Overpass request failed after {self.MAX_RETRIES} attempts")
 
-    def _post_overpass(self, query: str) -> Dict[str, Any]:
+    async def _post_overpass(self, query: str) -> Dict[str, Any]:
         """Fetch from Overpass with caching. Failed requests are never cached."""
         cache_key = overpass_query_key(query)
         cached = self.cache.get(cache_key)
@@ -304,16 +307,16 @@ class OSMOpeningHoursResolver:
             logger.debug("Overpass cache hit")
             return cached
 
-        data = self._post_overpass_with_retry(query)
+        data = await self._post_overpass_with_retry(query)
         self.cache.set(cache_key, data, ttl_s=self.cache_ttl_s)
         return data
 
-    def fetch_element(self, ref: OSMRef) -> Dict[str, Any] | None:
-        data = self._post_overpass(_overpass_query_element(ref))
+    async def fetch_element(self, ref: OSMRef) -> Dict[str, Any] | None:
+        data = await self._post_overpass(_overpass_query_element(ref))
         elements = data.get("elements") or []
         return elements[0] if elements else None
 
-    def resolve(
+    async def resolve(
         self,
         lat: float,
         lon: float,
@@ -346,7 +349,7 @@ class OSMOpeningHoursResolver:
         try:
             candidates: List[_OSMCandidate] = []
             for r in (radius_m, max_radius_m):
-                data = self._post_overpass(_overpass_query_near(lat, lon, r))
+                data = await self._post_overpass(_overpass_query_near(lat, lon, r))
                 els = data.get("elements") or []
 
                 tmp: List[_OSMCandidate] = []
@@ -449,11 +452,11 @@ class OSMOpeningHoursResolver:
                 },
             }
 
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             error_msg = f"Overpass request failed: {type(e).__name__}"
-            if isinstance(e, requests.Timeout):
+            if isinstance(e, httpx.TimeoutException):
                 error_msg = "Overpass API did not respond in time (timeout)"
-            elif isinstance(e, requests.ConnectionError):
+            elif isinstance(e, httpx.ConnectError):
                 error_msg = "Could not connect to Overpass API"
             logger.error(error_msg)
             return {
@@ -514,7 +517,7 @@ _default_resolver = OSMOpeningHoursResolver(
 )
 
 
-def resolve_opening_hours_osm(
+async def resolve_opening_hours_osm(
     lat: float,
     lon: float,
     name_hint: str | None = None,
@@ -524,7 +527,7 @@ def resolve_opening_hours_osm(
     accept_score: float = 70.0,
     accept_margin: float = 12.0,
 ) -> Dict[str, Any]:
-    return _default_resolver.resolve(
+    return await _default_resolver.resolve(
         lat=lat,
         lon=lon,
         name_hint=name_hint,
@@ -536,5 +539,5 @@ def resolve_opening_hours_osm(
     )
 
 
-def fetch_osm_element(ref: OSMRef) -> Dict[str, Any] | None:
-    return _default_resolver.fetch_element(ref)
+async def fetch_osm_element(ref: OSMRef) -> Dict[str, Any] | None:
+    return await _default_resolver.fetch_element(ref)
