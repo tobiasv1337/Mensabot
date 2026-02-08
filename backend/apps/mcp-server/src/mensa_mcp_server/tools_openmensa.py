@@ -8,6 +8,8 @@ import anyio
 from typing import Annotated, Optional
 from pydantic import Field
 
+from openmensa_sdk import OpenMensaAPIError
+
 from .concurrency import get_io_semaphore
 from .server import mcp, make_openmensa_client
 from .settings import settings
@@ -33,8 +35,8 @@ from .schemas import (
     OpenMensaCanteenRefDTO,
 )
 
-from .osm_opening_hours import resolve_opening_hours_osm
 from .services.canteen_index import load_canteen_index
+from .services.opening_hours import fetch_opening_hours_osm_for_canteen
 from .services.openmensa import fetch_single_menu, normalize_menu_date
 
 # ------------------------------ internal helpers ------------------------------
@@ -305,62 +307,4 @@ async def get_opening_hours_osm_for_canteen(
     If you use opening hours returned by this tool in a user-facing response,
     include the provided attribution (usually: "© OpenStreetMap contributors").
     """
-    cache_key = osm_opening_hours_key(canteen_id=canteen_id)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return OSMResolveForCanteenResponseDTO.model_validate(cached)
-
-    def _fetch_canteen():
-        with make_openmensa_client() as client:
-            try:
-                return client.get_canteen(canteen_id)
-            except OpenMensaAPIError as e:
-                if e.status_code == 404:
-                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-                raise
-
-    async with get_io_semaphore():
-        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-
-    dto = _canteen_to_dto(canteen)
-
-    # If OpenMensa has no coordinates, we can't do deterministic OSM matching.
-    if dto.lat is None or dto.lng is None:
-        res = {
-            "status": "error",
-            "opening_hours": None,
-            "kitchen_hours": None,
-            "source": None,
-            "confidence": 0.0,
-            "candidates": [],
-            "note": "Canteen has no coordinates in OpenMensa data; cannot resolve via OSM.",
-            "attribution": {
-                "attribution": "© OpenStreetMap contributors",
-                "attribution_url": "https://www.openstreetmap.org/copyright",
-                "license": "ODbL 1.0",
-            },
-        }
-    else:
-        def _resolve():
-            return resolve_opening_hours_osm(
-                lat=dto.lat,
-                lon=dto.lng,
-                name_hint=dto.name,
-                radius_m=radius_m,
-                max_radius_m=max_radius_m,
-                max_candidates=max_candidates,
-            )
-
-        async with get_io_semaphore():
-            res = await anyio.to_thread.run_sync(_resolve)
-
-    res["openmensa"] = OpenMensaCanteenRefDTO(
-        canteen_id=canteen_id,
-        name=dto.name,
-        lat=dto.lat,
-        lng=dto.lng,
-    ).model_dump(exclude_none=True)
-
-    dto = OSMResolveForCanteenResponseDTO.model_validate(res)
-    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
-    return dto
+    return await fetch_opening_hours_osm_for_canteen(canteen_id=canteen_id, radius_m=radius_m, max_radius_m=max_radius_m, max_candidates=max_candidates)

@@ -42,6 +42,23 @@ export type Canteen = {
 	lng?: number;
 };
 
+export type OSMResolveStatus = "ok" | "ambiguous" | "not_found" | "error";
+
+export type OSMAttribution = {
+	attribution: string;
+	attribution_url: string;
+	license: string;
+};
+
+export type CanteenOpeningHoursResponse = {
+	status: OSMResolveStatus;
+	opening_hours?: string | null;
+	kitchen_hours?: string | null;
+	confidence: number;
+	note?: string | null;
+	attribution: OSMAttribution;
+};
+
 export type DietType = "vegan" | "vegetarian" | "meat" | "unknown";
 
 export type MenuDietFilter = "all" | "meat_only" | "vegetarian" | "vegan";
@@ -210,6 +227,11 @@ export class MensaBotClient {
 	async getCanteenInfo(canteenId: number): Promise<Canteen> {
 		const response = await this.getJson(`/canteens/${canteenId}`);
 		return response as Canteen;
+	}
+
+	async getCanteenOpeningHours(canteenId: number): Promise<CanteenOpeningHoursResponse> {
+		const response = await this.getJson(`/canteens/${canteenId}/opening-hours`);
+		return response as CanteenOpeningHoursResponse;
 	}
 
 	async getCanteenMenu(

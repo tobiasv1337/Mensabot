@@ -83,6 +83,11 @@ export const ControlButton = styled.button`
   &:active {
     transform: translateY(0.5px);
   }
+
+  &[aria-pressed="true"] {
+    background: ${({ theme }) => theme.accent2};
+    color: ${({ theme }) => theme.textOnAccent2};
+  }
 `;
 
 export const StatusPill = styled.div<{ $tone?: "default" | "danger" }>`
@@ -189,6 +194,27 @@ export const DetailRow = styled.div`
   font-size: 13px;
 `;
 
+export const DetailText = styled.div`
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 13px;
+  line-height: 1.5;
+`;
+
+export const AttributionText = styled.div`
+  font-size: 12px;
+  color: ${({ theme }) => theme.textMuted};
+  line-height: 1.4;
+`;
+
+export const AttributionLink = styled.a`
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 export const DetailPill = styled.span`
   display: inline-flex;
   align-items: center;
@@ -261,4 +287,3 @@ export const SecondaryAction = styled.button`
     box-shadow: none;
   }
 `;
-
