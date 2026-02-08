@@ -7,6 +7,7 @@ import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
 import ShortcutsPage from "./ShortcutsPage";
 import SettingsPage from "./SettingsPage";
+import MapPage from "./MapPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
@@ -182,6 +183,11 @@ const ChatPage: React.FC = () => {
               />
             ) : activeNav === "Settings" ? (
               <SettingsPage onDeleteAllChats={handleDeleteAllChats} />
+            ) : activeNav === "Map" ? (
+              <MapPage
+                onSelectCanteen={handleSelectCanteen}
+                selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
+              />
             ) : (
               <Chat
                 chat={chat}
