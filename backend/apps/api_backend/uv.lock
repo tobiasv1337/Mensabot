@@ -886,6 +886,7 @@ source = { editable = "../mcp-server" }
 dependencies = [
     { name = "anyio" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "openmensa-sdk" },
 ]
 
@@ -893,6 +894,7 @@ dependencies = [
 requires-dist = [
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "fastmcp", specifier = ">=2.14.4" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "openmensa-sdk", editable = "../../libs/openmensa" },
 ]
 

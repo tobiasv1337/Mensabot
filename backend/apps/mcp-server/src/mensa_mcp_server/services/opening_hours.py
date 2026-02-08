@@ -63,18 +63,14 @@ async def fetch_opening_hours_osm_for_canteen(
             },
         }
     else:
-        def _resolve():
-            return resolve_opening_hours_osm(
-                lat=dto.lat,
-                lon=dto.lng,
-                name_hint=dto.name,
-                radius_m=radius_m,
-                max_radius_m=max_radius_m,
-                max_candidates=max_candidates,
-            )
-
-        async with get_io_semaphore():
-            res = await anyio.to_thread.run_sync(_resolve)
+        res = await resolve_opening_hours_osm(
+            lat=dto.lat,
+            lon=dto.lng,
+            name_hint=dto.name,
+            radius_m=radius_m,
+            max_radius_m=max_radius_m,
+            max_candidates=max_candidates,
+        )
 
     res["openmensa"] = OpenMensaCanteenRefDTO(
         canteen_id=canteen_id,
@@ -86,4 +82,3 @@ async def fetch_opening_hours_osm_for_canteen(
     out = OSMResolveForCanteenResponseDTO.model_validate(res)
     shared_cache.set(cache_key, out.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
     return out
-
