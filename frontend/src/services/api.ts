@@ -124,6 +124,11 @@ export type CanteenSearchResponse = {
 	index: CanteenIndexInfo;
 };
 
+export type TranscribeResponse = {
+	text: string;
+	duration_s?: number;
+};
+
 export class MensaBotClient {
 	private baseUrl: string;
 
@@ -194,6 +199,41 @@ export class MensaBotClient {
 		}
 
 		throw new Error("Unexpected chat API response shape");
+	}
+
+	async transcribeAudio(audio: Blob): Promise<TranscribeResponse> {
+		const request = await fetch(this.baseUrl + "/transcribe", {
+			method: "POST",
+			headers: {
+				"Content-Type": audio.type || "application/octet-stream",
+			},
+			body: audio,
+		});
+
+		if (!request.ok) {
+			let detail = "";
+			try {
+				const data = (await request.json()) as { detail?: string };
+				if (typeof data?.detail === "string") detail = data.detail;
+			} catch {
+				// ignore
+			}
+			throw new Error(detail ? `Transcribe API error: ${detail}` : `Transcribe API error: ${request.status} ${request.statusText}`);
+		}
+
+		let response: unknown;
+		try {
+			response = await request.json();
+		} catch {
+			throw new Error("Transcribe API returned invalid JSON");
+		}
+
+		const res = response as Partial<TranscribeResponse>;
+		if (typeof res.text === "string") {
+			return { text: res.text, duration_s: typeof res.duration_s === "number" ? res.duration_s : undefined };
+		}
+
+		throw new Error("Unexpected transcribe API response shape");
 	}
 
 	async listCanteens(params: { page?: number; perPage?: number; city?: string; hasCoordinates?: boolean; } = {}): Promise<CanteenListResponse> {
