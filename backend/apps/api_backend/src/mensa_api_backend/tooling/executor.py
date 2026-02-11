@@ -32,6 +32,23 @@ class ParsedToolCall:
     raw_args: Any
 
 
+def _normalize_tool_arg_value(value: Any) -> Any:
+    if isinstance(value, str):
+        stripped = value.strip().lower()
+        if stripped in {"null", "none"}:
+            return None
+        return value
+    if isinstance(value, list):
+        return [_normalize_tool_arg_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_tool_arg_value(item) for key, item in value.items()}
+    return value
+
+
+def _normalize_tool_args(args: Any) -> Any:
+    return _normalize_tool_arg_value(args)
+
+
 def try_repair_json(s: str) -> str:
     t = s.strip()
 
@@ -104,14 +121,14 @@ def _parse_tool_args(
     messages: List[Dict[str, Any]],
 ) -> tuple[Any | None, bool]:
     if isinstance(raw_args, (dict, list)):
-        return raw_args, False
+        return _normalize_tool_args(raw_args), False
 
     if isinstance(raw_args, str):
         try:
-            return json.loads(raw_args), False
+            return _normalize_tool_args(json.loads(raw_args)), False
         except json.JSONDecodeError:
             try:
-                repaired = json.loads(try_repair_json(raw_args))
+                repaired = _normalize_tool_args(json.loads(try_repair_json(raw_args)))
                 logger.warning(
                     "Tool %s called with MALFORMED JSON arguments, but repair succeeded: %s",
                     tool_name,
