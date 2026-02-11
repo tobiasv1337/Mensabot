@@ -72,7 +72,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [voiceSeconds, setVoiceSeconds] = useState(0);
   const [voiceError, setVoiceError] = useState<string | null>(null);
 
-  const busy = disabled || isTranscribing;
+  const busy = disabled || isTranscribing || isRecording;
   const clearVoiceError = useCallback(() => {
     setVoiceError(null);
   }, []);
@@ -363,6 +363,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <S.VoiceButton
               type="button"
               aria-label={isRecording ? "Aufnahme stoppen" : "Sprachnachricht aufnehmen"}
+              aria-pressed={isRecording}
               aria-busy={isTranscribing}
               title={
                 isRecording

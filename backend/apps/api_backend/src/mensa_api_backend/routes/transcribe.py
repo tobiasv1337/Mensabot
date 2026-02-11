@@ -31,6 +31,7 @@ def _extract_error_detail(resp: httpx.Response) -> str:
         if isinstance(payload, dict) and isinstance(payload.get("detail"), str):
             return payload["detail"]
     except Exception:
+        # If JSON decoding fails or payload shape is unexpected, fall back to response text.
         pass
     return (resp.text or "").strip() or "STT service error"
 
@@ -38,9 +39,9 @@ def _extract_error_detail(resp: httpx.Response) -> str:
 @router.post("/api/transcribe", response_model=TranscribeResponse)
 async def transcribe(request: Request) -> TranscribeResponse:
     content_type = request.headers.get("content-type") or "application/octet-stream"
-    audio_bytes = await _read_body_limited(request, max_bytes=settings.stt_max_upload_bytes)
 
     async with get_stt_semaphore():
+        audio_bytes = await _read_body_limited(request, max_bytes=settings.stt_max_upload_bytes)
         try:
             async with httpx.AsyncClient(timeout=settings.stt_timeout_s) as client:
                 resp = await client.post(
@@ -69,4 +70,3 @@ async def transcribe(request: Request) -> TranscribeResponse:
         raise HTTPException(status_code=resp.status_code, detail=detail)
     logger.error("STT service error (status=%s): %s", resp.status_code, detail)
     raise HTTPException(status_code=502, detail="Speech-to-text service failed.")
-
