@@ -112,7 +112,8 @@ async def request_canteen_directions(
     Provide either a canteen_id or a lat/lng pair (preferred: canteen_id).
     If both are provided, the explicit lat/lng values will take precedence.
 
-    The backend will interrupt the tool loop and instruct the frontend to show
-    a directions button with this prompt.
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool with a canteen_id! Always call `search_canteens` before this tool to get the correct canteen_id.
+
+    Calling this tool will show the user a button which opens Google Maps with directions to the canteen.
     """
     return {"prompt": prompt, "canteen_id": canteen_id, "lat": lat, "lng": lng}
