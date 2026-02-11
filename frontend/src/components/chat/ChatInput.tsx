@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Shortcut } from "../../services/shortcuts";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./chat.styles";
@@ -51,7 +51,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onTranscribeAudio,
   maxVoiceSeconds = 180,
   disabled = false,
-  placeholder = "Nachricht schreiben",
+  placeholder = "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
   shortcuts,
   onShortcutAdd,
   onShortcutSelect,
@@ -73,6 +73,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [voiceError, setVoiceError] = useState<string | null>(null);
 
   const busy = disabled || isTranscribing;
+  const clearVoiceError = useCallback(() => {
+    setVoiceError(null);
+  }, []);
+  const hintText = useMemo(() => {
+    if (isRecording) return `Aufnahme läuft... ${voiceSeconds}s / ${maxVoiceSeconds}s`;
+    if (isTranscribing) return "Transkription läuft...";
+    if (disabled) return "Senden...";
+    if (voiceError) return voiceError;
+    return placeholder;
+  }, [voiceError, isTranscribing, isRecording, voiceSeconds, maxVoiceSeconds, disabled, placeholder]);
+  const micState: "idle" | "recording" | "transcribing" = isRecording
+    ? "recording"
+    : isTranscribing
+      ? "transcribing"
+      : "idle";
   const focusTextarea = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -161,10 +176,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const text = value.trim();
     if (busy) return;
     if (!text) return;
+    clearVoiceError();
     onSend(text);
     onChange("");
     requestAnimationFrame(() => focusTextarea());
-  }, [commandMenu, value, busy, onSend, onChange, focusTextarea]);
+  }, [commandMenu, value, busy, onSend, onChange, focusTextarea, clearVoiceError]);
 
   const pickRecorderMimeType = useCallback(() => {
     if (typeof MediaRecorder === "undefined") return "";
@@ -179,7 +195,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     async (blob: Blob) => {
       if (!onTranscribeAudio) return;
       setIsTranscribing(true);
-      setVoiceError(null);
+      clearVoiceError();
       try {
         const transcript = await onTranscribeAudio(blob);
         const cleaned = (transcript ?? "").trim();
@@ -196,7 +212,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         setIsTranscribing(false);
       }
     },
-    [onTranscribeAudio, onChange, focusTextarea]
+    [onTranscribeAudio, onChange, focusTextarea, clearVoiceError]
   );
 
   const stopRecording = useCallback(() => {
@@ -216,7 +232,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     if (!onTranscribeAudio) return;
     if (disabled || isTranscribing) return;
 
-    setVoiceError(null);
+    clearVoiceError();
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setVoiceError("Audioaufnahme wird von diesem Browser nicht unterstützt.");
@@ -288,6 +304,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     transcribeBlob,
     stopRecording,
     maxVoiceSeconds,
+    clearVoiceError,
   ]);
 
   return (
@@ -297,8 +314,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <S.ComposerTextarea
             ref={textareaRef}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={placeholder}
+            onChange={(event) => {
+              if (voiceError) clearVoiceError();
+              onChange(event.target.value);
+            }}
+            placeholder={hintText}
             readOnly={busy}
             aria-disabled={busy}
             onKeyDown={(event) => {
@@ -343,9 +363,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <S.VoiceButton
               type="button"
               aria-label={isRecording ? "Aufnahme stoppen" : "Sprachnachricht aufnehmen"}
+              aria-busy={isTranscribing}
               title={
                 isRecording
                   ? `Aufnahme läuft (${voiceSeconds}s) – tippe zum Stoppen`
+                  : isTranscribing
+                    ? "Transkription läuft..."
                   : "Sprachnachricht aufnehmen"
               }
               onClick={() => {
@@ -353,11 +376,29 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 else void startRecording();
               }}
               disabled={!isRecording && (disabled || isTranscribing)}
-              $active={isRecording}
+              $state={micState}
             >
               {isRecording ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
+                </svg>
+              ) : isTranscribing ? (
+                <svg
+                  className="spin"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+                  <path
+                    d="M20 12a8 8 0 0 0-8-8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -417,22 +458,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
             </svg>
           </S.SendButton>
         </S.ComposerTopRow>
-        {(voiceError || isTranscribing || isRecording) && (
-          <S.VoiceMetaRow
-            role={voiceError ? "alert" : undefined}
-            aria-live={voiceError ? "assertive" : "polite"}
-          >
-            {voiceError ? (
-              <S.VoiceErrorText>{voiceError}</S.VoiceErrorText>
-            ) : isTranscribing ? (
-              <S.VoiceHintText>Transkription läuft…</S.VoiceHintText>
-            ) : isRecording ? (
-              <S.VoiceHintText>
-                Aufnahme: {voiceSeconds}s / {maxVoiceSeconds}s
-              </S.VoiceHintText>
-            ) : null}
-          </S.VoiceMetaRow>
-        )}
         {commandMenu?.open && (
           <S.CommandMenu ref={commandMenuRef} role="listbox" aria-label="Slash Commands">
             {commandMenu.groups.map((group) => (

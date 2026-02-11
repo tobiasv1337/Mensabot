@@ -75,8 +75,9 @@ export const ControlButton = styled.button`
   color: ${({ theme }) => theme.textPrimary};
   background: transparent;
   border: none;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: ${({ theme }) => theme.surfaceInset};
   }
 
@@ -84,10 +85,6 @@ export const ControlButton = styled.button`
     transform: translateY(0.5px);
   }
 
-  &[aria-pressed="true"] {
-    background: ${({ theme }) => theme.accent2};
-    color: ${({ theme }) => theme.textOnAccent2};
-  }
 `;
 
 export const StatusPill = styled.div<{ $tone?: "default" | "danger" }>`
