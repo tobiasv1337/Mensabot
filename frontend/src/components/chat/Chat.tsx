@@ -305,6 +305,14 @@ const Chat: React.FC<ChatProps> = ({
     [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu]
   );
 
+  const handleTranscribeAudio = useCallback(
+    async (audio: Blob) => {
+      const res = await client.transcribeAudio(audio);
+      return res.text;
+    },
+    [client]
+  );
+
   const handleShareLocation = useCallback(() => {
     if (isSending || isRequestingLocation) return;
     if (!("geolocation" in navigator)) {
@@ -936,6 +944,8 @@ const Chat: React.FC<ChatProps> = ({
           value={inputValue}
           onChange={setInputValue}
           onSend={sendMessage}
+          onTranscribeAudio={handleTranscribeAudio}
+          maxVoiceSeconds={180}
           disabled={isSending}
           shortcuts={shortcuts}
           onShortcutAdd={handleOpenShortcutModal}
