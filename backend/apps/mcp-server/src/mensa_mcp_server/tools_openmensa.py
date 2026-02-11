@@ -146,6 +146,8 @@ async def get_canteen_info(
 ) -> CanteenDTO:
     """
     Get canteen metadata: name, address, city, and GPS coordinates.
+
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
     
     Use after discovering a canteen ID from search_canteens to get full details.
     """
@@ -181,6 +183,8 @@ async def get_menu_for_date(
 ) -> MenuResponsePublicDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
+
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
     
     Response status:
     - `ok`: Menu exists
@@ -239,6 +243,8 @@ async def get_menus_batch(
     """
     Fetch menus for multiple canteens/dates in one efficient call.
 
+    You have to retrieve the canteen_ids via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_ids.
+
     Preferred over repeated get_menu_for_date calls when fetching more than one menu.
     Each request can have its own diet_filter and allergen exclusions as in get_menu_for_date.
     The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
@@ -289,6 +295,8 @@ async def get_opening_hours_osm_for_canteen(
     max_candidates: Annotated[int, Field(ge=1, le=30, description="Max candidates returned")]=10,
 ) -> OSMResolveForCanteenResponseDTO:
     """Get opening hours from OpenStreetMap for an OpenMensa canteen ID.
+
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
 
     This uses the canteen's OpenMensa coordinates and name as a hint, then performs
     a deterministic Overpass lookup.
