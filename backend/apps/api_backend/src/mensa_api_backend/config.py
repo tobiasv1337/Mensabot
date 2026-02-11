@@ -28,6 +28,12 @@ class APIBackendSettings(BaseSettings):
     io_max_concurrency: int = 10
     llm_max_concurrency: int = 10
 
+    # Local STT service for voice message transcription.
+    stt_base_url: str = "http://stt:9100"
+    stt_timeout_s: float = 900.0
+    stt_max_upload_bytes: int = 25 * 1024 * 1024
+    stt_max_concurrency: int = 1
+
     # Expose debugging endpoints (cache + external API metrics). Keep disabled in production.
     enable_debug_endpoints: bool = False
 
