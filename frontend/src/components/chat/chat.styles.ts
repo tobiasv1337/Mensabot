@@ -1033,3 +1033,52 @@ export const SendButton = styled.button`
     outline-offset: 2px;
   }
 `;
+
+export const VoiceButton = styled.button<{ $active?: boolean }>`
+  height: 42px;
+  width: 46px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid ${({ theme, $active }) => ($active ? `${theme.accent2}AA` : `${theme.textMuted}44`)};
+  border-radius: 14px;
+  background: ${({ theme, $active }) => ($active ? theme.accent2 : theme.surfacePage)};
+  color: ${({ theme, $active }) => ($active ? theme.textOnAccent2 : theme.textPrimary)};
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: ${({ theme, $active }) =>
+      $active ? `0 10px 20px ${theme.accent2}30` : `0 10px 20px ${theme.textDark}14`};
+    border-color: ${({ theme, $active }) => ($active ? `${theme.accent2}CC` : `${theme.accent1}66`)};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+`;
+
+export const VoiceMetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 10px;
+  font-size: 12px;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const VoiceHintText = styled.span`
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const VoiceErrorText = styled.span`
+  color: ${({ theme }) => theme.accent1};
+  font-weight: 600;
+`;
