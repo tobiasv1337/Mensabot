@@ -243,19 +243,6 @@ async def get_menus_batch(
     Each request can have its own diet_filter and allergen exclusions as in get_menu_for_date.
     The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     Responses preserve input order with same statuses as get_menu_for_date.
-
-            Example (all parameters used):
-            ```json
-            {
-                "tool": "get_menus_batch",
-                "parameters": {
-                    "requests": [
-                        {"canteen_id": 2019, "date": "2024-06-01", "diet_filter": "vegetarian", "exclude_allergens": ["gluten", "soy"], "price_category": "employees"},
-                        {"canteen_id": 42, "date": "2024-06-02", "diet_filter": "meat_only", "exclude_allergens": [], "price_category": "students"}
-                    ]
-                }
-            }
-            ```
     """
 
     def _fetch_batch() -> list[MenuResponsePublicDTO]:
