@@ -18,4 +18,5 @@ export const NAV_LABELS: Record<NavItem, string> = {
     Shortcuts: "Shortcuts",
     Settings: "Einstellungen",
     Map: "Karte",
+    ProjectFacts: "Projekt Fakten",
 };

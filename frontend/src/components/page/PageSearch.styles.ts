@@ -77,3 +77,29 @@ export const MetaPill = styled.span`
   font-weight: 600;
 `;
 
+export const CardIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  color: ${({ theme }) => theme.textOnCard};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  svg {
+    width: 100%;
+    height: auto;
+  }
+`;
+
+export const CardTitle = styled.h3`
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.textOnCard};
+`;
+
+export const CardText = styled.p`
+  margin: 0;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.textSecondary};
+  line-height: 1.6;
+`;

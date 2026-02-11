@@ -15,30 +15,38 @@ export const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 200vh;
-  gap: 2rem;
-  
+   
   @media (max-width: 768px) {
     min-height: auto;
   }
+`;
+
+export const ScreenWrapper = styled.div<{ $fullScreen?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 3rem;
+  /* If content fits, let it be natural height. If not, force it to be at least 100vh */
+  min-height: ${({ $fullScreen }) => ($fullScreen ? '100vh' : 'auto')};
+  /* UpperSection inside should fill remaining space */
+  flex: ${({ $fullScreen }) => ($fullScreen ? '1' : '0 0 auto')};
 `;
 
 export const Section = styled.section`
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 100vh;
-  padding: 0 1rem;
+  min-height: auto;
   box-sizing: border-box;
+  gap: 1rem;
 
   @media (max-width: 768px) {
     min-height: auto;
-    padding: 0;
   }
 `;
 
 export const UpperSection = styled(Section)`
-  /* Using Page background from CanteensPage layout concept */
   background-color: transparent; 
   color: ${({ theme }) => theme.textOnPage};
   
@@ -46,6 +54,7 @@ export const UpperSection = styled(Section)`
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 2rem;
   align-items: center;
+  flex: 1;
 
   @media (max-width: 980px) {
     grid-template-columns: 1fr;
@@ -65,7 +74,7 @@ export const ImageContainer = styled.div`
     max-height: 80vh;
     object-fit: contain;
     border-radius: 18px;
-    box-shadow: 0 8px 24px ${({ theme }) => `${theme.accent1}1A`};
+    box-shadow: 0 8px 24px ${({ theme }) => `${theme.textDark}14`};
   }
 
   @media (max-width: 900px) {
@@ -78,45 +87,10 @@ export const ImageContainer = styled.div`
   }
 `;
 
-export const ContentBox = styled.div`
-  padding: 32px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}26`};
-  box-shadow: 0 24px 45px ${({ theme }) => `${theme.textDark}1F`};
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: -60%;
-    right: -20%;
-    width: 60%;
-    height: 140%;
-    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}40`}, transparent);
-    transform: rotate(12deg);
-    pointer-events: none;
-  }
-`;
-
 export const ContentColumn = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-`;
-
-export const SectionEyebrow = styled.div`
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: ${({ theme }) => theme.textSecondary};
-  margin-bottom: 12px;
 `;
 
 export const SectionTitle = styled.h1`
@@ -153,41 +127,10 @@ export const FactCard = styled.div`
   }
 `;
 
-export const CardIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: ${({ theme }) => theme.surfaceInset};
-  color: ${({ theme }) => theme.accent1};
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-  box-shadow: inset 0 2px 4px ${({ theme }) => `${theme.textDark}0A`};
-`;
-
-export const CardTitle = styled.h3`
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textOnCard};
-`;
-
-export const CardText = styled.p`
-  margin: 0;
-  font-size: 0.95rem;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
-`;
-
 export const LowerSection = styled(Section)`
-  /* Darker background for contrast, using surfaceElevated or a gradient */
-  background: linear-gradient(180deg, ${({ theme }) => theme.surfacePage} 0%, ${({ theme }) => theme.surfaceInset} 100%);
+  gap: 3rem;
   justify-content: center;
-  padding: 4rem 1rem;
   border-radius: 32px 32px 0 0;
-  margin-top: -2rem; /* Slight overlap effect */
 `;
 
 export const StatsGrid = styled.div`
