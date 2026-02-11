@@ -6,6 +6,11 @@ import heroImageLight from "../assets/ChatPageImageLight.jpeg";
 import heroImageDark from "../assets/ChatPageImageDark.jpeg";
 
 import { useTranslation } from "react-i18next";
+import {
+    MensenIcon,
+    StarIcon,
+    CitiesIcon,
+} from "../components/icons";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -67,23 +72,22 @@ const ProjectFactsPage: React.FC = () => {
 
     // Data for the lower section buttons
     const stats = [
-        { id: 1, label: t('projectFacts.stats.cities'), value: totalCities ?? "500+" },
-        { id: 2, label: t('projectFacts.stats.mensen'), value: totalCanteens ?? "1000+" },
-        { id: 3, label: t('projectFacts.stats.stars'), value: "⭐️ 4,5" },
+        { id: 1, label: t('projectFacts.stats.cities'), value: totalCities ?? "500+", icon: <CitiesIcon /> },
+        { id: 2, label: t('projectFacts.stats.mensen'), value: totalCanteens ?? "1000+", icon: <MensenIcon /> },
+        { id: 3, label: t('projectFacts.stats.stars'), value: "3,41", icon: <StarIcon /> },
     ];
 
     return (
         <S.PageContainer>
+            <S.ContentBox>
+                <S.SectionEyebrow>{t('projectFacts.eyebrow')}</S.SectionEyebrow>
+                <S.SectionTitle>{t('projectFacts.title')}</S.SectionTitle>
+            </S.ContentBox>
             <S.UpperSection>
                 <S.ImageContainer>
                     <img src={heroImage} alt="MensaBot Project Visualization" />
                 </S.ImageContainer>
-
                 <S.ContentColumn>
-                    <S.ContentBox>
-                        <S.SectionEyebrow>{t('projectFacts.eyebrow')}</S.SectionEyebrow>
-                        <S.SectionTitle>{t('projectFacts.title')}</S.SectionTitle>
-                    </S.ContentBox>
                     <S.InteractiveCardsGrid>
                         {facts.map((fact, index) => (
                             <S.FactCard key={fact.id} style={{ animationDelay: `${index * 0.1}s` }}>
@@ -103,7 +107,12 @@ const ProjectFactsPage: React.FC = () => {
                 <S.StatsGrid>
                     {stats.map((stat, index) => (
                         <S.StatCard key={stat.id} style={{ animationDelay: `${0.2 + (index * 0.1)}s` }}>
-                            <S.StatNumber>{stat.value}</S.StatNumber>
+                            <S.FlexContainer>
+                                <S.IconWrapper>
+                                    {(stat as any).icon}
+                                </S.IconWrapper>
+                                <S.Value>{stat.value}</S.Value>
+                            </S.FlexContainer>
                             <S.StatLabel>{stat.label}</S.StatLabel>
                         </S.StatCard>
                     ))}

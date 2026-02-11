@@ -229,7 +229,7 @@ export const StatCard = styled.div`
   }
 `;
 
-export const StatNumber = styled.div`
+export const Value = styled.div`
   font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, ${({ theme }) => theme.accent1}, ${({ theme }) => theme.accent2});
@@ -244,4 +244,23 @@ export const StatLabel = styled.div`
   letter-spacing: 0.15em;
   font-weight: 700;
   color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const FlexContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+`;
+
+export const IconWrapper = styled.span`
+  color: ${({ theme }) => theme.accent1};
+  display: flex;
+  width: 44px;
+  align-items: center;
+  justify-content: center;
+  svg {
+    width: 100%;
+    height: auto;
+  }
 `;
