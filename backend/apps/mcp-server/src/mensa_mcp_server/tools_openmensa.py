@@ -142,7 +142,7 @@ async def search_canteens(
 
 @mcp.tool()
 async def get_canteen_info(
-    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
+    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID.")],
 ) -> CanteenDTO:
     """
     Get canteen metadata: name, address, city, and GPS coordinates.
@@ -173,7 +173,7 @@ async def get_canteen_info(
 
 @mcp.tool()
 async def get_menu_for_date(
-    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
+    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID.")],
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
     diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.")] = None,
