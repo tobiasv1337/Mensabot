@@ -33,6 +33,11 @@ class ChatResponse(BaseModel):
     tool_calls: list[ToolCallTrace] | None = None
 
 
+class TranscribeResponse(BaseModel):
+    text: str
+    duration_s: float | None = None
+
+
 class CanteenOut(BaseModel):
     id: int
     name: str
