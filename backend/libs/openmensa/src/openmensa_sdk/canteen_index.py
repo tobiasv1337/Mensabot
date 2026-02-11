@@ -214,10 +214,10 @@ def _build_query_variants(query_norm: str) -> list[tuple[str, float, float | Non
             # make many unrelated canteens score >= min_score. When we have at least one
             # informative token left, treat the filtered query as the primary signal so
             # strong matches can still reach a high score (used by frontend cutoffs).
-            add_variant(" ".join(filtered), 1.0, None)
+            add_variant(" ".join(filtered), 0.75, 90.0)
             prefix_variant = _prefix_acronym(filtered)
             if prefix_variant:
-                add_variant(prefix_variant, 0.95, None)
+                add_variant(prefix_variant, 0.8, 90.0)
 
     return variants
 
