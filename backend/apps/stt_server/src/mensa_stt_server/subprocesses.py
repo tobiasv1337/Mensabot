@@ -31,6 +31,7 @@ async def run_subprocess(
         try:
             await proc.wait()
         except Exception:
+            # Best-effort cleanup after kill; preserve the original timeout exception.
             pass
         raise
 
@@ -39,4 +40,3 @@ async def run_subprocess(
         stdout=(stdout_b or b"").decode("utf-8", errors="replace"),
         stderr=(stderr_b or b"").decode("utf-8", errors="replace"),
     )
-

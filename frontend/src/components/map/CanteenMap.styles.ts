@@ -81,8 +81,18 @@ export const ControlButton = styled.button`
     background: ${({ theme }) => theme.surfaceInset};
   }
 
+  &[aria-pressed="true"] {
+    background: ${({ theme }) => theme.surfaceInset};
+    color: ${({ theme }) => theme.accent1};
+  }
+
   &:active {
     transform: translateY(0.5px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent1};
+    outline-offset: 2px;
   }
 
 `;
