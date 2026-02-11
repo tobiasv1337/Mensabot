@@ -1,0 +1,30 @@
+{
+    "projectFacts": {
+        "eyebrow": "Projekt Einblicke",
+        "title": "Hinter dem Bot",
+        "facts": {
+            "studentProject": {
+                "title": "Studentenprojekt",
+                "description": "Von Studenten für Studenten entwickelt, um das Mensa-Erlebnis zu verbessern."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Nutzt den MCP Standard, um präzise und hilfreiche Antworten zu Mensa-Menüs zu geben."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Mit modernen Technologien erstellt und komplett Open Source für Community-Beiträge."
+            },
+            "fastReliable": {
+                "title": "Schnell & Zuverlässig",
+                "description": "Optimiert für Geschwindigkeit, damit du die Informationen in Sekunden erhältst."
+            }
+        },
+        "statsTitle": "Projekt Statistiken",
+        "stats": {
+            "cities": "Städte",
+            "mensen": "Mensen",
+            "stars": "Sterne"
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "projectFacts": {
+        "eyebrow": "Project Insights",
+        "title": "Behind the Bot",
+        "facts": {
+            "studentProject": {
+                "title": "Student Project",
+                "description": "Developed by students for students, aiming to improve the campus dining experience."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Built with modern technologies and completely open source for community contributions."
+            },
+            "fastReliable": {
+                "title": "Fast & Reliable",
+                "description": "Optimized for speed to give you the information you need in seconds."
+            }
+        },
+        "statsTitle": "Project Statistics",
+        "stats": {
+            "cities": "Cities",
+            "mensen": "Canteens",
+            "stars": "Stars"
+        }
+    }
+}
