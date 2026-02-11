@@ -62,9 +62,9 @@ class TTLCache:
         ttl = self.default_ttl_s if ttl_s is None else ttl_s
         expires_at = time.monotonic() + ttl
         with self._lock:
-            if len(self._store) >= self.max_items:
-                self._store.popitem(last=False)
-                self._inc("evicted", key=key)
+            if key not in self._store and len(self._store) >= self.max_items:
+                evicted_key, _ = self._store.popitem(last=False)
+                self._inc("evicted", key=evicted_key)
             self._store[key] = (expires_at, value)
             self._inc("sets", key=key)
 

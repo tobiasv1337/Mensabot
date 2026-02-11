@@ -25,8 +25,8 @@ async def get_debug_metrics(
     index = store.load()
     path = getattr(store, "path", None)
     file_exists = bool(path) and os.path.exists(path)
-    file_size = os.path.getsize(path) if file_exists and path else None
-    file_mtime = os.path.getmtime(path) if file_exists and path else None
+    file_size = os.path.getsize(path) if file_exists else None
+    file_mtime = os.path.getmtime(path) if file_exists else None
 
     return {
         "cache": shared_cache.stats(reset=reset),
