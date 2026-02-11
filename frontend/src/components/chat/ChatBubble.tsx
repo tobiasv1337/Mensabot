@@ -31,6 +31,12 @@ const formatToolPayload = (payload: unknown) => {
   }
 };
 
+const omitMarkdownNode = <T extends { node?: unknown }>(props: T) => {
+  const domProps = { ...props };
+  delete domProps.node;
+  return domProps;
+};
+
 type ChatBubbleProps = {
   message: ChatMessage;
   avatarSrc?: string;
@@ -83,10 +89,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
-                a: ({ ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+                a: (props) => <a {...omitMarkdownNode(props)} target="_blank" rel="noreferrer" />,
                 table: ({ children, ...props }) => (
                   <S.TableWrap>
-                    <table {...props}>{children}</table>
+                    <table {...omitMarkdownNode(props)}>{children}</table>
                   </S.TableWrap>
                 ),
               }}

@@ -191,6 +191,8 @@ const getIcon = (item: string) => {
       return <ChatIcon />;
     case "Canteens":
       return <MensenIcon />;
+    case "Map":
+      return <MapIcon />;
     case "About":
       return <AboutUsIcon />;
     case "Contact":
@@ -327,17 +329,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </ButtonTextWrapper>
                 </Button>
 
-                <Button
-                  variant="default"
-                  size="fill"
-                  active={activeNav === "Map"}
-                  collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Map")}>
-                  <ButtonIconWrapper><MapIcon /></ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Karte
-                  </ButtonTextWrapper>
-                </Button>
               </S.NavSection>
 
               <S.SectionTitle>Chats</S.SectionTitle>

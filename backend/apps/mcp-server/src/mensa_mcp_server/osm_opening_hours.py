@@ -227,6 +227,7 @@ class OSMOpeningHoursResolver:
                             try:
                                 backoff_s = min(self.MAX_BACKOFF_S, float(retry_after))
                             except ValueError:
+                                # Ignore malformed Retry-After and keep exponential backoff.
                                 pass
 
                         if attempt < self.MAX_RETRIES:

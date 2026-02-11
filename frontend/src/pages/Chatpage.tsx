@@ -12,7 +12,7 @@ import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "About", "Contact"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "Contact"];
 const CHAT_PAGE_SIZE = 10;
 
 const resolveInitialChatId = () => {
