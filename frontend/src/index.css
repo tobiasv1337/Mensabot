@@ -3,6 +3,31 @@
   box-sizing: border-box;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.5);
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -16,6 +41,13 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body.chat-lock-scroll {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 #root {
@@ -31,7 +63,7 @@ a {
   text-decoration: inherit;
 }
 
-/* Remove default button styles - will be styled via styled-components */
+/* Remove default button styles - will be styled via styled-AiWarning */
 button {
   font-family: inherit;
   cursor: pointer;
@@ -44,4 +76,3 @@ button {
 textarea {
   font-family: inherit;
 }
-

@@ -1,8 +1,8 @@
 import styled from "styled-components";
 
 export const PageRoot = styled.div`
-  min-height: 100vh;
-  background: ${({ theme }) => theme.surfaceInset};
+  min-height: 100dvh;
+  background: ${({ theme }) => theme.surfacePage};
 `;
 
 export const Shell = styled.div`
@@ -13,10 +13,10 @@ export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
   display: grid;
   grid-template-columns: ${({ $collapsed }) =>
     $collapsed ? "72px" : "280px"} 1fr;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
   transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  @media (max-width: 1023px) {
+  @media (max-width: 1023px), (hover: none) and (pointer: coarse) {
     grid-template-columns: 1fr;
   }
 `;
@@ -24,7 +24,7 @@ export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
 export const SidebarSlot = styled.div`
   display: none;
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     display: block;
     position: sticky;
     top: 80px;
@@ -33,14 +33,21 @@ export const SidebarSlot = styled.div`
   }
 `;
 
-export const Content = styled.main`
-  padding: 24px;
+export const Content = styled.main<{ $chat?: boolean }>`
+  padding: ${({ $chat }) => ($chat ? "24px 24px 0" : "24px")};
   min-width: 0;
+  min-height: 0;
+  ${({ $chat }) =>
+    $chat &&
+    `
+      height: calc(100dvh - 80px);
+      overflow: hidden;
+    `}
 
-  background: ${({ theme }) => theme.surfaceInset};
+  background: ${({ theme }) => theme.surfacePage};
   color: ${({ theme }) => theme.textOnPage};
 
   @media (max-width: 480px) {
-    padding: 16px;
+    padding: ${({ $chat }) => ($chat ? "16px 16px 0" : "16px")};
   }
 `;

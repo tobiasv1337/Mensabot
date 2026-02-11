@@ -11,3 +11,5 @@ WARP.md
 # ignore any .env files
 .env
 .env.*
+# But include example env files
+!.env.example

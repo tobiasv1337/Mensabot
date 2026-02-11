@@ -1,0 +1,16 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ .
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN npm run build
+
+FROM node:20-alpine
+RUN npm install -g serve@14.2.5
+COPY --from=build /app/dist /app/dist
+EXPOSE 8080
+CMD ["serve", "-s", "/app/dist", "-l", "8080"]

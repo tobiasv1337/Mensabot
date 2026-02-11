@@ -1,24 +1,7 @@
-import React, { createContext, useContext, useCallback, useEffect, useState, useMemo } from "react"
+import React, { useCallback, useEffect, useState, useMemo } from "react"
 import { ThemeProvider as StyledThemeProvider } from "styled-components"
 import { themes } from "./colors"
-
-type ThemeMode = "light" | "system" | "dark"
-
-interface ThemeContextType {
-    mode: ThemeMode;
-    currentTheme: typeof themes.light;
-    toggleMode: (mode: ThemeMode) => void;
-    // boolean to indicate if light/dark mode is active and block system changes
-    lightMode: boolean;
-    darkMode: boolean;
-}
-
-const ThemeContext = createContext<ThemeContextType>({ 
-    mode: "system", 
-    currentTheme: themes.light, 
-    toggleMode: () => {}, 
-    lightMode: false, 
-    darkMode: false, })
+import { ThemeContext, type ThemeMode } from "./themeContext"
 
 // helper function to get system preference
 const getSystemPreference = (): "light" | "dark" => {
@@ -29,8 +12,15 @@ const getSystemPreference = (): "light" | "dark" => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // saves button theme value defined by user (default: "system")
-    const [mode, setMode] = useState<ThemeMode>("system"); 
-    
+    const [mode, setMode] = useState<ThemeMode>(() => {
+        try {
+            const stored = localStorage.getItem("theme");
+            return ["light", "dark", "system"].includes(stored as string) ? (stored as ThemeMode) : "system";
+        } catch {
+            return "system";
+        }
+    });
+
     // systemmode
     const [systemMode, setSystemMode] = useState<"light" | "dark">(() => getSystemPreference());
 
@@ -48,6 +38,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     const toggleMode = useCallback((newMode: ThemeMode) => {
         setMode(newMode);
+        try {
+            localStorage.setItem("theme", newMode);
+        } catch {
+            // best-effort persistence
+        }
     }, []);
 
     // logic to determine the active theme based on mode and systemMode
@@ -60,7 +55,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             return themes.light;
         }
         return systemMode === "dark" ? themes.dark : themes.light;
-        
+
     }, [mode, systemMode]);
 
     const contextValue = useMemo(() => ({
@@ -69,7 +64,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         toggleMode,
         lightMode: mode === "light" || (mode === "system" && systemMode === "light"),
         darkMode: mode === "dark" || (mode === "system" && systemMode === "dark"),
-    }), [mode, systemMode, activeTheme]);
+    }), [mode, systemMode, activeTheme, toggleMode]);
+
+    useEffect(() => {
+        document.body.style.backgroundColor = activeTheme.surfacePage;
+        document.documentElement.style.backgroundColor = activeTheme.surfacePage;
+    }, [activeTheme]);
 
     return (
         <ThemeContext.Provider value={contextValue}>
@@ -79,5 +79,3 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         </ThemeContext.Provider>
     )
 };
-
-export const useTheme = () => useContext(ThemeContext)

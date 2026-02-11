@@ -19,7 +19,7 @@ export const Header = styled.header`
 
   padding: 0 clamp(12px, 3vw, 32px);
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     /* rechts braucht Platz für Nav, links kann schmal bleiben */
     grid-template-columns: 80px 1fr auto;
   }
@@ -87,7 +87,7 @@ export const BurgerButton = styled.button`
     background: ${({ theme }) => theme.surfaceInset};
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     display: none;
   }
 `;
@@ -98,23 +98,23 @@ export const DesktopNav = styled.nav`
   gap: 18px;
   align-items: center;
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     display: flex;
   }
 `;
 
-export const NavItem = styled.button<{ active?: boolean }>`
+export const NavItem = styled.button<{ $active?: boolean }>`
   all: unset;
   cursor: pointer;
   padding: 8px 14px;
   border-radius: 12px;
   font-size: 15px;
 
-  color: ${({ active, theme }) =>
-    active ? theme.textOnAccent : theme.textSecondary};
+  color: ${({ $active, theme }) =>
+    $active ? theme.textOnAccent : theme.textSecondary};
 
-  background: ${({ active, theme }) =>
-    active ? theme.surfaceAccent : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.surfaceAccent : "transparent"};
 
   transition: background 0.18s ease, color 0.18s ease;
 

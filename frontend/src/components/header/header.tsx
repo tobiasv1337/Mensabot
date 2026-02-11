@@ -1,8 +1,9 @@
 import React from "react";
 import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
+import { Button } from "../button/button";
 
-export type NavItem = string;
+import { NAV_LABELS, type NavItem } from "../../types/navigation";
 
 interface HeaderProps {
   activeNav: NavItem;
@@ -29,8 +30,8 @@ const Header: React.FC<HeaderProps> = ({
       {/* Center: Brand immer mittig */}
       <S.Left>
         <S.Brand>
-          <S.LogoImg src={mensaLogo} alt="MensaMatch Logo" />
-          <S.Title>MensaMatch</S.Title>
+          <S.LogoImg src={mensaLogo} alt="Mensabot Logo" />
+          <S.Title>Mensabot</S.Title>
         </S.Brand>
       </S.Left>
 
@@ -38,15 +39,18 @@ const Header: React.FC<HeaderProps> = ({
       <S.Right>
         <S.DesktopNav aria-label="Hauptnavigation">
           {navItems.map((n) => (
-            <S.NavItem
+            <Button
               key={n}
+              variant="default"
+              size="hug"
               active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
-              {n}
-            </S.NavItem>
+              {NAV_LABELS[n] ?? n}
+            </Button>
           ))}
         </S.DesktopNav>
+
       </S.Right>
     </S.Header>
   );

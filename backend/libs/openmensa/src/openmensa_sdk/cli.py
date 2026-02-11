@@ -22,6 +22,15 @@ Usage examples:
 
     # 6. Show a single meal by ID
     openmensa get-meal --canteen-id 2019 --date 2025-10-29 --meal-id 12345
+
+    # 7. Refresh the local canteen index
+    openmensa index-refresh
+
+    # 8. List canteens from the local index
+    openmensa index-list --per-page 20 --city Berlin
+
+    # 9. Search canteens in the local index
+    openmensa index-search --query "tu berlin" --limit 5
 """
 
 import argparse
@@ -35,6 +44,9 @@ from openmensa_sdk import (
     Canteen,
     Day,
     Meal,
+    CanteenIndexStore,
+    CanteenSearchResult,
+    DEFAULT_INDEX_TTL_HOURS,
 )
 
 
@@ -117,6 +129,78 @@ def cmd_get_meal(args) -> int:
     return 0
 
 
+def _get_index_store(args) -> CanteenIndexStore:
+    if args.index_path:
+        return CanteenIndexStore(path=args.index_path)
+    return CanteenIndexStore()
+
+
+def cmd_index_refresh(args) -> int:
+    store = _get_index_store(args)
+    with OpenMensaClient() as client:
+        try:
+            index = store.refresh(client)
+        except OpenMensaAPIError as e:
+            print_api_error(e)
+            return 1
+    print(f"Index refreshed: {index.updated_at.isoformat()} ({len(index.canteens)} canteens)")
+    return 0
+
+
+def cmd_index_list(args) -> int:
+    store = _get_index_store(args)
+    with OpenMensaClient() as client:
+        try:
+            index = store.refresh_if_stale(client, ttl_hours=args.ttl_hours)
+        except OpenMensaAPIError as e:
+            print_api_error(e)
+            return 1
+
+    canteens, total = index.list(
+        page=args.page,
+        per_page=args.per_page,
+        city=args.city,
+        has_coordinates=args.has_coordinates,
+    )
+    next_page = args.page + 1 if args.page * args.per_page < total else None
+
+    print(f"Index updated_at={index.updated_at.isoformat()} total_canteens={len(index.canteens)}")
+    print(f"Found {len(canteens)} canteens (total={total}, next_page={next_page}):")
+    for c in canteens:
+        print_canteen(c)
+    return 0
+
+
+def cmd_index_search(args) -> int:
+    store = _get_index_store(args)
+    with OpenMensaClient() as client:
+        try:
+            index = store.refresh_if_stale(client, ttl_hours=args.ttl_hours)
+        except OpenMensaAPIError as e:
+            print_api_error(e)
+            return 1
+
+    results, total = index.search(
+        args.query,
+        city=args.city,
+        near_lat=args.near_lat,
+        near_lng=args.near_lng,
+        radius_km=args.radius_km,
+        limit=args.limit,
+        min_score=args.min_score,
+        has_coordinates=args.has_coordinates,
+    )
+
+    print(f"Index updated_at={index.updated_at.isoformat()} total_canteens={len(index.canteens)}")
+    if not args.query:
+        print("Mode: location-only (no text score; results ordered by distance)")
+    print(f"Found {len(results)} results (total={total}):")
+    show_score = bool(args.query)
+    for r in results:
+        print_search_result(r, show_score=show_score)
+    return 0
+
+
 # ---- printers --------------------------------------------------------
 
 def print_canteen(c: Canteen) -> None:
@@ -154,6 +238,16 @@ def print_meal(m: Meal, verbose: bool = False) -> None:
     print(f"    others:       {prices['others']}")
     if verbose:
         print(f"    raw:          {json.dumps(prices['raw'], ensure_ascii=False)}")
+
+
+def print_search_result(r: CanteenSearchResult, show_score: bool = True) -> None:
+    print("RESULT")
+    if show_score:
+        print(f"  score:      {r.score:.1f}")
+    else:
+        print("  score:      -")
+    print(f"  distance:   {r.distance_km if r.distance_km is not None else '-'}")
+    print_canteen(r.canteen)
 
 
 def print_api_error(e: OpenMensaAPIError) -> None:
@@ -213,6 +307,37 @@ def build_parser() -> argparse.ArgumentParser:
     gm.add_argument("--date", type=str, default=_date.today().isoformat(), help="Date (YYYY-MM-DD). Defaults to today.")
     gm.add_argument("--meal-id", type=int, required=True, help="Meal ID")
     gm.set_defaults(func=cmd_get_meal)
+
+    # index-refresh
+    ir = sub.add_parser("index-refresh", help="Refresh the local canteen index")
+    ir.add_argument("--index-path", type=str, default=None, help="Path to the local index file")
+    ir.set_defaults(func=cmd_index_refresh)
+
+    # index-list
+    il = sub.add_parser("index-list", help="List canteens from the local index")
+    il.add_argument("--index-path", type=str, default=None, help="Path to the local index file")
+    il.add_argument("--ttl-hours", type=float, default=DEFAULT_INDEX_TTL_HOURS, help="Index refresh TTL in hours")
+    il.add_argument("--page", type=int, default=1, help="Page number (1-based)")
+    il.add_argument("--per-page", type=int, default=50, help="Items per page")
+    il.add_argument("--city", type=str, default=None, help="Optional city filter")
+    il.add_argument("--has-coordinates", dest="has_coordinates", action="store_const", const=True, default=None, help="Only return canteens with coordinates")
+    il.add_argument("--no-coordinates", dest="has_coordinates", action="store_const", const=False, help="Only return canteens without coordinates")
+    il.set_defaults(func=cmd_index_list)
+
+    # index-search
+    isearch = sub.add_parser("index-search", help="Search canteens in the local index")
+    isearch.add_argument("--index-path", type=str, default=None, help="Path to the local index file")
+    isearch.add_argument("--ttl-hours", type=float, default=DEFAULT_INDEX_TTL_HOURS, help="Index refresh TTL in hours")
+    isearch.add_argument("--query", type=str, default=None, help="Search query")
+    isearch.add_argument("--city", type=str, default=None, help="Optional city filter")
+    isearch.add_argument("--near-lat", type=float, default=None, help="Latitude for radius search")
+    isearch.add_argument("--near-lng", type=float, default=None, help="Longitude for radius search")
+    isearch.add_argument("--radius-km", type=float, default=None, help="Radius in kilometers for near search")
+    isearch.add_argument("--limit", type=int, default=20, help="Max number of results to return")
+    isearch.add_argument("--min-score", type=float, default=60.0, help="Minimum search score (0-100)")
+    isearch.add_argument("--has-coordinates", dest="has_coordinates", action="store_const", const=True, default=None, help="Only return canteens with coordinates")
+    isearch.add_argument("--no-coordinates", dest="has_coordinates", action="store_const", const=False, help="Only return canteens without coordinates")
+    isearch.set_defaults(func=cmd_index_search)
 
     return p
 
