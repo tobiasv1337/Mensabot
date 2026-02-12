@@ -19,24 +19,28 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
             color: theme.textSecondary,
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textPrimary,
+            border: 'none',
         },
         surfaceAccent: { // two times darker surface background
             bg: theme.surfaceAccent,
             color: theme.textOnAccent,
             hoverBg: theme.surfaceAccent,
             hoverColor: theme.textOnAccent,
+            border: 'none',
         },
         surfaceInset: { // darker surface background
             bg: theme.surfaceInset,
             color: theme.textOnInset,
             hoverBg: theme.surfaceInset,
             hoverColor: theme.textOnInset,
+            border: 'none',
         },
         surfaceElevated: { // elevated surface background
             bg: theme.surfaceElevated,
             color: theme.textOnElevated,
             hoverBg: theme.surfaceElevated,
             hoverColor: theme.textOnElevated,
+            border: 'none',
         },
         surfaceInsetBorder: { // elevated surface with border
             bg: theme.mode === 'dark' ? theme.surfaceCard : theme.surfaceInset,
@@ -131,7 +135,7 @@ export const StyledButton = styled.button<StyledButtonProps & ButtonProps>`
         return css`
             background: ${styles.bg};
             color: ${styles.color};
-            border: ${(styles as any).border || 'none'};
+            border: ${styles.border};
 
             &:hover:not(:disabled) {
                 background: ${styles.hoverBg};

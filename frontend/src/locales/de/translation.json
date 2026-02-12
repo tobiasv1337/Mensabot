@@ -20,6 +20,7 @@
                 "description": "Optimiert für Geschwindigkeit, damit du die Informationen in Sekunden erhältst."
             }
         },
+        "imageAlt": "MensaBot Projekt Visualisierung",
         "statsTitle": "Projekt Statistiken",
         "stats": {
             "cities": "Städte",

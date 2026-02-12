@@ -37,19 +37,10 @@ const ProjectFactsPage: React.FC = () => {
     useEffect(() => {
         const checkHeight = () => {
             if (wrapperRef.current && lowerRef.current) {
-                // Get the natural height of the wrapper content (without min-height: 100vh applied yet if possible)
-                // However, reading scrollHeight or offsetHeight when it MIGHT be 100vh is tricky.
-                // Better approach: Check if (Window Height - Lower Section Height) < Wrapper Natural Height?
-                // Actually, simply: If (WrapperContent + LowerSection) > WindowHeight, then Wrapper should be 100vh (pushing Lower down).
-                // If they fit, Wrapper is Natural Height.
-
-                // We need to measure natural heights.
+                // measure natural heights.
                 const wrapperHeight = wrapperRef.current.scrollHeight;
                 const lowerHeight = lowerRef.current.scrollHeight;
                 const totalContentHeight = wrapperHeight + lowerHeight;
-
-                // If total content fits in window, we DON'T need full screen force (so they sit together).
-                // If total content is taller than window, we force wrapper to be 100vh so it takes up the full initial view.
                 setIsFullScreen(totalContentHeight > window.innerHeight);
             }
         };
@@ -57,16 +48,15 @@ const ProjectFactsPage: React.FC = () => {
         checkHeight();
         window.addEventListener('resize', checkHeight);
         return () => window.removeEventListener('resize', checkHeight);
-    }, [totalCanteens, totalCities]); // Re-run when content might change (stats loaded)
+    }, [totalCanteens, totalCities]);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Fetch with empty query to get global stats from index
                 const response = await client.searchCanteens({
                     query: "",
                     page: 1,
-                    perPage: 1, // Minimize data transfer, we only need the index stats
+                    perPage: 1,
                 });
                 setTotalCanteens(response.index.total_canteens);
                 setTotalCities(response.index.total_cities);
@@ -107,7 +97,14 @@ const ProjectFactsPage: React.FC = () => {
     ];
 
     // Data for the lower section buttons
-    const stats = [
+    interface StatItem {
+        id: number;
+        label: string;
+        value: string | number;
+        icon: React.ReactNode;
+    }
+
+    const stats: StatItem[] = [
         { id: 1, label: t('projectFacts.stats.cities'), value: totalCities ?? "500+", icon: <CitiesIcon /> },
         { id: 2, label: t('projectFacts.stats.mensen'), value: totalCanteens ?? "1000+", icon: <MensenIcon /> },
         { id: 3, label: t('projectFacts.stats.stars'), value: "3,41", icon: <StarIcon /> },
@@ -122,7 +119,7 @@ const ProjectFactsPage: React.FC = () => {
                 </P.HeroCard>
                 <S.UpperSection>
                     <S.ImageContainer>
-                        <img src={heroImage} alt="MensaBot Project Visualization" />
+                        <img src={heroImage} alt={t('projectFacts.imageAlt')} />
                     </S.ImageContainer>
                     <S.ContentColumn>
                         <S.InteractiveCardsGrid>
@@ -148,7 +145,7 @@ const ProjectFactsPage: React.FC = () => {
                         <S.StatCard key={stat.id} style={{ animationDelay: `${0.2 + (index * 0.1)}s` }}>
                             <S.FlexContainer>
                                 <S.IconWrapper>
-                                    {(stat as any).icon}
+                                    {stat.icon}
                                 </S.IconWrapper>
                                 <S.Value>{stat.value}</S.Value>
                             </S.FlexContainer>
