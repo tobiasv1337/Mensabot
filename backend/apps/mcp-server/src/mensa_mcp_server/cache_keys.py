@@ -12,6 +12,22 @@ def openmensa_canteen_key(canteen_id: int) -> str:
     return f"openmensa:canteen:{canteen_id}"
 
 
+def _cache_filter_key(value: object | None, *, default: str) -> str:
+    """Normalize enum-like and string filter values for stable cache keys."""
+    if value is None:
+        return default
+
+    raw = getattr(value, "value", value)
+    if raw is None:
+        return default
+
+    if isinstance(raw, str):
+        normalized = raw.strip()
+        return normalized or default
+
+    return str(raw)
+
+
 def openmensa_menu_key(
     *,
     canteen_id: int,
@@ -20,12 +36,10 @@ def openmensa_menu_key(
     price_category: object | None,
     exclude_allergens: Iterable[str] | None,
 ) -> str:
-    diet_value = getattr(diet_filter, "value", None) if diet_filter is not None else None
-    diet_key = diet_value if diet_value is not None else "all"
-    price_value = getattr(price_category, "value", None) if price_category is not None else None
-    price_key = price_value if price_value is not None else ""
+    diet_key = _cache_filter_key(diet_filter, default="all")
+    price_key = _cache_filter_key(price_category, default="all")
     allergens = list(exclude_allergens or [])
-    allergens_key = ",".join(sorted(allergens)) if allergens else ""
+    allergens_key = ",".join(sorted(allergens)) if allergens else "none"
     return f"openmensa:menu:{canteen_id}:{date}:{diet_key}:{price_key}:{allergens_key}"
 
 
