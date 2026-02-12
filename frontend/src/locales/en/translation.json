@@ -21,6 +21,7 @@
             }
         },
         "statsTitle": "Project Statistics",
+        "imageAlt": "MensaBot Project Visualization",
         "stats": {
             "cities": "Cities",
             "mensen": "Canteens",

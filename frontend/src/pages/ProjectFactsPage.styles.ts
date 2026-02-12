@@ -97,7 +97,7 @@ export const SectionTitle = styled.h1`
   font-size: clamp(32px, 5vw, 48px);
   margin: 0;
   color: ${({ theme }) => theme.textPrimary};
-  line-height: title;
+  line-height: 1.2;
 `;
 
 export const InteractiveCardsGrid = styled.div`
@@ -105,26 +105,6 @@ export const InteractiveCardsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
   width: 100%;
-`;
-
-export const FactCard = styled.div`
-  padding: 24px;
-  border-radius: 24px;
-  background: ${({ theme }) => theme.surfaceCard};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  box-shadow: 0 14px 28px ${({ theme }) => `${theme.textDark}14`};
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  animation: ${fadeUp} 0.5s ease both;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 34px ${({ theme }) => `${theme.textDark}22`};
-    border-color: ${({ theme }) => `${theme.accent1}44`};
-  }
 `;
 
 export const LowerSection = styled(Section)`
