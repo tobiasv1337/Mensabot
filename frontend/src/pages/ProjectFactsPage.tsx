@@ -127,11 +127,11 @@ const ProjectFactsPage: React.FC = () => {
                     <S.ContentColumn>
                         <S.InteractiveCardsGrid>
                             {facts.map((fact, index) => (
-                                <PS.SearchCard key={fact.id} style={{ animationDelay: `${index * 0.1}s` }}>
+                                <S.StatCard key={fact.id} style={{ animationDelay: `${index * 0.1}s` }}>
                                     <PS.CardIcon>{fact.icon}</PS.CardIcon>
                                     <PS.CardTitle>{fact.title}</PS.CardTitle>
                                     <PS.CardText>{fact.description}</PS.CardText>
-                                </PS.SearchCard>
+                                </S.StatCard>
                             ))}
                         </S.InteractiveCardsGrid>
                     </S.ContentColumn>
