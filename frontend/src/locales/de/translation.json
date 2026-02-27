@@ -1,4 +1,19 @@
 {
+    "contact": {
+        "eyebrow": "Kontakt",
+        "title": "Sag Hallo!",
+        "description": "Hast du Fragen, Vorschläge oder Feedback? Wir würden uns freuen von dir zu hören. Kontaktiere uns direkt per E-Mail oder nutze das Kontaktformular unten.",
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Dein Name",
+            "email": "E-Mail",
+            "emailPlaceholder": "du@beispiel.de",
+            "message": "Nachricht",
+            "messagePlaceholder": "Wie können wir dir helfen?",
+            "submit": "Nachricht Senden",
+            "success": "Danke für deine Nachricht!"
+        }
+    },
     "projectFacts": {
         "eyebrow": "Projekt Einblicke",
         "title": "Hinter dem Bot",
