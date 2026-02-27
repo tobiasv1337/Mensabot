@@ -9,6 +9,7 @@ import ShortcutsPage from "./ShortcutsPage";
 import ProjectFactsPage from "./ProjectFactsPage";
 import SettingsPage from "./SettingsPage";
 import MapPage from "./MapPage";
+import ContactPage from "./ContactPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
@@ -177,6 +178,8 @@ const ChatPage: React.FC = () => {
               />
             ) : activeNav === "ProjectFacts" ? (
               <ProjectFactsPage />
+            ) : activeNav === "Contact" ? (
+              <ContactPage />
             ) : activeNav === "Shortcuts" ? (
               <ShortcutsPage
                 shortcuts={shortcuts}
