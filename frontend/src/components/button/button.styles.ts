@@ -51,6 +51,27 @@ const getVariantStyles = (theme: Theme, variant: ButtonProps['variant'] = 'defau
                 ? `1px solid ${theme.textOnCard}`
                 : `1px solid ${theme.textOnInset}`,
         },
+        accent1: {
+            bg: theme.accent1,
+            color: theme.textOnAccent1,
+            hoverBg: theme.accent1,
+            hoverColor: theme.textOnAccent1,
+            border: 'none',
+        },
+        accent2: {
+            bg: theme.accent2,
+            color: theme.textOnAccent2,
+            hoverBg: theme.accent2,
+            hoverColor: theme.textOnAccent2,
+            border: 'none',
+        },
+        accent3: {
+            bg: theme.accent3,
+            color: theme.textOnAccent3,
+            hoverBg: theme.accent3,
+            hoverColor: theme.textOnAccent3,
+            border: 'none',
+        },
     };
     return variantStyles[variant ?? 'default'];
 };
