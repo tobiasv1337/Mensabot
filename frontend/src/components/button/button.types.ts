@@ -3,7 +3,7 @@ import React from 'react';
 
 // Defines the available styles/colors of the button.
 // 'default' is the standard (neutral with transparent background)
-export const buttonVariants = ['default', 'surfaceAccent', 'surfaceInset', 'surfaceElevated', 'surfaceInsetBorder'] as const;
+export const buttonVariants = ['default', 'surfaceAccent', 'surfaceInset', 'surfaceElevated', 'surfaceInsetBorder', 'accent1', 'accent2', 'accent3'] as const;
 export type ButtonVariant = typeof buttonVariants[number];
 
 export const buttonSizes = ['hug', 'fill', 'iconOnly'] as const;
