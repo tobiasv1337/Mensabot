@@ -1,4 +1,19 @@
 {
+    "contact": {
+        "eyebrow": "Contact",
+        "title": "Say Hello!",
+        "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email or use the contact form below.",
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Your Name",
+            "email": "Email",
+            "emailPlaceholder": "you@example.com",
+            "message": "Message",
+            "messagePlaceholder": "How can we help you?",
+            "submit": "Send Message",
+            "success": "Thank you for your message!"
+        }
+    },
     "projectFacts": {
         "eyebrow": "Project Insights",
         "title": "Behind the Bot",
