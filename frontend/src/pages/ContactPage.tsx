@@ -58,7 +58,7 @@ const ContactPage: React.FC = () => {
                         <S.TextArea id="message" placeholder={t('contact.form.messagePlaceholder')} required />
                     </S.FormGroup>
 
-                    <Button type="submit" variant="default" text={t('contact.form.submit')} style={{ marginTop: '0.5rem' }} />
+                    <Button type="submit" variant="surfaceInsetBorder" text={t('contact.form.submit')} style={{ marginTop: '0.5rem' }} />
                 </S.FormContainer>
             </S.ScreenWrapper>
         </S.PageContainer>
