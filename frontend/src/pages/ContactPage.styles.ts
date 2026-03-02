@@ -79,23 +79,16 @@ export const EmailLink = styled.a`
 
 export const LogosContainer = styled.div`
   display: flex;
-  gap: 3rem;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   margin-top: 2rem;
   flex-wrap: wrap;
+  width: 75%;
+  height: 25%;
 
-  img {
-    max-width: 250px;
+  svg {
+    width: 25%;
     height: auto;
-    object-fit: contain;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px ${({ theme }) => `${theme.textDark}14`};
-    transition: transform 0.3s ease;
-
-    &:hover {
-      transform: scale(1.02);
-    }
   }
 
   @media (max-width: 600px) {
