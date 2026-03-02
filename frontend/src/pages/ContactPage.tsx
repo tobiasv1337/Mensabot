@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as S from './ContactPage.styles';
 import * as P from '../components/page/PageHero.styles';
 import { Button } from '../components/button/button';
-import { ContactIcon } from '../components/icons';
-import tuLogo from "../assets/tu_logo.png";
-import qualityAndUsabilityLogo from "../assets/qualityAndUsability_logo.png";
-import { TuLogo } from "../components/icons";
+import { ContactIcon, TuLogo, QualityAndUsabilityLogo } from "../components/icons";
 
 const ContactPage: React.FC = () => {
     const { t } = useTranslation();
@@ -27,9 +24,8 @@ const ContactPage: React.FC = () => {
 
                 <S.UpperSection>
                     <S.LogosContainer>
-                        {/*<img src={tuLogo} alt="TU Berlin Logo" />*/}
                         <TuLogo />
-                        <img src={qualityAndUsabilityLogo} alt="Quality And Usability Logo" />
+                        <QualityAndUsabilityLogo />
                     </S.LogosContainer>
                     <S.Description>
                         {t('contact.description')}
