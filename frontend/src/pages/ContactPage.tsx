@@ -6,6 +6,7 @@ import { Button } from '../components/button/button';
 import { ContactIcon } from '../components/icons';
 import tuLogo from "../assets/tu_logo.png";
 import qualityAndUsabilityLogo from "../assets/qualityAndUsability_logo.png";
+import { TuLogo } from "../components/icons";
 
 const ContactPage: React.FC = () => {
     const { t } = useTranslation();
@@ -26,7 +27,8 @@ const ContactPage: React.FC = () => {
 
                 <S.UpperSection>
                     <S.LogosContainer>
-                        <img src={tuLogo} alt="TU Berlin Logo" />
+                        {/*<img src={tuLogo} alt="TU Berlin Logo" />*/}
+                        <TuLogo />
                         <img src={qualityAndUsabilityLogo} alt="Quality And Usability Logo" />
                     </S.LogosContainer>
                     <S.Description>
