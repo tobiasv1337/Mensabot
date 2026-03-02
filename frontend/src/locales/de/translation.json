@@ -3,6 +3,8 @@
         "eyebrow": "Kontakt",
         "title": "Sag Hallo!",
         "description": "Hast du Fragen, Vorschläge oder Feedback? Wir würden uns freuen von dir zu hören. Kontaktiere uns direkt per E-Mail oder nutze das Kontaktformular unten.",
+        "mail": "mailto:stefan.hillmann@tu-berlin.de",
+        "mailButton": "Kontaktiere Stefan Hillmann",
         "form": {
             "name": "Name",
             "namePlaceholder": "Dein Name",

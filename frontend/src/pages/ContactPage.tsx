@@ -34,8 +34,8 @@ const ContactPage: React.FC = () => {
                     <Button
                         variant="accent1"
                         iconLeft={<ContactIcon />}
-                        text="Stefan Hillmann"
-                        onClick={() => window.location.href = "mailto:stefan.hillmann@tu-berlin.de"}
+                        text={t('contact.mailButton')}
+                        onClick={() => window.location.href = t('contact.mail')}
                     />
 
                 </S.UpperSection>

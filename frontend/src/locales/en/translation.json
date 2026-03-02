@@ -3,6 +3,8 @@
         "eyebrow": "Contact",
         "title": "Say Hello!",
         "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email or use the contact form below.",
+        "mail": "mailto:stefan.hillmann@tu-berlin.de",
+        "mailButton": "Contact Stefan Hillmann",
         "form": {
             "name": "Name",
             "namePlaceholder": "Your Name",
