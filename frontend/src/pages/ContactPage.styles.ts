@@ -172,3 +172,60 @@ export const TextArea = styled.textarea`
     color: ${({ theme }) => theme.textMuted};
   }
 `;
+
+export const ImpressumContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background: ${({ theme }) => theme.surfaceCard};
+  padding: 2.5rem;
+  border-radius: 24px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+  box-shadow: 0 10px 30px ${({ theme }) => `${theme.textDark}14`};
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+
+  @media (max-width: 600px) {
+    padding: 1.5rem;
+  }
+`;
+
+export const ImpressumTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0;
+  margin-bottom: 0.5rem;
+`;
+
+export const ImpressumContentWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+`;
+
+export const ImpressumSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+`;
+
+export const ImpressumSectionTitle = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.textPrimary};
+  margin: 0;
+`;
+
+export const ImpressumText = styled.p`
+  font-size: 1rem;
+  color: ${({ theme }) => theme.textSecondary};
+  margin: 0;
+`;

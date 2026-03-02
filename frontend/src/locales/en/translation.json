@@ -14,6 +14,25 @@
             "messagePlaceholder": "How can we help you?",
             "submit": "Send Message",
             "success": "Thank you for your message!"
+        },
+        "impressum": {
+            "eyebrow": "Impressum",
+            "title": "Impressum",
+            "contact": {
+                "title": "Contact",
+                "name": "MensaBot",
+                "address": "Technische Universität Berlin",
+                "street": "Marchstraße 23",
+                "postalCode": "10587",
+                "city": "Berlin",
+                "email": "sekretariat@qu.tu-berlin.de"
+            },
+            "legal": {
+                "title": "Legal Notice",
+                "copyright": "© 2026 MensaBot. All rights reserved.",
+                "disclaimer": "The content of this website was created with the utmost care. However, no guarantee is assumed for the accuracy, completeness, and timeliness of the content.",
+                "liability": "Liability notice: Despite careful content control, we assume no liability for the content of external links. The respective operators are solely responsible for the content of the linked pages."
+            }
         }
     },
     "projectFacts": {

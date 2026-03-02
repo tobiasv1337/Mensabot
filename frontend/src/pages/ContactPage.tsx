@@ -58,6 +58,27 @@ const ContactPage: React.FC = () => {
 
                     <Button type="submit" variant="surfaceInsetBorder" text={t('contact.form.submit')} style={{ marginTop: '0.5rem' }} />
                 </S.FormContainer>
+
+                <S.ImpressumContainer>
+                    <S.ImpressumTitle>{t('contact.impressum.title')}</S.ImpressumTitle>
+                    <S.ImpressumContentWrapper>
+                        <S.ImpressumSection>
+                            <S.ImpressumSectionTitle>{t('contact.impressum.contact.title')}</S.ImpressumSectionTitle>
+                            <S.ImpressumText>{t('contact.impressum.contact.name')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.contact.address')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.contact.street')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.contact.postalCode')} {t('contact.impressum.contact.city')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.contact.email')}</S.ImpressumText>
+                        </S.ImpressumSection>
+
+                        <S.ImpressumSection>
+                            <S.ImpressumSectionTitle>{t('contact.impressum.legal.title')}</S.ImpressumSectionTitle>
+                            <S.ImpressumText>{t('contact.impressum.legal.copyright')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.legal.disclaimer')}</S.ImpressumText>
+                            <S.ImpressumText>{t('contact.impressum.legal.liability')}</S.ImpressumText>
+                        </S.ImpressumSection>
+                    </S.ImpressumContentWrapper>
+                </S.ImpressumContainer>
             </S.ScreenWrapper>
         </S.PageContainer>
     );
