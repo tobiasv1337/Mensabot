@@ -71,7 +71,7 @@ export const AboutUsIcon = () => (
     </svg>
 );
 
-export const ContactIcon = () => (
+export const LegalNoticeIcon = () => (
     <svg
         width="20"
         height="20"
