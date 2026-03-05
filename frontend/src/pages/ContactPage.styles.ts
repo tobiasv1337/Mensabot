@@ -28,7 +28,6 @@ export const ScreenWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1000px;
   margin: 0 auto;
   gap: 3rem;
 `;
@@ -41,15 +40,6 @@ export const UpperSection = styled.section`
   text-align: center;
   width: 100%;
   color: ${({ theme }) => theme.textPrimary};
-`;
-
-export const Title = styled.h1`
-  font-size: clamp(32px, 5vw, 48px);
-  margin: 0;
-  background: linear-gradient(135deg, ${({ theme }) => theme.accent1}, ${({ theme }) => theme.accent2});
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.2;
 `;
 
 export const Description = styled.p`
@@ -87,89 +77,13 @@ export const LogosContainer = styled.div`
   height: 25%;
 
   svg {
-    width: 25%;
-    height: auto;
+    width: auto;
+    height: 5rem;
   }
 
   @media (max-width: 600px) {
     flex-direction: column;
     gap: 1.5rem;
-  }
-`;
-
-export const FormContainer = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  background: ${({ theme }) => theme.surfaceCard};
-  padding: 2.5rem;
-  border-radius: 24px;
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  box-shadow: 0 10px 30px ${({ theme }) => `${theme.textDark}14`};
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
-
-  @media (max-width: 600px) {
-    padding: 1.5rem;
-  }
-`;
-
-export const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  text-align: left;
-`;
-
-export const Label = styled.label`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.textSecondary};
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-`;
-
-export const Input = styled.input`
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  border: 1.5px solid ${({ theme }) => `${theme.textMuted}30`};
-  background: ${({ theme }) => theme.surfaceInset};
-  color: ${({ theme }) => theme.textPrimary};
-  font-size: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.accent1};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}33`};
-  }
-
-  &::placeholder {
-    color: ${({ theme }) => theme.textMuted};
-  }
-`;
-
-export const TextArea = styled.textarea`
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  border: 1.5px solid ${({ theme }) => `${theme.textMuted}30`};
-  background: ${({ theme }) => theme.surfaceInset};
-  color: ${({ theme }) => theme.textPrimary};
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 140px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.accent1};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.accent1}33`};
-  }
-
-  &::placeholder {
-    color: ${({ theme }) => theme.textMuted};
   }
 `;
 
