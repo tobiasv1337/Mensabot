@@ -9,7 +9,7 @@ import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 import {
   AboutUsIcon,
   ChatIcon,
-  ContactIcon,
+  LegalNoticeIcon,
   DarkModeIcon,
   HomeIcon,
   LightModeIcon,
@@ -56,8 +56,8 @@ const getIcon = (item: string) => {
       return <MapIcon />;
     case "About":
       return <AboutUsIcon />;
-    case "Contact":
-      return <ContactIcon />;
+    case "LegalNotice":
+      return <LegalNoticeIcon />;
     case "ProjectFacts":
       return <ProjectFactsIcon />;
     default:

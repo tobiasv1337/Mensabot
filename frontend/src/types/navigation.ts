@@ -5,7 +5,7 @@ export type NavItem =
     | "Map"
     | "ProjectFacts"
     | "About"
-    | "Contact"
+    | "LegalNotice"
     | "Shortcuts"
     | "Settings";
 
@@ -14,7 +14,7 @@ export const NAV_LABELS: Record<NavItem, string> = {
     ChatBot: "Chatbot",
     Canteens: "Mensen",
     About: "Über Uns",
-    Contact: "Kontakt",
+    LegalNotice: "Impressum",
     Shortcuts: "Shortcuts",
     Settings: "Einstellungen",
     Map: "Karte",

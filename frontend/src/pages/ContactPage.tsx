@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as S from './ContactPage.styles';
 import * as P from '../components/page/PageHero.styles';
 import { Button } from '../components/button/button';
-import { ContactIcon, TuLogo, QualityAndUsabilityLogo } from "../components/icons";
+import { LegalNoticeIcon, TuLogo, QualityAndUsabilityLogo } from "../components/icons";
 
 const ContactPage: React.FC = () => {
     const { t } = useTranslation();
@@ -27,7 +27,7 @@ const ContactPage: React.FC = () => {
 
                     <Button
                         variant="accent1"
-                        iconLeft={<ContactIcon />}
+                        iconLeft={<LegalNoticeIcon />}
                         text={t('contact.mailButton')}
                         onClick={() => window.location.href = t('contact.mail')}
                     />
