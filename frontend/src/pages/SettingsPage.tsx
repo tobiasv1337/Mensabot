@@ -81,14 +81,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
               <S.SettingActions>
                 <Button
                   type="button"
-                  variant={i18n.language === 'de' ? "surfaceAccent" : "default"}
+                  variant={i18n.language === 'de' ? "surfaceAccent" : "surfaceInsetBorder"}
                   onClick={() => i18n.changeLanguage('de')}
                 >
                   {t('settings.language.de')}
                 </Button>
                 <Button
                   type="button"
-                  variant={i18n.language === 'en' ? "surfaceAccent" : "default"}
+                  variant={i18n.language === 'en' ? "surfaceAccent" : "surfaceInsetBorder"}
                   onClick={() => i18n.changeLanguage('en')}
                 >
                   {t('settings.language.en')}
