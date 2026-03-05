@@ -63,5 +63,37 @@
             "mensen": "Mensen",
             "stars": "Sterne"
         }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Einstellungen",
+            "subtitle": "Verwalte deine App-Einstellungen und gespeicherten Daten."
+        },
+        "data": {
+            "title": "Daten & Speicher",
+            "subtitle": "Verwalte deine lokalen Chatdaten im Browser.",
+            "deleteChats": {
+                "label": "Chat-Verlauf löschen",
+                "description": "Entfernt alle gespeicherten Chats dauerhaft aus deinem Browser.",
+                "button": "Alle Chats löschen",
+                "note": "Chats werden lokal im Browser gespeichert."
+            }
+        },
+        "language": {
+            "title": "Sprache",
+            "label": "Wähle die Sprache der Seite.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Alle Chats löschen",
+            "subtitle": "Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+            "summaryLabel": "Zu löschende Daten",
+            "summaryValue": "Alle Chats",
+            "note": "Chats werden lokal im Browser gespeichert.",
+            "confirm": "Löschen",
+            "cancel": "Abbrechen"
+        }
     }
 }

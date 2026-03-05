@@ -63,5 +63,37 @@
             "mensen": "Canteens",
             "stars": "Stars"
         }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Settings",
+            "subtitle": "Manage your app settings and saved data."
+        },
+        "data": {
+            "title": "Data & Storage",
+            "subtitle": "Manage your local chat data in the browser.",
+            "deleteChats": {
+                "label": "Delete chat history",
+                "description": "Permanently removes all saved chats from your browser.",
+                "button": "Delete all chats",
+                "note": "Chats are saved locally in the browser."
+            }
+        },
+        "language": {
+            "title": "Language",
+            "label": "Choose the language of the site.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Delete all chats",
+            "subtitle": "This will permanently remove all chat histories. This action cannot be undone.",
+            "summaryLabel": "Data to be deleted",
+            "summaryValue": "All chats",
+            "note": "Chats are saved locally in the browser.",
+            "confirm": "Delete",
+            "cancel": "Cancel"
+        }
     }
 }
