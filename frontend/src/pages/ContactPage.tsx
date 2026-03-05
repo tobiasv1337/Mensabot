@@ -8,12 +8,6 @@ import { ContactIcon, TuLogo, QualityAndUsabilityLogo } from "../components/icon
 const ContactPage: React.FC = () => {
     const { t } = useTranslation();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Placeholder handler for form submission
-        alert(t('contact.form.success'));
-    };
-
     return (
         <S.PageContainer>
             <S.ScreenWrapper>
@@ -39,25 +33,6 @@ const ContactPage: React.FC = () => {
                     />
 
                 </S.UpperSection>
-
-                <S.FormContainer onSubmit={handleSubmit}>
-                    <S.FormGroup>
-                        <S.Label htmlFor="name">{t('contact.form.name')}</S.Label>
-                        <S.Input type="text" id="name" placeholder={t('contact.form.namePlaceholder')} required />
-                    </S.FormGroup>
-
-                    <S.FormGroup>
-                        <S.Label htmlFor="email">{t('contact.form.email')}</S.Label>
-                        <S.Input type="email" id="email" placeholder={t('contact.form.emailPlaceholder')} required />
-                    </S.FormGroup>
-
-                    <S.FormGroup>
-                        <S.Label htmlFor="message">{t('contact.form.message')}</S.Label>
-                        <S.TextArea id="message" placeholder={t('contact.form.messagePlaceholder')} required />
-                    </S.FormGroup>
-
-                    <Button type="submit" variant="surfaceInsetBorder" text={t('contact.form.submit')} style={{ marginTop: '0.5rem' }} />
-                </S.FormContainer>
 
                 <S.ImpressumContainer>
                     <S.ImpressumTitle>{t('contact.impressum.title')}</S.ImpressumTitle>

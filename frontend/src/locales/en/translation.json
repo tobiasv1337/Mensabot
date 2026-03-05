@@ -1,8 +1,8 @@
 {
     "contact": {
-        "eyebrow": "Contact",
+        "eyebrow": "Legal Notice",
         "title": "Say Hello!",
-        "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email or use the contact form below.",
+        "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email.",
         "mail": "mailto:stefan.hillmann@tu-berlin.de",
         "mailButton": "Contact Stefan Hillmann",
         "form": {
