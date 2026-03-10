@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 import en from "./locales/en/translation.json";
 import de from "./locales/de/translation.json";
 
@@ -16,14 +17,16 @@ const resources = {
 };
 
 i18n
+    .use(LanguageDetector)
     .use(initReactI18next) // passes i18n down to react-i18next
     .init({
         resources,
-        lng: "de", // language to use, more information here: https://www.i18next.com/overview/configuration-options#languages-namespaces-resources
-        // if you're using a language detector, do not define the lng option
+        fallbackLng: "en",
+        supportedLngs: ["de", "en"],
+        load: "languageOnly",
 
         interpolation: {
-            escapeValue: false // react already saves from xss
+            escapeValue: false
         }
     });
 
