@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Canteen } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
 import type { ChatFilters } from "../../services/chats";
@@ -14,6 +15,8 @@ type FiltersEditorProps = {
 };
 
 const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client }) => {
+  const { t } = useTranslation();
+
   const updateFiltersPartial = useCallback(
     (partial: Partial<ChatFilters>) => {
       onChange({ ...filters, ...partial });
@@ -62,7 +65,7 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
   return (
     <>
       <S.FilterSection>
-        <S.FilterLabel>Ernährungsweise</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.diet")}</S.FilterLabel>
         <ScrollablePillRow>
           {DIET_OPTIONS.map((option) => (
             <S.PillButton
@@ -87,7 +90,7 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
       </S.FilterSection>
 
       <S.FilterSection>
-        <S.FilterLabel>Allergene</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.allergens")}</S.FilterLabel>
         <ScrollablePillRow>
           {[...filters.allergens, ...availableAllergens.map((allergen) => allergen.key)].map((allergenKey) => {
             const isSelected = filters.allergens.includes(allergenKey);
@@ -108,7 +111,7 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
       </S.FilterSection>
 
       <S.FilterSection>
-        <S.FilterLabel>Mensa</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.canteen")}</S.FilterLabel>
         <CanteenSelector
           client={client}
           selectedCanteens={filters.canteens}

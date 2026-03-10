@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { getApiClient } from "../../services/apiClient";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
@@ -22,9 +23,6 @@ import {
 import { buildMenuMarkdown } from "./chatFormatting";
 import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
-
-const WELCOME_TEXT =
-  "Hallo! Ich bin dein Mensabot. Wie kann ich dir helfen?\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nOder nutze /command für Schnellzugriffe.";
 
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
@@ -61,6 +59,7 @@ const Chat: React.FC<ChatProps> = ({
   shortcuts,
   onCreateShortcut,
 }) => {
+  const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -128,9 +127,9 @@ const Chat: React.FC<ChatProps> = ({
 
   const fetchAndAppendMenu = useCallback(
     async (canteen: Canteen, targetChat: ChatModel, dateOverride?: string, dateLabel?: string) => {
-      const dateText = dateLabel ? ` für ${dateLabel}` : " für heute";
+      const dateText = dateLabel ? t("chat.dateFor", { date: dateLabel }) : t("chat.dateForToday");
       targetChat.addMessage(
-        new ChatMessage("user", `Zeige mir den Speiseplan der Mensa ${canteen.name}${dateText}.`)
+        new ChatMessage("user", t("chat.showMenuFor", { name: canteen.name, date: dateText }))
       );
       const requestId = ++menuRequestId.current;
       try {
@@ -147,12 +146,12 @@ const Chat: React.FC<ChatProps> = ({
         if (requestId !== menuRequestId.current) return;
         shouldAutoScrollRef.current = true;
         targetChat.addMessage(
-          new ChatMessage("assistant", "❌ Der Speiseplan konnte nicht geladen werden. Bitte versuche es erneut.")
+          new ChatMessage("assistant", t("chat.menuLoadError"))
         );
         setVersion((v) => v + 1);
       }
     },
-    [client]
+    [client, t]
   );
 
   useEffect(() => {
@@ -265,7 +264,7 @@ const Chat: React.FC<ChatProps> = ({
           const selected = response.results[0]?.canteen;
           if (!selected) {
             chat.addMessage(
-              new ChatMessage("assistant", "❌ Keine passende Mensa gefunden. Bitte prüfe den Namen.")
+              new ChatMessage("assistant", t("chat.noCanteenFound"))
             );
             setVersion((v) => v + 1);
             return;
@@ -275,7 +274,7 @@ const Chat: React.FC<ChatProps> = ({
           await fetchAndAppendMenu(selected, chat, parsed.dateISO, parsed.dateToken);
         } catch {
           chat.addMessage(
-            new ChatMessage("assistant", "❌ Mensa konnte nicht geladen werden. Bitte versuche es erneut.")
+            new ChatMessage("assistant", t("chat.canteenLoadError"))
           );
           setVersion((v) => v + 1);
         } finally {
@@ -294,7 +293,7 @@ const Chat: React.FC<ChatProps> = ({
         chat.addMessage(
           new ChatMessage(
             "assistant",
-            "❌ Server konnte nicht erreicht werden. Bitte versuche es später erneut."
+            t("chat.serverError")
           )
         );
         setVersion((v) => v + 1);
@@ -302,7 +301,7 @@ const Chat: React.FC<ChatProps> = ({
         setIsSending(false);
       }
     },
-    [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu]
+    [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -316,7 +315,7 @@ const Chat: React.FC<ChatProps> = ({
   const handleShareLocation = useCallback(() => {
     if (isSending || isRequestingLocation) return;
     if (!("geolocation" in navigator)) {
-      setLocationError("Dein Browser unterstützt keine Standortfreigabe.");
+      setLocationError(t("chat.geoNotSupported"));
       return;
     }
 
@@ -333,12 +332,12 @@ const Chat: React.FC<ChatProps> = ({
       },
       (geoError) => {
         console.error("Geolocation error", geoError);
-        setLocationError("Standort konnte nicht abgefragt werden. Bitte gib ihn manuell ein.");
+        setLocationError(t("chat.geoFailed"));
         setIsRequestingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 15000 }
     );
-  }, [isSending, isRequestingLocation, sendMessage]);
+  }, [isSending, isRequestingLocation, sendMessage, t]);
 
   const handleSelfLocation = useCallback(() => {
     if (isSending || isRequestingLocation) return;
@@ -346,13 +345,13 @@ const Chat: React.FC<ChatProps> = ({
     chat.addMessage(
       new ChatMessage(
         "assistant",
-        "Bitte gib deinen Standort unten ins Textfeld ein, damit ich passende Mensen in deiner Nähe finden kann.",
+        t("chat.selfLocationPrompt"),
         { kind: "normal" }
       )
     );
     setLocationPromptHandled(true);
     setVersion((v) => v + 1);
-  }, [chat, isSending, isRequestingLocation]);
+  }, [chat, isSending, isRequestingLocation, t]);
 
   const handleOpenDirections = useCallback(
     (message: ChatMessage) => {
@@ -379,7 +378,7 @@ const Chat: React.FC<ChatProps> = ({
       ? [
         {
           key: `diet-${filters.diet}`,
-          label: DIET_OPTIONS.find((option) => option.value === filters.diet)?.label ?? "Ernährung",
+          label: DIET_OPTIONS.find((option) => option.value === filters.diet)?.label ?? t("chat.filters.diet"),
           onRemove: () => updateFiltersPartial({ diet: null }),
         },
       ]
@@ -521,7 +520,7 @@ const Chat: React.FC<ChatProps> = ({
         setCommandCanteenResults(response.results);
       } catch {
         if (requestId !== commandRequestId.current) return;
-        setCommandCanteenError("Mensen konnten nicht geladen werden.");
+        setCommandCanteenError(t("chat.command.canteenSearchError"));
       } finally {
         if (requestId === commandRequestId.current) {
           setCommandCanteenLoading(false);
@@ -530,7 +529,7 @@ const Chat: React.FC<ChatProps> = ({
     }, DEBOUNCE_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [slashActive, slashQuery, isResolvedSlashCommand, client, commandUserLocation]);
+  }, [slashActive, slashQuery, isResolvedSlashCommand, client, commandUserLocation, t]);
 
   useEffect(() => {
     if (!slashActive) {
@@ -552,11 +551,11 @@ const Chat: React.FC<ChatProps> = ({
       return prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt;
     }
     const parts: string[] = [];
-    if (shortcut.filters.diet) parts.push(`Ernährung: ${shortcut.filters.diet}`);
-    if (shortcut.filters.allergens.length > 0) parts.push(`Allergene: ${shortcut.filters.allergens.length}`);
-    if (shortcut.filters.canteens.length > 0) parts.push(`Mensen: ${shortcut.filters.canteens.length}`);
-    return parts.length > 0 ? parts.join(" · ") : "Gespeicherter Shortcut";
-  }, []);
+    if (shortcut.filters.diet) parts.push(t("chat.describe.diet", { value: shortcut.filters.diet }));
+    if (shortcut.filters.allergens.length > 0) parts.push(t("chat.describe.allergens", { count: shortcut.filters.allergens.length }));
+    if (shortcut.filters.canteens.length > 0) parts.push(t("chat.describe.canteens", { count: shortcut.filters.canteens.length }));
+    return parts.length > 0 ? parts.join(" · ") : t("chat.describe.savedShortcut");
+  }, [t]);
 
   const shortcutItems: CommandMenuItem[] = useMemo(
     () =>
@@ -602,13 +601,13 @@ const Chat: React.FC<ChatProps> = ({
       let token = dateToken;
 
       if (index === 0) {
-        label = "Heute";
+        label = t("chat.command.today");
         token = "heute";
       } else if (index === 1) {
-        label = "Morgen";
+        label = t("chat.command.tomorrow");
         token = "morgen";
       } else if (index === 2) {
-        label = "Übermorgen";
+        label = t("chat.command.dayAfterTomorrow");
         token = "übermorgen";
       }
 
@@ -622,7 +621,7 @@ const Chat: React.FC<ChatProps> = ({
     }
 
     return items;
-  }, []);
+  }, [t]);
 
   const commandGroups: CommandMenuGroup[] = useMemo(() => {
     if (!slashActive) return [];
@@ -631,39 +630,39 @@ const Chat: React.FC<ChatProps> = ({
       return [
         {
           id: "dates",
-          label: "Datum",
+          label: t("chat.command.dateLabel"),
           items: dateItems,
         },
       ];
     }
 
     const shortcutEmptyLabel = shortcuts.length === 0
-      ? "Noch keine Shortcuts gespeichert."
+      ? t("chat.command.noShortcutsSaved")
       : shortcutQuery
-        ? "Keine passenden Shortcuts gefunden."
-        : "Keine Shortcuts verfügbar.";
+        ? t("chat.command.noMatchingShortcuts")
+        : t("chat.command.noShortcutsAvailable");
 
-    let canteenEmptyLabel = "Tippe, um eine Mensa zu suchen.";
+    let canteenEmptyLabel = t("chat.command.typeToSearch");
     if (slashQuery.length > 0) {
       if (commandCanteenLoading) {
-        canteenEmptyLabel = "Suche läuft...";
+        canteenEmptyLabel = t("chat.command.searching");
       } else if (commandCanteenError) {
         canteenEmptyLabel = commandCanteenError;
       } else if (canteenItems.length === 0) {
-        canteenEmptyLabel = "Keine Mensen gefunden.";
+        canteenEmptyLabel = t("chat.command.noCanteensFound");
       }
     }
 
     return [
       {
         id: "shortcuts",
-        label: "Shortcuts",
+        label: t("chat.command.shortcutsLabel"),
         items: shortcutItems,
         emptyLabel: shortcutItems.length === 0 ? shortcutEmptyLabel : undefined,
       },
       {
         id: "canteens",
-        label: "Mensen",
+        label: t("chat.command.canteensLabel"),
         items: canteenItems,
         emptyLabel: canteenItems.length === 0 ? canteenEmptyLabel : undefined,
       },
@@ -679,6 +678,7 @@ const Chat: React.FC<ChatProps> = ({
     dateItems,
     commandCanteenLoading,
     commandCanteenError,
+    t,
   ]);
 
   const flatCommandItems = useMemo(
@@ -774,8 +774,8 @@ const Chat: React.FC<ChatProps> = ({
               type="button"
               $variant="ghost"
               onClick={handleResetFilters}
-              title="Filter zurücksetzen"
-              aria-label="Filter zurücksetzen"
+              title={t("chat.resetFilters")}
+              aria-label={t("chat.resetFilters")}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
@@ -792,15 +792,15 @@ const Chat: React.FC<ChatProps> = ({
                   strokeLinejoin="round"
                 />
               </svg>
-              <S.IconButtonLabelAlways>Filter zurücksetzen</S.IconButtonLabelAlways>
+              <S.IconButtonLabelAlways>{t("chat.resetFilters")}</S.IconButtonLabelAlways>
             </S.IconButton>
           )}
           <S.IconButton
             type="button"
             $variant="ghost"
             onClick={() => setFiltersOpen((prev) => !prev)}
-            title={filtersOpen ? "Filter schließen" : "Filter öffnen"}
-            aria-label={filtersOpen ? "Filter schließen" : "Filter öffnen"}
+            title={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
+            aria-label={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
@@ -811,15 +811,15 @@ const Chat: React.FC<ChatProps> = ({
                 strokeLinejoin="round"
               />
             </svg>
-            <S.IconButtonLabel>{filtersOpen ? "Filter schließen" : "Filter"}</S.IconButtonLabel>
+            <S.IconButtonLabel>{filtersOpen ? t("chat.filterClose") : t("chat.filter")}</S.IconButtonLabel>
           </S.IconButton>
           <S.IconButton
             type="button"
             $variant="primary"
             onClick={handleStartNewChat}
             disabled={isSending}
-            title="Neuer Chat"
-            aria-label="Neuer Chat"
+            title={t("chat.newChat")}
+            aria-label={t("chat.newChat")}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
@@ -829,7 +829,7 @@ const Chat: React.FC<ChatProps> = ({
                 strokeLinecap="round"
               />
             </svg>
-            <S.IconButtonLabelAlways>Neuer Chat</S.IconButtonLabelAlways>
+            <S.IconButtonLabelAlways>{t("chat.newChat")}</S.IconButtonLabelAlways>
           </S.IconButton>
         </S.HeaderActions>
       </S.HeaderCard>
@@ -856,7 +856,7 @@ const Chat: React.FC<ChatProps> = ({
           <S.MessageList>
             {showWelcomeMessage && (
               <ChatBubble
-                message={new ChatMessage("assistant", WELCOME_TEXT)}
+                message={new ChatMessage("assistant", t("chat.welcome"))}
                 avatarSrc={mensabotLogo}
               />
             )}
@@ -870,13 +870,13 @@ const Chat: React.FC<ChatProps> = ({
                 ? [
                   {
                     id: "share-location",
-                    label: isRequestingLocation ? "Frage Standort ab..." : "Aktuellen Standort teilen",
+                    label: isRequestingLocation ? t("chat.shareLocationLoading") : t("chat.shareLocation"),
                     onClick: handleShareLocation,
                     disabled: isSending || isRequestingLocation,
                   },
                   {
                     id: "manual-location",
-                    label: "Manuell eingeben",
+                    label: t("chat.manualLocation"),
                     onClick: handleSelfLocation,
                     variant: "secondary",
                     disabled: isSending || isRequestingLocation,
@@ -886,7 +886,7 @@ const Chat: React.FC<ChatProps> = ({
                   ? [
                     {
                       id: "open-directions",
-                      label: "Route öffnen",
+                      label: t("chat.openRoute"),
                       onClick: () => handleOpenDirections(message),
                       disabled: isSending,
                     },
@@ -910,9 +910,9 @@ const Chat: React.FC<ChatProps> = ({
 
             {isSending && (
               <S.MessageRow>
-                <S.Avatar src={mensabotLogo} alt="Mensabot" />
+                <S.Avatar src={mensabotLogo} alt={t("chat.nameBot")} />
                 <S.MessageContent>
-                  <S.NameTag>Mensabot</S.NameTag>
+                  <S.NameTag>{t("chat.nameBot")}</S.NameTag>
                   <S.TypingBubble $isUser={false}>
                     <S.TypingDot />
                     <S.TypingDot />
@@ -925,7 +925,7 @@ const Chat: React.FC<ChatProps> = ({
           </S.MessageList>
         </S.MessagesScroll>
         {showScrollToLatest && (
-          <S.ScrollToLatest type="button" onClick={handleScrollToLatest} aria-label="Zum neuesten">
+          <S.ScrollToLatest type="button" onClick={handleScrollToLatest} aria-label={t("chat.scrollToLatest")}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M6 9l6 6 6-6"

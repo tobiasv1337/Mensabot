@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 
 const Wrapper = styled.div`
@@ -9,10 +10,11 @@ const Wrapper = styled.div`
 
 
 const AiWarningText: React.FC = () => {
+  const { t } = useTranslation();
   return (
-      <Wrapper>
-          KI-generierte Antworten können Fehler enthalten.
-      </Wrapper>
+    <Wrapper>
+      {t("chat.aiWarning")}
+    </Wrapper>
   )
 }
 
