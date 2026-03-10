@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Shortcut } from "../../services/shortcuts";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./chat.styles";
@@ -51,13 +52,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onTranscribeAudio,
   maxVoiceSeconds = 180,
   disabled = false,
-  placeholder = "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
+  placeholder,
   shortcuts,
   onShortcutAdd,
   onShortcutSelect,
   focusSignal,
   commandMenu,
 }) => {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("chat.input.placeholder");
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const commandMenuRef = useRef<HTMLDivElement>(null);
   const skipInitialFocus = useRef(true);
@@ -77,12 +81,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setVoiceError(null);
   }, []);
   const hintText = useMemo(() => {
-    if (isRecording) return `Aufnahme läuft... ${voiceSeconds}s / ${maxVoiceSeconds}s`;
-    if (isTranscribing) return "Transkription läuft...";
-    if (disabled) return "Senden...";
+    if (isRecording) return t("chat.input.recording", { seconds: voiceSeconds, max: maxVoiceSeconds });
+    if (isTranscribing) return t("chat.input.transcribing");
+    if (disabled) return t("chat.input.sending");
     if (voiceError) return voiceError;
-    return placeholder;
-  }, [voiceError, isTranscribing, isRecording, voiceSeconds, maxVoiceSeconds, disabled, placeholder]);
+    return resolvedPlaceholder;
+  }, [voiceError, isTranscribing, isRecording, voiceSeconds, maxVoiceSeconds, disabled, resolvedPlaceholder, t]);
   const micState: "idle" | "recording" | "transcribing" = isRecording
     ? "recording"
     : isTranscribing
@@ -200,19 +204,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
         const transcript = await onTranscribeAudio(blob);
         const cleaned = (transcript ?? "").trim();
         if (!cleaned) {
-          setVoiceError("Keine Sprache erkannt.");
+          setVoiceError(t("chat.input.noSpeechDetected"));
           return;
         }
         onChange(cleaned);
         requestAnimationFrame(() => focusTextarea());
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        setVoiceError(message || "Transkription fehlgeschlagen.");
+        setVoiceError(message || t("chat.input.transcriptionFailed"));
       } finally {
         setIsTranscribing(false);
       }
     },
-    [onTranscribeAudio, onChange, focusTextarea, clearVoiceError]
+    [onTranscribeAudio, onChange, focusTextarea, clearVoiceError, t]
   );
 
   const stopRecording = useCallback(() => {
@@ -235,7 +239,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     clearVoiceError();
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setVoiceError("Audioaufnahme wird von diesem Browser nicht unterstützt.");
+      setVoiceError(t("chat.input.audioNotSupported"));
       return;
     }
 
@@ -243,7 +247,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setVoiceError("Mikrofon-Zugriff verweigert.");
+      setVoiceError(t("chat.input.micDenied"));
       return;
     }
 
@@ -253,7 +257,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     } catch {
       stream.getTracks().forEach((track) => track.stop());
-      setVoiceError("Audioaufnahme konnte nicht gestartet werden.");
+      setVoiceError(t("chat.input.audioStartFailed"));
       return;
     }
 
@@ -274,7 +278,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       const blob = new Blob(chunks, { type: recorder.mimeType || "application/octet-stream" });
       cleanupRecording();
       if (blob.size < 1024) {
-        setVoiceError("Aufnahme war zu kurz.");
+        setVoiceError(t("chat.input.recordingTooShort"));
         return;
       }
       void transcribeBlob(blob);
@@ -284,7 +288,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       recorder.start(250);
     } catch {
       cleanupRecording();
-      setVoiceError("Audioaufnahme konnte nicht gestartet werden.");
+      setVoiceError(t("chat.input.audioStartFailed"));
       return;
     }
 
@@ -305,6 +309,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     stopRecording,
     maxVoiceSeconds,
     clearVoiceError,
+    t,
   ]);
 
   return (
@@ -362,15 +367,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
           {onTranscribeAudio && (
             <S.VoiceButton
               type="button"
-              aria-label={isRecording ? "Aufnahme stoppen" : "Sprachnachricht aufnehmen"}
+              aria-label={isRecording ? t("chat.input.stopRecording") : t("chat.input.startRecording")}
               aria-pressed={isRecording}
               aria-busy={isTranscribing}
               title={
                 isRecording
-                  ? `Aufnahme läuft (${voiceSeconds}s) – tippe zum Stoppen`
+                  ? t("chat.input.recordingHint", { seconds: voiceSeconds })
                   : isTranscribing
-                    ? "Transkription läuft..."
-                  : "Sprachnachricht aufnehmen"
+                    ? t("chat.input.transcribing")
+                    : t("chat.input.startRecording")
               }
               onClick={() => {
                 if (isRecording) stopRecording();
@@ -437,7 +442,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           )}
           <S.SendButton
             type="button"
-            aria-label="Senden"
+            aria-label={t("chat.input.send")}
             onClick={submit}
             disabled={busy || !value.trim()}
           >
@@ -481,12 +486,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         {item.meta && <S.CommandMeta>{item.meta}</S.CommandMeta>}
                       </div>
                       <S.CommandBadge>
-                        {item.kind === "shortcut" ? "Shortcut" : item.kind === "date" ? "Datum" : "Mensa"}
+                        {item.kind === "shortcut"
+                          ? t("chat.input.badgeShortcut")
+                          : item.kind === "date"
+                            ? t("chat.input.badgeDate")
+                            : t("chat.input.badgeCanteen")}
                       </S.CommandBadge>
                     </S.CommandItem>
                   ))
                 ) : (
-                  <S.CommandEmpty>{group.emptyLabel ?? "Keine Treffer"}</S.CommandEmpty>
+                  <S.CommandEmpty>{group.emptyLabel ?? t("chat.input.noResults")}</S.CommandEmpty>
                 )}
               </S.CommandGroup>
             ))}
@@ -495,7 +504,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <S.ShortcutRow>
           <S.ShortcutAddButton
             type="button"
-            aria-label="Shortcut hinzufügen"
+            aria-label={t("chat.input.addShortcut")}
             onClick={onShortcutAdd}
             disabled={busy}
           >

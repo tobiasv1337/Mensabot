@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -45,18 +46,19 @@ type ChatBubbleProps = {
 };
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [], actionsNote }) => {
+  const { t } = useTranslation();
   const isUser = message.role === "user";
   const toolCalls = message.meta.toolCalls ?? [];
 
   return (
     <S.MessageRow $isUser={isUser}>
-      {!isUser && avatarSrc && <S.Avatar src={avatarSrc} alt="Mensabot" />}
+      {!isUser && avatarSrc && <S.Avatar src={avatarSrc} alt={t("chat.nameBot")} />}
       <S.MessageContent $isUser={isUser}>
-        <S.NameTag>{isUser ? "Du" : "Mensabot"}</S.NameTag>
+        <S.NameTag>{isUser ? t("chat.nameUser") : t("chat.nameBot")}</S.NameTag>
         <S.Bubble $isUser={isUser}>
           {toolCalls.length > 0 && (
             <S.ToolTraceGroup>
-              <S.ToolTraceTitle>Tool-Aufrufe · {toolCalls.length}</S.ToolTraceTitle>
+              <S.ToolTraceTitle>{t("chat.toolCalls", { count: toolCalls.length })}</S.ToolTraceTitle>
               {toolCalls.map((toolCall, toolIndex) => {
                 const status: "ok" | "error" | "info" =
                   toolCall.ok === false ? "error" : toolCall.ok === true ? "ok" : "info";
@@ -73,9 +75,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
                       <S.ToolCallStatus $status={status}>{status}</S.ToolCallStatus>
                     </summary>
                     <S.ToolCallBody>
-                      <S.ToolCallSectionTitle>Request</S.ToolCallSectionTitle>
+                      <S.ToolCallSectionTitle>{t("chat.toolRequest")}</S.ToolCallSectionTitle>
                       <S.ToolCallCode>{formatToolPayload(requestPayload)}</S.ToolCallCode>
-                      <S.ToolCallSectionTitle>Result</S.ToolCallSectionTitle>
+                      <S.ToolCallSectionTitle>{t("chat.toolResult")}</S.ToolCallSectionTitle>
                       <S.ToolCallCode>{formatToolPayload(resultPayload)}</S.ToolCallCode>
                     </S.ToolCallBody>
                   </S.ToolCallDetails>
