@@ -89,6 +89,14 @@ export function useOnboarding(
 					break;
 				}
 				case "diet_select": {
+					if (action === "none") {
+						addBotMessage(t("chat.onboarding.noDietSelected"));
+						setTimeout(() => {
+							addBotMessage(t("chat.onboarding.allergyQuestion"));
+							setState((s) => ({ ...s, step: "allergy_question" }));
+						}, 400);
+						break;
+					}
 					// action is the diet value
 					const diet = action as DietPreference;
 					const label = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
@@ -193,11 +201,14 @@ export function useOnboarding(
 						{ id: "no", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("no"), variant: "secondary" },
 					];
 				case "diet_select":
-					return DIET_OPTIONS.map((opt) => ({
-						id: `diet-${opt.value}`,
-						label: opt.label,
-						onClick: () => advanceStep(opt.value),
-					}));
+					return [
+						...DIET_OPTIONS.map((opt) => ({
+							id: `diet-${opt.value}`,
+							label: opt.label,
+							onClick: () => advanceStep(opt.value),
+						})),
+						{ id: "diet-none", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("none"), variant: "secondary" as const },
+					];
 				case "allergy_question":
 					return [
 						{ id: "yes", label: t("chat.onboarding.allergyYes"), onClick: () => advanceStep("yes") },
