@@ -14,7 +14,7 @@ from mensa_mcp_server.server import make_openmensa_client
 from ..concurrency import get_io_semaphore
 from ..config import settings
 from ..logging import logger
-from ..models import ChatResponse, ToolCallTrace
+from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
     DIRECTIONS_FALLBACK_PROMPT,
     DIRECTIONS_TOOL_NAME,
@@ -373,6 +373,39 @@ def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[s
         )
 
 
+MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
+
+# Maps frontend diet preference values to the API's MenuDietFilter values
+DIET_PREFERENCE_TO_FILTER = {
+    "vegetarian": "vegetarian",
+    "vegan": "vegan",
+    "meat": "meat_only",
+}
+
+
+def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
+    """Override diet_filter and exclude_allergens in menu tool call arguments based on user filters."""
+    if user_filters.diet:
+        mapped = DIET_PREFERENCE_TO_FILTER.get(user_filters.diet)
+        if mapped:
+            args["diet_filter"] = mapped
+
+    if user_filters.allergens:
+        args["exclude_allergens"] = list(user_filters.allergens)
+
+    return args
+
+
+def _apply_filters_to_batch_args(args: dict, user_filters: UserFilters) -> dict:
+    """Override diet_filter and exclude_allergens in each request of a get_menus_batch call."""
+    requests = args.get("requests")
+    if isinstance(requests, list):
+        for req in requests:
+            if isinstance(req, dict):
+                _apply_filters_to_menu_args(req, user_filters)
+    return args
+
+
 async def _handle_mcp_tool(
     *,
     tool_name: str,
@@ -381,6 +414,7 @@ async def _handle_mcp_tool(
     tool_traces: list[ToolCallTrace],
     messages: List[Dict[str, Any]],
     call_id: str | None,
+    user_filters: UserFilters | None = None,
 ) -> None:
     if args is None:
         args = {}
@@ -395,6 +429,13 @@ async def _handle_mcp_tool(
             error="Tool arguments must be a JSON object",
         )
         return
+
+    if user_filters and tool_name in MENU_TOOL_NAMES:
+        if tool_name == "get_menus_batch":
+            args = _apply_filters_to_batch_args(args, user_filters)
+        else:
+            args = _apply_filters_to_menu_args(args, user_filters)
+        tool_trace.args = args
 
     result_payload = await call_mcp_tool(tool_name, args)
     if isinstance(result_payload, dict) and "error" in result_payload:
@@ -418,6 +459,7 @@ async def handle_tool_calls(
     *,
     iteration: int,
     include_tool_calls: bool,
+    user_filters: UserFilters | None = None,
 ) -> ChatResponse | None:
     for call in tool_calls:
         parsed = _parse_tool_call(call)
@@ -465,6 +507,7 @@ async def handle_tool_calls(
             tool_traces=tool_traces,
             messages=messages,
             call_id=parsed.call_id,
+            user_filters=user_filters,
         )
 
     return None

@@ -15,7 +15,7 @@
  * storage and sessions yourself.
  */
 
-import type { ChatMessage } from "./chats";
+import type { ChatFilters, ChatMessage } from "./chats";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -158,14 +158,31 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean; filters?: ChatFilters } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
+
+		const filters = options.filters;
+		const hasFilters = filters && (filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0);
+
+		const body: Record<string, unknown> = {
+			messages: payload,
+			include_tool_calls: options.includeToolCalls ?? false,
+		};
+
+		if (hasFilters) {
+			body.filters = {
+				diet: filters.diet,
+				allergens: filters.allergens,
+				canteens: filters.canteens.map((c) => ({ id: c.id, name: c.name })),
+			};
+		}
+
 		const request = await fetch(this.baseUrl + "/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ messages: payload, include_tool_calls: options.includeToolCalls ?? false })
+			body: JSON.stringify(body)
 		});
 
 		if (!request.ok) {

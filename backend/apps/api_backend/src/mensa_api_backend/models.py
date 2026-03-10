@@ -8,9 +8,21 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class CanteenFilter(BaseModel):
+    id: int
+    name: str
+
+
+class UserFilters(BaseModel):
+    diet: Literal["vegetarian", "vegan", "meat"] | None = None
+    allergens: list[str] = []
+    canteens: list[CanteenFilter] = []
+
+
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     include_tool_calls: bool = False
+    filters: UserFilters | None = None
 
 
 class ToolCallTrace(BaseModel):

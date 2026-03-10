@@ -216,7 +216,7 @@ export class Chat {
 		}
 
 		this.addMessage(new ChatMessage("user", message));
-		const response = await client.sendMessages(this.#messages, options);
+		const response = await client.sendMessages(this.#messages, { ...options, filters: this.#filters });
 		const toolCalls = response.tool_calls && response.tool_calls.length > 0 ? response.tool_calls : undefined;
 
 		if (response.status === "needs_location") {

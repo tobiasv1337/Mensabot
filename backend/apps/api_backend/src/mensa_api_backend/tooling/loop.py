@@ -9,8 +9,8 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from ..config import settings
 from ..concurrency import get_llm_semaphore
 from ..logging import logger
-from ..models import ChatMessage, ChatResponse, ToolCallTrace
-from ..prompts import EMPTY_REPLY_NUDGE, LLM_BASE_SYSTEM_PROMPT, MISSING_TOOL_CALLS_NUDGE
+from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
+from ..prompts import EMPTY_REPLY_NUDGE, LLM_BASE_SYSTEM_PROMPT, MISSING_TOOL_CALLS_NUDGE, build_user_filters_prompt
 from ..services.time_context import get_time_context
 from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
@@ -100,14 +100,22 @@ def format_message_history(messages: List[ChatMessage], format: Literal["openai"
     return formatted_messages
 
 
-def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMessage]:
+def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilters | None = None) -> List[ChatCompletionMessage]:
     """Format the message log (history + current request) into the format required by the LLM."""
-    return [
+    system_messages = [
         {
             "role": "system",
             "content": LLM_BASE_SYSTEM_PROMPT,
         },
         get_time_context(),
+    ]
+
+    filters_prompt = build_user_filters_prompt(user_filters)
+    if filters_prompt:
+        system_messages.append({"role": "system", "content": filters_prompt})
+
+    return [
+        *system_messages,
         *format_message_history(message_log),
     ]
 
@@ -185,8 +193,8 @@ def _nudge_missing_tool_calls(iteration: int, messages: list[Dict[str, Any]]) ->
     messages.append({"role": "system", "content": MISSING_TOOL_CALLS_NUDGE})
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
-    messages = prepare_message_log(message_log)
+async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None) -> ChatResponse:
+    messages = prepare_message_log(message_log, user_filters)
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
 
@@ -230,6 +238,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             tool_traces,
             iteration=iteration,
             include_tool_calls=include_tool_calls,
+            user_filters=user_filters,
         )
         if early_response is not None:
             return early_response
