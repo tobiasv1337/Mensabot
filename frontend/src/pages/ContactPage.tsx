@@ -25,20 +25,21 @@ const ContactPage: React.FC = () => {
                     <S.Description>
                         {t('contact.description')}
                     </S.Description>
+                    <S.ButtonContainer>
+                        <Button
+                            variant="accent1"
+                            iconLeft={<GitHubIcon />}
+                            text={t('contact.issueButton')}
+                            onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank'); }}
+                        />
+                        <Button
+                            variant="accent1"
+                            iconLeft={<MailIcon />}
+                            text={t('contact.mailButton')}
+                            onClick={() => { window.location.href = `mailto:${t('contact.mail')}`; }}
+                        />
+                    </S.ButtonContainer>
 
-                    <Button
-                        variant="accent1"
-                        iconLeft={<MailIcon />}
-                        text={t('contact.mailButton')}
-                        onClick={() => { window.location.href = `mailto:${t('contact.mail')}`; }}
-                    />
-
-                    <Button
-                        variant="accent1"
-                        iconLeft={<GitHubIcon />}
-                        text={t('contact.issueButton')}
-                        onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank'); }}
-                    />
 
                 </S.UpperSection>
 
