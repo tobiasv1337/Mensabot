@@ -161,38 +161,6 @@
         "saveEdit": "Änderungen speichern",
         "nameError": "Bitte gib einen Namen für den Shortcut an."
     },
-    "settings": {
-        "header": {
-            "eyebrow": "System",
-            "title": "Einstellungen",
-            "subtitle": "Verwalte deine App-Einstellungen und gespeicherten Daten."
-        },
-        "data": {
-            "title": "Daten & Speicher",
-            "subtitle": "Verwalte deine lokalen Chatdaten im Browser.",
-            "deleteChats": {
-                "label": "Chat-Verlauf löschen",
-                "description": "Entfernt alle gespeicherten Chats dauerhaft aus deinem Browser.",
-                "button": "Alle Chats löschen",
-                "note": "Chats werden lokal im Browser gespeichert."
-            }
-        },
-        "language": {
-            "title": "Sprache",
-            "label": "Wähle die Sprache der Seite.",
-            "de": "Deutsch",
-            "en": "English"
-        },
-        "modal": {
-            "title": "Alle Chats löschen",
-            "subtitle": "Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
-            "summaryLabel": "Zu löschende Daten",
-            "summaryValue": "Alle Chats",
-            "note": "Chats werden lokal im Browser gespeichert.",
-            "confirm": "Löschen",
-            "cancel": "Abbrechen"
-        }
-    },
     "landing": {
         "hero": {
             "titleStart": "Dein smarter",
@@ -304,7 +272,7 @@
         "dietOptions": {
             "vegetarian": "Vegetarisch",
             "vegan": "Vegan",
-            "meat": "Fleisch"
+            "meat": "Nur mit Fleisch"
         },
         "allergenLabels": {
             "gluten": "Gluten",
@@ -360,6 +328,69 @@
             "4": "Donnerstag",
             "5": "Freitag",
             "6": "Samstag"
+        },
+        "onboarding": {
+            "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
+            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
+            "dataAccept": "Verstanden & Akzeptieren",
+            "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
+            "dietYes": "Ja",
+            "dietNo": "Nein, keine Präferenz",
+            "dietSelect": "Welche **Essenspräferenz** hast du?",
+            "allergyQuestion": "Hast du **Allergien**, die ich beim Filtern berücksichtigen soll?",
+            "allergyYes": "Ja",
+            "allergyNo": "Nein, keine Allergien",
+            "allergySelect": "Wähle deine **Allergene** aus:",
+            "allergyConfirm": "Auswahl bestätigen",
+            "hints": "💡 **Tipp:** Du kannst deine Filter jederzeit oben mit dem **\"Filter\"**-Button anpassen. Außerdem kannst du **Shortcuts** für deine typischen Anfragen anlegen.",
+            "filterDisclaimer": "⚠️ **Wichtig:** Das Filtern nach Ernährungsweise und Allergenen wird von den meisten Mensen **nicht vollständig** über die Datenquelle unterstützt. Wir können daher **keine Garantie** für die Korrektheit der Filterung übernehmen. Bitte betrachte die Ergebnisse nur als **Vorfilterung** und verlasse dich niemals zu 100% auf die generierten Antworten.",
+            "filterDisclaimerAccept": "Verstanden",
+            "complete": "Super, du bist startklar! 🎉 Frag mich nach Speiseplänen, Öffnungszeiten oder Preisen.",
+            "dietSelected": "Essenspräferenz: **{{diet}}**",
+            "allergensSelected": "Allergene: **{{allergens}}**",
+            "noDietSelected": "Keine Essenspräferenz ausgewählt.",
+            "noAllergensSelected": "Keine Allergene ausgewählt."
+        }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Einstellungen",
+            "subtitle": "Verwalte deine App-Einstellungen und gespeicherten Daten."
+        },
+        "data": {
+            "title": "Daten & Speicher",
+            "subtitle": "Verwalte deine lokalen Chatdaten im Browser.",
+            "deleteChats": {
+                "label": "Chat-Verlauf löschen",
+                "description": "Entfernt alle gespeicherten Chats dauerhaft aus deinem Browser.",
+                "button": "Alle Chats löschen",
+                "note": "Chats werden lokal im Browser gespeichert."
+            }
+        },
+        "onboarding": {
+            "title": "Onboarding",
+            "subtitle": "Verwalte den Einführungsassistenten.",
+            "restart": {
+                "label": "Onboarding erneut starten",
+                "description": "Startet den Einführungsassistenten erneut im nächsten neuen Chat.",
+                "button": "Onboarding zurücksetzen"
+            }
+        },
+        "language": {
+            "title": "Sprache",
+            "label": "Wähle die Sprache der Seite.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Alle Chats löschen",
+            "subtitle": "Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+            "summaryLabel": "Zu löschende Daten",
+            "summaryValue": "Alle Chats",
+            "note": "Chats werden lokal im Browser gespeichert.",
+            "confirm": "Löschen",
+            "cancel": "Abbrechen"
         }
     }
 }

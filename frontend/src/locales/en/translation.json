@@ -161,38 +161,6 @@
         "saveEdit": "Save Changes",
         "nameError": "Please enter a name for the shortcut."
     },
-    "settings": {
-        "header": {
-            "eyebrow": "System",
-            "title": "Settings",
-            "subtitle": "Manage your app settings and saved data."
-        },
-        "data": {
-            "title": "Data & Storage",
-            "subtitle": "Manage your local chat data in the browser.",
-            "deleteChats": {
-                "label": "Delete chat history",
-                "description": "Permanently removes all saved chats from your browser.",
-                "button": "Delete all chats",
-                "note": "Chats are saved locally in the browser."
-            }
-        },
-        "language": {
-            "title": "Language",
-            "label": "Choose the language of the site.",
-            "de": "Deutsch",
-            "en": "English"
-        },
-        "modal": {
-            "title": "Delete all chats",
-            "subtitle": "This will permanently remove all chat histories. This action cannot be undone.",
-            "summaryLabel": "Data to be deleted",
-            "summaryValue": "All chats",
-            "note": "Chats are saved locally in the browser.",
-            "confirm": "Delete",
-            "cancel": "Cancel"
-        }
-    },
     "landing": {
         "hero": {
             "titleStart": "Your smart",
@@ -304,7 +272,7 @@
         "dietOptions": {
             "vegetarian": "Vegetarian",
             "vegan": "Vegan",
-            "meat": "Meat"
+            "meat": "Meat only"
         },
         "allergenLabels": {
             "gluten": "Gluten",
@@ -360,6 +328,69 @@
             "4": "Thursday",
             "5": "Friday",
             "6": "Saturday"
+        },
+        "onboarding": {
+            "welcome": "Hi! 👋 I'm **MensaBot** - your smart canteen assistant.",
+            "dataNotice": "MensaBot is a **university research project**. User data may be collected and logged for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
+            "dataAccept": "Understood & Accept",
+            "dietQuestion": "Do you have a **dietary preference** I should consider?",
+            "dietYes": "Yes",
+            "dietNo": "No preference",
+            "dietSelect": "What is your **dietary preference**?",
+            "allergyQuestion": "Do you have any **allergies** I should consider when filtering?",
+            "allergyYes": "Yes",
+            "allergyNo": "No allergies",
+            "allergySelect": "Select your **allergens**:",
+            "allergyConfirm": "Confirm selection",
+            "hints": "💡 **Tip:** You can adjust your filters anytime using the **\"Filter\"** button at the top. You can also create **Shortcuts** for your typical queries.",
+            "filterDisclaimer": "⚠️ **Important:** Filtering by diet type and allergens is **not fully supported** by most canteen data sources. We **cannot guarantee** the correctness of the filtering. Please treat the results only as **pre-filtering** and never rely 100% on the generated responses.",
+            "filterDisclaimerAccept": "Understood",
+            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices.",
+            "dietSelected": "Dietary preference: **{{diet}}**",
+            "allergensSelected": "Allergens: **{{allergens}}**",
+            "noDietSelected": "No dietary preference selected.",
+            "noAllergensSelected": "No allergens selected."
+        }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Settings",
+            "subtitle": "Manage your app settings and saved data."
+        },
+        "data": {
+            "title": "Data & Storage",
+            "subtitle": "Manage your local chat data in the browser.",
+            "deleteChats": {
+                "label": "Delete chat history",
+                "description": "Permanently removes all saved chats from your browser.",
+                "button": "Delete all chats",
+                "note": "Chats are saved locally in the browser."
+            }
+        },
+        "onboarding": {
+            "title": "Onboarding",
+            "subtitle": "Manage the introduction wizard.",
+            "restart": {
+                "label": "Restart onboarding",
+                "description": "Restarts the introduction wizard in the next new chat.",
+                "button": "Reset onboarding"
+            }
+        },
+        "language": {
+            "title": "Language",
+            "label": "Choose the language of the site.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Delete all chats",
+            "subtitle": "This will permanently remove all chat histories. This action cannot be undone.",
+            "summaryLabel": "Data to be deleted",
+            "summaryValue": "All chats",
+            "note": "Chats are saved locally in the browser.",
+            "confirm": "Delete",
+            "cancel": "Cancel"
         }
     }
 }
