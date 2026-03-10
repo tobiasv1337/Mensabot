@@ -95,5 +95,31 @@
             "confirm": "Löschen",
             "cancel": "Abbrechen"
         }
+    },
+    "landing": {
+        "hero": {
+            "titleStart": "Dein smarter",
+            "titleHighlight": "Mensa-Assistent",
+            "subtitle": "Finde sofort heraus, was es heute in deiner Mensa gibt. Frag den MensaBot - schnell, einfach und immer aktuell.",
+            "cta": "Jetzt chatten"
+        },
+        "features": {
+            "title": "Warum MensaBot?",
+            "smart": {
+                "title": "Intelligente Antworten",
+                "description": "Stell Fragen in natürlicher Sprache und erhalte sofort passende Menü-Vorschläge."
+            },
+            "canteens": {
+                "title": "Alle Mensen im Blick",
+                "description": "Zugriff auf über 1.000 Mensen in ganz Deutschland - immer tagesaktuell."
+            },
+            "fast": {
+                "title": "Blitzschnell & Einfach",
+                "description": "Keine Umwege: In Sekunden weißt du, was auf dem Speiseplan steht."
+            }
+        },
+        "bottom": {
+            "text": "Ein Studentenprojekt der TU Berlin."
+        }
     }
 }

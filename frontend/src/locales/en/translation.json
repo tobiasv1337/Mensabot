@@ -95,5 +95,31 @@
             "confirm": "Delete",
             "cancel": "Cancel"
         }
+    },
+    "landing": {
+        "hero": {
+            "titleStart": "Your smart",
+            "titleHighlight": "Canteen Assistant",
+            "subtitle": "Instantly find out what's on the menu at your canteen today. Ask MensaBot - fast, simple, and always up to date.",
+            "cta": "Start chatting"
+        },
+        "features": {
+            "title": "Why MensaBot?",
+            "smart": {
+                "title": "Smart Answers",
+                "description": "Ask questions in natural language and get instant, relevant menu suggestions."
+            },
+            "canteens": {
+                "title": "All Canteens at a Glance",
+                "description": "Access over 1,000 canteens across Germany - always up to date."
+            },
+            "fast": {
+                "title": "Lightning Fast & Simple",
+                "description": "No detours: know what's on the menu in seconds."
+            }
+        },
+        "bottom": {
+            "text": "A student project at TU Berlin."
+        }
     }
 }

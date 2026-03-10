@@ -33,8 +33,8 @@ export const SidebarSlot = styled.div`
   }
 `;
 
-export const Content = styled.main<{ $chat?: boolean }>`
-  padding: ${({ $chat }) => ($chat ? "24px 24px 0" : "24px")};
+export const Content = styled.main<{ $chat?: boolean; $flush?: boolean }>`
+  padding: ${({ $chat, $flush }) => ($flush ? "0" : $chat ? "24px 24px 0" : "24px")};
   min-width: 0;
   min-height: 0;
   ${({ $chat }) =>
@@ -48,6 +48,6 @@ export const Content = styled.main<{ $chat?: boolean }>`
   color: ${({ theme }) => theme.textOnPage};
 
   @media (max-width: 480px) {
-    padding: ${({ $chat }) => ($chat ? "16px 16px 0" : "16px")};
+    padding: ${({ $chat, $flush }) => ($flush ? "0" : $chat ? "16px 16px 0" : "16px")};
   }
 `;

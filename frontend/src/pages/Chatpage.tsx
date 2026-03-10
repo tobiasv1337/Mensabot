@@ -10,6 +10,7 @@ import ProjectFactsPage from "./ProjectFactsPage";
 import SettingsPage from "./SettingsPage";
 import MapPage from "./MapPage";
 import ContactPage from "./ContactPage";
+import LandingPage from "./LandingPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
@@ -29,7 +30,7 @@ const ChatPage: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const isChatView = activeNav === "ChatBot" || activeNav === "Home";
+  const isChatView = activeNav === "ChatBot";
 
   const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
 
@@ -170,7 +171,7 @@ const ChatPage: React.FC = () => {
             />
           </S.SidebarSlot>
 
-          <S.Content $chat={isChatView}>
+          <S.Content $chat={isChatView} $flush={activeNav === "Home"}>
             {activeNav === "Canteens" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}
@@ -194,6 +195,8 @@ const ChatPage: React.FC = () => {
                 onSelectCanteen={handleSelectCanteen}
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
+            ) : activeNav === "Home" ? (
+              <LandingPage onStartChat={() => setActiveNav("ChatBot")} />
             ) : (
               <Chat
                 chat={chat}
