@@ -1,10 +1,30 @@
 {
+    "nav": {
+        "home": "Home",
+        "chatbot": "Chatbot",
+        "canteens": "Canteens",
+        "map": "Map",
+        "projectFacts": "About",
+        "legalNotice": "Legal Notice",
+        "shortcuts": "Shortcuts",
+        "settings": "Settings"
+    },
+    "sidebar": {
+        "navigation": "Navigation",
+        "settingsSection": "Settings",
+        "chats": "Chats",
+        "noChats": "No chats found.",
+        "newChat": "Start new chat",
+        "loadMore": "Load more chats",
+        "theme": "Theme"
+    },
     "contact": {
         "eyebrow": "Legal Notice",
         "title": "Say Hello!",
         "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email.",
         "mail": "stefan.hillmann@tu-berlin.de",
         "mailButton": "Contact us!",
+        "issueButton": "Report an Issue",
         "form": {
             "name": "Name",
             "namePlaceholder": "Your Name",
@@ -16,8 +36,8 @@
             "success": "Thank you for your message!"
         },
         "impressum": {
-            "eyebrow": "Impressum",
-            "title": "Impressum",
+            "eyebrow": "Legal Notice",
+            "title": "Legal Notice",
             "contact": {
                 "title": "Contact",
                 "name": "MensaBot",
@@ -38,6 +58,7 @@
     "projectFacts": {
         "eyebrow": "Project Insights",
         "title": "Behind the Bot",
+        "githubButton": "View on GitHub",
         "facts": {
             "studentProject": {
                 "title": "Student Project",
@@ -63,6 +84,82 @@
             "mensen": "Canteens",
             "stars": "Stars"
         }
+    },
+    "canteens": {
+        "eyebrow": "Canteen Selection",
+        "title": "Discover Canteens",
+        "subtitle": "Find your canteen, start a new chat and ask directly about menus, opening hours or prices.",
+        "tagSearch": "Quick Search",
+        "tagOpenmensa": "Openmensa",
+        "tagLocations": "1000+ Locations",
+        "statsTotal": "Total Canteens",
+        "statsCities": "Cities",
+        "statsHits": "Results",
+        "searchPlaceholder": "Enter canteen or city",
+        "searchAriaLabel": "Search for canteens",
+        "searching": "Searching...",
+        "search": "Search",
+        "sortRecommended": "Recommended",
+        "sortName": "Name",
+        "sortCity": "City",
+        "sortDistance": "Distance",
+        "searchingFor": "Searching for \"{{query}}\"",
+        "loadingMore": "Loading more ...",
+        "searchResults": "Search Results",
+        "allCanteens": "All Canteens",
+        "found": "found",
+        "emptyTitle": "No canteens found",
+        "emptyBody": "Adjust your search or check if the name is correct.",
+        "selected": "Selected",
+        "startChat": "Start chat",
+        "routeTitle": "Open route in Google Maps",
+        "route": "Route",
+        "error": "Could not load canteens. Please try again."
+    },
+    "map": {
+        "eyebrow": "Map",
+        "title": "Canteens on the Map",
+        "subtitle": "Zoom in to discover locations. Tap on a pin for details and then start a chat with the selected canteen.",
+        "searchPlaceholder": "Enter canteen or city",
+        "searchAriaLabel": "Search for canteens on the map",
+        "searchFor": "Search: \"{{query}}\"",
+        "defaultHint": "Shows canteens in the current map view.",
+        "errorTitle": "MapTiler Configuration Missing",
+        "errorBody": "Please set the environment variables VITE_MAPTILER_STYLE_URL_LIGHT and VITE_MAPTILER_STYLE_URL_DARK (each the complete Style-JSON URL incl. ?key=...).",
+        "errorMissing": "Missing"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "subtitle": "Save frequent queries including filter sets. Shortcuts can be edited and deleted here.",
+        "newShortcut": "New Shortcut",
+        "empty": "You have not saved any shortcuts yet.",
+        "noPrompt": "No prompt set.",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "diet": "Diet",
+        "allergens": "Allergens",
+        "noFilters": "No filters",
+        "canteensCount": "{{count}} Canteens",
+        "deleteTitle": "Delete Shortcut",
+        "deleteSubtitle": "\"{{name}}\" will be permanently deleted. This action cannot be undone.",
+        "deleteSummaryLabel": "Shortcut to be deleted",
+        "deleteNote": "Shortcuts are saved locally in the browser."
+    },
+    "shortcutModal": {
+        "createTitle": "New Shortcut",
+        "editTitle": "Edit Shortcut",
+        "description": "Define name, prompt and filters. The prompt will be inserted into the chat field.",
+        "close": "Close",
+        "name": "Name",
+        "namePlaceholder": "e.g. Canteen Tuesday",
+        "prompt": "Prompt",
+        "promptPlaceholder": "Message that will be inserted in the chat",
+        "footerNote": "Shortcuts are saved locally in the browser.",
+        "cancel": "Cancel",
+        "saveCreate": "Save Shortcut",
+        "saveEdit": "Save Changes",
+        "nameError": "Please enter a name for the shortcut."
     },
     "settings": {
         "header": {

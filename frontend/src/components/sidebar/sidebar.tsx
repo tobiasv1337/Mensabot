@@ -1,13 +1,13 @@
 import React, { useCallback } from "react";
 import * as S from "./sidebar.styles";
-import { NAV_LABELS, type NavItem } from "../../types/navigation";
+import { getNavLabel, type NavItem } from "../../types/navigation";
 import { useTheme } from "../../theme/useTheme";
+import { useTranslation } from "react-i18next";
 import type { ChatSummary } from "../../services/chats";
 import { Button } from "../button/button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
 
 import {
-  AboutUsIcon,
   ChatIcon,
   LegalNoticeIcon,
   DarkModeIcon,
@@ -54,8 +54,6 @@ const getIcon = (item: string) => {
       return <MensenIcon />;
     case "Map":
       return <MapIcon />;
-    case "About":
-      return <AboutUsIcon />;
     case "LegalNotice":
       return <LegalNoticeIcon />;
     case "ProjectFacts":
@@ -82,6 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const { mode: themeMode, toggleMode } = useTheme();
+  const { t } = useTranslation();
 
   const handleNavSelection = (target: NavItem) => {
     onNavClick(target);
@@ -130,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Desktop Collapse Toggle */}
         {mode === "desktop" && (
           <div style={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
-            {!isCollapsed && <S.SectionTitle>Navigation</S.SectionTitle>}
+            {!isCollapsed && <S.SectionTitle>{t('sidebar.navigation')}</S.SectionTitle>}
             <Button
               variant="default"
               size="iconOnly"
@@ -142,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <S.Main onScroll={handleScroll}>
-          {!isCollapsed && mode !== "desktop" && <S.SectionTitle>Navigation</S.SectionTitle>}
+          {!isCollapsed && mode !== "desktop" && <S.SectionTitle>{t('sidebar.navigation')}</S.SectionTitle>}
 
           <S.NavSection>
             {navItems.map((n) => (
@@ -153,11 +152,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 active={activeNav === n}
                 collapsed={isCollapsed}
                 onClick={() => handleNavSelection(n)}
-                title={isCollapsed ? (NAV_LABELS[n] ?? n) : undefined}
+                title={isCollapsed ? getNavLabel(n, t) : undefined}
               >
                 <ButtonIconWrapper>{getIcon(n)}</ButtonIconWrapper>
                 <ButtonTextWrapper $collapsed={isCollapsed}>
-                  {NAV_LABELS[n] ?? n}
+                  {getNavLabel(n, t)}
                 </ButtonTextWrapper>
               </Button>
             ))}
@@ -165,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           {!isCollapsed && (
             <>
-              <S.SectionTitle>Einstellungen</S.SectionTitle>
+              <S.SectionTitle>{t('sidebar.settingsSection')}</S.SectionTitle>
 
               <S.NavSection>
                 <Button
@@ -176,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavSelection("Shortcuts")}>
                   <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Shortcuts
+                    {t('nav.shortcuts')}
                   </ButtonTextWrapper>
                 </Button>
 
@@ -188,16 +187,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavSelection("Settings")}>
                   <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Einstellungen
+                    {t('nav.settings')}
                   </ButtonTextWrapper>
                 </Button>
 
               </S.NavSection>
 
-              <S.SectionTitle>Chats</S.SectionTitle>
+              <S.SectionTitle>{t('sidebar.chats')}</S.SectionTitle>
               <S.ChatList>
                 {chats.length === 0 && (
-                  <S.ChatHint>Keine Chats gefunden.</S.ChatHint>
+                  <S.ChatHint>{t('sidebar.noChats')}</S.ChatHint>
                 )}
                 <Button
                   variant="surfaceInsetBorder"
@@ -206,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={handleNewChat}>
                   <ButtonIconWrapper><NewChatIcon /></ButtonIconWrapper>
                   <ButtonTextWrapper $collapsed={isCollapsed}>
-                    Neuen Chat starten
+                    {t('sidebar.newChat')}
                   </ButtonTextWrapper>
                 </Button>
                 {chats.map((chat) => (
@@ -221,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ))}
                 {hasMoreChats && (
                   <S.ChatLoadMore onClick={onLoadMoreChats}>
-                    Mehr Chats laden
+                    {t('sidebar.loadMore')}
                   </S.ChatLoadMore>
                 )}
               </S.ChatList>
@@ -230,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </S.Main>
         {/* THEME SWITCHER */}
         <S.Footer $isCollapsed={isCollapsed}>
-          {!isCollapsed && <S.FooterHint>Theme</S.FooterHint>}
+          {!isCollapsed && <S.FooterHint>{t('sidebar.theme')}</S.FooterHint>}
 
           <S.ThemeButtonGroup $isCollapsed={isCollapsed}>
             <S.SegmentButton

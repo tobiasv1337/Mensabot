@@ -5,6 +5,7 @@ import { useTheme } from "../theme/useTheme";
 import { Page, Content } from "./PageLayout.styles";
 import CanteenMap from "../components/map/CanteenMap";
 import * as S from "./MapPage.styles";
+import { useTranslation } from "react-i18next";
 
 type MapPageProps = {
   onSelectCanteen: (canteen: Canteen) => void;
@@ -19,6 +20,7 @@ const getStyleUrl = (options: { darkMode: boolean }) => {
 
 const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds = [] }) => {
   const { darkMode } = useTheme();
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
   const styleUrl = useMemo(() => getStyleUrl({ darkMode }), [darkMode]);
@@ -30,10 +32,10 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
     <Page>
       <Content>
         <S.HeroCard>
-          <S.HeroEyebrow>Karte</S.HeroEyebrow>
-          <S.HeroTitle>Mensen auf der Karte</S.HeroTitle>
+          <S.HeroEyebrow>{t('map.eyebrow')}</S.HeroEyebrow>
+          <S.HeroTitle>{t('map.title')}</S.HeroTitle>
           <S.HeroSubtitle>
-            Zoome rein, um Standorte zu entdecken. Tippe auf einen Pin für Details und starte anschließend einen Chat mit der ausgewählten Mensa.
+            {t('map.subtitle')}
           </S.HeroSubtitle>
         </S.HeroCard>
 
@@ -41,10 +43,10 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
           <S.SearchRow>
             <S.SearchInput
               type="search"
-              placeholder="Mensa oder Stadt eingeben"
+              placeholder={t('map.searchPlaceholder')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              aria-label="Suche nach Mensen auf der Karte"
+              aria-label={t('map.searchAriaLabel')}
             />
             <S.SearchActions>
               {query.trim().length > 0 && (
@@ -55,20 +57,19 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
             </S.SearchActions>
           </S.SearchRow>
           <S.SearchMeta>
-            <span>{query.trim().length > 0 ? `Suche: "${query.trim()}"` : "Zeigt Mensen im aktuellen Kartenausschnitt."}</span>
+            <span>{query.trim().length > 0 ? t('map.searchFor', { query: query.trim() }) : t('map.defaultHint')}</span>
             <S.MetaPill>MapLibre · MapTiler</S.MetaPill>
           </S.SearchMeta>
         </S.SearchCard>
 
         {missingConfig ? (
           <S.ErrorCard role="alert">
-            <S.ErrorTitle>MapTiler Konfiguration fehlt</S.ErrorTitle>
+            <S.ErrorTitle>{t('map.errorTitle')}</S.ErrorTitle>
             <S.ErrorBody>
-              Bitte setze die Umgebungsvariablen <code>VITE_MAPTILER_STYLE_URL_LIGHT</code> und <code>VITE_MAPTILER_STYLE_URL_DARK</code> (jeweils die komplette
-              Style-JSON URL inkl. <code>?key=...</code>).
+              {t('map.errorBody')}
             </S.ErrorBody>
             <S.ErrorBody>
-              Fehlend: {missingLight ? <code>VITE_MAPTILER_STYLE_URL_LIGHT</code> : null}
+              {t('map.errorMissing')}: {missingLight ? <code>VITE_MAPTILER_STYLE_URL_LIGHT</code> : null}
               {missingLight && missingDark ? " und " : null}
               {missingDark ? <code>VITE_MAPTILER_STYLE_URL_DARK</code> : null}
             </S.ErrorBody>

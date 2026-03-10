@@ -1,22 +1,25 @@
+import type { TFunction } from "i18next";
+
 export type NavItem =
     | "Home"
     | "ChatBot"
     | "Canteens"
     | "Map"
     | "ProjectFacts"
-    | "About"
     | "LegalNotice"
     | "Shortcuts"
     | "Settings";
 
-export const NAV_LABELS: Record<NavItem, string> = {
-    Home: "Home",
-    ChatBot: "Chatbot",
-    Canteens: "Mensen",
-    About: "Über Uns",
-    LegalNotice: "Impressum",
-    Shortcuts: "Shortcuts",
-    Settings: "Einstellungen",
-    Map: "Karte",
-    ProjectFacts: "Projekt Fakten",
+const NAV_LABEL_KEYS: Record<NavItem, string> = {
+    Home: "nav.home",
+    ChatBot: "nav.chatbot",
+    Canteens: "nav.canteens",
+    LegalNotice: "nav.legalNotice",
+    Shortcuts: "nav.shortcuts",
+    Settings: "nav.settings",
+    Map: "nav.map",
+    ProjectFacts: "nav.projectFacts",
 };
+
+export const getNavLabel = (item: NavItem, t: TFunction): string =>
+    t(NAV_LABEL_KEYS[item] ?? item);

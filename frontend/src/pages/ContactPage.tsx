@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as S from './ContactPage.styles';
 import * as P from '../components/page/PageHero.styles';
 import { Button } from '../components/button/button';
-import { MailIcon } from "../components/icons";
+import { MailIcon, GitHubIcon } from "../components/icons";
 import { TuLogo, QualityAndUsabilityLogo } from "../components/iconsLogos";
 
 const ContactPage: React.FC = () => {
@@ -31,6 +31,13 @@ const ContactPage: React.FC = () => {
                         iconLeft={<MailIcon />}
                         text={t('contact.mailButton')}
                         onClick={() => { window.location.href = `mailto:${t('contact.mail')}`; }}
+                    />
+
+                    <Button
+                        variant="accent1"
+                        iconLeft={<GitHubIcon />}
+                        text={t('contact.issueButton')}
+                        onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank'); }}
                     />
 
                 </S.UpperSection>

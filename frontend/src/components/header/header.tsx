@@ -3,7 +3,8 @@ import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
 import { Button } from "../button/button";
 
-import { NAV_LABELS, type NavItem } from "../../types/navigation";
+import { getNavLabel, type NavItem } from "../../types/navigation";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   activeNav: NavItem;
@@ -18,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({
   onNavClick,
   onToggleSidebar,
 }) => {
+  const { t } = useTranslation();
   return (
     <S.Header>
       {/* Left: Burger (nur <1024 sichtbar) */}
@@ -46,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({
               active={activeNav === n}
               onClick={() => onNavClick(n)}
             >
-              {NAV_LABELS[n] ?? n}
+              {getNavLabel(n, t)}
             </Button>
           ))}
         </S.DesktopNav>
