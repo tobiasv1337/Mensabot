@@ -193,7 +193,60 @@ def _nudge_missing_tool_calls(iteration: int, messages: list[Dict[str, Any]]) ->
     messages.append({"role": "system", "content": MISSING_TOOL_CALLS_NUDGE})
 
 
+DIET_ALLERGEN_WARNING = (
+    "\n\n> ⚠️ **Warning:** We cannot guarantee the correctness of any diet type or allergen filtering "
+    "in the generated responses. Please double check before consuming."
+)
+
+
+def _has_diet_or_allergen_context(user_filters: UserFilters | None, tool_traces: list[ToolCallTrace]) -> bool:
+    """Return True when the response involves diet/allergen filtering that warrants a disclaimer."""
+    if user_filters:
+        if user_filters.diet:
+            return True
+        if user_filters.allergens:
+            return True
+
+    for trace in tool_traces:
+        args = trace.args
+        if not isinstance(args, dict):
+            continue
+        diet = args.get("diet_filter")
+        if diet and diet != "all":
+            return True
+        if args.get("exclude_allergens"):
+            return True
+        # Check nested batch requests
+        requests = args.get("requests")
+        if isinstance(requests, list):
+            for req in requests:
+                if not isinstance(req, dict):
+                    continue
+                if req.get("diet_filter") and req["diet_filter"] != "all":
+                    return True
+                if req.get("exclude_allergens"):
+                    return True
+    return False
+
+
+def _maybe_append_filter_warning(response: ChatResponse, user_filters: UserFilters | None, tool_traces: list[ToolCallTrace]) -> ChatResponse:
+    """Append a filter disclaimer to the reply when diet/allergen filtering was involved."""
+    if response.status != "ok":
+        return response
+    if not response.reply:
+        return response
+    if not _has_diet_or_allergen_context(user_filters, tool_traces):
+        return response
+    response.reply = response.reply.rstrip() + DIET_ALLERGEN_WARNING
+    return response
+
+
 async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None) -> ChatResponse:
+    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters)
+    return _maybe_append_filter_warning(response, user_filters, tool_traces)
+
+
+async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None) -> tuple[ChatResponse, list[ToolCallTrace]]:
     messages = prepare_message_log(message_log, user_filters)
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -204,7 +257,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
-            return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls)
+            return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls), tool_traces
 
         logger.debug("Received completion: %s", completion.model_dump())
         choice = _get_first_choice(completion)
@@ -220,7 +273,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                 include_tool_calls=include_tool_calls,
             )
             if decision.response is not None:
-                return decision.response
+                return decision.response, tool_traces
             if decision.continue_loop:
                 continue
 
@@ -241,10 +294,10 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             user_filters=user_filters,
         )
         if early_response is not None:
-            return early_response
+            return early_response, tool_traces
 
     logger.warning(
         "Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.",
         settings.max_llm_iterations,
     )
-    return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls)
+    return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls), tool_traces
