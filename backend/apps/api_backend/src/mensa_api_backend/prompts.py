@@ -1,4 +1,5 @@
 from .config import settings
+from .models import UserFilters
 
 
 LLM_BASE_SYSTEM_PROMPT = (
@@ -104,3 +105,39 @@ LOCATION_FALLBACK_PROMPT = "To answer your question, I need your location. Would
 
 DIRECTIONS_TOOL_NAME = "request_canteen_directions"
 DIRECTIONS_FALLBACK_PROMPT = "Möchtest du die Route zur Mensa in Google Maps öffnen?"
+
+
+def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
+    """Build a system prompt section describing the user's active filters, or None if no filters are set."""
+    if filters is None:
+        return None
+
+    parts: list[str] = []
+
+    if filters.diet:
+        parts.append(f"- **Diet preference**: {filters.diet}. When fetching menus, always set `diet_filter` to \"{filters.diet}\".")
+
+    if filters.allergens:
+        allergen_list = ", ".join(filters.allergens)
+        parts.append(f"- **Excluded allergens**: {allergen_list}. When fetching menus, always set `exclude_allergens` to {filters.allergens}.")
+
+    if filters.canteens:
+        canteen_lines = ", ".join(f"{c.name} (ID: {c.id})" for c in filters.canteens)
+        parts.append(
+            f"- **Selected canteens**: {canteen_lines}. "
+            "The user has explicitly selected these canteens in the app UI. "
+            "ALWAYS use ONLY these canteens for menu queries, directions, opening hours, etc. "
+            "You already have their IDs - do NOT call `search_canteens`, use the IDs directly. "
+            "Even if the user's message text mentions a different canteen name, the UI selection takes priority. "
+            "Only use a different canteen if the user EXPLICITLY asks you to ignore their filter or look up a specific other canteen by saying something like 'instead show me ...' or 'what about ...'."
+        )
+
+    if not parts:
+        return None
+
+    return (
+        "## Active User Filters\n"
+        "The user has configured the following filters in the app. You MUST respect these filters in every tool call.\n"
+        "These filters are automatically enforced on menu tool calls, but you should also be aware of them when presenting results.\n"
+        + "\n".join(parts)
+    )
