@@ -4,12 +4,14 @@ import ConfirmModal from "../components/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
 import { Button } from "../components/button/button";
 import { useTranslation } from "react-i18next";
+import { resetOnboarding } from "../services/onboarding";
 
 type SettingsPageProps = {
   onDeleteAllChats: () => void;
+  onResetOnboarding?: () => void;
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOnboarding }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
@@ -92,6 +94,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
                   onClick={() => i18n.changeLanguage('en')}
                 >
                   {t('settings.language.en')}
+                </Button>
+              </S.SettingActions>
+            </S.SettingRow>
+          </S.SectionBody>
+        </S.SectionCard>
+
+        <S.SectionCard>
+          <S.SectionHeader>
+            <S.SectionTitle>{t('settings.onboarding.title')}</S.SectionTitle>
+            <S.SectionSubtitle>{t('settings.onboarding.subtitle')}</S.SectionSubtitle>
+          </S.SectionHeader>
+          <S.SectionBody>
+            <S.SettingRow $default>
+              <S.SettingInfo>
+                <S.SettingLabel>{t('settings.onboarding.restart.label')}</S.SettingLabel>
+                <S.SettingDescription>
+                  {t('settings.onboarding.restart.description')}
+                </S.SettingDescription>
+              </S.SettingInfo>
+              <S.SettingActions>
+                <Button
+                  type="button"
+                  variant="surfaceInsetBorder"
+                  onClick={() => {
+                    resetOnboarding();
+                    onResetOnboarding?.();
+                  }}
+                >
+                  {t('settings.onboarding.restart.button')}
                 </Button>
               </S.SettingActions>
             </S.SettingRow>
