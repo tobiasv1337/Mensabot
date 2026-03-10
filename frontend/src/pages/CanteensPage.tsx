@@ -4,6 +4,7 @@ import { getApiClient } from "../services/apiClient";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
 import { openGoogleMaps } from "../services/maps";
+import { useTranslation } from "react-i18next";
 
 
 const PER_PAGE = 24;
@@ -17,6 +18,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
   onSelectCanteen,
   selectedCanteenIds = [],
 }) => {
+  const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
   const requestId = useRef(0);
 
@@ -79,7 +81,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
         setTotalCities(response.index.total_cities);
       } catch {
         if (currentRequest !== requestId.current) return;
-        setError("Mensen konnten nicht geladen werden. Bitte versuche es erneut.");
+        setError(t('canteens.error'));
       } finally {
         if (currentRequest === requestId.current) {
           setLoadingState(null);
@@ -139,16 +141,15 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
       <Content>
         <S.Hero>
           <S.HeroCard>
-            <S.HeroEyebrow>Mensa Auswahl</S.HeroEyebrow>
-            <S.HeroTitle>Mensen entdecken</S.HeroTitle>
+            <S.HeroEyebrow>{t('canteens.eyebrow')}</S.HeroEyebrow>
+            <S.HeroTitle>{t('canteens.title')}</S.HeroTitle>
             <S.HeroSubtitle>
-              Finde deine Mensa, starte einen neuen Chat und frage direkt nach
-              Speiseplänen, Öffnungszeiten oder Preisen.
+              {t('canteens.subtitle')}
             </S.HeroSubtitle>
             <S.HeroHighlights>
-              <S.HighlightTag>Schnelle Suche</S.HighlightTag>
-              <S.HighlightTag>Openmensa</S.HighlightTag>
-              <S.HighlightTag>1000+ Standorte</S.HighlightTag>
+              <S.HighlightTag>{t('canteens.tagSearch')}</S.HighlightTag>
+              <S.HighlightTag>{t('canteens.tagOpenmensa')}</S.HighlightTag>
+              <S.HighlightTag>{t('canteens.tagLocations')}</S.HighlightTag>
             </S.HeroHighlights>
           </S.HeroCard>
 
@@ -156,16 +157,16 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
             <S.StatGrid>
               <S.StatBlock>
                 <S.StatNumber>{totalCanteens ?? "--"}</S.StatNumber>
-                <S.StatLabel>Mensen Gesamt</S.StatLabel>
+                <S.StatLabel>{t('canteens.statsTotal')}</S.StatLabel>
               </S.StatBlock>
               <S.StatBlock>
                 <S.StatNumber>{totalCities ?? "--"}</S.StatNumber>
-                <S.StatLabel>Städte</S.StatLabel>
+                <S.StatLabel>{t('canteens.statsCities')}</S.StatLabel>
               </S.StatBlock>
               {isSearching && (
                 <S.StatBlock>
                   <S.StatNumber>{totalResults ?? "--"}</S.StatNumber>
-                  <S.StatLabel>Treffer</S.StatLabel>
+                  <S.StatLabel>{t('canteens.statsHits')}</S.StatLabel>
                 </S.StatBlock>
               )}
             </S.StatGrid>
@@ -176,14 +177,14 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           <S.SearchRow>
             <S.SearchInput
               type="search"
-              placeholder="Mensa oder Stadt eingeben"
+              placeholder={t('canteens.searchPlaceholder')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              aria-label="Suche nach Mensen"
+              aria-label={t('canteens.searchAriaLabel')}
             />
             <S.SearchActions>
               <S.SearchButton type="submit" disabled={loadingState === "search"}>
-                {loadingState === "search" ? "Suche..." : "Suchen"}
+                {loadingState === "search" ? t('canteens.searching') : t('canteens.search')}
               </S.SearchButton>
 
               <S.SortSelect
@@ -191,10 +192,10 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                 onChange={(e) => setSortBy(e.target.value as "auto" | "distance" | "name" | "city")}
                 aria-label="Sortieren nach"
               >
-                <option value="auto">Empfohlen</option>
-                <option value="name">Name</option>
-                <option value="city">Stadt</option>
-                <option value="distance">Entfernung</option>
+                <option value="auto">{t('canteens.sortRecommended')}</option>
+                <option value="name">{t('canteens.sortName')}</option>
+                <option value="city">{t('canteens.sortCity')}</option>
+                <option value="distance">{t('canteens.sortDistance')}</option>
               </S.SortSelect>
 
               {query.trim().length > 0 && (
@@ -206,9 +207,9 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           </S.SearchRow>
           <S.SearchMeta>
             <span>
-              {isSearching ? `Suche nach "${query.trim()}"` : ""}
+              {isSearching ? t('canteens.searchingFor', { query: query.trim() }) : ""}
             </span>
-            {loadingState === "more" && <S.MetaPill>Lädt mehr ...</S.MetaPill>}
+            {loadingState === "more" && <S.MetaPill>{t('canteens.loadingMore')}</S.MetaPill>}
           </S.SearchMeta>
         </S.SearchCard>
 
@@ -216,10 +217,10 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
 
         <S.ResultsHeader>
           <S.ResultsTitle>
-            {isSearching ? "Suchergebnisse" : "Alle Mensen"}
+            {isSearching ? t('canteens.searchResults') : t('canteens.allCanteens')}
           </S.ResultsTitle>
           <S.ResultsMeta>
-            {totalResults} gefunden
+            {totalResults} {t('canteens.found')}
           </S.ResultsMeta>
         </S.ResultsHeader>
 
@@ -231,9 +232,9 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           </S.SkeletonGrid>
         ) : items.length === 0 ? (
           <S.EmptyState>
-            <S.EmptyTitle>Keine Mensen gefunden</S.EmptyTitle>
+            <S.EmptyTitle>{t('canteens.emptyTitle')}</S.EmptyTitle>
             <S.EmptyBody>
-              Passe deine Suche an oder prüfe, ob der Name korrekt ist.
+              {t('canteens.emptyBody')}
             </S.EmptyBody>
           </S.EmptyState>
         ) : (
@@ -264,22 +265,22 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
                       <S.CardAddress>{canteen.address}</S.CardAddress>
                     </div>
                     {selectedCanteenIds.includes(canteen.id) && (
-                      <S.CardTag>Ausgewählt</S.CardTag>
+                      <S.CardTag>{t('canteens.selected')}</S.CardTag>
                     )}
                   </S.CardHeader>
 
                   <S.CardFooter>
-                    <S.ActionLabel>Chat starten</S.ActionLabel>
+                    <S.ActionLabel>{t('canteens.startChat')}</S.ActionLabel>
                     <S.FooterRight>
                       {showDistance && (
                         <S.DistancePill
                           onClick={(e) => canteen.lat && canteen.lng && openGoogleMaps(canteen.lat, canteen.lng, e)}
                           $clickable={!!(canteen.lat && canteen.lng)}
-                          title="Route in Google Maps öffnen"
+                          title={t('canteens.routeTitle')}
                         >
                           <span>{distance_km?.toFixed(1)} km</span>
                           <span style={{ opacity: 0.3, fontSize: "1.2em", fontWeight: 300 }}>|</span>
-                          <span>Route ↗</span>
+                          <span>{t('canteens.route')} ↗</span>
                         </S.DistancePill>
                       )}
                     </S.FooterRight>
@@ -295,7 +296,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
         )}
         {loadingState === "more" && (
           <S.LoadMoreButton disabled>
-            Lädt mehr ...
+            {t('canteens.loadingMore')}
           </S.LoadMoreButton>
         )}
       </Content>

@@ -1,10 +1,30 @@
 {
+    "nav": {
+        "home": "Home",
+        "chatbot": "Chatbot",
+        "canteens": "Mensen",
+        "map": "Karte",
+        "projectFacts": "Über uns/Fakten",
+        "legalNotice": "Impressum",
+        "shortcuts": "Shortcuts",
+        "settings": "Einstellungen"
+    },
+    "sidebar": {
+        "navigation": "Navigation",
+        "settingsSection": "Einstellungen",
+        "chats": "Chats",
+        "noChats": "Keine Chats gefunden.",
+        "newChat": "Neuen Chat starten",
+        "loadMore": "Mehr Chats laden",
+        "theme": "Theme"
+    },
     "contact": {
         "eyebrow": "Impressum",
         "title": "Sag Hallo!",
         "description": "Hast du Fragen, Vorschläge oder Feedback? Wir würden uns freuen von dir zu hören. Kontaktiere uns direkt per E-Mail.",
         "mail": "stefan.hillmann@tu-berlin.de",
         "mailButton": "Kontaktiere uns!",
+        "issueButton": "Problem melden",
         "form": {
             "name": "Name",
             "namePlaceholder": "Dein Name",
@@ -38,6 +58,7 @@
     "projectFacts": {
         "eyebrow": "Projekt Einblicke",
         "title": "Hinter dem Bot",
+        "githubButton": "Auf GitHub ansehen",
         "facts": {
             "studentProject": {
                 "title": "Studentenprojekt",
@@ -63,6 +84,82 @@
             "mensen": "Mensen",
             "stars": "Sterne"
         }
+    },
+    "canteens": {
+        "eyebrow": "Mensa Auswahl",
+        "title": "Mensen entdecken",
+        "subtitle": "Finde deine Mensa, starte einen neuen Chat und frage direkt nach Speiseplänen, Öffnungszeiten oder Preisen.",
+        "tagSearch": "Schnelle Suche",
+        "tagOpenmensa": "Openmensa",
+        "tagLocations": "1000+ Standorte",
+        "statsTotal": "Mensen Gesamt",
+        "statsCities": "Städte",
+        "statsHits": "Treffer",
+        "searchPlaceholder": "Mensa oder Stadt eingeben",
+        "searchAriaLabel": "Suche nach Mensen",
+        "searching": "Suche...",
+        "search": "Suchen",
+        "sortRecommended": "Empfohlen",
+        "sortName": "Name",
+        "sortCity": "Stadt",
+        "sortDistance": "Entfernung",
+        "searchingFor": "Suche nach \"{{query}}\"",
+        "loadingMore": "Lädt mehr ...",
+        "searchResults": "Suchergebnisse",
+        "allCanteens": "Alle Mensen",
+        "found": "gefunden",
+        "emptyTitle": "Keine Mensen gefunden",
+        "emptyBody": "Passe deine Suche an oder prüfe, ob der Name korrekt ist.",
+        "selected": "Ausgewählt",
+        "startChat": "Chat starten",
+        "routeTitle": "Route in Google Maps öffnen",
+        "route": "Route",
+        "error": "Mensen konnten nicht geladen werden. Bitte versuche es erneut."
+    },
+    "map": {
+        "eyebrow": "Karte",
+        "title": "Mensen auf der Karte",
+        "subtitle": "Zoome rein, um Standorte zu entdecken. Tippe auf einen Pin für Details und starte anschließend einen Chat mit der ausgewählten Mensa.",
+        "searchPlaceholder": "Mensa oder Stadt eingeben",
+        "searchAriaLabel": "Suche nach Mensen auf der Karte",
+        "searchFor": "Suche: \"{{query}}\"",
+        "defaultHint": "Zeigt Mensen im aktuellen Kartenausschnitt.",
+        "errorTitle": "MapTiler Konfiguration fehlt",
+        "errorBody": "Bitte setze die Umgebungsvariablen VITE_MAPTILER_STYLE_URL_LIGHT und VITE_MAPTILER_STYLE_URL_DARK (jeweils die komplette Style-JSON URL inkl. ?key=...).",
+        "errorMissing": "Fehlend"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "subtitle": "Speichere häufige Anfragen inklusive Filtersätze. Shortcuts lassen sich hier bearbeiten und löschen.",
+        "newShortcut": "Neuer Shortcut",
+        "empty": "Du hast noch keine Shortcuts gespeichert.",
+        "noPrompt": "Kein Prompt hinterlegt.",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "cancel": "Abbrechen",
+        "diet": "Ernährung",
+        "allergens": "Allergene",
+        "noFilters": "Keine Filter",
+        "canteensCount": "{{count}} Mensen",
+        "deleteTitle": "Shortcut löschen",
+        "deleteSubtitle": "\"{{name}}\" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "deleteSummaryLabel": "Zu löschender Shortcut",
+        "deleteNote": "Shortcuts werden lokal im Browser gespeichert."
+    },
+    "shortcutModal": {
+        "createTitle": "Neuer Shortcut",
+        "editTitle": "Shortcut bearbeiten",
+        "description": "Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.",
+        "close": "Schließen",
+        "name": "Name",
+        "namePlaceholder": "z. B. Mensa Dienstag",
+        "prompt": "Prompt",
+        "promptPlaceholder": "Nachricht, die im Chat eingefügt wird",
+        "footerNote": "Shortcuts werden lokal im Browser gespeichert.",
+        "cancel": "Abbrechen",
+        "saveCreate": "Shortcut speichern",
+        "saveEdit": "Änderungen speichern",
+        "nameError": "Bitte gib einen Namen für den Shortcut an."
     },
     "settings": {
         "header": {

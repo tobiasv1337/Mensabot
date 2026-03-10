@@ -6,6 +6,7 @@ import ShortcutModal from "../components/shortcuts/ShortcutModal";
 import ConfirmModal from "../components/modal/ConfirmModal";
 import { DIET_OPTIONS, getAllergenLabel } from "../components/chat/filterData";
 import * as S from "./ShortcutsPage.styles";
+import { useTranslation } from "react-i18next";
 
 type ShortcutsPageProps = {
   shortcuts: Shortcut[];
@@ -20,6 +21,7 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
   onUpdateShortcut,
   onDeleteShortcut,
 }) => {
+  const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -92,18 +94,18 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
     <S.Page>
       <S.HeaderRow>
         <div>
-          <S.Title>Shortcuts</S.Title>
+          <S.Title>{t('shortcuts.title')}</S.Title>
           <S.Subtitle>
-            Speichere häufige Anfragen inklusive Filtersätze. Shortcuts lassen sich hier bearbeiten und löschen.
+            {t('shortcuts.subtitle')}
           </S.Subtitle>
         </div>
         <S.PrimaryButton type="button" onClick={openCreate}>
-          Neuer Shortcut
+          {t('shortcuts.newShortcut')}
         </S.PrimaryButton>
       </S.HeaderRow>
 
       {sortedShortcuts.length === 0 ? (
-        <S.EmptyState>Du hast noch keine Shortcuts gespeichert.</S.EmptyState>
+        <S.EmptyState>{t('shortcuts.empty')}</S.EmptyState>
       ) : (
         <S.Grid>
           {sortedShortcuts.map((shortcut) => {
@@ -115,30 +117,30 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
                 ? `${allergens.slice(0, 3).join(", ")}${allergens.length > 3 ? ` +${allergens.length - 3}` : ""}`
                 : null;
             const canteensLabel =
-              shortcut.filters.canteens.length > 0 ? `${shortcut.filters.canteens.length} Mensen` : null;
+              shortcut.filters.canteens.length > 0 ? t('shortcuts.canteensCount', { count: shortcut.filters.canteens.length }) : null;
 
             return (
               <S.Card key={shortcut.id}>
                 <S.CardHeader>
                   <div>
                     <S.CardTitle>{shortcut.name}</S.CardTitle>
-                    <S.CardPrompt>{shortcut.prompt.trim() || "Kein Prompt hinterlegt."}</S.CardPrompt>
+                    <S.CardPrompt>{shortcut.prompt.trim() || t('shortcuts.noPrompt')}</S.CardPrompt>
                   </div>
                   <S.CardActions>
-                    <S.ActionButton type="button" onClick={() => openEdit(shortcut)} aria-label={`${shortcut.name} bearbeiten`}>
-                      Bearbeiten
+                    <S.ActionButton type="button" onClick={() => openEdit(shortcut)} aria-label={`${shortcut.name} ${t('shortcuts.edit')}`}>
+                      {t('shortcuts.edit')}
                     </S.ActionButton>
-                    <S.ActionButton type="button" $variant="danger" onClick={() => handleDelete(shortcut)} aria-label={`${shortcut.name} löschen`}>
-                      Löschen
+                    <S.ActionButton type="button" $variant="danger" onClick={() => handleDelete(shortcut)} aria-label={`${shortcut.name} ${t('shortcuts.delete')}`}>
+                      {t('shortcuts.delete')}
                     </S.ActionButton>
                   </S.CardActions>
                 </S.CardHeader>
 
                 <S.MetaRow>
-                  {dietLabel && <S.MetaChip>Ernährung: {dietLabel}</S.MetaChip>}
-                  {allergensLabel && <S.MetaChip>Allergene: {allergensLabel}</S.MetaChip>}
+                  {dietLabel && <S.MetaChip>{t('shortcuts.diet')}: {dietLabel}</S.MetaChip>}
+                  {allergensLabel && <S.MetaChip>{t('shortcuts.allergens')}: {allergensLabel}</S.MetaChip>}
                   {canteensLabel && <S.MetaChip>{canteensLabel}</S.MetaChip>}
-                  {!dietLabel && !allergensLabel && !canteensLabel && <S.MetaChip>Keine Filter</S.MetaChip>}
+                  {!dietLabel && !allergensLabel && !canteensLabel && <S.MetaChip>{t('shortcuts.noFilters')}</S.MetaChip>}
                 </S.MetaRow>
               </S.Card>
             );
@@ -161,12 +163,12 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
       {deleteTarget && (
         <ConfirmModal
           isOpen={Boolean(deleteTarget)}
-          title="Shortcut löschen"
-          subtitle={`"${deleteTarget.name}" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.`}
-          summary={{ label: "Zu löschender Shortcut", value: deleteTarget.name }}
-          note="Shortcuts werden lokal im Browser gespeichert."
-          confirmLabel="Löschen"
-          cancelLabel="Abbrechen"
+          title={t('shortcuts.deleteTitle')}
+          subtitle={t('shortcuts.deleteSubtitle', { name: deleteTarget.name })}
+          summary={{ label: t('shortcuts.deleteSummaryLabel'), value: deleteTarget.name }}
+          note={t('shortcuts.deleteNote')}
+          confirmLabel={t('shortcuts.delete')}
+          cancelLabel={t('shortcuts.cancel')}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
         />
