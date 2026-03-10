@@ -189,7 +189,14 @@ const ChatPage: React.FC = () => {
                 onDeleteShortcut={deleteShortcut}
               />
             ) : activeNav === "Settings" ? (
-              <SettingsPage onDeleteAllChats={handleDeleteAllChats} />
+              <SettingsPage
+                onDeleteAllChats={handleDeleteAllChats}
+                onResetOnboarding={() => {
+                  const fresh = Chats.create();
+                  activateChat(fresh.id);
+                  setActiveNav("ChatBot");
+                }}
+              />
             ) : activeNav === "Map" ? (
               <MapPage
                 onSelectCanteen={handleSelectCanteen}
