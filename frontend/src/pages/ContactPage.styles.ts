@@ -70,6 +70,15 @@ export const LogosContainer = styled.div`
   }
 `;
 
+export const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+`;
+
 export const ImpressumContainer = styled.div`
   display: flex;
   flex-direction: column;
