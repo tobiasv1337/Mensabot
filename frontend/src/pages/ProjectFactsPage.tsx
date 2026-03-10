@@ -16,7 +16,9 @@ import {
     MCPIcon,
     OpenSourceIcon,
     ShortcutsIcon,
+    GitHubIcon,
 } from "../components/icons";
+import { Button } from "../components/button/button";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -86,7 +88,12 @@ const ProjectFactsPage: React.FC = () => {
             id: 3,
             icon: <OpenSourceIcon />,
             title: t('projectFacts.facts.openSource.title'),
-            description: t('projectFacts.facts.openSource.description')
+            description: t('projectFacts.facts.openSource.description'),
+            action: {
+                icon: <GitHubIcon />,
+                label: t('projectFacts.githubButton'),
+                href: 'https://github.com/tobiasv1337/Mensabot',
+            },
         },
         {
             id: 4,
@@ -128,6 +135,14 @@ const ProjectFactsPage: React.FC = () => {
                                     <PS.CardIcon>{fact.icon}</PS.CardIcon>
                                     <PS.CardTitle>{fact.title}</PS.CardTitle>
                                     <PS.CardText>{fact.description}</PS.CardText>
+                                    {'action' in fact && fact.action && (
+                                        <Button
+                                            variant="default"
+                                            iconLeft={fact.action.icon}
+                                            text={fact.action.label}
+                                            onClick={() => { window.open(fact.action.href, '_blank'); }}
+                                        />
+                                    )}
                                 </S.StatCard>
                             ))}
                         </S.InteractiveCardsGrid>
