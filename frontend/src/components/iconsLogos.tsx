@@ -4,7 +4,9 @@ export const TuLogo = () => (
         width="146"
         height="50"
         fill="currentColor"
+        aria-labelledby="tuLogo"
     >
+        <title id="tuLogo">TU Logo</title>
         <path d="M75.81 80.7c6.28 0 10.79-1.86 14.29-4.21 3.27-2.19 5.8-4.78 7.74-8.12 2.51-4.32 2.78-8.33 2.99-10.66 0-.02 4.67-48.4 4.67-48.4H82.7c-.01 0-6.9 71.39-6.89 71.39z" />
         <path d="m53.86 22.73-3.45 35.8c-.58 7.83 2.36 11.85 4.18 13.97 3.34 3.87 9.47 6.91 16.56 8.18l6.6-68.51c.21-3.25-.73-6.09-2.9-8.57C72.32.71 68.57.05 67.02.05L10.46.06C6.28.06 0 4.11 0 11.11c0 8.65 7.69 11.62 10.34 11.62 1.35.01 43.52 0 43.52 0z" />
         <path d="m44.53 71.41 4.24-44.02-22.84-.05s-3.72 38.32-4.26 44.02l22.86.05z" /><g>
@@ -43,7 +45,9 @@ export const QualityAndUsabilityLogo = () => (
         viewBox="0 0 1201.5853 575.7782"
         width="1201.5853"
         height="575.7782"
+        aria-labelledby="qualityAndUsabilityLogo"
     >
+        <title id="qualityAndUsabilityLogo">Quality and Usability Logo</title>
         <g transform="translate(227.5643, -244.47307)">
             <g transform="matrix(1.25, 0, 0, -1.25, -216.93438, 813.16468)">
                 <g transform="scale(0.1, 0.1)" fill="currentColor">
