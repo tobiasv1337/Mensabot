@@ -212,8 +212,8 @@ def _build_query_variants(query_norm: str) -> list[tuple[str, float, float | Non
         if filtered:
             # Stop tokens like "tu", "uni", "mensa" are very common and would otherwise
             # make many unrelated canteens score >= min_score. When we have at least one
-            # informative token left, treat the filtered query as the primary signal so
-            # strong matches can still reach a high score (used by frontend cutoffs).
+            # informative token left, use the filtered query with reduced weight and a
+            # score cap so it contributes without inflating scores for weak matches.
             add_variant(" ".join(filtered), 0.75, 90.0)
             prefix_variant = _prefix_acronym(filtered)
             if prefix_variant:
