@@ -1,6 +1,6 @@
 import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
 
-type MessageKind = "normal" | "location_prompt" | "directions_prompt";
+type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "onboarding";
 
 type DirectionsMeta = {
 	lat?: number;
@@ -216,7 +216,8 @@ export class Chat {
 		}
 
 		this.addMessage(new ChatMessage("user", message));
-		const response = await client.sendMessages(this.#messages, { ...options, filters: this.#filters });
+		const apiMessages = this.#messages.filter((m) => m.meta.kind !== "onboarding");
+		const response = await client.sendMessages(apiMessages, { ...options, filters: this.#filters });
 		const toolCalls = response.tool_calls && response.tool_calls.length > 0 ? response.tool_calls : undefined;
 
 		if (response.status === "needs_location") {
