@@ -460,18 +460,52 @@ def _normalize_text(text: str) -> str:
     return ascii_only.strip().lower()
 
 
-def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
-    text_blob = _normalize_text(" ".join([name] + list(notes)))
-    
-    # Check in order: meat -> vegan -> vegetarian -> unknown
-    # This order matters because vegan/vegetarian keywords might appear in descriptions
-    # but meat keywords take precedence for classification
-    for diet_type in [DietType.meat, DietType.vegan, DietType.vegetarian]:
+def _matches_diet_prefix(text: str, diet_type: DietType) -> bool:
+    """Return True if text starts with an explicit diet declaration like 'vegan:' or 'vegetarisch:'."""
+    return any(text.startswith(f"{keyword}:") for keyword in _DIET_KEYWORDS[diet_type])
+
+
+def _first_diet_keyword_in_text(text: str) -> DietType | None:
+    """Find the diet of the earliest keyword occurrence in a text.
+
+    This avoids order bias from hardcoded diet priority and prefers what appears first in the sentence.
+    """
+    best_diet: DietType | None = None
+    best_pos: int | None = None
+
+    for diet_type in [DietType.vegan, DietType.vegetarian, DietType.meat]:
         for keyword in _DIET_KEYWORDS[diet_type]:
             pattern = r"\b" + re.escape(keyword) + r"\b"
-            if re.search(pattern, text_blob):
+            match = re.search(pattern, text)
+            if not match:
+                continue
+            pos = match.start()
+            if best_pos is None or pos < best_pos:
+                best_pos = pos
+                best_diet = diet_type
+
+    return best_diet
+
+
+def _infer_diet_type(name: str, notes: Iterable[str]) -> DietType:
+    note_list = list(notes)
+    normalized_name = _normalize_text(name)
+    normalized_notes = [_normalize_text(note) for note in note_list]
+
+    # 1) Hard preference for explicit declaration prefixes in notes.
+    #    Example: "Vegetarisch: ... ohne Fisch- und Fleischzutaten" must classify as vegetarian.
+    for note in normalized_notes:
+        for diet_type in [DietType.vegan, DietType.vegetarian, DietType.meat]:
+            if _matches_diet_prefix(note, diet_type):
                 return diet_type
-    
+
+    # 2) Fallback: first keyword wins (by position), evaluated in natural text order.
+    #    This reduces bias from fixed diet ordering when multiple keywords are present.
+    for text in [normalized_name, *normalized_notes]:
+        inferred = _first_diet_keyword_in_text(text)
+        if inferred is not None:
+            return inferred
+
     return DietType.unknown
 
 
