@@ -3,8 +3,8 @@
         "eyebrow": "Legal Notice",
         "title": "Say Hello!",
         "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email.",
-        "mail": "mailto:stefan.hillmann@tu-berlin.de",
-        "mailButton": "Contact Stefan Hillmann",
+        "mail": "stefan.hillmann@tu-berlin.de",
+        "mailButton": "Contact us!",
         "form": {
             "name": "Name",
             "namePlaceholder": "Your Name",
