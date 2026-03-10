@@ -50,23 +50,6 @@ export const Description = styled.p`
   margin: 0;
 `;
 
-//can be deleted needed just for color extraction later
-export const EmailLink = styled.a`
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.accent1};
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  background: ${({ theme }) => `${theme.accent1}15`};
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${({ theme }) => `${theme.accent1}25`};
-    transform: translateY(-2px);
-  }
-`;
-
 export const LogosContainer = styled.div`
   display: flex;
   justify-content: space-between;
