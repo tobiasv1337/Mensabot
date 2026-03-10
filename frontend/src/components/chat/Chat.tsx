@@ -12,6 +12,7 @@ import ShortcutModal from "../shortcuts/ShortcutModal";
 import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
+import { useOnboarding } from "./useOnboarding";
 import {
   buildSlashInput,
   formatCanteenCommand,
@@ -101,6 +102,23 @@ const Chat: React.FC<ChatProps> = ({
     [onFiltersChange]
   );
 
+  const onboarding = useOnboarding(chat, updateFilters, () => setVersion((v) => v + 1));
+
+  // Start onboarding on first empty chat if not completed
+  const onboardingStartedRef = useRef(false);
+  useEffect(() => {
+    if (
+      !onboarding.isActive &&
+      onboarding.step === "idle" &&
+      chat.messages.length === 0 &&
+      !menuCanteen &&
+      !onboardingStartedRef.current
+    ) {
+      onboardingStartedRef.current = true;
+      onboarding.startOnboarding();
+    }
+  }, [chat, menuCanteen, onboarding]);
+
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -170,6 +188,7 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
+    onboardingStartedRef.current = false;
     requestAnimationFrame(() => {
       scrollToBottom();
     });
@@ -763,7 +782,7 @@ const Chat: React.FC<ChatProps> = ({
     }
     : undefined;
 
-  const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen;
+  const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen && !onboarding.isActive;
 
   return (
     <S.ChatShell>
@@ -862,11 +881,19 @@ const Chat: React.FC<ChatProps> = ({
             )}
             {chat.messages.map((message, index) => {
               const isLast = index === chat.messages.length - 1;
+              const isOnboardingMsg = message.meta.kind === "onboarding";
               const shouldShowLocationActions =
                 message.meta.kind === "location_prompt" && isLast && !locationPromptHandled;
               const shouldShowDirectionsActions =
                 message.meta.kind === "directions_prompt";
-              const actions: MessageAction[] = shouldShowLocationActions
+
+              const onboardingActions = isOnboardingMsg
+                ? onboarding.getActions(index, chat.messages.length)
+                : [];
+
+              const actions: MessageAction[] = onboardingActions.length > 0
+                ? onboardingActions
+                : shouldShowLocationActions
                 ? [
                   {
                     id: "share-location",
@@ -946,7 +973,7 @@ const Chat: React.FC<ChatProps> = ({
           onSend={sendMessage}
           onTranscribeAudio={handleTranscribeAudio}
           maxVoiceSeconds={180}
-          disabled={isSending}
+          disabled={isSending || onboarding.isActive}
           shortcuts={shortcuts}
           onShortcutAdd={handleOpenShortcutModal}
           onShortcutSelect={handleApplyShortcut}
