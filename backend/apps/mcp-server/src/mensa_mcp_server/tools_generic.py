@@ -91,10 +91,10 @@ async def health() -> dict:
 async def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brauche ich deinen Standort. Möchtest du ihn freigeben?") -> dict:
     """
     Ask the user for permission to share their location. Returns the prompt text to display.
-    This will return the users GPS location which you can use for canteen lookup etc.
+    The backend will interrupt the tool loop to collect the user's GPS location from the frontend, which you can then use for canteen lookup etc.
 
-    Use this tool when you need the user's location to answer a question. For example if the user aks what to eat nearby.
-    Prefer this tool for requesting the users location over just asking manually via your response for better user experience and more accurate location data.
+    Use this tool when you need the user's location to answer a question. For example if the user asks what to eat nearby.
+    Prefer this tool for requesting the user's location over just asking manually via your response for better user experience and more accurate location data.
     """
     return {"prompt": prompt}
 
