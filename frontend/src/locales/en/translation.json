@@ -361,7 +361,7 @@
         },
         "data": {
             "title": "Data & Storage",
-            "subtitle": "Manage your local chat data in the browser.",
+            "subtitle": "Manage your local chat data and the introduction wizard.",
             "deleteChats": {
                 "label": "Delete chat history",
                 "description": "Permanently removes all saved chats from your browser.",

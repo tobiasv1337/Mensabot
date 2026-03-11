@@ -50,29 +50,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOn
 
         <S.SectionCard>
           <S.SectionHeader>
-            <S.SectionTitle>{t('settings.data.title')}</S.SectionTitle>
-            <S.SectionSubtitle>{t('settings.data.subtitle')}</S.SectionSubtitle>
-          </S.SectionHeader>
-          <S.SectionBody>
-            <S.SettingRow $danger>
-              <S.SettingInfo>
-                <S.SettingLabel>{t('settings.data.deleteChats.label')}</S.SettingLabel>
-                <S.SettingDescription>
-                  {t('settings.data.deleteChats.description')}
-                </S.SettingDescription>
-              </S.SettingInfo>
-              <S.SettingActions>
-                <S.DangerButton type="button" onClick={() => setDeleteOpen(true)}>
-                  {t('settings.data.deleteChats.button')}
-                </S.DangerButton>
-              </S.SettingActions>
-            </S.SettingRow>
-            <S.MutedNote>{t('settings.data.deleteChats.note')}</S.MutedNote>
-          </S.SectionBody>
-        </S.SectionCard>
-
-        <S.SectionCard>
-          <S.SectionHeader>
             <S.SectionTitle>{t('settings.language.title')}</S.SectionTitle>
           </S.SectionHeader>
           <S.SectionBody>
@@ -102,8 +79,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOn
 
         <S.SectionCard>
           <S.SectionHeader>
-            <S.SectionTitle>{t('settings.onboarding.title')}</S.SectionTitle>
-            <S.SectionSubtitle>{t('settings.onboarding.subtitle')}</S.SectionSubtitle>
+            <S.SectionTitle>{t('settings.data.title')}</S.SectionTitle>
+            <S.SectionSubtitle>{t('settings.data.subtitle')}</S.SectionSubtitle>
           </S.SectionHeader>
           <S.SectionBody>
             <S.SettingRow $default>
@@ -126,6 +103,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOn
                 </Button>
               </S.SettingActions>
             </S.SettingRow>
+            <S.SettingRow $danger>
+              <S.SettingInfo>
+                <S.SettingLabel>{t('settings.data.deleteChats.label')}</S.SettingLabel>
+                <S.SettingDescription>
+                  {t('settings.data.deleteChats.description')}
+                </S.SettingDescription>
+              </S.SettingInfo>
+              <S.SettingActions>
+                <S.DangerButton type="button" onClick={() => setDeleteOpen(true)}>
+                  {t('settings.data.deleteChats.button')}
+                </S.DangerButton>
+              </S.SettingActions>
+            </S.SettingRow>
+            <S.MutedNote>{t('settings.data.deleteChats.note')}</S.MutedNote>
           </S.SectionBody>
         </S.SectionCard>
       </Content>
