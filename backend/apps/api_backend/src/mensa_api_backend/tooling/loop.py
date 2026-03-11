@@ -201,12 +201,6 @@ DIET_ALLERGEN_WARNING = (
 
 def _has_diet_or_allergen_context(user_filters: UserFilters | None, tool_traces: list[ToolCallTrace]) -> bool:
     """Return True when the response involves diet/allergen filtering that warrants a disclaimer."""
-    if user_filters:
-        if user_filters.diet:
-            return True
-        if user_filters.allergens:
-            return True
-
     for trace in tool_traces:
         args = trace.args
         if not isinstance(args, dict):

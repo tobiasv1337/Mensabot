@@ -37,13 +37,28 @@ export function useOnboarding(
 		selectedAllergens: [],
 	}));
 
-	// Reset state when chat changes
+	// Track pending timeouts so we can cancel them on unmount / chat switch
+	const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+	const prevChatIdRef = useRef(chat.id);
+
+	const scheduledTimeout = useCallback((fn: () => void, ms: number) => {
+		const id = setTimeout(fn, ms);
+		pendingTimeouts.current.push(id);
+		return id;
+	}, []);
+
+	// Reset state only on actual chat switch (not StrictMode remount)
 	useEffect(() => {
-		setState({
-			step: isOnboardingCompleted() ? "done" : "idle",
-			selectedDiet: null,
-			selectedAllergens: [],
-		});
+		if (prevChatIdRef.current !== chat.id) {
+			prevChatIdRef.current = chat.id;
+			pendingTimeouts.current.forEach(clearTimeout);
+			pendingTimeouts.current = [];
+			setState({
+				step: isOnboardingCompleted() ? "done" : "idle",
+				selectedDiet: null,
+				selectedAllergens: [],
+			});
+		}
 	}, [chat.id]);
 
 	const addBotMessage = useCallback(
@@ -74,11 +89,11 @@ export function useOnboarding(
 		setState((s) => ({ ...s, step: "welcome" }));
 
 		// Immediately advance to data notice after welcome
-		setTimeout(() => {
+		scheduledTimeout(() => {
 			addBotMessage(t("chat.onboarding.dataNotice"));
 			setState((s) => ({ ...s, step: "data_notice" }));
 		}, 600);
-	}, [chat.id, addBotMessage, t]);
+	}, [chat.id, addBotMessage, scheduledTimeout, t]);
 
 	const advanceStep = useCallback(
 		(action: string, label?: string) => {
@@ -99,7 +114,7 @@ export function useOnboarding(
 						setState((s) => ({ ...s, step: "diet_select" }));
 					} else if (action === "no") {
 						addBotMessage(t("chat.onboarding.noDietSelected"));
-						setTimeout(() => {
+						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
 						}, 400);
@@ -109,7 +124,7 @@ export function useOnboarding(
 				case "diet_select": {
 					if (action === "none") {
 						addBotMessage(t("chat.onboarding.noDietSelected"));
-						setTimeout(() => {
+						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
 						}, 400);
@@ -120,7 +135,7 @@ export function useOnboarding(
 					const label = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
 					addBotMessage(t("chat.onboarding.dietSelected", { diet: label }));
 					setState((s) => ({ ...s, selectedDiet: diet }));
-					setTimeout(() => {
+					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.allergyQuestion"));
 						setState((s) => ({ ...s, step: "allergy_question" }));
 					}, 400);
@@ -132,7 +147,7 @@ export function useOnboarding(
 						setState((s) => ({ ...s, step: "allergy_select" }));
 					} else if (action === "no") {
 						addBotMessage(t("chat.onboarding.noAllergensSelected"));
-						setTimeout(() => {
+						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
 						}, 400);
@@ -151,7 +166,7 @@ export function useOnboarding(
 						} else {
 							addBotMessage(t("chat.onboarding.noAllergensSelected"));
 						}
-						setTimeout(() => {
+						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
 						}, 400);
@@ -176,7 +191,7 @@ export function useOnboarding(
 						addBotMessage(t("chat.onboarding.complete"));
 						markOnboardingCompleted();
 						setState((s) => ({ ...s, step: "complete" }));
-						setTimeout(() => {
+						scheduledTimeout(() => {
 							setState((s) => ({ ...s, step: "done" }));
 						}, 800);
 					}
@@ -186,7 +201,7 @@ export function useOnboarding(
 					break;
 			}
 		},
-		[state, addBotMessage, addUserMessage, t, onFiltersChange],
+		[state, addBotMessage, addUserMessage, scheduledTimeout, t, onFiltersChange],
 	);
 
 	const toggleAllergen = useCallback((key: string) => {
@@ -244,7 +259,7 @@ export function useOnboarding(
 					];
 				case "hints":
 					return [
-						{ id: "ok", label: "OK", onClick: () => advanceStep("ok", "OK") },
+						{ id: "ok", label: t("chat.onboarding.hintsOk"), onClick: () => advanceStep("ok", t("chat.onboarding.hintsOk")) },
 					];
 				case "filter_disclaimer":
 					return [
