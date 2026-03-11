@@ -776,7 +776,7 @@ const Chat: React.FC<ChatProps> = ({
     }
     : undefined;
 
-  const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen && !onboarding.isActive;
+  const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen && onboarding.step === "done";
 
   return (
     <S.ChatShell>

@@ -343,6 +343,7 @@
             "allergySelect": "Select your **allergens**:",
             "allergyConfirm": "Confirm selection",
             "hints": "💡 **Tip:** You can adjust your filters anytime using the **\"Filter\"** button at the top. You can also create **Shortcuts** for your typical queries.",
+            "hintsOk": "OK",
             "inputDisabled": "Please complete the onboarding first",
             "filterDisclaimer": "⚠️ **Important:** Filtering by diet type and **allergens** is **not fully supported** by most canteen data sources. We **cannot guarantee** the correctness of the filtering. Please treat the results only as **pre-filtering** and never rely 100% on the generated responses.",
             "filterDisclaimerAccept": "Understood",
