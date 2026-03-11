@@ -54,6 +54,14 @@ export function useOnboarding(
 		[chat, onMessagesChanged],
 	);
 
+	const addUserMessage = useCallback(
+		(content: string) => {
+			chat.addMessage(new ChatMessage("user", content, { kind: "onboarding" }));
+			onMessagesChanged();
+		},
+		[chat, onMessagesChanged],
+	);
+
 	// Track which chat.id onboarding was already started for to prevent
 	// StrictMode double-firing from adding the welcome message twice.
 	const startedForChatRef = useRef<string | null>(null);
@@ -73,7 +81,10 @@ export function useOnboarding(
 	}, [chat.id, addBotMessage, t]);
 
 	const advanceStep = useCallback(
-		(action: string) => {
+		(action: string, label?: string) => {
+			if (label) {
+				addUserMessage(label);
+			}
 			switch (state.step) {
 				case "data_notice": {
 					if (action === "accept") {
@@ -175,7 +186,7 @@ export function useOnboarding(
 					break;
 			}
 		},
-		[state, addBotMessage, t, onFiltersChange],
+		[state, addBotMessage, addUserMessage, t, onFiltersChange],
 	);
 
 	const toggleAllergen = useCallback((key: string) => {
@@ -200,26 +211,26 @@ export function useOnboarding(
 			switch (state.step) {
 				case "data_notice":
 					return [
-						{ id: "accept", label: t("chat.onboarding.dataAccept"), onClick: () => advanceStep("accept") },
+						{ id: "accept", label: t("chat.onboarding.dataAccept"), onClick: () => advanceStep("accept", t("chat.onboarding.dataAccept")) },
 					];
 				case "diet_question":
 					return [
-						{ id: "yes", label: t("chat.onboarding.dietYes"), onClick: () => advanceStep("yes") },
-						{ id: "no", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("no"), variant: "secondary" },
+						{ id: "yes", label: t("chat.onboarding.dietYes"), onClick: () => advanceStep("yes", t("chat.onboarding.dietYes")) },
+						{ id: "no", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("no", t("chat.onboarding.dietNo")), variant: "secondary" },
 					];
 				case "diet_select":
 					return [
 						...DIET_OPTIONS.map((opt) => ({
 							id: `diet-${opt.value}`,
 							label: opt.label,
-							onClick: () => advanceStep(opt.value),
+							onClick: () => advanceStep(opt.value, opt.label),
 						})),
-						{ id: "diet-none", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("none"), variant: "secondary" as const },
+						{ id: "diet-none", label: t("chat.onboarding.dietNo"), onClick: () => advanceStep("none", t("chat.onboarding.dietNo")), variant: "secondary" as const },
 					];
 				case "allergy_question":
 					return [
-						{ id: "yes", label: t("chat.onboarding.allergyYes"), onClick: () => advanceStep("yes") },
-						{ id: "no", label: t("chat.onboarding.allergyNo"), onClick: () => advanceStep("no"), variant: "secondary" },
+						{ id: "yes", label: t("chat.onboarding.allergyYes"), onClick: () => advanceStep("yes", t("chat.onboarding.allergyYes")) },
+						{ id: "no", label: t("chat.onboarding.allergyNo"), onClick: () => advanceStep("no", t("chat.onboarding.allergyNo")), variant: "secondary" },
 					];
 				case "allergy_select":
 					return [
@@ -229,15 +240,15 @@ export function useOnboarding(
 							onClick: () => toggleAllergen(a.key),
 							variant: (state.selectedAllergens.includes(a.key) ? "primary" : "secondary") as "primary" | "secondary",
 						})),
-						{ id: "confirm", label: t("chat.onboarding.allergyConfirm"), onClick: () => advanceStep("confirm") },
+						{ id: "confirm", label: t("chat.onboarding.allergyConfirm"), onClick: () => advanceStep("confirm", t("chat.onboarding.allergyConfirm")) },
 					];
 				case "hints":
 					return [
-						{ id: "ok", label: "OK", onClick: () => advanceStep("ok") },
+						{ id: "ok", label: "OK", onClick: () => advanceStep("ok", "OK") },
 					];
 				case "filter_disclaimer":
 					return [
-						{ id: "accept", label: t("chat.onboarding.filterDisclaimerAccept"), onClick: () => advanceStep("accept") },
+						{ id: "accept", label: t("chat.onboarding.filterDisclaimerAccept"), onClick: () => advanceStep("accept", t("chat.onboarding.filterDisclaimerAccept")) },
 					];
 				default:
 					return [];
