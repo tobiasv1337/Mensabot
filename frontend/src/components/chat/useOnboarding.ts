@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference } from "../../services/chats";
+import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference, type PriceCategory } from "../../services/chats";
 import { isOnboardingCompleted, markOnboardingCompleted } from "../../services/onboarding";
-import { DIET_OPTIONS, ALLERGENS } from "./filterData";
+import { DIET_OPTIONS, ALLERGENS, PRICE_CATEGORY_OPTIONS } from "./filterData";
 import type { MessageAction } from "./ChatBubble";
 
 type OnboardingStep =
 	| "idle"
 	| "welcome"
 	| "data_notice"
+	| "price_category_select"
 	| "diet_question"
 	| "diet_select"
 	| "allergy_question"
@@ -20,6 +21,7 @@ type OnboardingStep =
 
 type OnboardingState = {
 	step: OnboardingStep;
+	selectedPriceCategory: PriceCategory;
 	selectedDiet: DietPreference;
 	selectedAllergens: string[];
 };
@@ -33,6 +35,7 @@ export function useOnboarding(
 
 	const [state, setState] = useState<OnboardingState>(() => ({
 		step: isOnboardingCompleted() ? "done" : "idle",
+		selectedPriceCategory: null,
 		selectedDiet: null,
 		selectedAllergens: [],
 	}));
@@ -55,6 +58,7 @@ export function useOnboarding(
 			pendingTimeouts.current = [];
 			setState({
 				step: isOnboardingCompleted() ? "done" : "idle",
+				selectedPriceCategory: null,
 				selectedDiet: null,
 				selectedAllergens: [],
 			});
@@ -103,9 +107,29 @@ export function useOnboarding(
 			switch (state.step) {
 				case "data_notice": {
 					if (action === "accept") {
+						addBotMessage(t("chat.onboarding.priceCategorySelect"));
+						setState((s) => ({ ...s, step: "price_category_select" }));
+					}
+					break;
+				}
+				case "price_category_select": {
+					if (action === "none") {
+						addBotMessage(t("chat.onboarding.noPriceCategorySelected"));
+						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.dietQuestion"));
+							setState((s) => ({ ...s, step: "diet_question" }));
+						}, 400);
+						break;
+					}
+					// action is the price category value
+					const category = action as PriceCategory;
+					const categoryLabel = PRICE_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? action;
+					addBotMessage(t("chat.onboarding.priceCategorySelected", { category: categoryLabel }));
+					setState((s) => ({ ...s, selectedPriceCategory: category }));
+					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.dietQuestion"));
 						setState((s) => ({ ...s, step: "diet_question" }));
-					}
+					}, 400);
 					break;
 				}
 				case "diet_question": {
@@ -187,6 +211,7 @@ export function useOnboarding(
 							diet: state.selectedDiet,
 							allergens: [...state.selectedAllergens],
 							canteens: [],
+							priceCategory: state.selectedPriceCategory,
 						});
 						addBotMessage(t("chat.onboarding.complete"));
 						markOnboardingCompleted();
@@ -227,6 +252,15 @@ export function useOnboarding(
 				case "data_notice":
 					return [
 						{ id: "accept", label: t("chat.onboarding.dataAccept"), onClick: () => advanceStep("accept", t("chat.onboarding.dataAccept")) },
+					];
+				case "price_category_select":
+					return [
+						...PRICE_CATEGORY_OPTIONS.map((opt) => ({
+							id: `price-${opt.value}`,
+							label: opt.label,
+							onClick: () => advanceStep(opt.value, opt.label),
+						})),
+						{ id: "price-none", label: t("chat.onboarding.priceCategoryNo"), onClick: () => advanceStep("none", t("chat.onboarding.priceCategoryNo")), variant: "secondary" as const },
 					];
 				case "diet_question":
 					return [

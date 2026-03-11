@@ -11,7 +11,7 @@ import ScrollablePillRow from "./ScrollablePillRow";
 import ShortcutModal from "../shortcuts/ShortcutModal";
 import AiWarningText from "./AiWarning/AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
-import { DIET_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
+import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import { useOnboarding } from "./useOnboarding";
 import {
   buildSlashInput,
@@ -47,6 +47,7 @@ const cloneFilters = (filters: ChatFilters): ChatFilters => ({
   diet: filters.diet ?? null,
   allergens: [...filters.allergens],
   canteens: [...filters.canteens],
+  priceCategory: filters.priceCategory ?? null,
 });
 
 
@@ -384,9 +385,18 @@ const Chat: React.FC<ChatProps> = ({
   }, [updateFilters]);
 
   const hasActiveFilters =
-    filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0;
+    filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0 || filters.priceCategory !== null;
 
   const activeFilterItems = [
+    ...(filters.priceCategory
+      ? [
+        {
+          key: `price-${filters.priceCategory}`,
+          label: PRICE_CATEGORY_OPTIONS.find((option) => option.value === filters.priceCategory)?.label ?? t("chat.filters.priceCategory"),
+          onRemove: () => updateFiltersPartial({ priceCategory: null }),
+        },
+      ]
+      : []),
     ...(filters.diet
       ? [
         {
@@ -564,6 +574,7 @@ const Chat: React.FC<ChatProps> = ({
       return prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt;
     }
     const parts: string[] = [];
+    if (shortcut.filters.priceCategory) parts.push(t("chat.describe.priceCategory", { value: PRICE_CATEGORY_OPTIONS.find((o) => o.value === shortcut.filters.priceCategory)?.label ?? shortcut.filters.priceCategory }));
     if (shortcut.filters.diet) parts.push(t("chat.describe.diet", { value: shortcut.filters.diet }));
     if (shortcut.filters.allergens.length > 0) parts.push(t("chat.describe.allergens", { count: shortcut.filters.allergens.length }));
     if (shortcut.filters.canteens.length > 0) parts.push(t("chat.describe.canteens", { count: shortcut.filters.canteens.length }));

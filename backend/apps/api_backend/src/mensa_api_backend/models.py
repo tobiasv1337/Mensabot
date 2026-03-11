@@ -17,6 +17,7 @@ class UserFilters(BaseModel):
     diet: Literal["vegetarian", "vegan", "meat"] | None = None
     allergens: list[str] = []
     canteens: list[CanteenFilter] = []
+    price_category: Literal["students", "employees", "pupils", "others"] | None = None
 
 
 class ChatRequest(BaseModel):

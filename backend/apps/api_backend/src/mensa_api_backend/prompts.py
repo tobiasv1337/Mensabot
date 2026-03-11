@@ -125,6 +125,9 @@ def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
         diet_filter_value = DIET_PREFERENCE_TO_FILTER.get(filters.diet, filters.diet)
         parts.append(f"- **Diet preference**: {filters.diet}. When fetching menus, always set `diet_filter` to \"{diet_filter_value}\".")
 
+    if filters.price_category:
+        parts.append(f"- **Price category**: {filters.price_category}. When fetching menus, always set `price_category` to \"{filters.price_category}\". This ensures only the relevant price is shown.")
+
     if filters.allergens:
         allergen_list = ", ".join(filters.allergens)
         parts.append(f"- **Excluded allergens**: {allergen_list}. When fetching menus, always set `exclude_allergens` to {filters.allergens}.")
@@ -147,6 +150,6 @@ def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
     return (
         "## Active User Filters\n"
         "The user has configured the following filters in the app. You MUST respect these filters in every tool call.\n"
-        "Some of these filters (such as diet preference and excluded allergens) are automatically enforced on menu tool calls, but you MUST still explicitly respect all filters in every tool call and when presenting results.\n"
+        "Some of these filters (such as diet preference, excluded allergens, and price category) are automatically enforced on menu tool calls, but you MUST still explicitly respect all filters in every tool call and when presenting results.\n"
         + "\n".join(parts)
     )

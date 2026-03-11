@@ -252,12 +252,14 @@
             "dayAfterTomorrow": "Übermorgen"
         },
         "describe": {
+            "priceCategory": "Preiskategorie: {{value}}",
             "diet": "Ernährung: {{value}}",
             "allergens": "Allergene: {{count}}",
             "canteens": "Mensen: {{count}}",
             "savedShortcut": "Gespeicherter Shortcut"
         },
         "filters": {
+            "priceCategory": "Preiskategorie",
             "diet": "Ernährungsweise",
             "allergens": "Allergene",
             "canteen": "Mensa"
@@ -273,6 +275,12 @@
             "vegetarian": "Vegetarisch",
             "vegan": "Vegan",
             "meat": "Nur mit Fleisch"
+        },
+        "priceCategoryOptions": {
+            "students": "Student",
+            "employees": "Mitarbeiter",
+            "pupils": "Schüler",
+            "others": "Gast"
         },
         "allergenLabels": {
             "gluten": "Gluten",
@@ -333,6 +341,10 @@
             "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
             "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
             "dataAccept": "Verstanden & Akzeptieren",
+            "priceCategorySelect": "Bist du **Student**, **Mitarbeiter**, **Schüler** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
+            "priceCategoryNo": "Überspringen",
+            "priceCategorySelected": "Preiskategorie: **{{category}}**",
+            "noPriceCategorySelected": "Keine Preiskategorie ausgewählt.",
             "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
             "dietYes": "Ja",
             "dietNo": "Nein, keine Präferenz",
