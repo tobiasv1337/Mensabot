@@ -5,7 +5,7 @@ import { MensaBotClient } from "../../services/api";
 import type { ChatFilters } from "../../services/chats";
 import ScrollablePillRow from "./ScrollablePillRow";
 import CanteenSelector from "./CanteenSelector";
-import { ALLERGENS, DIET_OPTIONS, getAllergenLabel } from "./filterData";
+import { ALLERGENS, DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel } from "./filterData";
 import * as S from "./chat.styles";
 
 type FiltersEditorProps = {
@@ -64,6 +64,28 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
 
   return (
     <>
+      <S.FilterSection>
+        <S.FilterLabel>{t("chat.filters.priceCategory")}</S.FilterLabel>
+        <ScrollablePillRow>
+          {PRICE_CATEGORY_OPTIONS.map((option) => (
+            <S.PillButton
+              key={option.value}
+              type="button"
+              $selected={filters.priceCategory === option.value}
+              $removable={filters.priceCategory === option.value}
+              onClick={() =>
+                updateFiltersPartial({
+                  priceCategory: filters.priceCategory === option.value ? null : option.value,
+                })
+              }
+            >
+              {filters.priceCategory === option.value && <S.PillRemove>×</S.PillRemove>}
+              {option.label}
+            </S.PillButton>
+          ))}
+        </ScrollablePillRow>
+      </S.FilterSection>
+
       <S.FilterSection>
         <S.FilterLabel>{t("chat.filters.diet")}</S.FilterLabel>
         <ScrollablePillRow>

@@ -378,7 +378,7 @@ MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
 
 
 def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
-    """Override diet_filter and exclude_allergens in menu tool call arguments based on user filters."""
+    """Override diet_filter, exclude_allergens and price_category in menu tool call arguments based on user filters."""
     if user_filters.diet:
         mapped = DIET_PREFERENCE_TO_FILTER.get(user_filters.diet)
         if mapped:
@@ -386,6 +386,9 @@ def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
 
     if user_filters.allergens:
         args["exclude_allergens"] = list(user_filters.allergens)
+
+    if user_filters.price_category:
+        args["price_category"] = user_filters.price_category
 
     return args
 

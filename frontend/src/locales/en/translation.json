@@ -252,12 +252,14 @@
             "dayAfterTomorrow": "Day after tomorrow"
         },
         "describe": {
+            "priceCategory": "Price category: {{value}}",
             "diet": "Diet: {{value}}",
             "allergens": "Allergens: {{count}}",
             "canteens": "Canteens: {{count}}",
             "savedShortcut": "Saved shortcut"
         },
         "filters": {
+            "priceCategory": "Price category",
             "diet": "Dietary preference",
             "allergens": "Allergens",
             "canteen": "Canteen"
@@ -273,6 +275,12 @@
             "vegetarian": "Vegetarian",
             "vegan": "Vegan",
             "meat": "Meat only"
+        },
+        "priceCategoryOptions": {
+            "students": "Student",
+            "employees": "Employee",
+            "pupils": "Pupil",
+            "others": "Guest"
         },
         "allergenLabels": {
             "gluten": "Gluten",
@@ -333,6 +341,10 @@
             "welcome": "Hi! 👋 I'm **MensaBot** - your smart canteen assistant.",
             "dataNotice": "MensaBot is a **university research project**. User data may be collected and logged for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
             "dataAccept": "Understood & Accept",
+            "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
+            "priceCategoryNo": "Skip",
+            "priceCategorySelected": "Price category: **{{category}}**",
+            "noPriceCategorySelected": "No price category selected.",
             "dietQuestion": "Do you have a **dietary preference** I should consider?",
             "dietYes": "Yes",
             "dietNo": "No preference",

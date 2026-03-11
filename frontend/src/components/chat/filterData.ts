@@ -1,5 +1,5 @@
 import i18n from "../../i18n";
-import type { ChatFilters } from "../../services/chats";
+import type { ChatFilters, PriceCategory } from "../../services/chats";
 import vegetarianIcon from "../../assets/vegetarian.svg";
 import veganIcon from "../../assets/vegan.svg";
 import meatIcon from "../../assets/meat.svg";
@@ -108,3 +108,29 @@ export const getAllergenLabel = (key: string): string => {
   // i18next returns the key path if no translation is found
   return translated === translationKey ? key : translated;
 };
+
+/**
+ * Price category options - `value` is the API key (never translated),
+ * `label` is a getter that resolves the display name via i18n at call time.
+ */
+export const PRICE_CATEGORY_OPTIONS: ReadonlyArray<{
+  value: Exclude<PriceCategory, null>;
+  label: string;
+}> = [
+    {
+      value: "students",
+      get label() { return i18n.t("chat.priceCategoryOptions.students"); },
+    },
+    {
+      value: "employees",
+      get label() { return i18n.t("chat.priceCategoryOptions.employees"); },
+    },
+    {
+      value: "pupils",
+      get label() { return i18n.t("chat.priceCategoryOptions.pupils"); },
+    },
+    {
+      value: "others",
+      get label() { return i18n.t("chat.priceCategoryOptions.others"); },
+    },
+  ];

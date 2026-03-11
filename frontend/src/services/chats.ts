@@ -27,10 +27,13 @@ export type ChatMessageData = {
 
 export type DietPreference = "vegetarian" | "vegan" | "meat" | null;
 
+export type PriceCategory = "students" | "employees" | "pupils" | "others" | null;
+
 export type ChatFilters = {
 	diet: DietPreference;
 	allergens: string[];
 	canteens: Canteen[];
+	priceCategory: PriceCategory;
 };
 
 export type ChatSummary = {
@@ -51,6 +54,7 @@ export const defaultChatFilters: ChatFilters = {
 	diet: null,
 	allergens: [],
 	canteens: [],
+	priceCategory: null,
 };
 
 const clampText = (value: string, maxChars: number) => {
@@ -125,7 +129,7 @@ export class Chat {
 		this.id = id;
 		this.#messages = messages;
 		const sourceFilters = filters ?? defaultChatFilters;
-		this.#filters = { diet: sourceFilters.diet, allergens: [...sourceFilters.allergens], canteens: [...sourceFilters.canteens] };
+		this.#filters = { diet: sourceFilters.diet, allergens: [...sourceFilters.allergens], canteens: [...sourceFilters.canteens], priceCategory: sourceFilters.priceCategory ?? null };
 		this.#title = normalizeTitle(meta?.title ?? DEFAULT_CHAT_TITLE);
 		const now = Date.now();
 		this.#createdAt = typeof meta?.createdAt === "number" ? meta.createdAt : now;
@@ -190,7 +194,7 @@ export class Chat {
 	}
 
 	setFilters(filters: ChatFilters) {
-		this.#filters = { ...filters, allergens: [...filters.allergens], canteens: [...filters.canteens] };
+		this.#filters = { ...filters, allergens: [...filters.allergens], canteens: [...filters.canteens], priceCategory: filters.priceCategory ?? null };
 		this.#updatedAt = Date.now();
 		this.persist();
 	}
@@ -435,6 +439,7 @@ export class Chats {
 						diet: filters.diet ?? defaultChatFilters.diet,
 						allergens: Array.isArray(filters.allergens) ? filters.allergens : [],
 						canteens: Array.isArray(filters.canteens) ? filters.canteens : [],
+						priceCategory: filters.priceCategory ?? defaultChatFilters.priceCategory,
 					},
 					{
 						title: typeof parsed.title === "string" ? parsed.title : DEFAULT_CHAT_TITLE,

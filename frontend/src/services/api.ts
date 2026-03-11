@@ -162,7 +162,7 @@ export class MensaBotClient {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 
 		const filters = options.filters;
-		const hasFilters = filters && (filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0);
+		const hasFilters = filters && (filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0 || filters.priceCategory !== null);
 
 		const body: Record<string, unknown> = {
 			messages: payload,
@@ -174,6 +174,7 @@ export class MensaBotClient {
 				diet: filters.diet,
 				allergens: filters.allergens,
 				canteens: filters.canteens.map((c) => ({ id: c.id, name: c.name })),
+				price_category: filters.priceCategory,
 			};
 		}
 

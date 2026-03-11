@@ -28,6 +28,7 @@ const normalizeFilters = (filters?: Partial<ChatFilters>): ChatFilters => ({
     ? filters?.allergens.filter((item): item is string => typeof item === "string")
     : [],
   canteens: Array.isArray(filters?.canteens) ? filters?.canteens : [],
+  priceCategory: filters?.priceCategory ?? defaultChatFilters.priceCategory,
 });
 
 const sanitizeShortcut = (item: unknown): Shortcut | null => {
