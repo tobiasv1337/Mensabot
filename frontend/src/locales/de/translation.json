@@ -343,6 +343,7 @@
             "allergySelect": "Wähle deine **Allergene** aus:",
             "allergyConfirm": "Auswahl bestätigen",
             "hints": "💡 **Tipp:** Du kannst deine Filter jederzeit oben mit dem **\"Filter\"**-Button anpassen. Außerdem kannst du **Shortcuts** für deine typischen Anfragen anlegen.",
+            "inputDisabled": "Bitte schließe zuerst das Onboarding ab",
             "filterDisclaimer": "⚠️ **Wichtig:** Das Filtern nach Ernährungsweise und **Allergenen** wird von den meisten Mensen **nicht vollständig** über die Datenquelle unterstützt. Wir können daher **keine Garantie** für die Korrektheit der Filterung übernehmen. Bitte betrachte die Ergebnisse nur als **Vorfilterung** und verlasse dich niemals zu 100% auf die generierten Antworten.",
             "filterDisclaimerAccept": "Verstanden",
             "complete": "Super, du bist startklar! 🎉 Frag mich nach Speiseplänen, Öffnungszeiten oder Preisen.",

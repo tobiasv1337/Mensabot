@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import type { NavItem } from "../types/navigation";
@@ -41,13 +41,6 @@ const ChatPage: React.FC = () => {
     return Chats.getById(activeChatId, true)!;
   });
 
-  // Handle lazy creation of the initial chat to avoid side-effects in render
-  useEffect(() => {
-    if (activeChatId === "init_pending") {
-      const fresh = Chats.create();
-      setTimeout(() => setActiveChatId(fresh.id), 0);
-    }
-  }, [activeChatId]);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
 
@@ -78,6 +71,16 @@ const ChatPage: React.FC = () => {
     setFilters(nextChat.filters ?? defaultChatFilters);
     setMenuCanteen(options?.menuCanteen ?? null);
   }, []);
+
+  // Handle lazy creation of the initial chat to avoid side-effects in render
+  const initDoneRef = useRef(false);
+  useEffect(() => {
+    if (activeChatId === "init_pending" && !initDoneRef.current) {
+      initDoneRef.current = true;
+      const fresh = Chats.create();
+      activateChat(fresh.id);
+    }
+  }, [activeChatId, activateChat]);
 
   useEffect(() => {
     Chats.setActiveId(activeChatId);
