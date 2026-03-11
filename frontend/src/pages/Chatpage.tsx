@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
-import type { NavItem } from "../types/navigation";
+import { NAV_ROUTES, navItemFromPath, type NavItem } from "../types/navigation";
 import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
@@ -27,7 +28,10 @@ const resolveInitialChatId = () => {
 };
 
 const ChatPage: React.FC = () => {
-  const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeNav = navItemFromPath(location.pathname);
+  const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isChatView = activeNav === "ChatBot";
@@ -112,9 +116,9 @@ const ChatPage: React.FC = () => {
       };
       fresh.setFilters(nextFilters);
       activateChat(fresh.id, { menuCanteen: options?.preselectedCanteen ?? null });
-      setActiveNav("ChatBot");
+      navigate(NAV_ROUTES.ChatBot);
     },
-    [filters, activateChat]
+    [filters, activateChat, navigate]
   );
 
   const handleDeleteAllChats = useCallback(() => {
@@ -122,9 +126,9 @@ const ChatPage: React.FC = () => {
     const fresh = Chats.create();
     setChatPages(1);
     activateChat(fresh.id);
-    setActiveNav("ChatBot");
+    navigate(NAV_ROUTES.ChatBot);
     setDrawerOpen(false);
-  }, [activateChat]);
+  }, [activateChat, navigate]);
 
   const handleSelectChat = useCallback(
     (id: string) => {
@@ -138,10 +142,10 @@ const ChatPage: React.FC = () => {
   const handleSelectCanteen = useCallback(
     (canteen: Canteen) => {
       startNewChat({ preselectedCanteen: canteen });
-      setActiveNav("ChatBot");
+      navigate(NAV_ROUTES.ChatBot);
       setDrawerOpen(false);
     },
-    [startNewChat]
+    [startNewChat, navigate]
   );
 
   return (
@@ -197,7 +201,7 @@ const ChatPage: React.FC = () => {
                 onResetOnboarding={() => {
                   const fresh = Chats.create();
                   activateChat(fresh.id);
-                  setActiveNav("ChatBot");
+                  navigate(NAV_ROUTES.ChatBot);
                 }}
               />
             ) : activeNav === "Map" ? (
@@ -206,7 +210,7 @@ const ChatPage: React.FC = () => {
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
             ) : activeNav === "Home" ? (
-              <LandingPage onStartChat={() => setActiveNav("ChatBot")} />
+              <LandingPage onStartChat={() => navigate(NAV_ROUTES.ChatBot)} />
             ) : (
               <Chat
                 chat={chat}
