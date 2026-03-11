@@ -50,7 +50,7 @@ export function useOnboarding(
 		return id;
 	}, []);
 
-	// Reset state only on actual chat switch (not StrictMode remount)
+	// Reset state on actual chat switch (no cleanup — would race with startOnboarding on remount)
 	useEffect(() => {
 		if (prevChatIdRef.current !== chat.id) {
 			prevChatIdRef.current = chat.id;
@@ -156,8 +156,8 @@ export function useOnboarding(
 					}
 					// action is the diet value
 					const diet = action as DietPreference;
-					const label = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
-					addBotMessage(t("chat.onboarding.dietSelected", { diet: label }));
+					const dietLabel = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
+					addBotMessage(t("chat.onboarding.dietSelected", { diet: dietLabel }));
 					setState((s) => ({ ...s, selectedDiet: diet }));
 					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.allergyQuestion"));
