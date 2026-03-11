@@ -23,3 +23,21 @@ const NAV_LABEL_KEYS: Record<NavItem, string> = {
 
 export const getNavLabel = (item: NavItem, t: TFunction): string =>
     t(NAV_LABEL_KEYS[item] ?? item);
+
+export const NAV_ROUTES: Record<NavItem, string> = {
+    Home: "/",
+    ChatBot: "/chat",
+    Canteens: "/canteens",
+    Map: "/map",
+    ProjectFacts: "/about",
+    LegalNotice: "/legal",
+    Shortcuts: "/shortcuts",
+    Settings: "/settings",
+};
+
+const PATH_TO_NAV: Record<string, NavItem> = Object.fromEntries(
+    Object.entries(NAV_ROUTES).map(([k, v]) => [v, k as NavItem])
+) as Record<string, NavItem>;
+
+export const navItemFromPath = (pathname: string): NavItem =>
+    PATH_TO_NAV[pathname] ?? "Home";
