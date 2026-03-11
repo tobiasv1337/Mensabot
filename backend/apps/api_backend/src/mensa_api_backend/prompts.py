@@ -1,6 +1,13 @@
 from .config import settings
 from .models import UserFilters
 
+# Maps frontend diet preference values to the API's MenuDietFilter values
+DIET_PREFERENCE_TO_FILTER = {
+    "vegetarian": "vegetarian",
+    "vegan": "vegan",
+    "meat": "meat_only",
+}
+
 
 LLM_BASE_SYSTEM_PROMPT = (
     "You are the Mensabot, a friendly assistant for university canteen inquiries. Only answer questions that are at least somewhat related to canteens, meals, food, eating, or dining. Politely decline unrelated or critical topics.\n"
@@ -115,7 +122,8 @@ def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
     parts: list[str] = []
 
     if filters.diet:
-        parts.append(f"- **Diet preference**: {filters.diet}. When fetching menus, always set `diet_filter` to \"{filters.diet}\".")
+        diet_filter_value = DIET_PREFERENCE_TO_FILTER.get(filters.diet, filters.diet)
+        parts.append(f"- **Diet preference**: {filters.diet}. When fetching menus, always set `diet_filter` to \"{diet_filter_value}\".")
 
     if filters.allergens:
         allergen_list = ", ".join(filters.allergens)
@@ -128,6 +136,7 @@ def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
             "The user has explicitly selected these canteens in the app UI. "
             "ALWAYS use ONLY these canteens for menu queries, directions, opening hours, etc. "
             "You already have their IDs - do NOT call `search_canteens`, use the IDs directly. "
+            "This overrides the general rule to call `search_canteens` first; the UI selection already provides the canteen IDs. "
             "Even if the user's message text mentions a different canteen name, the UI selection takes priority. "
             "Only use a different canteen if the user EXPLICITLY asks you to ignore their filter or look up a specific other canteen by saying something like 'instead show me ...' or 'what about ...'."
         )
@@ -138,6 +147,6 @@ def build_user_filters_prompt(filters: UserFilters | None) -> str | None:
     return (
         "## Active User Filters\n"
         "The user has configured the following filters in the app. You MUST respect these filters in every tool call.\n"
-        "These filters are automatically enforced on menu tool calls, but you should also be aware of them when presenting results.\n"
+        "Some of these filters (such as diet preference and excluded allergens) are automatically enforced on menu tool calls, but you MUST still explicitly respect all filters in every tool call and when presenting results.\n"
         + "\n".join(parts)
     )

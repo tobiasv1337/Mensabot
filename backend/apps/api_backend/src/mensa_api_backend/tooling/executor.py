@@ -16,6 +16,7 @@ from ..config import settings
 from ..logging import logger
 from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
+    DIET_PREFERENCE_TO_FILTER,
     DIRECTIONS_FALLBACK_PROMPT,
     DIRECTIONS_TOOL_NAME,
     LOCATION_FALLBACK_PROMPT,
@@ -374,13 +375,6 @@ def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[s
 
 
 MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
-
-# Maps frontend diet preference values to the API's MenuDietFilter values
-DIET_PREFERENCE_TO_FILTER = {
-    "vegetarian": "vegetarian",
-    "vegan": "vegan",
-    "meat": "meat_only",
-}
 
 
 def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
