@@ -199,7 +199,7 @@ DIET_ALLERGEN_WARNING = (
 )
 
 
-def _has_diet_or_allergen_context(user_filters: UserFilters | None, tool_traces: list[ToolCallTrace]) -> bool:
+def _has_diet_or_allergen_context(tool_traces: list[ToolCallTrace]) -> bool:
     """Return True when the response involves diet/allergen filtering that warrants a disclaimer."""
     for trace in tool_traces:
         args = trace.args
@@ -223,13 +223,13 @@ def _has_diet_or_allergen_context(user_filters: UserFilters | None, tool_traces:
     return False
 
 
-def _maybe_append_filter_warning(response: ChatResponse, user_filters: UserFilters | None, tool_traces: list[ToolCallTrace]) -> ChatResponse:
+def _maybe_append_filter_warning(response: ChatResponse, tool_traces: list[ToolCallTrace]) -> ChatResponse:
     """Append a filter disclaimer to the reply when diet/allergen filtering was involved."""
     if response.status != "ok":
         return response
     if not response.reply:
         return response
-    if not _has_diet_or_allergen_context(user_filters, tool_traces):
+    if not _has_diet_or_allergen_context(tool_traces):
         return response
     response.reply = response.reply.rstrip() + DIET_ALLERGEN_WARNING
     return response
@@ -237,7 +237,7 @@ def _maybe_append_filter_warning(response: ChatResponse, user_filters: UserFilte
 
 async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None) -> ChatResponse:
     response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters)
-    return _maybe_append_filter_warning(response, user_filters, tool_traces)
+    return _maybe_append_filter_warning(response, tool_traces)
 
 
 async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None) -> tuple[ChatResponse, list[ToolCallTrace]]:
