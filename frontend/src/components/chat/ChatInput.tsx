@@ -83,7 +83,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const hintText = useMemo(() => {
     if (isRecording) return t("chat.input.recording", { seconds: voiceSeconds, max: maxVoiceSeconds });
     if (isTranscribing) return t("chat.input.transcribing");
-    if (disabled) return t("chat.input.sending");
+    if (disabled) return resolvedPlaceholder;
     if (voiceError) return voiceError;
     return resolvedPlaceholder;
   }, [voiceError, isTranscribing, isRecording, voiceSeconds, maxVoiceSeconds, disabled, resolvedPlaceholder, t]);

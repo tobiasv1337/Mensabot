@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference } from "../../services/chats";
 import { isOnboardingCompleted, markOnboardingCompleted } from "../../services/onboarding";
@@ -54,7 +54,14 @@ export function useOnboarding(
 		[chat, onMessagesChanged],
 	);
 
+	// Track which chat.id onboarding was already started for to prevent
+	// StrictMode double-firing from adding the welcome message twice.
+	const startedForChatRef = useRef<string | null>(null);
+
 	const startOnboarding = useCallback(() => {
+		if (startedForChatRef.current === chat.id) return;
+		startedForChatRef.current = chat.id;
+
 		addBotMessage(t("chat.onboarding.welcome"));
 		setState((s) => ({ ...s, step: "welcome" }));
 
@@ -63,7 +70,7 @@ export function useOnboarding(
 			addBotMessage(t("chat.onboarding.dataNotice"));
 			setState((s) => ({ ...s, step: "data_notice" }));
 		}, 600);
-	}, [addBotMessage, t]);
+	}, [chat.id, addBotMessage, t]);
 
 	const advanceStep = useCallback(
 		(action: string) => {

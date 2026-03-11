@@ -104,19 +104,13 @@ const Chat: React.FC<ChatProps> = ({
 
   const onboarding = useOnboarding(chat, updateFilters, () => setVersion((v) => v + 1));
 
-  // Start onboarding on first empty chat if not completed
+  // Start onboarding whenever it hasn't been completed yet
   const onboardingStartedRef = useRef(false);
   useEffect(() => {
-    if (
-      !onboarding.isActive &&
-      onboarding.step === "idle" &&
-      chat.messages.length === 0 &&
-      !menuCanteen &&
-      !onboardingStartedRef.current
-    ) {
-      onboardingStartedRef.current = true;
-      onboarding.startOnboarding();
-    }
+    if (onboarding.isActive || onboarding.step !== "idle" || menuCanteen || onboardingStartedRef.current) return;
+
+    onboardingStartedRef.current = true;
+    onboarding.startOnboarding();
   }, [chat, menuCanteen, onboarding]);
 
   const scrollToBottom = useCallback(() => {
@@ -974,6 +968,7 @@ const Chat: React.FC<ChatProps> = ({
           onTranscribeAudio={handleTranscribeAudio}
           maxVoiceSeconds={180}
           disabled={isSending || onboarding.isActive}
+          placeholder={isSending ? t("chat.input.sending") : onboarding.isActive ? t("chat.onboarding.inputDisabled") : undefined}
           shortcuts={shortcuts}
           onShortcutAdd={handleOpenShortcutModal}
           onShortcutSelect={handleApplyShortcut}
