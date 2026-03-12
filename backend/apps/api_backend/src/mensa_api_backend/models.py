@@ -24,6 +24,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     include_tool_calls: bool = False
     filters: UserFilters | None = None
+    language: str | None = None
 
 
 class ToolCallTrace(BaseModel):
