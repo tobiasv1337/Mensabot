@@ -123,7 +123,7 @@ const ChatPage: React.FC = () => {
           ? [options.preselectedCanteen]
           : baseFilters.canteens ?? [],
       };
-      const targetChat = chat.hasUserMessage ? Chats.create() : chat;
+      const targetChat = (chat.hasUserMessage || chat.id === "init_pending") ? Chats.create() : chat;
       targetChat.setFilters(nextFilters);
       activateChat(targetChat.id, { menuCanteen: options?.preselectedCanteen ?? null });
       navigate(NAV_ROUTES.ChatBot);
@@ -167,7 +167,7 @@ const ChatPage: React.FC = () => {
 
       setActiveNav(target);
     },
-    [startNewChat]
+    [startNewChat, setActiveNav]
   );
 
   return (
