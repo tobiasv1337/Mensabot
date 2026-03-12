@@ -94,9 +94,12 @@ async def request_user_location(prompt: Annotated[str, Field(description="A shor
     """
     Ask the user for permission to share their location. Returns the prompt text to display.
     The backend will interrupt the tool loop to collect the user's GPS coordinates from the frontend.
+    After the user interacts with the location prompt, their location is provided in the next user message.
+    Use that next user message as input and continue with the relevant tool calls (for example search_canteens with coordinates).
 
     Use this tool when you need the user's location to answer a question. For example if the user asks what to eat nearby.
-    Prefer this tool for requesting the user's location over just asking manually via your response for better user experience and more accurate location data.
+    Also use this tool to disambiguate search_canteens matches across different cities/areas when location is the best signal.
+    Prefer this tool over asking for location manually in plain text for better UX and more accurate location data.
     """
     return {"prompt": prompt}
 
@@ -130,16 +133,25 @@ async def request_user_clarification(
     """
     Present the user with a multiple-choice question in the chat UI.
     The backend will interrupt the tool loop and show clickable buttons to the user.
+    After the user selects an option, that selection is provided in the next user message.
+    Use that next user message as input and continue.
 
     Use this tool when:
     - search_canteens returns multiple plausible results and you are uncertain which one the user means
     - The user's request is ambiguous and could refer to different canteens, cities, or options
     - You need the user to choose between specific alternatives
     - You want to ask the user a simple yes/no question with clear button options
+    - You can provide a concise predefined option list (2-10 options)
+
+    Important:
+    - If the user should choose from predefined options, call this tool instead of listing options in plain text.
+    - Do not ask users to choose by typing when clickable options can be provided.
+    - If the ambiguity is primarily geographic across many cities/areas, prefer request_user_location first.
 
     Do NOT use this tool when:
     - There is only one obvious option
     - The user has already specified enough information to proceed
+    - The user clearly wants results for multiple canteens (then continue with all relevant matches)
     - The question is open-ended and no clear predefined options exist (just ask the user directly via text instead)
     """
     return {"prompt": prompt, "options": options, "allow_none": allow_none}
