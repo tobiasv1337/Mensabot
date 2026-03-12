@@ -1,10 +1,15 @@
 import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
 
-type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "onboarding";
+type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";
 
 type DirectionsMeta = {
 	lat?: number;
 	lng?: number;
+};
+
+type ClarificationMeta = {
+	options: string[];
+	allow_none?: boolean;
 };
 
 const CHAT_STORAGE_PREFIX = "chat-";
@@ -22,6 +27,7 @@ export type ChatMessageData = {
 		kind: MessageKind;
 		toolCalls?: ToolCallTrace[];
 		directions?: DirectionsMeta;
+		clarification?: ClarificationMeta;
 	};
 };
 
@@ -99,7 +105,7 @@ export class ChatMessage implements ChatMessageData {
 	constructor(role: "user" | "assistant", content: string, meta: ChatMessageData["meta"] = { kind: "normal" }) {
 		this.role = role;
 		this.content = content;
-		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions };
+		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions, clarification: meta.clarification };
 	}
 
 	toJSON(): ChatMessageData {
@@ -112,7 +118,7 @@ export class ChatMessage implements ChatMessageData {
 
 	static fromJSON(json: ChatMessageData) {
 		const meta: ChatMessageData["meta"] = json.meta ?? { kind: "normal" };
-		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions });
+		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions, clarification: meta.clarification });
 	}
 }
 
@@ -237,6 +243,20 @@ export class Chat {
 					directions: {
 						lat: response.lat ?? undefined,
 						lng: response.lng ?? undefined,
+					},
+				})
+			);
+			return response;
+		}
+
+		if (response.status === "needs_clarification") {
+			this.addMessage(
+				new ChatMessage("assistant", response.prompt, {
+					kind: "clarification_prompt",
+					toolCalls,
+					clarification: {
+						options: response.options,
+						allow_none: response.allow_none,
 					},
 				})
 			);

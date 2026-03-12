@@ -84,6 +84,7 @@ const Chat: React.FC<ChatProps> = ({
   const [locationPromptHandled, setLocationPromptHandled] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [clarificationHandled, setClarificationHandled] = useState(false);
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
   const initialMenuFetched = useRef(false);
@@ -134,6 +135,7 @@ const Chat: React.FC<ChatProps> = ({
     setInputValue("");
     setLocationPromptHandled(false);
     setLocationError("");
+    setClarificationHandled(false);
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
   }, [isSending, onStartNewChat]);
@@ -181,6 +183,7 @@ const Chat: React.FC<ChatProps> = ({
     setInputValue("");
     setLocationPromptHandled(false);
     setLocationError("");
+    setClarificationHandled(false);
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
     onboardingStartedRef.current = false;
@@ -239,7 +242,13 @@ const Chat: React.FC<ChatProps> = ({
       return;
     }
 
+    if (lastMsg.meta?.kind === "clarification_prompt") {
+      setClarificationHandled(false);
+      return;
+    }
+
     setLocationPromptHandled(true);
+    setClarificationHandled(true);
   }, [version, chat]);
 
   const sendMessage = useCallback(
@@ -378,6 +387,15 @@ const Chat: React.FC<ChatProps> = ({
       openGoogleMaps(lat, lng);
     },
     [isSending]
+  );
+
+  const handleClarificationSelect = useCallback(
+    (option: string) => {
+      if (isSending) return;
+      setClarificationHandled(true);
+      void sendMessage(option);
+    },
+    [isSending, sendMessage]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -891,9 +909,33 @@ const Chat: React.FC<ChatProps> = ({
                 message.meta.kind === "location_prompt" && isLast && !locationPromptHandled;
               const shouldShowDirectionsActions =
                 message.meta.kind === "directions_prompt";
+              const shouldShowClarificationActions =
+                message.meta.kind === "clarification_prompt" && isLast && !clarificationHandled;
 
               const onboardingActions = isOnboardingMsg
                 ? onboarding.getActions(index, chat.messages.length)
+                : [];
+
+              const clarificationActions: MessageAction[] = shouldShowClarificationActions
+                ? [
+                  ...(message.meta.clarification?.options ?? []).map((option, optIdx) => ({
+                    id: `clarification-${optIdx}`,
+                    label: option,
+                    onClick: () => handleClarificationSelect(option),
+                    disabled: isSending,
+                  })),
+                  ...(message.meta.clarification?.allow_none !== false
+                    ? [
+                      {
+                        id: "clarification-none",
+                        label: t("chat.clarificationNone"),
+                        onClick: () => handleClarificationSelect(t("chat.clarificationNone")),
+                        variant: "secondary" as const,
+                        disabled: isSending,
+                      },
+                    ]
+                    : []),
+                ]
                 : [];
 
               const actions: MessageAction[] = onboardingActions.length > 0
@@ -914,16 +956,18 @@ const Chat: React.FC<ChatProps> = ({
                     disabled: isSending || isRequestingLocation,
                   },
                 ]
-                : shouldShowDirectionsActions
-                  ? [
-                    {
-                      id: "open-directions",
-                      label: t("chat.openRoute"),
-                      onClick: () => handleOpenDirections(message),
-                      disabled: isSending,
-                    },
-                  ]
-                  : [];
+                  : shouldShowDirectionsActions
+                    ? [
+                      {
+                        id: "open-directions",
+                        label: t("chat.openRoute"),
+                        onClick: () => handleOpenDirections(message),
+                        disabled: isSending,
+                      },
+                    ]
+                    : shouldShowClarificationActions
+                      ? clarificationActions
+                      : [];
 
               const actionsNote = shouldShowLocationActions
                 ? locationError || undefined

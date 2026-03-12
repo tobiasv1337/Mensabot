@@ -215,6 +215,7 @@
         "shareLocationLoading": "Frage Standort ab...",
         "manualLocation": "Manuell eingeben",
         "openRoute": "Route öffnen",
+        "clarificationNone": "Keine dieser Optionen",
         "myLocation": "Mein Standort: {{lat}}, {{lng}}",
         "input": {
             "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
