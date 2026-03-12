@@ -348,7 +348,8 @@ const Chat: React.FC<ChatProps> = ({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        const coordsMessage = t("chat.myLocation", { lat: latitude.toFixed(6), lng: longitude.toFixed(6) });
+        // `lng` is reserved by i18next for language override, so use `lon` for interpolation.
+        const coordsMessage = t("chat.myLocation", { lat: latitude.toFixed(6), lon: longitude.toFixed(6) });
         await sendMessage(coordsMessage);
         setLocationPromptHandled(true);
         setIsRequestingLocation(false);
