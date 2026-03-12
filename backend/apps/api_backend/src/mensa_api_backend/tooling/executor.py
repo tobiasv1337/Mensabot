@@ -358,7 +358,7 @@ def _handle_clarification_tool(
     prompt = args.get("prompt") if isinstance(args, dict) else None
     prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("clarification_fallback_prompt", lang)
     options = args.get("options") if isinstance(args, dict) else None
-    if not isinstance(options, list) or len(options) < 2:
+    if not isinstance(options, list) or len(options) < 1:
         options = []
     allow_none = args.get("allow_none", True) if isinstance(args, dict) else True
     logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
