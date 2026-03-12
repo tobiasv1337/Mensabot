@@ -32,7 +32,8 @@ export type ToolCallTrace = {
 export type ChatApiResponse =
 	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
-	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] };
+	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] }
+	| { status: "needs_clarification"; prompt: string; options: string[]; allow_none?: boolean; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
 	id: number;
@@ -210,6 +211,16 @@ export class MensaBotClient {
 				prompt: res.prompt,
 				lat: res.lat,
 				lng: res.lng,
+				tool_calls: res.tool_calls,
+			};
+		}
+
+		if (res.status === "needs_clarification") {
+			return {
+				status: "needs_clarification",
+				prompt: res.prompt,
+				options: res.options ?? [],
+				allow_none: res.allow_none,
 				tool_calls: res.tool_calls,
 			};
 		}
