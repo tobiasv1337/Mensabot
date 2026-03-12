@@ -339,7 +339,7 @@ const Chat: React.FC<ChatProps> = ({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        const coordsMessage = `Mein Standort: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        const coordsMessage = t("chat.myLocation", { lat: latitude.toFixed(6), lng: longitude.toFixed(6) });
         await sendMessage(coordsMessage);
         setLocationPromptHandled(true);
         setIsRequestingLocation(false);

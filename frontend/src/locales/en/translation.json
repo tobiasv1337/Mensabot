@@ -215,6 +215,7 @@
         "shareLocationLoading": "Requesting location...",
         "manualLocation": "Enter manually",
         "openRoute": "Open route",
+        "myLocation": "My Location: {{lat}}, {{lng}}",
         "input": {
             "placeholder": "Write a message or use / for quick actions",
             "recording": "Recording... {{seconds}}s / {{max}}s",
