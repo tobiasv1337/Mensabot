@@ -1,6 +1,8 @@
 import datetime as dt
 from zoneinfo import ZoneInfo
-from typing import Optional
+from typing import Annotated, Optional
+
+from pydantic import Field
 
 from .server import mcp
 from .settings import settings
@@ -88,10 +90,10 @@ async def health() -> dict:
 
 
 @mcp.tool()
-async def request_user_location(prompt: str = "Um dir diese Frage zu beantworten, brauche ich deinen Standort. Möchtest du ihn freigeben?") -> dict:
+async def request_user_location(prompt: Annotated[str, Field(description="A short, user-facing message explaining why their location is needed. Write this in the same language you are responding in.")]) -> dict:
     """
     Ask the user for permission to share their location. Returns the prompt text to display.
-    The backend will interrupt the tool loop to collect the user's GPS location from the frontend, which you can then use for canteen lookup etc.
+    The backend will interrupt the tool loop to collect the user's GPS coordinates from the frontend.
 
     Use this tool when you need the user's location to answer a question. For example if the user asks what to eat nearby.
     Prefer this tool for requesting the user's location over just asking manually via your response for better user experience and more accurate location data.
@@ -101,7 +103,7 @@ async def request_user_location(prompt: str = "Um dir diese Frage zu beantworten
 
 @mcp.tool()
 async def request_canteen_directions(
-    prompt: str = "Möchtest du die Route zur Mensa in Google Maps öffnen?",
+    prompt: Annotated[str, Field(description="A short, user-facing message asking the user if they want to open directions. Write this in the same language you are responding in.")],
     canteen_id: Optional[int] = None,
     lat: Optional[float] = None,
     lng: Optional[float] = None,
