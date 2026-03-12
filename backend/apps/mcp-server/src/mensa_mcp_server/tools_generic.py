@@ -119,3 +119,27 @@ async def request_canteen_directions(
     Calling this tool will show the user a button which opens Google Maps with directions to the canteen.
     """
     return {"prompt": prompt, "canteen_id": canteen_id, "lat": lat, "lng": lng}
+
+
+@mcp.tool()
+async def request_user_clarification(
+    prompt: Annotated[str, Field(description="A short, user-facing question explaining what needs clarification. Write this in the same language you are responding in.")],
+    options: Annotated[list[str], Field(description="A list of 2-10 option labels for the user to choose from. Each label should be very concise and user-friendly. Write this in the same language you are responding in.")],
+    allow_none: Annotated[bool, Field(description="If true, an extra 'None of these' option will be shown to the user.")] = True,
+) -> dict:
+    """
+    Present the user with a multiple-choice question in the chat UI.
+    The backend will interrupt the tool loop and show clickable buttons to the user.
+
+    Use this tool when:
+    - search_canteens returns multiple plausible results and you are uncertain which one the user means
+    - The user's request is ambiguous and could refer to different canteens, cities, or options
+    - You need the user to choose between specific alternatives
+    - You want to ask the user a simple yes/no question with clear button options
+
+    Do NOT use this tool when:
+    - There is only one obvious option
+    - The user has already specified enough information to proceed
+    - The question is open-ended and no clear predefined options exist (just ask the user directly via text instead)
+    """
+    return {"prompt": prompt, "options": options, "allow_none": allow_none}
