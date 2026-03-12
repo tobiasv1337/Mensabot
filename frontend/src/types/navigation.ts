@@ -38,21 +38,20 @@ export const NAV_ROUTES: Record<NavItem, string> = {
 const PATH_TO_NAV: Record<string, NavItem> = Object.fromEntries(
     Object.entries(NAV_ROUTES).map(([k, v]) => [v, k as NavItem])
 ) as Record<string, NavItem>;
+const BASE_ROUTES = Object.keys(PATH_TO_NAV)
+    .filter(r => r !== "/")
+    .sort((a, b) => b.length - a.length);
 
 export const navItemFromPath = (pathname: string): NavItem | undefined => {
-    if (pathname in PATH_TO_NAV) return PATH_TO_NAV[pathname];
+    if (Object.hasOwn(PATH_TO_NAV, pathname)) return PATH_TO_NAV[pathname];
     
     let normalized = pathname;
     if (normalized !== "/" && normalized.endsWith("/")) {
         normalized = normalized.slice(0, -1);
-        if (normalized in PATH_TO_NAV) return PATH_TO_NAV[normalized];
+        if (Object.hasOwn(PATH_TO_NAV, normalized)) return PATH_TO_NAV[normalized];
     }
 
-    const baseRoutes = Object.keys(PATH_TO_NAV)
-        .filter(r => r !== "/")
-        .sort((a, b) => b.length - a.length);
-        
-    for (const route of baseRoutes) {
+    for (const route of BASE_ROUTES) {
         if (pathname.startsWith(route + "/")) {
             return PATH_TO_NAV[route];
         }
