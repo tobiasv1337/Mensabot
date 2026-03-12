@@ -30,7 +30,7 @@ const resolveInitialChatId = () => {
 const ChatPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const activeNavMatch = navItemFromPath(location.pathname);
   const activeNav = activeNavMatch ?? "Home";
   const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
@@ -146,16 +146,15 @@ const ChatPage: React.FC = () => {
       setActiveNav("ChatBot");
       setDrawerOpen(false);
     },
-    [activateChat]
+    [activateChat, setActiveNav]
   );
 
   const handleSelectCanteen = useCallback(
     (canteen: Canteen) => {
       startNewChat({ preselectedCanteen: canteen });
-      navigate(NAV_ROUTES.ChatBot);
       setDrawerOpen(false);
     },
-    [startNewChat, navigate]
+    [startNewChat]
   );
 
   return (
