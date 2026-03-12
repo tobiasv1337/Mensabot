@@ -216,7 +216,7 @@
         "manualLocation": "Manuell eingeben",
         "openRoute": "Route öffnen",
         "clarificationNone": "Keine dieser Optionen",
-        "myLocation": "Mein Standort: {{lat}}, {{lng}}",
+        "myLocation": "Mein Standort: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
             "recording": "Aufnahme läuft... {{seconds}}s / {{max}}s",
