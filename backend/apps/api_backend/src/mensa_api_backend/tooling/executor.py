@@ -13,13 +13,12 @@ from mensa_mcp_server.server import make_openmensa_client
 
 from ..concurrency import get_io_semaphore
 from ..config import settings
+from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
 from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
     DIET_PREFERENCE_TO_FILTER,
-    DIRECTIONS_FALLBACK_PROMPT,
     DIRECTIONS_TOOL_NAME,
-    LOCATION_FALLBACK_PROMPT,
     LOCATION_TOOL_NAME,
 )
 
@@ -193,9 +192,10 @@ def _handle_location_tool(
     tool_trace: ToolCallTrace,
     tool_traces: list[ToolCallTrace],
     include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse:
     prompt = args.get("prompt") if isinstance(args, dict) else None
-    prompt_text = prompt or LOCATION_FALLBACK_PROMPT
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("location_fallback_prompt", lang)
     logger.info("Location request tool triggered with prompt: %s", prompt_text)
     tool_trace.ok = True
     tool_trace.result = {"needs_location": True, "prompt": prompt_text}
@@ -216,9 +216,10 @@ async def _handle_directions_tool(
     call_id: str | None,
     tool_name: str,
     include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse | None:
     prompt = args.get("prompt") if isinstance(args, dict) else None
-    prompt_text = prompt or DIRECTIONS_FALLBACK_PROMPT
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("directions_fallback_prompt", lang)
     raw_canteen_id = args.get("canteen_id") if isinstance(args, dict) else None
     raw_lat = args.get("lat") if isinstance(args, dict) else None
     raw_lng = args.get("lng") if isinstance(args, dict) else None
@@ -345,7 +346,7 @@ async def _handle_directions_tool(
     )
 
 
-def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[str, Any]) -> None:
+def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[str, Any], lang: str = DEFAULT_LANGUAGE) -> None:
     if settings.llm_supports_tool_messages:
         return
 
@@ -353,23 +354,14 @@ def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[s
         messages.append(
             {
                 "role": "system",
-                "content": (
-                    "You have just successfully received the tool results you requested as a JSON object."
-                    "You can assume these tool results to be 100% correct and accurate."
-                    "You don't need to validate them and can fully trust them to answer the user query."
-                    "Now either make further tool calls if needed, or answer the user based on the tool results."
-                ),
+                "content": get_string("tool_guidance_success", lang),
             }
         )
     else:
         messages.append(
             {
                 "role": "system",
-                "content": (
-                    "The previous tool call failed and did NOT provide useful data. "
-                    "You should not rely on this tool result. "
-                    "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                ),
+                "content": get_string("tool_guidance_error", lang),
             }
         )
 
@@ -412,6 +404,7 @@ async def _handle_mcp_tool(
     messages: List[Dict[str, Any]],
     call_id: str | None,
     user_filters: UserFilters | None = None,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> None:
     if args is None:
         args = {}
@@ -446,7 +439,7 @@ async def _handle_mcp_tool(
     tool_traces.append(tool_trace)
 
     _append_tool_message(messages, call_id, tool_name, result_payload)
-    _append_tool_guidance(messages, result_payload)
+    _append_tool_guidance(messages, result_payload, lang)
 
 
 async def handle_tool_calls(
@@ -457,6 +450,7 @@ async def handle_tool_calls(
     iteration: int,
     include_tool_calls: bool,
     user_filters: UserFilters | None = None,
+    language: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse | None:
     for call in tool_calls:
         parsed = _parse_tool_call(call)
@@ -481,6 +475,7 @@ async def handle_tool_calls(
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
+                lang=language,
             )
 
         if parsed.tool_name == DIRECTIONS_TOOL_NAME:
@@ -492,6 +487,7 @@ async def handle_tool_calls(
                 call_id=parsed.call_id,
                 tool_name=parsed.tool_name,
                 include_tool_calls=include_tool_calls,
+                lang=language,
             )
             if response is not None:
                 return response
@@ -505,6 +501,7 @@ async def handle_tool_calls(
             messages=messages,
             call_id=parsed.call_id,
             user_filters=user_filters,
+            lang=language,
         )
 
     return None
