@@ -1,5 +1,5 @@
 from .models import UserFilters
-from .i18n import get_string
+from .i18n import get_string, DEFAULT_LANGUAGE
 
 # Maps frontend diet preference values to the API's MenuDietFilter values
 DIET_PREFERENCE_TO_FILTER = {
@@ -13,7 +13,7 @@ LOCATION_TOOL_NAME = "request_user_location"
 DIRECTIONS_TOOL_NAME = "request_canteen_directions"
 
 
-def build_user_filters_prompt(filters: UserFilters | None, lang: str = "en") -> str | None:
+def build_user_filters_prompt(filters: UserFilters | None, lang: str = DEFAULT_LANGUAGE) -> str | None:
     """Build a system prompt section describing the user's active filters, or None if no filters are set."""
     if filters is None:
         return None

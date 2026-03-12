@@ -15,11 +15,10 @@ Adding a new language:
 """
 
 import json
+import importlib.resources
 from functools import lru_cache
-from pathlib import Path
 
 
-LOCALES_DIR = Path(__file__).parent / "locales"
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("de", "en")
 DEFAULT_LANGUAGE = "en"
 
@@ -27,11 +26,11 @@ DEFAULT_LANGUAGE = "en"
 @lru_cache(maxsize=None)
 def _load_locale(lang: str) -> dict[str, str]:
     """Load and cache a locale JSON file. Returns empty dict if file doesn't exist."""
-    path = LOCALES_DIR / f"{lang}.json"
-    if not path.exists():
+    try:
+        content = importlib.resources.files("mensa_api_backend").joinpath("locales", f"{lang}.json").read_text(encoding="utf-8")
+        return json.loads(content)
+    except FileNotFoundError:
         return {}
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
 
 
 def get_string(key: str, lang: str = DEFAULT_LANGUAGE, **kwargs: object) -> str:
