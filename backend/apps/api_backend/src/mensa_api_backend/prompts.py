@@ -11,6 +11,7 @@ DIET_PREFERENCE_TO_FILTER = {
 
 LOCATION_TOOL_NAME = "request_user_location"
 DIRECTIONS_TOOL_NAME = "request_canteen_directions"
+CLARIFICATION_TOOL_NAME = "request_user_clarification"
 
 
 def build_user_filters_prompt(filters: UserFilters | None, lang: str = DEFAULT_LANGUAGE) -> str | None:

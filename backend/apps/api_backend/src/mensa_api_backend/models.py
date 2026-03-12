@@ -39,11 +39,13 @@ class ToolCallTrace(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    status: Literal["ok", "needs_location", "needs_directions"]
+    status: Literal["ok", "needs_location", "needs_directions", "needs_clarification"]
     reply: str | None = None
     prompt: str | None = None
     lat: float | None = None
     lng: float | None = None
+    options: list[str] | None = None
+    allow_none: bool | None = None
     tool_calls: list[ToolCallTrace] | None = None
 
 

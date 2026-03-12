@@ -9,6 +9,8 @@
 
     "directions_fallback_prompt": "Möchtest du die Route zur Mensa in Google Maps öffnen?",
 
+    "clarification_fallback_prompt": "Ich brauche noch eine kurze Info. Welche dieser Optionen meintest du?",
+
     "tool_guidance_success": "Du hast soeben die angeforderten Tool-Ergebnisse als JSON-Objekt erhalten. Du kannst diese Ergebnisse als 100% korrekt und genau annehmen. Du musst sie nicht validieren und kannst ihnen vollständig vertrauen, um die Nutzeranfrage zu beantworten. Führe nun entweder weitere Tool-Aufrufe durch, falls nötig, oder beantworte die Frage des Nutzers anhand der Tool-Ergebnisse.",
 
     "tool_guidance_error": "Der vorherige Tool-Aufruf ist fehlgeschlagen und hat KEINE nützlichen Daten geliefert. Du solltest dich nicht auf dieses Tool-Ergebnis verlassen. Versuche entweder, ein anderes Tool aufzurufen, um die benötigten Informationen zu erhalten, oder wenn kein passendes Tool verfügbar ist, gib zu, dass du die Antwort nicht kennst, oder versuche, basierend auf deinem internen Wissen zu antworten, wobei du deutlich machst, dass dies nur eine Vermutung ist und veraltet oder falsch sein kann.",

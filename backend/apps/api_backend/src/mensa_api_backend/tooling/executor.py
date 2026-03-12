@@ -17,6 +17,7 @@ from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
 from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
+    CLARIFICATION_TOOL_NAME,
     DIET_PREFERENCE_TO_FILTER,
     DIRECTIONS_TOOL_NAME,
     LOCATION_TOOL_NAME,
@@ -346,6 +347,33 @@ async def _handle_directions_tool(
     )
 
 
+def _handle_clarification_tool(
+    *,
+    args: Any,
+    tool_trace: ToolCallTrace,
+    tool_traces: list[ToolCallTrace],
+    include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
+) -> ChatResponse:
+    prompt = args.get("prompt") if isinstance(args, dict) else None
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("clarification_fallback_prompt", lang)
+    options = args.get("options") if isinstance(args, dict) else None
+    if not isinstance(options, list) or len(options) < 2:
+        options = []
+    allow_none = args.get("allow_none", True) if isinstance(args, dict) else True
+    logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
+    tool_trace.ok = True
+    tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
+    tool_traces.append(tool_trace)
+    return ChatResponse(
+        status="needs_clarification",
+        prompt=prompt_text,
+        options=options,
+        allow_none=allow_none,
+        tool_calls=(tool_traces or None) if include_tool_calls else None,
+    )
+
+
 def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[str, Any], lang: str = DEFAULT_LANGUAGE) -> None:
     if settings.llm_supports_tool_messages:
         return
@@ -492,6 +520,15 @@ async def handle_tool_calls(
             if response is not None:
                 return response
             continue
+
+        if parsed.tool_name == CLARIFICATION_TOOL_NAME:
+            return _handle_clarification_tool(
+                args=args,
+                tool_trace=tool_trace,
+                tool_traces=tool_traces,
+                include_tool_calls=include_tool_calls,
+                lang=language,
+            )
 
         await _handle_mcp_tool(
             tool_name=parsed.tool_name,
