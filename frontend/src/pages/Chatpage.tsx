@@ -30,8 +30,18 @@ const resolveInitialChatId = () => {
 const ChatPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const activeNav = navItemFromPath(location.pathname);
+  
+  const activeNavMatch = navItemFromPath(location.pathname);
+  const activeNav = activeNavMatch ?? "Home";
   const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
+
+  useEffect(() => {
+    if (!activeNavMatch) {
+      navigate(NAV_ROUTES.Home, { replace: true });
+    } else if (location.pathname !== "/" && location.pathname.endsWith("/")) {
+      navigate(location.pathname.slice(0, -1), { replace: true });
+    }
+  }, [activeNavMatch, location.pathname, navigate]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isChatView = activeNav === "ChatBot";
