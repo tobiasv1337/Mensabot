@@ -147,11 +147,5 @@ async def request_user_clarification(
     - If the user should choose from predefined options, call this tool instead of listing options in plain text.
     - Do not ask users to choose by typing when clickable options can be provided.
     - If the ambiguity is primarily geographic across many cities/areas, prefer request_user_location first.
-
-    Do NOT use this tool when:
-    - There is only one obvious option
-    - The user has already specified enough information to proceed
-    - The user clearly wants results for multiple canteens (then continue with all relevant matches)
-    - The question is open-ended and no clear predefined options exist (just ask the user directly via text instead)
     """
     return {"prompt": prompt, "options": options, "allow_none": allow_none}
