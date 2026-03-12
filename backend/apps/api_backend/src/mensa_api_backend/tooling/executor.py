@@ -360,7 +360,15 @@ def _handle_clarification_tool(
     options = args.get("options") if isinstance(args, dict) else None
     if not isinstance(options, list) or len(options) < 1:
         options = []
-    allow_none = args.get("allow_none", True) if isinstance(args, dict) else True
+        
+    allow_none_raw = args.get("allow_none", True) if isinstance(args, dict) else True
+    if isinstance(allow_none_raw, bool):
+        allow_none = allow_none_raw
+    elif isinstance(allow_none_raw, str):
+        allow_none = allow_none_raw.strip().lower() not in {"false", "0", "no", "f", "off"}
+    else:
+        allow_none = True
+        
     logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
     tool_trace.ok = True
     tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
