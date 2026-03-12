@@ -16,6 +16,7 @@
  */
 
 import type { ChatFilters, ChatMessage } from "./chats";
+import i18n from "../i18n";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -167,6 +168,7 @@ export class MensaBotClient {
 		const body: Record<string, unknown> = {
 			messages: payload,
 			include_tool_calls: options.includeToolCalls ?? false,
+			language: i18n.language,
 		};
 
 		if (hasFilters) {
