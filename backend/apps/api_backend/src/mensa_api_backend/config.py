@@ -20,10 +20,6 @@ class APIBackendSettings(BaseSettings):
     llm_max_retries: int = 10
     llm_retry_base_delay: float = 1.0
     llm_retry_max_delay: float = 30.0
-    llm_fallback_response: str = (
-        "I'm sorry, but I wasn't able to provide a satisfactory answer within the allowed number of "
-        "attempts. Please try rephrasing your question or ask something else."
-    )
 
     io_max_concurrency: int = 10
     llm_max_concurrency: int = 10
