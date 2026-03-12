@@ -16,6 +16,7 @@ const CHAT_STORAGE_PREFIX = "chat-";
 const CHAT_INDEX_KEY = "mensabot-chats-index";
 const CHAT_ACTIVE_KEY = "mensabot-active-chat-id";
 const DEFAULT_CHAT_TITLE = "Neuer Chat";
+const ONBOARDING_CHAT_TITLE = "Onboarding";
 const TITLE_MAX_WORDS = 6;
 const TITLE_MAX_CHARS = 42;
 const PREVIEW_MAX_CHARS = 80;
@@ -84,6 +85,9 @@ const deriveTitleFromMessage = (value: string) => {
 	return normalizeTitle(base);
 };
 
+const isMeaningfulUserMessage = (message: Pick<ChatMessageData, "role" | "meta">) =>
+	message.role === "user" && message.meta.kind !== "onboarding";
+
 const buildPreview = (value?: string) => {
 	if (!value) return "";
 	const cleaned = value.replace(/\s+/g, " ").trim();
@@ -140,7 +144,7 @@ export class Chat {
 		const now = Date.now();
 		this.#createdAt = typeof meta?.createdAt === "number" ? meta.createdAt : now;
 		this.#updatedAt = typeof meta?.updatedAt === "number" ? meta.updatedAt : this.#createdAt;
-		this.#hasUserMessage = messages.some((message) => message.role === "user");
+		this.#hasUserMessage = messages.some((message) => isMeaningfulUserMessage(message));
 	}
 
 	get messages() {
@@ -163,6 +167,10 @@ export class Chat {
 		return this.#updatedAt;
 	}
 
+	get hasUserMessage() {
+		return this.#hasUserMessage;
+	}
+
 	persist() {
 		try {
 			localStorage.setItem(`${CHAT_STORAGE_PREFIX}${this.id}`, JSON.stringify(this));
@@ -180,9 +188,16 @@ export class Chat {
 	}
 
 	addMessage(message: ChatMessage) {
-		const shouldAutoTitle = message.role === "user" && !this.#hasUserMessage && this.#title === DEFAULT_CHAT_TITLE;
+		const isMeaningfulUser = isMeaningfulUserMessage(message);
+		const shouldAutoTitle =
+			isMeaningfulUser &&
+			!this.#hasUserMessage &&
+			(this.#title === DEFAULT_CHAT_TITLE || this.#title === ONBOARDING_CHAT_TITLE);
 		this.#messages.push(message);
-		if (message.role === "user") {
+		if (message.meta.kind === "onboarding" && this.#title === DEFAULT_CHAT_TITLE) {
+			this.#title = ONBOARDING_CHAT_TITLE;
+		}
+		if (isMeaningfulUser) {
 			this.#hasUserMessage = true;
 		}
 		if (shouldAutoTitle) {

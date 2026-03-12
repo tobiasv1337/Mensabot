@@ -116,7 +116,6 @@ const ChatPage: React.FC = () => {
 
   const startNewChat = useCallback(
     (options?: { preselectedCanteen?: Canteen | null }) => {
-      const fresh = Chats.create();
       const baseFilters = filters ?? defaultChatFilters;
       const nextFilters: ChatFilters = {
         ...baseFilters,
@@ -124,11 +123,12 @@ const ChatPage: React.FC = () => {
           ? [options.preselectedCanteen]
           : baseFilters.canteens ?? [],
       };
-      fresh.setFilters(nextFilters);
-      activateChat(fresh.id, { menuCanteen: options?.preselectedCanteen ?? null });
+      const targetChat = chat.hasUserMessage ? Chats.create() : chat;
+      targetChat.setFilters(nextFilters);
+      activateChat(targetChat.id, { menuCanteen: options?.preselectedCanteen ?? null });
       navigate(NAV_ROUTES.ChatBot);
     },
-    [filters, activateChat, navigate]
+    [filters, chat, activateChat, navigate]
   );
 
   const handleDeleteAllChats = useCallback(() => {
@@ -157,6 +157,19 @@ const ChatPage: React.FC = () => {
     [startNewChat]
   );
 
+  const handleSidebarNavClick = useCallback(
+    (target: NavItem) => {
+      if (target === "ChatBot") {
+        startNewChat();
+        setDrawerOpen(false);
+        return;
+      }
+
+      setActiveNav(target);
+    },
+    [startNewChat]
+  );
+
   return (
     <S.PageRoot>
       <Header
@@ -177,7 +190,7 @@ const ChatPage: React.FC = () => {
               onCloseDrawer={() => { }}
               navItems={NAV_ITEMS}
               activeNav={activeNav}
-              onNavClick={setActiveNav}
+              onNavClick={handleSidebarNavClick}
               chats={recentChats}
               activeChatId={activeChatId}
               onSelectChat={handleSelectChat}
@@ -219,7 +232,7 @@ const ChatPage: React.FC = () => {
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
             ) : activeNav === "Home" ? (
-              <LandingPage onStartChat={() => navigate(NAV_ROUTES.ChatBot)} />
+              <LandingPage onStartChat={() => startNewChat()} />
             ) : (
               <Chat
                 chat={chat}
@@ -240,7 +253,7 @@ const ChatPage: React.FC = () => {
           onCloseDrawer={() => setDrawerOpen(false)}
           navItems={NAV_ITEMS}
           activeNav={activeNav}
-          onNavClick={setActiveNav}
+          onNavClick={handleSidebarNavClick}
           chats={recentChats}
           activeChatId={activeChatId}
           onSelectChat={handleSelectChat}
