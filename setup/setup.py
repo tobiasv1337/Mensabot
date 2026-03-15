@@ -27,7 +27,7 @@ ENV_FILE = os.path.join(BASE_DIR, ".env")
 ENV_EXAMPLE_FILE = os.path.join(BASE_DIR, ".env.example")
 TLS_CERT_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.crt")
 TLS_KEY_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.key")
-DEV_CERT_SCRIPT = os.path.join(BASE_DIR, "create-dev-cert.sh")
+DEV_CERT_SCRIPT = os.path.join(BASE_DIR, "setup", "create-dev-cert.sh")
 
 def run_cmd(cmd: str, shell: bool = True) -> Tuple[int, str, str]:
     """Runs a shell command and returns the exit code, stdout, and stderr."""
