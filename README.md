@@ -189,7 +189,7 @@ docker compose up --build -d
 
 - App: `https://localhost/`
 - Healthcheck: `https://localhost/api/health`
-- Portainer: `https://localhost/portainer/`
+- Portainer (localhost/private network only): `https://localhost/portainer/`
 
 If you are using the generated self-signed certificate, your browser will show a warning until you trust or replace it.
 
@@ -352,7 +352,7 @@ If both `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` are set, the Nginx container gen
 
 ### Portainer
 
-Portainer is included behind the same Nginx entrypoint and is reachable under `/portainer/`. That is convenient for demos and server operations, but it also means the stack exposes a container management UI. Review whether that fits your deployment model.
+Portainer is included behind the same Nginx entrypoint and is reachable under `/portainer/`, but the reverse proxy now restricts it to localhost plus common private-network ranges by default. That keeps the container management UI off the public internet while still allowing access from the host machine, LAN clients, and typical VPN/CGNAT networks such as Tailscale. If your admin network uses different client IP ranges, adjust the `allow` rules in `nginx/nginx.conf`.
 
 ## Quality and CI
 
