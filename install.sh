@@ -9,6 +9,7 @@ REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
 BRANCH="main"
 PRIMARY_USER="${SUDO_USER:-$(id -un)}"
+CURRENT_USER="$(id -un)"
 
 # Function to print informational messages
 info() {
@@ -30,6 +31,18 @@ run_privileged() {
             sudo "$@"
         else
             error "sudo is required to install dependencies and configure Docker."
+        fi
+    else
+        "$@"
+    fi
+}
+
+run_as_primary_user() {
+    if [ "$EUID" -eq 0 ] && [ "$PRIMARY_USER" != "$CURRENT_USER" ]; then
+        if command -v sudo &> /dev/null; then
+            sudo -H -u "$PRIMARY_USER" "$@"
+        else
+            error "sudo is required to switch back to $PRIMARY_USER for user-owned repository files."
         fi
     else
         "$@"
@@ -90,6 +103,11 @@ else
     cd "$CLONE_DIR"
 fi
 
+if [ "$EUID" -eq 0 ] && [ "$PRIMARY_USER" != "$CURRENT_USER" ]; then
+    info "Ensuring repository files are owned by $PRIMARY_USER..."
+    chown -R "$PRIMARY_USER":"$PRIMARY_USER" "$PWD"
+fi
+
 [ -f setup/requirements.txt ] || error "Expected file setup/requirements.txt not found. Wrong branch or repository layout?"
 [ -f setup/setup.py ] || error "Expected file setup/setup.py not found."
 
@@ -101,56 +119,65 @@ VENV_DIR=".setup-venv"
 SETUP_PYTHON="$PWD/$VENV_DIR/bin/python"
 
 if [ ! -d "$VENV_DIR" ]; then
-    python3 -m venv "$VENV_DIR"
+    run_as_primary_user python3 -m venv "$VENV_DIR"
 fi
 
-"$SETUP_PYTHON" -m pip install --upgrade pip -q
-"$SETUP_PYTHON" -m pip install -r setup/requirements.txt -q
+run_as_primary_user "$SETUP_PYTHON" -m pip install --upgrade pip -q
+run_as_primary_user "$SETUP_PYTHON" -m pip install -r setup/requirements.txt -q
 
 success "Python environment ready."
 
 launch_setup_wizard() {
     if [ -t 0 ] && [ -t 1 ]; then
-        exec "$SETUP_PYTHON" setup/setup.py
+        run_as_primary_user "$SETUP_PYTHON" setup/setup.py
+        exit $?
     fi
 
     if [ -t 1 ] && [ -r /dev/tty ]; then
         info "Reconnecting the Setup Wizard to your terminal..."
-        exec "$SETUP_PYTHON" setup/setup.py < /dev/tty
+        run_as_primary_user "$SETUP_PYTHON" setup/setup.py < /dev/tty
+        exit $?
     fi
 
     error "No interactive terminal is available for the Setup Wizard. Run the installer from a terminal session and try again."
 }
 
+launch_setup_wizard_with_docker_group() {
+    if [ -t 1 ] && [ -r /dev/tty ]; then
+        run_as_primary_user sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py < /dev/tty"
+        exit $?
+    fi
+
+    run_as_primary_user sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py"
+    exit $?
+}
+
 # Launch the interactive setup wizard
 info "Launching Mensabot Setup Wizard..."
-if ! docker info &> /dev/null; then
+if ! run_privileged docker info &> /dev/null; then
     info "Ensuring Docker service is running..."
     if command -v systemctl &> /dev/null; then
         run_privileged systemctl enable --now docker &> /dev/null || true
     fi
 
-    if ! docker info &> /dev/null && command -v service &> /dev/null; then
+    if ! run_privileged docker info &> /dev/null && command -v service &> /dev/null; then
         run_privileged service docker start &> /dev/null || true
     fi
 
-    if ! id -nG "$PRIMARY_USER" 2>/dev/null | grep -qw docker; then
-        info "Granting $PRIMARY_USER access to the Docker socket..."
-        run_privileged usermod -aG docker "$PRIMARY_USER"
-    fi
 fi
 
-if docker info &> /dev/null; then
+if ! run_as_primary_user docker info &> /dev/null && ! id -nG "$PRIMARY_USER" 2>/dev/null | grep -qw docker; then
+    info "Granting $PRIMARY_USER access to the Docker socket..."
+    run_privileged usermod -aG docker "$PRIMARY_USER"
+fi
+
+if run_as_primary_user docker info &> /dev/null; then
     launch_setup_wizard
 fi
 
-if run_privileged docker info &> /dev/null && command -v sg &> /dev/null; then
+if run_privileged docker info &> /dev/null && command -v sg &> /dev/null && id -nG "$PRIMARY_USER" 2>/dev/null | grep -qw docker; then
     info "Refreshing docker group membership for this run..."
-    if [ -t 1 ] && [ -r /dev/tty ]; then
-        exec sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py < /dev/tty"
-    fi
-
-    exec sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py"
+    launch_setup_wizard_with_docker_group
 fi
 
 error "Docker is installed, but this shell cannot access it yet. Open a new shell or run 'newgrp docker' and rerun the installer."

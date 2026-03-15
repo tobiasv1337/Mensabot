@@ -3,16 +3,12 @@
 import os
 import sys
 import subprocess
-import shlex
 from pathlib import Path
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Sequence
 
 try:
-    import rich
     from rich.console import Console
     from rich.panel import Panel
-    from rich.text import Text
-    from rich.markdown import Markdown
     import questionary
     from questionary import Choice
     import dotenv
@@ -22,18 +18,20 @@ except ImportError:
 
 console = Console()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = str(Path(__file__).resolve().parent.parent)
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 ENV_EXAMPLE_FILE = os.path.join(BASE_DIR, ".env.example")
 TLS_CERT_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.crt")
 TLS_KEY_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.key")
 DEV_CERT_SCRIPT = os.path.join(BASE_DIR, "setup", "create-dev-cert.sh")
 
-def run_cmd(cmd: str, shell: bool = True) -> Tuple[int, str, str]:
-    """Runs a shell command and returns the exit code, stdout, and stderr."""
+def run_cmd(cmd: Sequence[str], cwd: str = BASE_DIR) -> Tuple[int, str, str]:
+    """Runs a command and returns the exit code, stdout, and stderr."""
+    if isinstance(cmd, str):
+        raise TypeError("run_cmd expects an argv sequence, not a shell string.")
     process = subprocess.Popen(
-        cmd,
-        shell=shell,
+        list(cmd),
+        cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -42,14 +40,16 @@ def run_cmd(cmd: str, shell: bool = True) -> Tuple[int, str, str]:
     return process.returncode, stdout.strip(), stderr.strip()
 
 
-def run_cmd_live(cmd: str, shell: bool = True) -> int:
-    """Runs a shell command attached to the current terminal for live output."""
-    process = subprocess.Popen(cmd, shell=shell)
+def run_cmd_live(cmd: Sequence[str], cwd: str = BASE_DIR) -> int:
+    """Runs a command attached to the current terminal for live output."""
+    if isinstance(cmd, str):
+        raise TypeError("run_cmd_live expects an argv sequence, not a shell string.")
+    process = subprocess.Popen(list(cmd), cwd=cwd)
     return process.wait()
 
 def check_prerequisites():
     """Checks if Docker and Docker Compose are installed and running."""
-    code, out, err = run_cmd("docker info", shell=True)
+    code, out, err = run_cmd(["docker", "info"])
     if code != 0:
         console.print(Panel("[bold red]Docker is not running or not installed.[/bold red]\nPlease start Docker and try again.", title="Error"))
         details = "\n".join(part for part in (out, err) if part)
@@ -57,7 +57,7 @@ def check_prerequisites():
             console.print(f"[dim]Docker details:[/dim] {details}")
         sys.exit(1)
         
-    code, out, err = run_cmd("docker compose version", shell=True)
+    code, out, err = run_cmd(["docker", "compose", "version"])
     if code != 0:
         console.print(Panel("[bold red]Docker Compose plugin is not installed.[/bold red]\nPlease install it and try again.", title="Error"))
         sys.exit(1)
@@ -72,7 +72,7 @@ def get_deployment_state() -> int:
     if not os.path.exists(ENV_FILE):
         return 1
         
-    code, out, err = run_cmd("docker compose ps --services --filter 'status=running'")
+    code, out, err = run_cmd(["docker", "compose", "ps", "--services", "--filter", "status=running"])
     if code == 0 and out.strip() != "":
         # Some services are running
         return 3
@@ -210,7 +210,7 @@ def ensure_ssl_certificates() -> bool:
     console.print(
         "[yellow]TLS certificate files not found. Generating a local development certificate...[/yellow]"
     )
-    code, out, err = run_cmd(f"sh {shlex.quote(DEV_CERT_SCRIPT)}")
+    code, out, err = run_cmd(["sh", DEV_CERT_SCRIPT])
     if code == 0 and os.path.exists(TLS_CERT_FILE) and os.path.exists(TLS_KEY_FILE):
         return True
 
@@ -319,6 +319,35 @@ def flow_advanced_setup(current_env: Dict, example_env: Dict, example_desc: Dict
     
     def get_default(key: str) -> str:
         return get_config_default(key, current_env, example_env)
+
+    def prompt_secret_value(key: str) -> None:
+        has_current_value = bool(current_env.get(key))
+        if has_current_value:
+            action = questionary.select(
+                f"{key}:",
+                choices=[
+                    Choice("Keep existing value", value="keep"),
+                    Choice("Replace value", value="replace"),
+                    Choice("Clear value", value="clear"),
+                ],
+                default="keep",
+                use_indicator=True,
+            ).ask()
+            if action in (None, "keep"):
+                return
+            if action == "clear":
+                save_env_var(key, "")
+                current_env[key] = ""
+                return
+
+        val = questionary.password(f"{key} (hidden):").ask()
+        if val is None:
+            return
+        if has_current_value and val == "":
+            console.print("[yellow]No new value entered. Keeping the existing value.[/yellow]")
+            return
+        save_env_var(key, val)
+        current_env[key] = val
         
     categories: List = load_env_categories(ENV_EXAMPLE_FILE)
     if not categories:
@@ -339,8 +368,7 @@ def flow_advanced_setup(current_env: Dict, example_env: Dict, example_desc: Dict
                 if desc:
                     console.print(f"\n[dim]{desc}[/dim]")
                 if "API_KEY" in key_str or "PASS" in key_str:
-                    val = questionary.password(f"{key_str} (hidden):").ask()
-                    if val: save_env_var(key_str, val)
+                    prompt_secret_value(key_str)
                 elif "ENABLE" in key_str or "AUTO" in key_str:
                     current_bool = str(get_default(key_str)).lower() == "true"
                     val = questionary.confirm(f"{key_str}?", default=current_bool).ask()
@@ -386,7 +414,7 @@ def action_start():
         pause()
         return
     console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
-    code = run_cmd_live("docker compose up -d --build")
+    code = run_cmd_live(["docker", "compose", "up", "-d", "--build"])
 
     if code == 0:
         console.print("[bold green]Mensabot started successfully![/bold green]")
@@ -400,14 +428,14 @@ def action_restart():
     """Stops and restarts the docker compose stack to apply config changes."""
     console.print("\n[bold cyan]Restarting Mensabot[/bold cyan]")
     with console.status("Stopping current stack...", spinner="dots"):
-        run_cmd("docker compose down")
+        run_cmd(["docker", "compose", "down"])
 
     if not ensure_ssl_certificates():
         pause()
         return
 
     console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
-    code = run_cmd_live("docker compose up -d --build")
+    code = run_cmd_live(["docker", "compose", "up", "-d", "--build"])
 
     if code == 0:
         console.print("[bold green]Mensabot restarted successfully![/bold green]")
@@ -421,9 +449,17 @@ def action_update():
     console.print("\n[bold cyan]Mensabot Update Manager[/bold cyan]")
     
     with console.status("Fetching latest available versions from GitHub...", spinner="dots"):
-        run_cmd("git fetch --tags --all")
-        code_tags, tags, _ = run_cmd("git tag -l --sort=-v:refname")
-        code_branches, branches_raw, _ = run_cmd("git branch -r --sort=-committerdate")
+        code_fetch, fetch_out, fetch_err = run_cmd(["git", "fetch", "--tags", "--all"])
+        code_tags, tags, tags_err = run_cmd(["git", "tag", "-l", "--sort=-v:refname"])
+        code_branches, branches_raw, branches_err = run_cmd(["git", "branch", "-r", "--sort=-committerdate"])
+
+    if code_fetch != 0:
+        console.print("[bold red]Error fetching latest versions from Git.[/bold red]")
+        details = "\n".join(part for part in (fetch_out, fetch_err) if part)
+        if details:
+            console.print(details)
+        pause()
+        return
     
     branch_list = []
     if code_branches == 0:
@@ -450,6 +486,16 @@ def action_update():
     
     if len(choices) <= 1:
         console.print("[red]Could not retrieve versions from Git.[/red]")
+        details = "\n".join(
+            part
+            for part in (
+                tags_err if code_tags != 0 else "",
+                branches_err if code_branches != 0 else "",
+            )
+            if part
+        )
+        if details:
+            console.print(details)
         pause()
         return
 
@@ -461,12 +507,30 @@ def action_update():
     
     if selected_ref == "cancel" or selected_ref is None:
         return
-        
+
+    is_branch = selected_ref in branch_list
+
     with console.status(f"Checking out {selected_ref}...", spinner="dots"):
-        code, out, err = run_cmd(f"git checkout {selected_ref} && git pull")
+        code, out, err = run_cmd(["git", "checkout", selected_ref])
+    if code != 0:
+        console.print("[bold red]Error checking out the selected version.[/bold red]")
+        details = "\n".join(part for part in (out, err) if part)
+        if details:
+            console.print(details)
+        pause()
+        return
+
+    if is_branch:
+        with console.status(f"Pulling latest changes for {selected_ref}...", spinner="dots"):
+            code, out, err = run_cmd(["git", "pull", "--ff-only", "origin", selected_ref])
         if code != 0:
-            run_cmd(f"git checkout {selected_ref}")
-            
+            console.print("[bold red]Error pulling the latest changes for the selected branch.[/bold red]")
+            details = "\n".join(part for part in (out, err) if part)
+            if details:
+                console.print(details)
+            pause()
+            return
+
     console.print(f"[bold green]Successfully switched Mensabot to version: {selected_ref}[/bold green]")
     
     if get_deployment_state() == 3:
@@ -480,7 +544,7 @@ def action_stop():
     """Stops the docker compose stack."""
     console.print("\n[bold cyan]Stopping Mensabot[/bold cyan]")
     with console.status("Stopping current stack...", spinner="dots"):
-        code, out, err = run_cmd("docker compose down")
+        code, out, err = run_cmd(["docker", "compose", "down"])
         
     if code == 0:
         console.print("[bold green]Mensabot stopped successfully.[/bold green]")
