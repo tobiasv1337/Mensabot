@@ -7,7 +7,7 @@ set -e
 
 REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
-BRANCH="feat/devops/further-streamline-deployment"
+BRANCH="main"
 PRIMARY_USER="${SUDO_USER:-$(id -un)}"
 
 # Function to print informational messages
