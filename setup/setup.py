@@ -152,6 +152,46 @@ def get_config_default(key: str, current_env: Dict, example_env: Dict) -> str:
     return ""
 
 
+def reconnect_stdin_to_terminal() -> bool:
+    """Rebind stdin to the controlling terminal when the launcher was piped into bash."""
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        return True
+
+    if not sys.stdout.isatty():
+        return False
+
+    try:
+        tty_in = open("/dev/tty", "r", encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+
+    sys.stdin = tty_in
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def ensure_interactive_terminal():
+    """Abort early with a clear error when the setup wizard has no usable terminal."""
+    if reconnect_stdin_to_terminal():
+        return
+
+    console.print(Panel(
+        "[bold red]The setup wizard requires an interactive terminal.[/bold red]\n\n"
+        "This usually happens when the installer was started without a controlling TTY.\n"
+        "Run it from a normal shell session and try again.",
+        title="Interactive Terminal Required",
+        expand=False
+    ))
+    sys.exit(1)
+
+
+def pause(message: str = "Press Enter to continue..."):
+    """Wait for user acknowledgment without crashing when stdin is unavailable."""
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        questionary.text(message).ask()
+        return
+    console.print(f"[dim]{message}[/dim]")
+
+
 def guide_ssl_certificate():
     """Displays instructions on handling Let's Encrypt SSL certificates."""
     console.print(Panel(
@@ -165,7 +205,7 @@ def guide_ssl_certificate():
         "Mensabot's NGINX is configured to automatically pick up these certificates.",
         expand=False
     ))
-    questionary.text("Press Enter to continue...").ask()
+    pause()
 
 def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict):
     """Walks the user through mandatory and critical fields only."""
@@ -318,7 +358,7 @@ def action_start():
     else:
         console.print("[bold red]Error bringing up the stack:[/bold red]")
         console.print(err)
-    questionary.text("Press Enter to continue...").ask()
+    pause()
 
 def action_restart():
     """Stops and restarts the docker compose stack to apply config changes."""
@@ -334,7 +374,7 @@ def action_restart():
     else:
         console.print("[bold red]Error restarting the stack:[/bold red]")
         console.print(err)
-    questionary.text("Press Enter to continue...").ask()
+    pause()
 
 def action_update():
     """Fetches updates from git, allows version selection, and pulls code."""
@@ -370,7 +410,7 @@ def action_update():
     
     if len(choices) <= 1:
         console.print("[red]Could not retrieve versions from Git.[/red]")
-        questionary.text("Press Enter to continue...").ask()
+        pause()
         return
 
     selected_ref = questionary.select(
@@ -407,7 +447,7 @@ def action_stop():
     else:
         console.print("[bold red]Error stopping the stack:[/bold red]")
         console.print(err)
-    questionary.text("Press Enter to continue...").ask()
+    pause()
 
 def main_menu():
     while True:
@@ -468,5 +508,6 @@ def main_menu():
             sys.exit(0)
 
 if __name__ == "__main__":
+    ensure_interactive_terminal()
     check_prerequisites()
     main_menu()
