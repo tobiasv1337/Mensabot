@@ -8,6 +8,7 @@ set -e
 REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
 BRANCH="feat/devops/further-streamline-deployment"
+PRIMARY_USER="${SUDO_USER:-$(id -un)}"
 
 # Function to print informational messages
 info() {
@@ -21,6 +22,18 @@ success() {
 error() {
     echo -e "\033[1;31m[x]\033[0m $1"
     exit 1
+}
+
+run_privileged() {
+    if [ "$EUID" -ne 0 ]; then
+        if command -v sudo &> /dev/null; then
+            sudo "$@"
+        else
+            error "sudo is required to install dependencies and configure Docker."
+        fi
+    else
+        "$@"
+    fi
 }
 
 # Verify base dependencies exist or attempt to install them via apt
@@ -45,16 +58,8 @@ else
     
     if [ -n "$deps_to_install" ]; then
         info "Installing missing dependencies:$deps_to_install"
-        # we might need sudo
-        if [ "$EUID" -ne 0 ]; then
-             if command -v sudo &> /dev/null; then
-                sudo apt-get update && sudo apt-get install -y $deps_to_install
-             else
-                error "Please run this script as root to install system dependencies."
-             fi
-        else
-             apt-get update && apt-get install -y $deps_to_install
-        fi
+        run_privileged apt-get update
+        run_privileged apt-get install -y $deps_to_install
     fi
 fi
 
@@ -62,15 +67,8 @@ fi
 if ! command -v docker &> /dev/null; then
     info "Docker is not installed. Installing Docker..."
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    run_privileged sh get-docker.sh
     rm get-docker.sh
-    
-    if [ "$EUID" -ne 0 ]; then
-        if command -v sudo &> /dev/null; then
-           sudo usermod -aG docker $USER
-           info "Added $USER to docker group. You might need to log out and back in later."
-        fi
-    fi
     success "Docker installed successfully."
 else
     success "Docker is already installed."
@@ -100,17 +98,42 @@ success "Repository ready."
 # Create a dedicated python virtual environment for the setup tools
 info "Setting up Python environment for the Setup Wizard..."
 VENV_DIR=".setup-venv"
+SETUP_PYTHON="$PWD/$VENV_DIR/bin/python"
 
 if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv "$VENV_DIR"
 fi
 
-source "$VENV_DIR/bin/activate"
-python -m pip install --upgrade pip -q
-python -m pip install -r setup/requirements.txt -q
+"$SETUP_PYTHON" -m pip install --upgrade pip -q
+"$SETUP_PYTHON" -m pip install -r setup/requirements.txt -q
 
 success "Python environment ready."
 
 # Launch the interactive setup wizard
 info "Launching Mensabot Setup Wizard..."
-python setup/setup.py
+if ! docker info &> /dev/null; then
+    info "Ensuring Docker service is running..."
+    if command -v systemctl &> /dev/null; then
+        run_privileged systemctl enable --now docker &> /dev/null || true
+    fi
+
+    if ! docker info &> /dev/null && command -v service &> /dev/null; then
+        run_privileged service docker start &> /dev/null || true
+    fi
+
+    if ! id -nG "$PRIMARY_USER" 2>/dev/null | grep -qw docker; then
+        info "Granting $PRIMARY_USER access to the Docker socket..."
+        run_privileged usermod -aG docker "$PRIMARY_USER"
+    fi
+fi
+
+if docker info &> /dev/null; then
+    exec "$SETUP_PYTHON" setup/setup.py
+fi
+
+if run_privileged docker info &> /dev/null && command -v sg &> /dev/null; then
+    info "Refreshing docker group membership for this run..."
+    exec sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py"
+fi
+
+error "Docker is installed, but this shell cannot access it yet. Open a new shell or run 'newgrp docker' and rerun the installer."
