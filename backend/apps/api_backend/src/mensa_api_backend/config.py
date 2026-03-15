@@ -14,7 +14,6 @@ class APIBackendSettings(BaseSettings):
     llm_base_url: str
     llm_model: str
 
-    llm_supports_tool_messages: bool = False
     log_level: str = "INFO"
     max_llm_iterations: int = 10
     llm_max_retries: int = 10

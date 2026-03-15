@@ -16,7 +16,7 @@ try:
     from questionary import Choice
     import dotenv
 except ImportError:
-    print("Required packages not found. Please install them using: pip install -r setup-requirements.txt")
+    print("Required packages not found. Please install them using: pip install -r setup/requirements.txt")
     sys.exit(1)
 
 console = Console()
@@ -70,13 +70,13 @@ def display_header():
     subprocess.call("clear" if os.name == "posix" else "cls", shell=True)
     console.print(Panel("[bold blue]Mensabot Setup Wizard[/bold blue]\n[dim]Interactive configuration and deployment manager[/dim]", expand=False))
 
-def load_env_defaults(file_path: str) -> dict:
+def load_env_defaults(file_path: str) -> Dict:
     """Loads a .env file into a dictionary for easy default lookups."""
     if not os.path.exists(file_path):
         return {}
     return dotenv.dotenv_values(file_path)
 
-def load_env_descriptions(file_path: str) -> dict:
+def load_env_descriptions(file_path: str) -> Dict:
     """Parses a .env file and extracts the preceding comment block for each variable."""
     descriptions = {}
     if not os.path.exists(file_path):
@@ -100,9 +100,9 @@ def load_env_descriptions(file_path: str) -> dict:
                 current_comment = []
     return descriptions
 
-def load_env_categories(file_path: str) -> List[Dict[str, Any]]:
+def load_env_categories(file_path: str) -> List:
     """Parses a .env file to dynamically extract categories and their associated keys."""
-    categories: List[Dict[str, Any]] = []
+    categories: List = []
     if not os.path.exists(file_path):
         return categories
     
@@ -140,6 +140,15 @@ def save_env_var(key: str, value: str):
     # We must explicitly quote values if they might contain spaces or specials, but python-dotenv handles this mostly.
     dotenv.set_key(ENV_FILE, key, value, quote_mode="always")
 
+def get_config_default(key: str, current_env: Dict, example_env: Dict) -> str:
+    """Safely retrieves a default value, prioritizing existing .env over .env.example."""
+    if key in current_env and current_env[key] is not None:
+        return current_env[key]
+    if key in example_env and example_env[key] is not None:
+        return example_env[key]
+    return ""
+
+
 def guide_ssl_certificate():
     """Displays instructions on handling Let's Encrypt SSL certificates."""
     console.print(Panel(
@@ -155,32 +164,29 @@ def guide_ssl_certificate():
     ))
     questionary.text("Press Enter to continue...").ask()
 
-def flow_express_setup():
+def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict):
     """Walks the user through mandatory and critical fields only."""
     console.print("\n[bold cyan]Express Setup[/bold cyan]")
     console.print("We will configure the most important settings. Other settings will inherit defaults.")
     
-    current_env = load_env_defaults(ENV_FILE)
-    example_env = load_env_defaults(ENV_EXAMPLE_FILE)
-    example_desc = load_env_descriptions(ENV_EXAMPLE_FILE)
-    
-    def get_default(key: str, fallback: str = "") -> str:
-        return current_env.get(key) or example_env.get(key) or fallback
+    def get_default(key: str) -> str:
+        return get_config_default(key, current_env, example_env)
         
     def prompt_with_desc(key: str, prompt_text: str, default_val: str, hide=False) -> str:
-        if key in example_desc:
-            console.print(f"\n[dim]{example_desc[key]}[/dim]")
+        desc = example_desc.get(key, "")
+        if desc:
+            console.print(f"\n[dim]{desc}[/dim]")
         if hide:
             return questionary.password(prompt_text).ask()
         return questionary.text(prompt_text, default=default_val).ask()
 
     # LLM Settings
     console.print("\n[bold]1. LLM Settings[/bold]")
-    llm_base = prompt_with_desc("API_BACKEND_LLM_BASE_URL", "LLM API Base URL:", get_default("API_BACKEND_LLM_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_base = prompt_with_desc("API_BACKEND_LLM_BASE_URL", "LLM API Base URL:", get_default("API_BACKEND_LLM_BASE_URL"))
     if llm_base is None: return
     save_env_var("API_BACKEND_LLM_BASE_URL", llm_base)
     
-    llm_model = prompt_with_desc("API_BACKEND_LLM_MODEL", "LLM Model:", get_default("API_BACKEND_LLM_MODEL", "qwen/qwen-2.5-72b-instruct"))
+    llm_model = prompt_with_desc("API_BACKEND_LLM_MODEL", "LLM Model:", get_default("API_BACKEND_LLM_MODEL"))
     if llm_model is None: return
     save_env_var("API_BACKEND_LLM_MODEL", llm_model)
     
@@ -201,11 +207,12 @@ def flow_express_setup():
     
     # Nginx Auth
     console.print("\n[bold]3. Security[/bold]")
-    if "BASIC_AUTH_USER" in example_desc:
-        console.print(f"\n[dim]{example_desc['BASIC_AUTH_USER']}[/dim]")
+    desc_user = example_desc.get("BASIC_AUTH_USER", "")
+    if desc_user:
+        console.print(f"\n[dim]{desc_user}[/dim]")
     enable_auth = questionary.confirm("Enable Nginx Basic Auth?", default=bool(get_default("BASIC_AUTH_USER"))).ask()
     if enable_auth:
-        user = questionary.text("Username:", default=get_default("BASIC_AUTH_USER", "admin")).ask()
+        user = questionary.text("Username:", default=get_default("BASIC_AUTH_USER")).ask()
         if user is None: return
         pwd = questionary.password("Password:").ask()
         if pwd is None: return
@@ -217,28 +224,27 @@ def flow_express_setup():
         
     # STT Settings
     console.print("\n[bold]4. Voice / STT Settings[/bold]")
-    if "STT_MODEL" in example_desc:
-        console.print(f"\n[dim]{example_desc['STT_MODEL']}[/dim]")
+    desc_stt = example_desc.get("STT_MODEL", "")
+    if desc_stt:
+        console.print(f"\n[dim]{desc_stt}[/dim]")
+    
+    stt_def = get_default("STT_MODEL")
     stt_model = questionary.select(
         "Whisper STT Model Size:",
         choices=["tiny", "base", "small", "medium"],
-        default=get_default("STT_MODEL", "small")
+        default=stt_def if stt_def in ["tiny", "base", "small", "medium"] else "small"
     ).ask()
     if stt_model is None: return
     save_env_var("STT_MODEL", stt_model)
 
-def flow_advanced_setup():
+def flow_advanced_setup(current_env: Dict, example_env: Dict, example_desc: Dict):
     """Walks through categories of settings for deep configuration."""
     console.print("\n[bold cyan]Advanced Setup[/bold cyan]")
     
-    current_env = load_env_defaults(ENV_FILE)
-    example_env = load_env_defaults(ENV_EXAMPLE_FILE)
-    example_desc = load_env_descriptions(ENV_EXAMPLE_FILE)
-    
-    def get_default(key: str, fallback: str = "") -> str:
-        return current_env.get(key) or example_env.get(key) or fallback
+    def get_default(key: str) -> str:
+        return get_config_default(key, current_env, example_env)
         
-    categories = load_env_categories(ENV_EXAMPLE_FILE)
+    categories: List = load_env_categories(ENV_EXAMPLE_FILE)
     if not categories:
         categories = [
             {"name": "Frontend & Map", "keys": ["VITE_API_BASE_URL", "VITE_MAPTILER_STYLE_URL_LIGHT", "VITE_MAPTILER_STYLE_URL_DARK"]},
@@ -253,8 +259,9 @@ def flow_advanced_setup():
             console.print(f"\n[bold]{cat['name']}[/bold]")
             for key in cat["keys"]:
                 key_str = str(key)
-                if key_str in example_desc:
-                    console.print(f"\n[dim]{example_desc[key_str]}[/dim]")
+                desc = example_desc.get(key_str, "")
+                if desc:
+                    console.print(f"\n[dim]{desc}[/dim]")
                 if "API_KEY" in key_str or "PASS" in key_str:
                     val = questionary.password(f"{key_str} (hidden):").ask()
                     if val: save_env_var(key_str, val)
@@ -269,6 +276,11 @@ def flow_advanced_setup():
 def action_configure():
     """Runs the interactive .env configuration flow."""
     console.print("\n[yellow]Starting configuration...[/yellow]")
+    
+    current_env = load_env_defaults(ENV_FILE)
+    example_env = load_env_defaults(ENV_EXAMPLE_FILE)
+    example_desc = load_env_descriptions(ENV_EXAMPLE_FILE)
+    
     mode = questionary.select(
         "Select setup mode:",
         choices=[
@@ -280,10 +292,10 @@ def action_configure():
     ).ask()
     
     if mode == "express":
-        flow_express_setup()
+        flow_express_setup(current_env, example_env, example_desc)
         guide_ssl_certificate()
     elif mode == "advanced":
-        flow_advanced_setup()
+        flow_advanced_setup(current_env, example_env, example_desc)
         guide_ssl_certificate()
     elif mode == "ssl":
         guide_ssl_certificate()
@@ -336,7 +348,7 @@ def action_update():
             b_clean = b.strip()
             if "->" in b_clean or not b_clean: continue
             if b_clean.startswith("origin/"):
-                branch_list.append(b_clean[7:])
+                branch_list.append(b_clean.replace("origin/", "", 1))
             else:
                 branch_list.append(b_clean)
                 
