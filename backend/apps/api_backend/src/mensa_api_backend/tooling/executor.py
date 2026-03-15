@@ -382,26 +382,6 @@ def _handle_clarification_tool(
     )
 
 
-def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[str, Any], lang: str = DEFAULT_LANGUAGE) -> None:
-    if settings.llm_supports_tool_messages:
-        return
-
-    if not (isinstance(result_payload, dict) and "error" in result_payload):
-        messages.append(
-            {
-                "role": "system",
-                "content": get_string("tool_guidance_success", lang),
-            }
-        )
-    else:
-        messages.append(
-            {
-                "role": "system",
-                "content": get_string("tool_guidance_error", lang),
-            }
-        )
-
-
 MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
 
 
@@ -475,7 +455,6 @@ async def _handle_mcp_tool(
     tool_traces.append(tool_trace)
 
     _append_tool_message(messages, call_id, tool_name, result_payload)
-    _append_tool_guidance(messages, result_payload, lang)
 
 
 async def handle_tool_calls(

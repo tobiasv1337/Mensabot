@@ -272,8 +272,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
             _nudge_missing_tool_calls(iteration, messages, lang)
             continue
 
-        if settings.llm_supports_tool_messages:
-            messages.append(sanitize_message(message))
+        messages.append(sanitize_message(message))
 
         logger.info("Number of tool calls: %d", len(tool_calls))
         early_response = await handle_tool_calls(

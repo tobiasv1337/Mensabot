@@ -7,6 +7,7 @@ set -e
 
 REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
+BRANCH="feat/devops/further-streamline-deployment"
 
 # Function to print informational messages
 info() {
@@ -42,7 +43,7 @@ else
         fi
     done
     
-    if [ ! -z "$deps_to_install" ]; then
+    if [ -n "$deps_to_install" ]; then
         info "Installing missing dependencies:$deps_to_install"
         # we might need sudo
         if [ "$EUID" -ne 0 ]; then
@@ -75,18 +76,24 @@ else
     success "Docker is already installed."
 fi
 
-# Clone the Mensabot repository or pull latest if it already exists
-if [ ! -f "setup/setup.py" ] || [ ! -f "docker-compose.yml" ]; then
+# Clone the Mensabot repository or update it if it already exists
+info "Preparing Mensabot repository..."
+if [ -d "$CLONE_DIR/.git" ]; then
+    info "Directory $CLONE_DIR already exists. Updating branch $BRANCH..."
+    cd "$CLONE_DIR"
+    git fetch origin
+    git checkout "$BRANCH"
+    git pull origin "$BRANCH"
+elif [ -d "$CLONE_DIR" ]; then
+    error "Directory $CLONE_DIR exists but is not a git repository. Please remove it or rename it."
+else
     info "Cloning Mensabot repository..."
-    if [ -d "$CLONE_DIR" ]; then
-        info "Directory $CLONE_DIR already exists. Pulling latest changes..."
-        cd "$CLONE_DIR"
-        git pull
-    else
-        git clone "$REPO_URL" "$CLONE_DIR"
-        cd "$CLONE_DIR"
-    fi
+    git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$CLONE_DIR"
+    cd "$CLONE_DIR"
 fi
+
+[ -f setup/requirements.txt ] || error "Expected file setup/requirements.txt not found. Wrong branch or repository layout?"
+[ -f setup/setup.py ] || error "Expected file setup/setup.py not found."
 
 success "Repository ready."
 
@@ -99,8 +106,8 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 
 source "$VENV_DIR/bin/activate"
-pip install --upgrade pip -q
-pip install -r setup/requirements.txt -q
+python -m pip install --upgrade pip -q
+python -m pip install -r setup/requirements.txt -q
 
 success "Python environment ready."
 
