@@ -109,6 +109,19 @@ fi
 
 success "Python environment ready."
 
+launch_setup_wizard() {
+    if [ -t 0 ] && [ -t 1 ]; then
+        exec "$SETUP_PYTHON" setup/setup.py
+    fi
+
+    if [ -t 1 ] && [ -r /dev/tty ]; then
+        info "Reconnecting the Setup Wizard to your terminal..."
+        exec "$SETUP_PYTHON" setup/setup.py < /dev/tty
+    fi
+
+    error "No interactive terminal is available for the Setup Wizard. Run the installer from a terminal session and try again."
+}
+
 # Launch the interactive setup wizard
 info "Launching Mensabot Setup Wizard..."
 if ! docker info &> /dev/null; then
@@ -128,11 +141,15 @@ if ! docker info &> /dev/null; then
 fi
 
 if docker info &> /dev/null; then
-    exec "$SETUP_PYTHON" setup/setup.py
+    launch_setup_wizard
 fi
 
 if run_privileged docker info &> /dev/null && command -v sg &> /dev/null; then
     info "Refreshing docker group membership for this run..."
+    if [ -t 1 ] && [ -r /dev/tty ]; then
+        exec sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py < /dev/tty"
+    fi
+
     exec sg docker -c "cd \"$PWD\" && \"$SETUP_PYTHON\" setup/setup.py"
 fi
 
