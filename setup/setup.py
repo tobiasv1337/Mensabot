@@ -42,6 +42,9 @@ def check_prerequisites():
     code, out, err = run_cmd("docker info", shell=True)
     if code != 0:
         console.print(Panel("[bold red]Docker is not running or not installed.[/bold red]\nPlease start Docker and try again.", title="Error"))
+        details = "\n".join(part for part in (out, err) if part)
+        if details:
+            console.print(f"[dim]Docker details:[/dim] {details}")
         sys.exit(1)
         
     code, out, err = run_cmd("docker compose version", shell=True)
