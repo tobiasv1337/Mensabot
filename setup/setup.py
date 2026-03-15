@@ -41,6 +41,12 @@ def run_cmd(cmd: str, shell: bool = True) -> Tuple[int, str, str]:
     stdout, stderr = process.communicate()
     return process.returncode, stdout.strip(), stderr.strip()
 
+
+def run_cmd_live(cmd: str, shell: bool = True) -> int:
+    """Runs a shell command attached to the current terminal for live output."""
+    process = subprocess.Popen(cmd, shell=shell)
+    return process.wait()
+
 def check_prerequisites():
     """Checks if Docker and Docker Compose are installed and running."""
     code, out, err = run_cmd("docker info", shell=True)
@@ -379,15 +385,15 @@ def action_start():
     if not ensure_ssl_certificates():
         pause()
         return
-    with console.status("Starting Docker Compose stack (this might take a few minutes)...", spinner="dots"):
-        code, out, err = run_cmd("docker compose up -d --build")
-    
+    console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
+    code = run_cmd_live("docker compose up -d --build")
+
     if code == 0:
         console.print("[bold green]Mensabot started successfully![/bold green]")
         console.print("It might take a minute for all services to become fully healthy.")
     else:
         console.print("[bold red]Error bringing up the stack:[/bold red]")
-        console.print(err)
+        console.print("Docker Compose exited with a non-zero status.")
     pause()
 
 def action_restart():
@@ -400,14 +406,14 @@ def action_restart():
         pause()
         return
 
-    with console.status("Starting Docker Compose stack...", spinner="dots"):
-        code, out, err = run_cmd("docker compose up -d --build")
-        
+    console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
+    code = run_cmd_live("docker compose up -d --build")
+
     if code == 0:
         console.print("[bold green]Mensabot restarted successfully![/bold green]")
     else:
         console.print("[bold red]Error restarting the stack:[/bold red]")
-        console.print(err)
+        console.print("Docker Compose exited with a non-zero status.")
     pause()
 
 def action_update():
