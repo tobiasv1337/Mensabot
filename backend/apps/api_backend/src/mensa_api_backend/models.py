@@ -8,9 +8,23 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class CanteenFilter(BaseModel):
+    id: int
+    name: str
+
+
+class UserFilters(BaseModel):
+    diet: Literal["vegetarian", "vegan", "meat"] | None = None
+    allergens: list[str] = []
+    canteens: list[CanteenFilter] = []
+    price_category: Literal["students", "employees", "pupils", "others"] | None = None
+
+
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     include_tool_calls: bool = False
+    filters: UserFilters | None = None
+    language: str | None = None
 
 
 class ToolCallTrace(BaseModel):
@@ -25,12 +39,19 @@ class ToolCallTrace(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    status: Literal["ok", "needs_location", "needs_directions"]
+    status: Literal["ok", "needs_location", "needs_directions", "needs_clarification"]
     reply: str | None = None
     prompt: str | None = None
     lat: float | None = None
     lng: float | None = None
+    options: list[str] | None = None
+    allow_none: bool | None = None
     tool_calls: list[ToolCallTrace] | None = None
+
+
+class TranscribeResponse(BaseModel):
+    text: str
+    duration_s: float | None = None
 
 
 class CanteenOut(BaseModel):

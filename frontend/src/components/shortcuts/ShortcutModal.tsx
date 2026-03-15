@@ -7,6 +7,7 @@ import { normalizeAllergenList } from "../chat/filterData";
 import * as ChatStyles from "../chat/chat.styles";
 import Modal from "../modal/Modal";
 import * as S from "../modal/modal.styles";
+import { useTranslation } from "react-i18next";
 
 type ShortcutModalProps = {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const handleSave = useCallback(() => {
@@ -69,29 +71,29 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
   }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
-  const nameError = hasSubmitted ? "Bitte gib einen Namen für den Shortcut an." : "";
+  const nameError = hasSubmitted ? t('shortcutModal.nameError') : "";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      ariaLabel={mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}
+      ariaLabel={mode === "create" ? t('shortcutModal.createTitle') : t('shortcutModal.editTitle')}
     >
       <S.ModalHeader>
         <div>
-          <S.ModalTitle>{mode === "create" ? "Neuer Shortcut" : "Shortcut bearbeiten"}</S.ModalTitle>
+          <S.ModalTitle>{mode === "create" ? t('shortcutModal.createTitle') : t('shortcutModal.editTitle')}</S.ModalTitle>
           <S.ModalSubtitle>
-            Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.
+            {t('shortcutModal.description')}
           </S.ModalSubtitle>
         </div>
         <S.CloseButton type="button" onClick={handleCancel}>
-          Schließen
+          {t('shortcutModal.close')}
         </S.CloseButton>
       </S.ModalHeader>
 
       <S.ModalBody>
         <S.FieldGrid>
-          <S.FieldLabel htmlFor="shortcut-name">Name</S.FieldLabel>
+          <S.FieldLabel htmlFor="shortcut-name">{t('shortcutModal.name')}</S.FieldLabel>
           <S.TextInput
             id="shortcut-name"
             value={value.name}
@@ -102,13 +104,13 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
                 name: event.target.value,
               });
             }}
-            placeholder="z. B. Mensa Dienstag"
+            placeholder={t('shortcutModal.namePlaceholder')}
             autoFocus
           />
         </S.FieldGrid>
 
         <S.FieldGrid>
-          <S.FieldLabel htmlFor="shortcut-prompt">Prompt</S.FieldLabel>
+          <S.FieldLabel htmlFor="shortcut-prompt">{t('shortcutModal.prompt')}</S.FieldLabel>
           <S.TextArea
             id="shortcut-prompt"
             value={value.prompt}
@@ -119,7 +121,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
                 prompt: event.target.value,
               });
             }}
-            placeholder="Nachricht, die im Chat eingefügt wird"
+            placeholder={t('shortcutModal.promptPlaceholder')}
           />
         </S.FieldGrid>
 
@@ -141,12 +143,12 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
       </S.ModalBody>
 
       <S.ModalFooter>
-        <S.FooterNote>Shortcuts werden lokal im Browser gespeichert.</S.FooterNote>
+        <S.FooterNote>{t('shortcutModal.footerNote')}</S.FooterNote>
         <ChatStyles.ActionButton type="button" $variant="secondary" onClick={handleCancel}>
-          Abbrechen
+          {t('shortcutModal.cancel')}
         </ChatStyles.ActionButton>
         <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleSave}>
-          {mode === "create" ? "Shortcut speichern" : "Änderungen speichern"}
+          {mode === "create" ? t('shortcutModal.saveCreate') : t('shortcutModal.saveEdit')}
         </ChatStyles.ActionButton>
       </S.ModalFooter>
     </Modal>

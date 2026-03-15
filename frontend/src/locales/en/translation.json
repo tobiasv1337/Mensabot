@@ -1,0 +1,412 @@
+{
+    "nav": {
+        "home": "Home",
+        "chatbot": "Chatbot",
+        "canteens": "Canteens",
+        "map": "Map",
+        "projectFacts": "About",
+        "legalNotice": "Legal Notice",
+        "shortcuts": "Shortcuts",
+        "settings": "Settings"
+    },
+    "sidebar": {
+        "navigation": "Navigation",
+        "settingsSection": "Settings",
+        "chats": "Chats",
+        "noChats": "No chats found.",
+        "newChat": "Start new chat",
+        "loadMore": "Load more chats",
+        "theme": "Theme"
+    },
+    "contact": {
+        "eyebrow": "Legal Notice",
+        "title": "Say Hello!",
+        "description": "Have any questions, suggestions, or feedback? We'd love to hear from you. Reach out to us directly via email.",
+        "mail": "stefan.hillmann@tu-berlin.de",
+        "mailButton": "Contact us!",
+        "issueButton": "Report an Issue",
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Your Name",
+            "email": "Email",
+            "emailPlaceholder": "you@example.com",
+            "message": "Message",
+            "messagePlaceholder": "How can we help you?",
+            "submit": "Send Message",
+            "success": "Thank you for your message!"
+        },
+        "impressum": {
+            "eyebrow": "Legal Notice",
+            "title": "Legal Notice",
+            "contact": {
+                "title": "Contact",
+                "name": "MensaBot",
+                "address": "Technische Universität Berlin",
+                "street": "Marchstraße 23",
+                "postalCode": "10587",
+                "city": "Berlin",
+                "email": "sekretariat@qu.tu-berlin.de"
+            },
+            "legal": {
+                "title": "Legal Notice",
+                "copyright": "© 2026 MensaBot. All rights reserved.",
+                "disclaimer": "The content of this website was created with the utmost care. However, no guarantee is assumed for the accuracy, completeness, and timeliness of the content.",
+                "liability": "Liability notice: Despite careful content control, we assume no liability for the content of external links. The respective operators are solely responsible for the content of the linked pages."
+            }
+        }
+    },
+    "projectFacts": {
+        "eyebrow": "Project Insights",
+        "title": "Behind the Bot",
+        "githubButton": "View on GitHub",
+        "facts": {
+            "studentProject": {
+                "title": "Student Project",
+                "description": "Developed by students for students, aiming to improve the campus dining experience."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Built with modern technologies and completely open source for community contributions."
+            },
+            "fastReliable": {
+                "title": "Fast & Reliable",
+                "description": "Optimized for speed to give you the information you need in seconds."
+            }
+        },
+        "statsTitle": "Project Statistics",
+        "imageAlt": "MensaBot Project Visualization",
+        "stats": {
+            "cities": "Cities",
+            "mensen": "Canteens",
+            "stars": "Stars"
+        }
+    },
+    "canteens": {
+        "eyebrow": "Canteen Selection",
+        "title": "Discover Canteens",
+        "subtitle": "Find your canteen, start a new chat and ask directly about menus, opening hours or prices.",
+        "tagSearch": "Quick Search",
+        "tagOpenmensa": "Openmensa",
+        "tagLocations": "1000+ Locations",
+        "statsTotal": "Total Canteens",
+        "statsCities": "Cities",
+        "statsHits": "Results",
+        "searchPlaceholder": "Enter canteen or city",
+        "searchAriaLabel": "Search for canteens",
+        "searching": "Searching...",
+        "search": "Search",
+        "sortRecommended": "Recommended",
+        "sortName": "Name",
+        "sortCity": "City",
+        "sortDistance": "Distance",
+        "searchingFor": "Searching for \"{{query}}\"",
+        "loadingMore": "Loading more ...",
+        "searchResults": "Search Results",
+        "allCanteens": "All Canteens",
+        "found": "found",
+        "emptyTitle": "No canteens found",
+        "emptyBody": "Adjust your search or check if the name is correct.",
+        "selected": "Selected",
+        "startChat": "Start chat",
+        "routeTitle": "Open route in Google Maps",
+        "route": "Route",
+        "error": "Could not load canteens. Please try again."
+    },
+    "map": {
+        "eyebrow": "Map",
+        "title": "Canteens on the Map",
+        "subtitle": "Zoom in to discover locations. Tap on a pin for details and then start a chat with the selected canteen.",
+        "searchPlaceholder": "Enter canteen or city",
+        "searchAriaLabel": "Search for canteens on the map",
+        "searchFor": "Search: \"{{query}}\"",
+        "defaultHint": "Shows canteens in the current map view.",
+        "errorTitle": "MapTiler Configuration Missing",
+        "errorBody": "Please set the environment variables VITE_MAPTILER_STYLE_URL_LIGHT and VITE_MAPTILER_STYLE_URL_DARK (each the complete Style-JSON URL incl. ?key=...).",
+        "errorMissing": "Missing"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "subtitle": "Save frequent queries including filter sets. Shortcuts can be edited and deleted here.",
+        "newShortcut": "New Shortcut",
+        "empty": "You have not saved any shortcuts yet.",
+        "noPrompt": "No prompt set.",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "diet": "Diet",
+        "allergens": "Allergens",
+        "noFilters": "No filters",
+        "canteensCount": "{{count}} Canteens",
+        "deleteTitle": "Delete Shortcut",
+        "deleteSubtitle": "\"{{name}}\" will be permanently deleted. This action cannot be undone.",
+        "deleteSummaryLabel": "Shortcut to be deleted",
+        "deleteNote": "Shortcuts are saved locally in the browser."
+    },
+    "shortcutModal": {
+        "createTitle": "New Shortcut",
+        "editTitle": "Edit Shortcut",
+        "description": "Define name, prompt and filters. The prompt will be inserted into the chat field.",
+        "close": "Close",
+        "name": "Name",
+        "namePlaceholder": "e.g. Canteen Tuesday",
+        "prompt": "Prompt",
+        "promptPlaceholder": "Message that will be inserted in the chat",
+        "footerNote": "Shortcuts are saved locally in the browser.",
+        "cancel": "Cancel",
+        "saveCreate": "Save Shortcut",
+        "saveEdit": "Save Changes",
+        "nameError": "Please enter a name for the shortcut."
+    },
+    "landing": {
+        "hero": {
+            "titleStart": "Your smart",
+            "titleHighlight": "Canteen Assistant",
+            "subtitle": "Instantly find out what's on the menu at your canteen today. Ask MensaBot - fast, simple, and always up to date.",
+            "cta": "Start chatting"
+        },
+        "features": {
+            "title": "Why MensaBot?",
+            "smart": {
+                "title": "Smart Answers",
+                "description": "Ask questions in natural language and get instant, relevant menu suggestions."
+            },
+            "canteens": {
+                "title": "All Canteens at a Glance",
+                "description": "Access over 1,000 canteens across Germany - always up to date."
+            },
+            "fast": {
+                "title": "Lightning Fast & Simple",
+                "description": "No detours: know what's on the menu in seconds."
+            }
+        },
+        "bottom": {
+            "text": "A student project at TU Berlin."
+        }
+    },
+    "chat": {
+        "welcome": "Hello! I'm your MensaBot. How can I help you?\nAsk me about menus, opening hours, or prices.\nOr use /command for quick access.",
+        "resetFilters": "Reset filters",
+        "filterClose": "Close filters",
+        "filterOpen": "Open filters",
+        "filter": "Filter",
+        "newChat": "New Chat",
+        "scrollToLatest": "Scroll to latest",
+        "aiWarning": "AI-generated answers may contain errors.",
+        "nameUser": "You",
+        "nameBot": "MensaBot",
+        "toolCalls": "Tool Calls · {{count}}",
+        "toolRequest": "Request",
+        "toolResult": "Result",
+        "showMenuFor": "Show me the menu for {{name}}{{date}}.",
+        "dateForToday": " for today",
+        "dateFor": " for {{date}}",
+        "menuLoadError": "❌ The menu could not be loaded. Please try again.",
+        "noCanteenFound": "❌ No matching canteen found. Please check the name.",
+        "canteenLoadError": "❌ The canteen could not be loaded. Please try again.",
+        "serverError": "❌ Could not reach the server. Please try again later.",
+        "geoNotSupported": "Your browser does not support location sharing.",
+        "geoFailed": "Could not determine your location. Please enter it manually.",
+        "selfLocationPrompt": "Please enter your location in the text field below so I can find canteens near you.",
+        "shareLocation": "Share current location",
+        "shareLocationLoading": "Requesting location...",
+        "manualLocation": "Enter manually",
+        "openRoute": "Open route",
+        "clarificationNone": "None of these options",
+        "myLocation": "My Location: {{lat}}, {{lon}}",
+        "input": {
+            "placeholder": "Write a message or use / for quick actions",
+            "recording": "Recording... {{seconds}}s / {{max}}s",
+            "transcribing": "Transcribing...",
+            "sending": "Sending...",
+            "send": "Send",
+            "stopRecording": "Stop recording",
+            "startRecording": "Record voice message",
+            "recordingHint": "Recording ({{seconds}}s) – tap to stop",
+            "noSpeechDetected": "No speech detected.",
+            "transcriptionFailed": "Transcription failed.",
+            "audioNotSupported": "Audio recording is not supported by this browser.",
+            "micDenied": "Microphone access denied.",
+            "audioStartFailed": "Audio recording could not be started.",
+            "recordingTooShort": "Recording was too short.",
+            "addShortcut": "Add shortcut",
+            "badgeShortcut": "Shortcut",
+            "badgeDate": "Date",
+            "badgeCanteen": "Canteen",
+            "noResults": "No results"
+        },
+        "command": {
+            "dateLabel": "Date",
+            "shortcutsLabel": "Shortcuts",
+            "canteensLabel": "Canteens",
+            "noShortcutsSaved": "No shortcuts saved yet.",
+            "noMatchingShortcuts": "No matching shortcuts found.",
+            "noShortcutsAvailable": "No shortcuts available.",
+            "typeToSearch": "Type to search for a canteen.",
+            "searching": "Searching...",
+            "noCanteensFound": "No canteens found.",
+            "canteenSearchError": "Could not load canteens.",
+            "today": "Today",
+            "tomorrow": "Tomorrow",
+            "dayAfterTomorrow": "Day after tomorrow"
+        },
+        "describe": {
+            "priceCategory": "Price category: {{value}}",
+            "diet": "Diet: {{value}}",
+            "allergens": "Allergens: {{count}}",
+            "canteens": "Canteens: {{count}}",
+            "savedShortcut": "Saved shortcut"
+        },
+        "filters": {
+            "priceCategory": "Price category",
+            "diet": "Dietary preference",
+            "allergens": "Allergens",
+            "canteen": "Canteen"
+        },
+        "canteenSearch": {
+            "placeholder": "Search canteen",
+            "searching": "Searching...",
+            "loadError": "Error loading",
+            "noResults": "No results",
+            "unknownCity": "Unknown city"
+        },
+        "dietOptions": {
+            "vegetarian": "Vegetarian",
+            "vegan": "Vegan",
+            "meat": "Meat only"
+        },
+        "priceCategoryOptions": {
+            "students": "Student",
+            "employees": "Employee",
+            "pupils": "Pupil",
+            "others": "Guest"
+        },
+        "allergenLabels": {
+            "gluten": "Gluten",
+            "wheat": "Wheat",
+            "rye": "Rye",
+            "barley": "Barley",
+            "oats": "Oats",
+            "spelt": "Spelt",
+            "crustacean": "Crustaceans",
+            "egg": "Eggs",
+            "fish": "Fish",
+            "peanut": "Peanuts",
+            "soy": "Soy",
+            "milk": "Milk",
+            "lactose": "Lactose",
+            "nut": "Tree nuts",
+            "celery": "Celery",
+            "mustard": "Mustard",
+            "sesame": "Sesame",
+            "sulfite": "Sulfites",
+            "lupin": "Lupin",
+            "mollusc": "Molluscs",
+            "alcohol": "Alcohol",
+            "caffeine": "Caffeine",
+            "quinine": "Quinine",
+            "preservative": "Preservatives",
+            "nitrite": "Nitrite curing salt",
+            "antioxidant": "Antioxidants",
+            "colorant": "Colorants",
+            "phosphate": "Phosphates",
+            "sweetener": "Sweeteners",
+            "flavor_enhancer": "Flavor enhancers",
+            "gelatin": "Gelatin",
+            "yeast": "Yeast",
+            "phenylalanine": "Phenylalanine",
+            "laxative": "Laxative"
+        },
+        "menu": {
+            "menuFor": "Menu for **{{date}}**",
+            "otherDishes": "Other dishes",
+            "noMenuPublished": "No menu has been published for this date yet.",
+            "emptyMenu": "No dishes are listed for this date.",
+            "filteredOut": "All dishes were excluded by filters.",
+            "invalidDate": "The date is invalid.",
+            "apiError": "The menu could not be loaded right now.",
+            "noMeals": "No dishes are listed for this date."
+        },
+        "weekdays": {
+            "0": "Sunday",
+            "1": "Monday",
+            "2": "Tuesday",
+            "3": "Wednesday",
+            "4": "Thursday",
+            "5": "Friday",
+            "6": "Saturday"
+        },
+        "onboarding": {
+            "welcome": "Hi! 👋 I'm **MensaBot** - your smart canteen assistant.",
+            "dataNotice": "MensaBot is a **university research project**. User data may be collected and logged for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
+            "dataAccept": "Understood & Accept",
+            "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
+            "priceCategoryNo": "Skip",
+            "priceCategorySelected": "Price category: **{{category}}**",
+            "noPriceCategorySelected": "No price category selected.",
+            "dietQuestion": "Do you have a **dietary preference** I should consider?",
+            "dietYes": "Yes",
+            "dietNo": "No preference",
+            "dietSelect": "What is your **dietary preference**?",
+            "allergyQuestion": "Do you have any **allergies** I should consider when filtering?",
+            "allergyYes": "Yes",
+            "allergyNo": "No allergies",
+            "allergySelect": "Select your **allergens**:",
+            "allergyConfirm": "Confirm selection",
+            "hints": "💡 **Tip:** You can adjust your filters anytime using the **\"Filter\"** button at the top. You can also create **Shortcuts** for your typical queries.",
+            "hintsOk": "OK",
+            "inputDisabled": "Please complete the onboarding first",
+            "filterDisclaimer": "⚠️ **Important:** Filtering by diet type and **allergens** is **not fully supported** by most canteen data sources. We **cannot guarantee** the correctness of the filtering. Please treat the results only as **pre-filtering** and never rely 100% on the generated responses.",
+            "filterDisclaimerAccept": "Understood",
+            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices.",
+            "dietSelected": "Dietary preference: **{{diet}}**",
+            "allergensSelected": "Allergens: **{{allergens}}**",
+            "noDietSelected": "No dietary preference selected.",
+            "noAllergensSelected": "No allergens selected."
+        }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Settings",
+            "subtitle": "Manage your app settings and saved data."
+        },
+        "data": {
+            "title": "Data & Storage",
+            "subtitle": "Manage your local chat data and the introduction wizard.",
+            "deleteChats": {
+                "label": "Delete chat history",
+                "description": "Permanently removes all saved chats from your browser.",
+                "button": "Delete all chats",
+                "note": "Chats are saved locally in the browser."
+            }
+        },
+        "onboarding": {
+            "title": "Onboarding",
+            "subtitle": "Manage the introduction wizard.",
+            "restart": {
+                "label": "Restart onboarding",
+                "description": "Restarts the introduction wizard in the next new chat.",
+                "button": "Reset onboarding"
+            }
+        },
+        "language": {
+            "title": "Language",
+            "label": "Choose the language of the site.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Delete all chats",
+            "subtitle": "This will permanently remove all chat histories. This action cannot be undone.",
+            "summaryLabel": "Data to be deleted",
+            "summaryValue": "All chats",
+            "note": "Chats are saved locally in the browser.",
+            "confirm": "Delete",
+            "cancel": "Cancel"
+        }
+    }
+}

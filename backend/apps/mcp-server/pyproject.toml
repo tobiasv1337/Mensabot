@@ -14,7 +14,9 @@ requires-python = ">=3.11"
 dependencies = [
     "fastmcp>=2.14.4",
     "anyio>=4.12.1",
+    "httpx>=0.28.1",
     "openmensa-sdk",
+    "pydantic>=2.12.5",
 ]
 
 [project.scripts]

@@ -1,17 +1,22 @@
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
-import type { NavItem } from "../types/navigation";
+import { NAV_ROUTES, navItemFromPath, type NavItem } from "../types/navigation";
 import * as S from "./Chatpage.styles";
 import Chat from "../components/chat/Chat.tsx";
 import CanteensPage from "./CanteensPage";
 import ShortcutsPage from "./ShortcutsPage";
+import ProjectFactsPage from "./ProjectFactsPage";
 import SettingsPage from "./SettingsPage";
+import MapPage from "./MapPage";
+import ContactPage from "./ContactPage";
+import LandingPage from "./LandingPage";
 import type { Canteen } from "../services/api";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "About", "Contact"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const CHAT_PAGE_SIZE = 10;
 
 const resolveInitialChatId = () => {
@@ -23,10 +28,23 @@ const resolveInitialChatId = () => {
 };
 
 const ChatPage: React.FC = () => {
-  const [activeNav, setActiveNav] = useState<NavItem>(NAV_ITEMS[0]);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeNavMatch = navItemFromPath(location.pathname);
+  const activeNav = activeNavMatch ?? "Home";
+  const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
+
+  useEffect(() => {
+    if (!activeNavMatch) {
+      navigate(NAV_ROUTES.Home, { replace: true });
+    } else if (location.pathname !== "/" && location.pathname.endsWith("/")) {
+      navigate(location.pathname.slice(0, -1), { replace: true });
+    }
+  }, [activeNavMatch, location.pathname, navigate]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const isChatView = activeNav === "ChatBot" || activeNav === "Home";
+  const isChatView = activeNav === "ChatBot";
 
   const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
 
@@ -37,13 +55,6 @@ const ChatPage: React.FC = () => {
     return Chats.getById(activeChatId, true)!;
   });
 
-  // Handle lazy creation of the initial chat to avoid side-effects in render
-  useEffect(() => {
-    if (activeChatId === "init_pending") {
-      const fresh = Chats.create();
-      setTimeout(() => setActiveChatId(fresh.id), 0);
-    }
-  }, [activeChatId]);
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
 
@@ -75,6 +86,16 @@ const ChatPage: React.FC = () => {
     setMenuCanteen(options?.menuCanteen ?? null);
   }, []);
 
+  // Handle lazy creation of the initial chat to avoid side-effects in render
+  const initDoneRef = useRef(false);
+  useEffect(() => {
+    if (activeChatId === "init_pending" && !initDoneRef.current) {
+      initDoneRef.current = true;
+      const fresh = Chats.create();
+      activateChat(fresh.id);
+    }
+  }, [activeChatId, activateChat]);
+
   useEffect(() => {
     Chats.setActiveId(activeChatId);
   }, [chat, activeChatId]);
@@ -95,7 +116,6 @@ const ChatPage: React.FC = () => {
 
   const startNewChat = useCallback(
     (options?: { preselectedCanteen?: Canteen | null }) => {
-      const fresh = Chats.create();
       const baseFilters = filters ?? defaultChatFilters;
       const nextFilters: ChatFilters = {
         ...baseFilters,
@@ -103,11 +123,12 @@ const ChatPage: React.FC = () => {
           ? [options.preselectedCanteen]
           : baseFilters.canteens ?? [],
       };
-      fresh.setFilters(nextFilters);
-      activateChat(fresh.id, { menuCanteen: options?.preselectedCanteen ?? null });
-      setActiveNav("ChatBot");
+      const targetChat = (chat.hasUserMessage || chat.id === "init_pending") ? Chats.create() : chat;
+      targetChat.setFilters(nextFilters);
+      activateChat(targetChat.id, { menuCanteen: options?.preselectedCanteen ?? null });
+      navigate(NAV_ROUTES.ChatBot);
     },
-    [filters, activateChat]
+    [filters, chat, activateChat, navigate]
   );
 
   const handleDeleteAllChats = useCallback(() => {
@@ -115,9 +136,9 @@ const ChatPage: React.FC = () => {
     const fresh = Chats.create();
     setChatPages(1);
     activateChat(fresh.id);
-    setActiveNav("ChatBot");
+    navigate(NAV_ROUTES.ChatBot);
     setDrawerOpen(false);
-  }, [activateChat]);
+  }, [activateChat, navigate]);
 
   const handleSelectChat = useCallback(
     (id: string) => {
@@ -125,16 +146,28 @@ const ChatPage: React.FC = () => {
       setActiveNav("ChatBot");
       setDrawerOpen(false);
     },
-    [activateChat]
+    [activateChat, setActiveNav]
   );
 
   const handleSelectCanteen = useCallback(
     (canteen: Canteen) => {
       startNewChat({ preselectedCanteen: canteen });
-      setActiveNav("ChatBot");
       setDrawerOpen(false);
     },
     [startNewChat]
+  );
+
+  const handleSidebarNavClick = useCallback(
+    (target: NavItem) => {
+      if (target === "ChatBot") {
+        startNewChat();
+        setDrawerOpen(false);
+        return;
+      }
+
+      setActiveNav(target);
+    },
+    [startNewChat, setActiveNav]
   );
 
   return (
@@ -157,7 +190,7 @@ const ChatPage: React.FC = () => {
               onCloseDrawer={() => { }}
               navItems={NAV_ITEMS}
               activeNav={activeNav}
-              onNavClick={setActiveNav}
+              onNavClick={handleSidebarNavClick}
               chats={recentChats}
               activeChatId={activeChatId}
               onSelectChat={handleSelectChat}
@@ -167,12 +200,16 @@ const ChatPage: React.FC = () => {
             />
           </S.SidebarSlot>
 
-          <S.Content $chat={isChatView}>
+          <S.Content $chat={isChatView} $flush={activeNav === "Home"}>
             {activeNav === "Canteens" ? (
               <CanteensPage
                 onSelectCanteen={handleSelectCanteen}
                 selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
               />
+            ) : activeNav === "ProjectFacts" ? (
+              <ProjectFactsPage />
+            ) : activeNav === "LegalNotice" ? (
+              <ContactPage />
             ) : activeNav === "Shortcuts" ? (
               <ShortcutsPage
                 shortcuts={shortcuts}
@@ -181,7 +218,21 @@ const ChatPage: React.FC = () => {
                 onDeleteShortcut={deleteShortcut}
               />
             ) : activeNav === "Settings" ? (
-              <SettingsPage onDeleteAllChats={handleDeleteAllChats} />
+              <SettingsPage
+                onDeleteAllChats={handleDeleteAllChats}
+                onResetOnboarding={() => {
+                  const fresh = Chats.create();
+                  activateChat(fresh.id);
+                  navigate(NAV_ROUTES.ChatBot);
+                }}
+              />
+            ) : activeNav === "Map" ? (
+              <MapPage
+                onSelectCanteen={handleSelectCanteen}
+                selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
+              />
+            ) : activeNav === "Home" ? (
+              <LandingPage onStartChat={() => startNewChat()} />
             ) : (
               <Chat
                 chat={chat}
@@ -202,7 +253,7 @@ const ChatPage: React.FC = () => {
           onCloseDrawer={() => setDrawerOpen(false)}
           navItems={NAV_ITEMS}
           activeNav={activeNav}
-          onNavClick={setActiveNav}
+          onNavClick={handleSidebarNavClick}
           chats={recentChats}
           activeChatId={activeChatId}
           onSelectChat={handleSelectChat}

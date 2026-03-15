@@ -1,0 +1,412 @@
+{
+    "nav": {
+        "home": "Home",
+        "chatbot": "Chatbot",
+        "canteens": "Mensen",
+        "map": "Karte",
+        "projectFacts": "Über uns/Fakten",
+        "legalNotice": "Impressum",
+        "shortcuts": "Shortcuts",
+        "settings": "Einstellungen"
+    },
+    "sidebar": {
+        "navigation": "Navigation",
+        "settingsSection": "Einstellungen",
+        "chats": "Chats",
+        "noChats": "Keine Chats gefunden.",
+        "newChat": "Neuen Chat starten",
+        "loadMore": "Mehr Chats laden",
+        "theme": "Theme"
+    },
+    "contact": {
+        "eyebrow": "Impressum",
+        "title": "Sag Hallo!",
+        "description": "Hast du Fragen, Vorschläge oder Feedback? Wir würden uns freuen von dir zu hören. Kontaktiere uns direkt per E-Mail.",
+        "mail": "stefan.hillmann@tu-berlin.de",
+        "mailButton": "Kontaktiere uns!",
+        "issueButton": "Problem melden",
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Dein Name",
+            "email": "E-Mail",
+            "emailPlaceholder": "du@beispiel.de",
+            "message": "Nachricht",
+            "messagePlaceholder": "Wie können wir dir helfen?",
+            "submit": "Nachricht Senden",
+            "success": "Danke für deine Nachricht!"
+        },
+        "impressum": {
+            "eyebrow": "Impressum",
+            "title": "Impressum",
+            "contact": {
+                "title": "Kontakt",
+                "name": "MensaBot",
+                "address": "Technische Universität Berlin",
+                "street": "Marchstraße 23",
+                "postalCode": "10587",
+                "city": "Berlin",
+                "email": "sekretariat@qu.tu-berlin.de"
+            },
+            "legal": {
+                "title": "Rechtliche Hinweise",
+                "copyright": "© 2026 MensaBot. Alle Rechte vorbehalten.",
+                "disclaimer": "Die Inhalte dieser Website wurden mit größtmöglicher Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte wird jedoch keine Gewähr übernommen.",
+                "liability": "Haftungshinweis: Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich."
+            }
+        }
+    },
+    "projectFacts": {
+        "eyebrow": "Projekt Einblicke",
+        "title": "Hinter dem Bot",
+        "githubButton": "Auf GitHub ansehen",
+        "facts": {
+            "studentProject": {
+                "title": "Studentenprojekt",
+                "description": "Von Studenten für Studenten entwickelt, um das Mensa-Erlebnis zu verbessern."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Nutzt den MCP Standard, um präzise und hilfreiche Antworten zu Mensa-Menüs zu geben."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Mit modernen Technologien erstellt und komplett Open Source für Community-Beiträge."
+            },
+            "fastReliable": {
+                "title": "Schnell & Zuverlässig",
+                "description": "Optimiert für Geschwindigkeit, damit du die Informationen in Sekunden erhältst."
+            }
+        },
+        "imageAlt": "MensaBot Projekt Visualisierung",
+        "statsTitle": "Projekt Statistiken",
+        "stats": {
+            "cities": "Städte",
+            "mensen": "Mensen",
+            "stars": "Sterne"
+        }
+    },
+    "canteens": {
+        "eyebrow": "Mensa Auswahl",
+        "title": "Mensen entdecken",
+        "subtitle": "Finde deine Mensa, starte einen neuen Chat und frage direkt nach Speiseplänen, Öffnungszeiten oder Preisen.",
+        "tagSearch": "Schnelle Suche",
+        "tagOpenmensa": "Openmensa",
+        "tagLocations": "1000+ Standorte",
+        "statsTotal": "Mensen Gesamt",
+        "statsCities": "Städte",
+        "statsHits": "Treffer",
+        "searchPlaceholder": "Mensa oder Stadt eingeben",
+        "searchAriaLabel": "Suche nach Mensen",
+        "searching": "Suche...",
+        "search": "Suchen",
+        "sortRecommended": "Empfohlen",
+        "sortName": "Name",
+        "sortCity": "Stadt",
+        "sortDistance": "Entfernung",
+        "searchingFor": "Suche nach \"{{query}}\"",
+        "loadingMore": "Lädt mehr ...",
+        "searchResults": "Suchergebnisse",
+        "allCanteens": "Alle Mensen",
+        "found": "gefunden",
+        "emptyTitle": "Keine Mensen gefunden",
+        "emptyBody": "Passe deine Suche an oder prüfe, ob der Name korrekt ist.",
+        "selected": "Ausgewählt",
+        "startChat": "Chat starten",
+        "routeTitle": "Route in Google Maps öffnen",
+        "route": "Route",
+        "error": "Mensen konnten nicht geladen werden. Bitte versuche es erneut."
+    },
+    "map": {
+        "eyebrow": "Karte",
+        "title": "Mensen auf der Karte",
+        "subtitle": "Zoome rein, um Standorte zu entdecken. Tippe auf einen Pin für Details und starte anschließend einen Chat mit der ausgewählten Mensa.",
+        "searchPlaceholder": "Mensa oder Stadt eingeben",
+        "searchAriaLabel": "Suche nach Mensen auf der Karte",
+        "searchFor": "Suche: \"{{query}}\"",
+        "defaultHint": "Zeigt Mensen im aktuellen Kartenausschnitt.",
+        "errorTitle": "MapTiler Konfiguration fehlt",
+        "errorBody": "Bitte setze die Umgebungsvariablen VITE_MAPTILER_STYLE_URL_LIGHT und VITE_MAPTILER_STYLE_URL_DARK (jeweils die komplette Style-JSON URL inkl. ?key=...).",
+        "errorMissing": "Fehlend"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "subtitle": "Speichere häufige Anfragen inklusive Filtersätze. Shortcuts lassen sich hier bearbeiten und löschen.",
+        "newShortcut": "Neuer Shortcut",
+        "empty": "Du hast noch keine Shortcuts gespeichert.",
+        "noPrompt": "Kein Prompt hinterlegt.",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "cancel": "Abbrechen",
+        "diet": "Ernährung",
+        "allergens": "Allergene",
+        "noFilters": "Keine Filter",
+        "canteensCount": "{{count}} Mensen",
+        "deleteTitle": "Shortcut löschen",
+        "deleteSubtitle": "\"{{name}}\" wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "deleteSummaryLabel": "Zu löschender Shortcut",
+        "deleteNote": "Shortcuts werden lokal im Browser gespeichert."
+    },
+    "shortcutModal": {
+        "createTitle": "Neuer Shortcut",
+        "editTitle": "Shortcut bearbeiten",
+        "description": "Name, Prompt und Filter definieren. Der Prompt wird ins Chatfeld eingesetzt.",
+        "close": "Schließen",
+        "name": "Name",
+        "namePlaceholder": "z. B. Mensa Dienstag",
+        "prompt": "Prompt",
+        "promptPlaceholder": "Nachricht, die im Chat eingefügt wird",
+        "footerNote": "Shortcuts werden lokal im Browser gespeichert.",
+        "cancel": "Abbrechen",
+        "saveCreate": "Shortcut speichern",
+        "saveEdit": "Änderungen speichern",
+        "nameError": "Bitte gib einen Namen für den Shortcut an."
+    },
+    "landing": {
+        "hero": {
+            "titleStart": "Dein smarter",
+            "titleHighlight": "Mensa-Assistent",
+            "subtitle": "Finde sofort heraus, was es heute in deiner Mensa gibt. Frag den MensaBot - schnell, einfach und immer aktuell.",
+            "cta": "Jetzt chatten"
+        },
+        "features": {
+            "title": "Warum MensaBot?",
+            "smart": {
+                "title": "Intelligente Antworten",
+                "description": "Stell Fragen in natürlicher Sprache und erhalte sofort passende Menü-Vorschläge."
+            },
+            "canteens": {
+                "title": "Alle Mensen im Blick",
+                "description": "Zugriff auf über 1.000 Mensen in ganz Deutschland - immer tagesaktuell."
+            },
+            "fast": {
+                "title": "Blitzschnell & Einfach",
+                "description": "Keine Umwege: In Sekunden weißt du, was auf dem Speiseplan steht."
+            }
+        },
+        "bottom": {
+            "text": "Ein Studentenprojekt der TU Berlin."
+        }
+    },
+    "chat": {
+        "welcome": "Hallo! Ich bin dein Mensabot. Wie kann ich dir helfen?\nFrag mich nach Speiseplänen, Öffnungszeiten oder Preisen.\nOder nutze /command für Schnellzugriffe.",
+        "resetFilters": "Filter zurücksetzen",
+        "filterClose": "Filter schließen",
+        "filterOpen": "Filter öffnen",
+        "filter": "Filter",
+        "newChat": "Neuer Chat",
+        "scrollToLatest": "Zum neuesten",
+        "aiWarning": "KI-generierte Antworten können Fehler enthalten.",
+        "nameUser": "Du",
+        "nameBot": "Mensabot",
+        "toolCalls": "Tool-Aufrufe · {{count}}",
+        "toolRequest": "Request",
+        "toolResult": "Result",
+        "showMenuFor": "Zeige mir den Speiseplan der Mensa {{name}}{{date}}.",
+        "dateForToday": " für heute",
+        "dateFor": " für {{date}}",
+        "menuLoadError": "❌ Der Speiseplan konnte nicht geladen werden. Bitte versuche es erneut.",
+        "noCanteenFound": "❌ Keine passende Mensa gefunden. Bitte prüfe den Namen.",
+        "canteenLoadError": "❌ Mensa konnte nicht geladen werden. Bitte versuche es erneut.",
+        "serverError": "❌ Server konnte nicht erreicht werden. Bitte versuche es später erneut.",
+        "geoNotSupported": "Dein Browser unterstützt keine Standortfreigabe.",
+        "geoFailed": "Standort konnte nicht abgefragt werden. Bitte gib ihn manuell ein.",
+        "selfLocationPrompt": "Bitte gib deinen Standort unten ins Textfeld ein, damit ich passende Mensen in deiner Nähe finden kann.",
+        "shareLocation": "Aktuellen Standort teilen",
+        "shareLocationLoading": "Frage Standort ab...",
+        "manualLocation": "Manuell eingeben",
+        "openRoute": "Route öffnen",
+        "clarificationNone": "Keine dieser Optionen",
+        "myLocation": "Mein Standort: {{lat}}, {{lon}}",
+        "input": {
+            "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
+            "recording": "Aufnahme läuft... {{seconds}}s / {{max}}s",
+            "transcribing": "Transkription läuft...",
+            "sending": "Senden...",
+            "send": "Senden",
+            "stopRecording": "Aufnahme stoppen",
+            "startRecording": "Sprachnachricht aufnehmen",
+            "recordingHint": "Aufnahme läuft ({{seconds}}s) – tippe zum Stoppen",
+            "noSpeechDetected": "Keine Sprache erkannt.",
+            "transcriptionFailed": "Transkription fehlgeschlagen.",
+            "audioNotSupported": "Audioaufnahme wird von diesem Browser nicht unterstützt.",
+            "micDenied": "Mikrofon-Zugriff verweigert.",
+            "audioStartFailed": "Audioaufnahme konnte nicht gestartet werden.",
+            "recordingTooShort": "Aufnahme war zu kurz.",
+            "addShortcut": "Shortcut hinzufügen",
+            "badgeShortcut": "Shortcut",
+            "badgeDate": "Datum",
+            "badgeCanteen": "Mensa",
+            "noResults": "Keine Treffer"
+        },
+        "command": {
+            "dateLabel": "Datum",
+            "shortcutsLabel": "Shortcuts",
+            "canteensLabel": "Mensen",
+            "noShortcutsSaved": "Noch keine Shortcuts gespeichert.",
+            "noMatchingShortcuts": "Keine passenden Shortcuts gefunden.",
+            "noShortcutsAvailable": "Keine Shortcuts verfügbar.",
+            "typeToSearch": "Tippe, um eine Mensa zu suchen.",
+            "searching": "Suche läuft...",
+            "noCanteensFound": "Keine Mensen gefunden.",
+            "canteenSearchError": "Mensen konnten nicht geladen werden.",
+            "today": "Heute",
+            "tomorrow": "Morgen",
+            "dayAfterTomorrow": "Übermorgen"
+        },
+        "describe": {
+            "priceCategory": "Preiskategorie: {{value}}",
+            "diet": "Ernährung: {{value}}",
+            "allergens": "Allergene: {{count}}",
+            "canteens": "Mensen: {{count}}",
+            "savedShortcut": "Gespeicherter Shortcut"
+        },
+        "filters": {
+            "priceCategory": "Preiskategorie",
+            "diet": "Ernährungsweise",
+            "allergens": "Allergene",
+            "canteen": "Mensa"
+        },
+        "canteenSearch": {
+            "placeholder": "Mensa suchen",
+            "searching": "Suche läuft...",
+            "loadError": "Fehler beim Laden",
+            "noResults": "Keine Treffer",
+            "unknownCity": "Unbekannte Stadt"
+        },
+        "dietOptions": {
+            "vegetarian": "Vegetarisch",
+            "vegan": "Vegan",
+            "meat": "Nur mit Fleisch"
+        },
+        "priceCategoryOptions": {
+            "students": "Student",
+            "employees": "Mitarbeiter",
+            "pupils": "Schüler",
+            "others": "Gast"
+        },
+        "allergenLabels": {
+            "gluten": "Gluten",
+            "wheat": "Weizen",
+            "rye": "Roggen",
+            "barley": "Gerste",
+            "oats": "Hafer",
+            "spelt": "Dinkel",
+            "crustacean": "Krebstiere",
+            "egg": "Eier",
+            "fish": "Fisch",
+            "peanut": "Erdnüsse",
+            "soy": "Soja",
+            "milk": "Milch",
+            "lactose": "Laktose",
+            "nut": "Schalenfrüchte",
+            "celery": "Sellerie",
+            "mustard": "Senf",
+            "sesame": "Sesam",
+            "sulfite": "Schwefeldioxid",
+            "lupin": "Lupinen",
+            "mollusc": "Weichtiere",
+            "alcohol": "Alkohol",
+            "caffeine": "Koffein",
+            "quinine": "Chinin",
+            "preservative": "Konservierungsstoffe",
+            "nitrite": "Nitritpökelsalz",
+            "antioxidant": "Antioxidationsmittel",
+            "colorant": "Farbstoffe",
+            "phosphate": "Phosphate",
+            "sweetener": "Süßungsmittel",
+            "flavor_enhancer": "Geschmacksverstärker",
+            "gelatin": "Gelatine",
+            "yeast": "Hefe",
+            "phenylalanine": "Phenylalanin",
+            "laxative": "Abführend"
+        },
+        "menu": {
+            "menuFor": "Speiseplan für **{{date}}**",
+            "otherDishes": "Weitere Gerichte",
+            "noMenuPublished": "Für dieses Datum ist noch kein Speiseplan veröffentlicht.",
+            "emptyMenu": "Für dieses Datum sind keine Gerichte eingetragen.",
+            "filteredOut": "Alle Gerichte wurden durch Filter ausgeschlossen.",
+            "invalidDate": "Das Datum ist ungültig.",
+            "apiError": "Der Speiseplan konnte gerade nicht geladen werden.",
+            "noMeals": "Für dieses Datum sind keine Gerichte eingetragen."
+        },
+        "weekdays": {
+            "0": "Sonntag",
+            "1": "Montag",
+            "2": "Dienstag",
+            "3": "Mittwoch",
+            "4": "Donnerstag",
+            "5": "Freitag",
+            "6": "Samstag"
+        },
+        "onboarding": {
+            "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
+            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
+            "dataAccept": "Verstanden & Akzeptieren",
+            "priceCategorySelect": "Bist du **Student**, **Mitarbeiter**, **Schüler** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
+            "priceCategoryNo": "Überspringen",
+            "priceCategorySelected": "Preiskategorie: **{{category}}**",
+            "noPriceCategorySelected": "Keine Preiskategorie ausgewählt.",
+            "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
+            "dietYes": "Ja",
+            "dietNo": "Nein, keine Präferenz",
+            "dietSelect": "Welche **Essenspräferenz** hast du?",
+            "allergyQuestion": "Hast du **Allergien**, die ich beim Filtern berücksichtigen soll?",
+            "allergyYes": "Ja",
+            "allergyNo": "Nein, keine Allergien",
+            "allergySelect": "Wähle deine **Allergene** aus:",
+            "allergyConfirm": "Auswahl bestätigen",
+            "hints": "💡 **Tipp:** Du kannst deine Filter jederzeit oben mit dem **\"Filter\"**-Button anpassen. Außerdem kannst du **Shortcuts** für deine typischen Anfragen anlegen.",
+            "hintsOk": "OK",
+            "inputDisabled": "Bitte schließe zuerst das Onboarding ab",
+            "filterDisclaimer": "⚠️ **Wichtig:** Das Filtern nach Ernährungsweise und **Allergenen** wird von den meisten Mensen **nicht vollständig** über die Datenquelle unterstützt. Wir können daher **keine Garantie** für die Korrektheit der Filterung übernehmen. Bitte betrachte die Ergebnisse nur als **Vorfilterung** und verlasse dich niemals zu 100% auf die generierten Antworten.",
+            "filterDisclaimerAccept": "Verstanden",
+            "complete": "Super, du bist startklar! 🎉 Frag mich nach Speiseplänen, Öffnungszeiten oder Preisen.",
+            "dietSelected": "Essenspräferenz: **{{diet}}**",
+            "allergensSelected": "Allergene: **{{allergens}}**",
+            "noDietSelected": "Keine Essenspräferenz ausgewählt.",
+            "noAllergensSelected": "Keine Allergene ausgewählt."
+        }
+    },
+    "settings": {
+        "header": {
+            "eyebrow": "System",
+            "title": "Einstellungen",
+            "subtitle": "Verwalte deine App-Einstellungen und gespeicherten Daten."
+        },
+        "data": {
+            "title": "Daten & Speicher",
+            "subtitle": "Verwalte deine lokalen Chatdaten und den Einführungsassistenten.",
+            "deleteChats": {
+                "label": "Chat-Verlauf löschen",
+                "description": "Entfernt alle gespeicherten Chats dauerhaft aus deinem Browser.",
+                "button": "Alle Chats löschen",
+                "note": "Chats werden lokal im Browser gespeichert."
+            }
+        },
+        "onboarding": {
+            "title": "Onboarding",
+            "subtitle": "Verwalte den Einführungsassistenten.",
+            "restart": {
+                "label": "Onboarding erneut starten",
+                "description": "Startet den Einführungsassistenten erneut im nächsten neuen Chat.",
+                "button": "Onboarding zurücksetzen"
+            }
+        },
+        "language": {
+            "title": "Sprache",
+            "label": "Wähle die Sprache der Seite.",
+            "de": "Deutsch",
+            "en": "English"
+        },
+        "modal": {
+            "title": "Alle Chats löschen",
+            "subtitle": "Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+            "summaryLabel": "Zu löschende Daten",
+            "summaryValue": "Alle Chats",
+            "note": "Chats werden lokal im Browser gespeichert.",
+            "confirm": "Löschen",
+            "cancel": "Abbrechen"
+        }
+    }
+}

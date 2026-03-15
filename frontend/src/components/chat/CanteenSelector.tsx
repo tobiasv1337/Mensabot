@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
 import ScrollablePillRow from "./ScrollablePillRow";
@@ -17,8 +18,11 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
   selectedCanteens,
   onAdd,
   onRemove,
-  placeholder = "Mensa suchen",
+  placeholder,
 }) => {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("chat.canteenSearch.placeholder");
+
   const canteenRequestId = useRef(0);
   const canteenAnchorRef = useRef<HTMLDivElement>(null);
 
@@ -117,7 +121,7 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
         setCanteenResults(response.results);
       } catch {
         if (requestId !== canteenRequestId.current) return;
-        setCanteenError("Mensen konnten nicht geladen werden.");
+        setCanteenError(t("chat.canteenSearch.loadError"));
       } finally {
         if (requestId === canteenRequestId.current) {
           setCanteenLoading(false);
@@ -126,7 +130,7 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
     }, 320);
 
     return () => window.clearTimeout(timer);
-  }, [canteenQuery, canteenFilterOpen, client, userLocation]);
+  }, [canteenQuery, canteenFilterOpen, client, userLocation, t]);
 
   const filteredCanteenResults = useMemo(
     () => canteenResults.filter((result) => !selectedCanteens.some((item) => item.id === result.canteen.id)),
@@ -148,7 +152,7 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
         <S.PillInputShell $active={canteenFilterOpen} onClick={() => setCanteenFilterOpen(true)}>
           <S.PillInput
             type="search"
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={canteenQuery}
             onChange={(event) => {
               setCanteenQuery(event.target.value);
@@ -165,10 +169,10 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
         </S.PillInputShell>
         {canteenFilterOpen && canteenQuery.trim().length > 0 && dropdownStyle && (
           <S.SearchDropdown style={dropdownStyle}>
-            {canteenLoading && <S.SearchDropdownItem $muted>Suche läuft...</S.SearchDropdownItem>}
-            {canteenError && <S.SearchDropdownItem $muted>Fehler beim Laden</S.SearchDropdownItem>}
+            {canteenLoading && <S.SearchDropdownItem $muted>{t("chat.canteenSearch.searching")}</S.SearchDropdownItem>}
+            {canteenError && <S.SearchDropdownItem $muted>{canteenError}</S.SearchDropdownItem>}
             {!canteenLoading && !canteenError && filteredCanteenResults.length === 0 && (
-              <S.SearchDropdownItem $muted>Keine Treffer</S.SearchDropdownItem>
+              <S.SearchDropdownItem $muted>{t("chat.canteenSearch.noResults")}</S.SearchDropdownItem>
             )}
             {!canteenLoading &&
               !canteenError &&
@@ -181,7 +185,7 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
                 >
                   <span>{result.canteen.name}</span>
                   <S.SearchDropdownMeta>
-                    {result.canteen.city ? result.canteen.city : "Unbekannte Stadt"}
+                    {result.canteen.city ? result.canteen.city : t("chat.canteenSearch.unknownCity")}
                     {result.distance_km !== undefined ? ` · ${result.distance_km.toFixed(1)} km` : ""}
                   </S.SearchDropdownMeta>
                 </S.SearchDropdownItem>

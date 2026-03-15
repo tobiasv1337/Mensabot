@@ -1,4 +1,5 @@
 # nginx-specific gitignore file
 
 # SSL-Zertifikate
-certs/
+certs/*
+!certs/.gitkeep

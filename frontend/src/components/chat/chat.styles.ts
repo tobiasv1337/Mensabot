@@ -22,6 +22,27 @@ const pulse = keyframes`
   }
 `;
 
+const micPulse = keyframes`
+  0% {
+    box-shadow: 0 0 0 0 rgba(254, 65, 60, 0.38);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(254, 65, 60, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(254, 65, 60, 0);
+  }
+`;
+
+const spin = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
 export const ChatShell = styled.section`
   position: relative;
   display: grid;
@@ -1031,5 +1052,62 @@ export const SendButton = styled.button`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.accent2};
     outline-offset: 2px;
+  }
+`;
+
+export const VoiceButton = styled.button<{ $state?: "idle" | "recording" | "transcribing" }>`
+  height: 42px;
+  width: 42px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid
+    ${({ theme, $state }) =>
+      $state === "recording"
+        ? `${theme.accent1}B3`
+        : $state === "transcribing"
+          ? `${theme.accent2}A3`
+          : `${theme.textMuted}44`};
+  border-radius: 999px;
+  background: ${({ theme, $state }) =>
+    $state === "recording"
+      ? theme.accent1
+      : $state === "transcribing"
+        ? `${theme.accent2}1A`
+        : theme.surfacePage};
+  color: ${({ theme, $state }) =>
+    $state === "recording" ? theme.textOnAccent1 : $state === "transcribing" ? theme.accent2 : theme.textPrimary};
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  animation: ${({ $state }) => ($state === "recording" ? micPulse : "none")} 1.3s ease-in-out infinite;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: ${({ theme, $state }) =>
+      $state === "recording"
+        ? `0 10px 20px ${theme.accent1}33`
+        : $state === "transcribing"
+          ? `0 10px 20px ${theme.accent2}26`
+          : `0 10px 20px ${theme.textDark}14`};
+    border-color: ${({ theme, $state }) =>
+      $state === "recording"
+        ? `${theme.accent1}CC`
+        : $state === "transcribing"
+          ? `${theme.accent2}CC`
+          : `${theme.accent1}66`};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+
+  svg.spin {
+    animation: ${spin} 1s linear infinite;
   }
 `;

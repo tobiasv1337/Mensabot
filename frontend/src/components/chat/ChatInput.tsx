@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Shortcut } from "../../services/shortcuts";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./chat.styles";
@@ -33,6 +34,8 @@ type ChatInputProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
+  onTranscribeAudio?: (audio: Blob) => Promise<string>;
+  maxVoiceSeconds?: number;
   disabled?: boolean;
   placeholder?: string;
   shortcuts: Shortcut[];
@@ -46,17 +49,49 @@ const ChatInput: React.FC<ChatInputProps> = ({
   value,
   onChange,
   onSend,
+  onTranscribeAudio,
+  maxVoiceSeconds = 180,
   disabled = false,
-  placeholder = "Nachricht schreiben",
+  placeholder,
   shortcuts,
   onShortcutAdd,
   onShortcutSelect,
   focusSignal,
   commandMenu,
 }) => {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("chat.input.placeholder");
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const commandMenuRef = useRef<HTMLDivElement>(null);
   const skipInitialFocus = useRef(true);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const stopTimeoutRef = useRef<number | null>(null);
+  const timerIntervalRef = useRef<number | null>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [voiceSeconds, setVoiceSeconds] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+
+  const busy = disabled || isTranscribing || isRecording;
+  const clearVoiceError = useCallback(() => {
+    setVoiceError(null);
+  }, []);
+  const hintText = useMemo(() => {
+    if (isRecording) return t("chat.input.recording", { seconds: voiceSeconds, max: maxVoiceSeconds });
+    if (isTranscribing) return t("chat.input.transcribing");
+    if (disabled) return resolvedPlaceholder;
+    if (voiceError) return voiceError;
+    return resolvedPlaceholder;
+  }, [voiceError, isTranscribing, isRecording, voiceSeconds, maxVoiceSeconds, disabled, resolvedPlaceholder, t]);
+  const micState: "idle" | "recording" | "transcribing" = isRecording
+    ? "recording"
+    : isTranscribing
+      ? "transcribing"
+      : "idle";
   const focusTextarea = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -66,6 +101,44 @@ const ChatInput: React.FC<ChatInputProps> = ({
       el.focus();
     }
   }, []);
+
+  const cleanupRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      try {
+        recorder.stop();
+      } catch {
+        // ignore
+      }
+    }
+
+    mediaRecorderRef.current = null;
+    chunksRef.current = [];
+
+    const stream = mediaStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    mediaStreamRef.current = null;
+
+    if (stopTimeoutRef.current !== null) {
+      window.clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+    if (timerIntervalRef.current !== null) {
+      window.clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    setIsRecording(false);
+    setVoiceSeconds(0);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      cleanupRecording();
+    };
+  }, [cleanupRecording]);
 
   const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
@@ -105,12 +178,139 @@ const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
     const text = value.trim();
-    if (disabled) return;
+    if (busy) return;
     if (!text) return;
+    clearVoiceError();
     onSend(text);
     onChange("");
     requestAnimationFrame(() => focusTextarea());
-  }, [commandMenu, value, disabled, onSend, onChange, focusTextarea]);
+  }, [commandMenu, value, busy, onSend, onChange, focusTextarea, clearVoiceError]);
+
+  const pickRecorderMimeType = useCallback(() => {
+    if (typeof MediaRecorder === "undefined") return "";
+    const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/ogg"];
+    for (const candidate of candidates) {
+      if (MediaRecorder.isTypeSupported(candidate)) return candidate;
+    }
+    return "";
+  }, []);
+
+  const transcribeBlob = useCallback(
+    async (blob: Blob) => {
+      if (!onTranscribeAudio) return;
+      setIsTranscribing(true);
+      clearVoiceError();
+      try {
+        const transcript = await onTranscribeAudio(blob);
+        const cleaned = (transcript ?? "").trim();
+        if (!cleaned) {
+          setVoiceError(t("chat.input.noSpeechDetected"));
+          return;
+        }
+        onChange(cleaned);
+        requestAnimationFrame(() => focusTextarea());
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setVoiceError(message || t("chat.input.transcriptionFailed"));
+      } finally {
+        setIsTranscribing(false);
+      }
+    },
+    [onTranscribeAudio, onChange, focusTextarea, clearVoiceError, t]
+  );
+
+  const stopRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") {
+      cleanupRecording();
+      return;
+    }
+    try {
+      recorder.stop();
+    } catch {
+      cleanupRecording();
+    }
+  }, [cleanupRecording]);
+
+  const startRecording = useCallback(async () => {
+    if (!onTranscribeAudio) return;
+    if (disabled || isTranscribing) return;
+
+    clearVoiceError();
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVoiceError(t("chat.input.audioNotSupported"));
+      return;
+    }
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setVoiceError(t("chat.input.micDenied"));
+      return;
+    }
+
+    const mimeType = pickRecorderMimeType();
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch {
+      stream.getTracks().forEach((track) => track.stop());
+      setVoiceError(t("chat.input.audioStartFailed"));
+      return;
+    }
+
+    mediaStreamRef.current = stream;
+    mediaRecorderRef.current = recorder;
+    chunksRef.current = [];
+    setVoiceSeconds(0);
+    setIsRecording(true);
+
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data && event.data.size > 0) {
+        chunksRef.current.push(event.data);
+      }
+    });
+
+    recorder.addEventListener("stop", () => {
+      const chunks = chunksRef.current;
+      const blob = new Blob(chunks, { type: recorder.mimeType || "application/octet-stream" });
+      cleanupRecording();
+      if (blob.size < 1024) {
+        setVoiceError(t("chat.input.recordingTooShort"));
+        return;
+      }
+      void transcribeBlob(blob);
+    });
+
+    try {
+      recorder.start(250);
+    } catch {
+      cleanupRecording();
+      setVoiceError(t("chat.input.audioStartFailed"));
+      return;
+    }
+
+    stopTimeoutRef.current = window.setTimeout(() => {
+      stopRecording();
+    }, maxVoiceSeconds * 1000);
+
+    timerIntervalRef.current = window.setInterval(() => {
+      setVoiceSeconds((prev) => prev + 1);
+    }, 1000);
+  }, [
+    onTranscribeAudio,
+    disabled,
+    isTranscribing,
+    pickRecorderMimeType,
+    cleanupRecording,
+    transcribeBlob,
+    stopRecording,
+    maxVoiceSeconds,
+    clearVoiceError,
+    t,
+  ]);
 
   return (
     <S.ComposerRow>
@@ -119,10 +319,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <S.ComposerTextarea
             ref={textareaRef}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={placeholder}
-            readOnly={disabled}
-            aria-disabled={disabled}
+            onChange={(event) => {
+              if (voiceError) clearVoiceError();
+              onChange(event.target.value);
+            }}
+            placeholder={hintText}
+            readOnly={busy}
+            aria-disabled={busy}
             onKeyDown={(event) => {
               if (commandMenu?.open) {
                 if (event.key === "ArrowDown") {
@@ -153,7 +356,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                if (disabled) {
+                if (busy) {
                   requestAnimationFrame(() => focusTextarea());
                   return;
                 }
@@ -161,11 +364,87 @@ const ChatInput: React.FC<ChatInputProps> = ({
               }
             }}
           />
+          {onTranscribeAudio && (
+            <S.VoiceButton
+              type="button"
+              aria-label={isRecording ? t("chat.input.stopRecording") : t("chat.input.startRecording")}
+              aria-pressed={isRecording}
+              aria-busy={isTranscribing}
+              title={
+                isRecording
+                  ? t("chat.input.recordingHint", { seconds: voiceSeconds })
+                  : isTranscribing
+                    ? t("chat.input.transcribing")
+                    : t("chat.input.startRecording")
+              }
+              onClick={() => {
+                if (isRecording) stopRecording();
+                else void startRecording();
+              }}
+              disabled={!isRecording && (disabled || isTranscribing)}
+              $state={micState}
+            >
+              {isRecording ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
+                </svg>
+              ) : isTranscribing ? (
+                <svg
+                  className="spin"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+                  <path
+                    d="M20 12a8 8 0 0 0-8-8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M19 11a7 7 0 0 1-14 0"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 19v3"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 22h8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </S.VoiceButton>
+          )}
           <S.SendButton
             type="button"
-            aria-label="Senden"
+            aria-label={t("chat.input.send")}
             onClick={submit}
-            disabled={disabled || !value.trim()}
+            disabled={busy || !value.trim()}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
@@ -207,12 +486,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         {item.meta && <S.CommandMeta>{item.meta}</S.CommandMeta>}
                       </div>
                       <S.CommandBadge>
-                        {item.kind === "shortcut" ? "Shortcut" : item.kind === "date" ? "Datum" : "Mensa"}
+                        {item.kind === "shortcut"
+                          ? t("chat.input.badgeShortcut")
+                          : item.kind === "date"
+                            ? t("chat.input.badgeDate")
+                            : t("chat.input.badgeCanteen")}
                       </S.CommandBadge>
                     </S.CommandItem>
                   ))
                 ) : (
-                  <S.CommandEmpty>{group.emptyLabel ?? "Keine Treffer"}</S.CommandEmpty>
+                  <S.CommandEmpty>{group.emptyLabel ?? t("chat.input.noResults")}</S.CommandEmpty>
                 )}
               </S.CommandGroup>
             ))}
@@ -221,9 +504,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <S.ShortcutRow>
           <S.ShortcutAddButton
             type="button"
-            aria-label="Shortcut hinzufügen"
+            aria-label={t("chat.input.addShortcut")}
             onClick={onShortcutAdd}
-            disabled={disabled}
+            disabled={busy}
           >
             <span aria-hidden="true">+</span>
           </S.ShortcutAddButton>
@@ -233,7 +516,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 key={shortcut.id}
                 type="button"
                 onClick={() => onShortcutSelect(shortcut)}
-                disabled={disabled}
+                disabled={busy}
               >
                 {shortcut.name}
               </S.ShortcutPillButton>

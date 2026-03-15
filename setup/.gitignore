@@ -1,0 +1,31 @@
+# setup-specific gitignore file
+
+# Python bytecode / caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual envs
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+# But include example env files
+!.env.example
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Tool caches
+*.log
+.cache/
+pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/

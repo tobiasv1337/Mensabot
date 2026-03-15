@@ -13,12 +13,13 @@ from mensa_mcp_server.server import make_openmensa_client
 
 from ..concurrency import get_io_semaphore
 from ..config import settings
+from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
-from ..models import ChatResponse, ToolCallTrace
+from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
-    DIRECTIONS_FALLBACK_PROMPT,
+    CLARIFICATION_TOOL_NAME,
+    DIET_PREFERENCE_TO_FILTER,
     DIRECTIONS_TOOL_NAME,
-    LOCATION_FALLBACK_PROMPT,
     LOCATION_TOOL_NAME,
 )
 
@@ -30,6 +31,23 @@ class ParsedToolCall:
     call_id: str | None
     tool_name: str
     raw_args: Any
+
+
+def _normalize_tool_arg_value(value: Any) -> Any:
+    if isinstance(value, str):
+        stripped = value.strip().lower()
+        if stripped in {"null", "none"}:
+            return None
+        return value
+    if isinstance(value, list):
+        return [_normalize_tool_arg_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_tool_arg_value(item) for key, item in value.items()}
+    return value
+
+
+def _normalize_tool_args(args: Any) -> Any:
+    return _normalize_tool_arg_value(args)
 
 
 def try_repair_json(s: str) -> str:
@@ -104,14 +122,14 @@ def _parse_tool_args(
     messages: List[Dict[str, Any]],
 ) -> tuple[Any | None, bool]:
     if isinstance(raw_args, (dict, list)):
-        return raw_args, False
+        return _normalize_tool_args(raw_args), False
 
     if isinstance(raw_args, str):
         try:
-            return json.loads(raw_args), False
+            return _normalize_tool_args(json.loads(raw_args)), False
         except json.JSONDecodeError:
             try:
-                repaired = json.loads(try_repair_json(raw_args))
+                repaired = _normalize_tool_args(json.loads(try_repair_json(raw_args)))
                 logger.warning(
                     "Tool %s called with MALFORMED JSON arguments, but repair succeeded: %s",
                     tool_name,
@@ -175,9 +193,10 @@ def _handle_location_tool(
     tool_trace: ToolCallTrace,
     tool_traces: list[ToolCallTrace],
     include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse:
     prompt = args.get("prompt") if isinstance(args, dict) else None
-    prompt_text = prompt or LOCATION_FALLBACK_PROMPT
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("location_fallback_prompt", lang)
     logger.info("Location request tool triggered with prompt: %s", prompt_text)
     tool_trace.ok = True
     tool_trace.result = {"needs_location": True, "prompt": prompt_text}
@@ -198,9 +217,10 @@ async def _handle_directions_tool(
     call_id: str | None,
     tool_name: str,
     include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse | None:
     prompt = args.get("prompt") if isinstance(args, dict) else None
-    prompt_text = prompt or DIRECTIONS_FALLBACK_PROMPT
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("directions_fallback_prompt", lang)
     raw_canteen_id = args.get("canteen_id") if isinstance(args, dict) else None
     raw_lat = args.get("lat") if isinstance(args, dict) else None
     raw_lng = args.get("lng") if isinstance(args, dict) else None
@@ -327,33 +347,68 @@ async def _handle_directions_tool(
     )
 
 
-def _append_tool_guidance(messages: List[Dict[str, Any]], result_payload: Dict[str, Any]) -> None:
-    if settings.llm_supports_tool_messages:
-        return
-
-    if not (isinstance(result_payload, dict) and "error" in result_payload):
-        messages.append(
-            {
-                "role": "system",
-                "content": (
-                    "You have just successfully received the tool results you requested as a JSON object."
-                    "You can assume these tool results to be 100% correct and accurate."
-                    "You don't need to validate them and can fully trust them to answer the user query."
-                    "Now either make further tool calls if needed, or answer the user based on the tool results."
-                ),
-            }
-        )
+def _handle_clarification_tool(
+    *,
+    args: Any,
+    tool_trace: ToolCallTrace,
+    tool_traces: list[ToolCallTrace],
+    include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
+) -> ChatResponse:
+    prompt = args.get("prompt") if isinstance(args, dict) else None
+    prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("clarification_fallback_prompt", lang)
+    options = args.get("options") if isinstance(args, dict) else None
+    if not isinstance(options, list) or len(options) < 1:
+        options = []
+        
+    allow_none_raw = args.get("allow_none", True) if isinstance(args, dict) else True
+    if isinstance(allow_none_raw, bool):
+        allow_none = allow_none_raw
+    elif isinstance(allow_none_raw, str):
+        allow_none = allow_none_raw.strip().lower() not in {"false", "0", "no", "f", "off"}
     else:
-        messages.append(
-            {
-                "role": "system",
-                "content": (
-                    "The previous tool call failed and did NOT provide useful data. "
-                    "You should not rely on this tool result. "
-                    "Either try to call another tool to get the information you need, or if no suitable tool is available, either admit you don't know the answer or try to answer based on your internal knowledge, clearly stating that this is just your guess and may be outdated or incorrect."
-                ),
-            }
-        )
+        allow_none = True
+        
+    logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
+    tool_trace.ok = True
+    tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
+    tool_traces.append(tool_trace)
+    return ChatResponse(
+        status="needs_clarification",
+        prompt=prompt_text,
+        options=options,
+        allow_none=allow_none,
+        tool_calls=(tool_traces or None) if include_tool_calls else None,
+    )
+
+
+MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
+
+
+def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
+    """Override diet_filter, exclude_allergens and price_category in menu tool call arguments based on user filters."""
+    if user_filters.diet:
+        mapped = DIET_PREFERENCE_TO_FILTER.get(user_filters.diet)
+        if mapped:
+            args["diet_filter"] = mapped
+
+    if user_filters.allergens:
+        args["exclude_allergens"] = list(user_filters.allergens)
+
+    if user_filters.price_category:
+        args["price_category"] = user_filters.price_category
+
+    return args
+
+
+def _apply_filters_to_batch_args(args: dict, user_filters: UserFilters) -> dict:
+    """Override diet_filter and exclude_allergens in each request of a get_menus_batch call."""
+    requests = args.get("requests")
+    if isinstance(requests, list):
+        for req in requests:
+            if isinstance(req, dict):
+                _apply_filters_to_menu_args(req, user_filters)
+    return args
 
 
 async def _handle_mcp_tool(
@@ -364,6 +419,8 @@ async def _handle_mcp_tool(
     tool_traces: list[ToolCallTrace],
     messages: List[Dict[str, Any]],
     call_id: str | None,
+    user_filters: UserFilters | None = None,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> None:
     if args is None:
         args = {}
@@ -379,6 +436,13 @@ async def _handle_mcp_tool(
         )
         return
 
+    if user_filters and tool_name in MENU_TOOL_NAMES:
+        if tool_name == "get_menus_batch":
+            args = _apply_filters_to_batch_args(args, user_filters)
+        else:
+            args = _apply_filters_to_menu_args(args, user_filters)
+        tool_trace.args = args
+
     result_payload = await call_mcp_tool(tool_name, args)
     if isinstance(result_payload, dict) and "error" in result_payload:
         tool_trace.ok = False
@@ -391,7 +455,6 @@ async def _handle_mcp_tool(
     tool_traces.append(tool_trace)
 
     _append_tool_message(messages, call_id, tool_name, result_payload)
-    _append_tool_guidance(messages, result_payload)
 
 
 async def handle_tool_calls(
@@ -401,6 +464,8 @@ async def handle_tool_calls(
     *,
     iteration: int,
     include_tool_calls: bool,
+    user_filters: UserFilters | None = None,
+    language: str = DEFAULT_LANGUAGE,
 ) -> ChatResponse | None:
     for call in tool_calls:
         parsed = _parse_tool_call(call)
@@ -425,6 +490,7 @@ async def handle_tool_calls(
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
+                lang=language,
             )
 
         if parsed.tool_name == DIRECTIONS_TOOL_NAME:
@@ -436,10 +502,20 @@ async def handle_tool_calls(
                 call_id=parsed.call_id,
                 tool_name=parsed.tool_name,
                 include_tool_calls=include_tool_calls,
+                lang=language,
             )
             if response is not None:
                 return response
             continue
+
+        if parsed.tool_name == CLARIFICATION_TOOL_NAME:
+            return _handle_clarification_tool(
+                args=args,
+                tool_trace=tool_trace,
+                tool_traces=tool_traces,
+                include_tool_calls=include_tool_calls,
+                lang=language,
+            )
 
         await _handle_mcp_tool(
             tool_name=parsed.tool_name,
@@ -448,6 +524,8 @@ async def handle_tool_calls(
             tool_traces=tool_traces,
             messages=messages,
             call_id=parsed.call_id,
+            user_filters=user_filters,
+            lang=language,
         )
 
     return None

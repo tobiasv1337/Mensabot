@@ -15,7 +15,8 @@
  * storage and sessions yourself.
  */
 
-import type { ChatMessage } from "./chats";
+import type { ChatFilters, ChatMessage } from "./chats";
+import i18n from "../i18n";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -31,7 +32,8 @@ export type ToolCallTrace = {
 export type ChatApiResponse =
 	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
-	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] };
+	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] }
+	| { status: "needs_clarification"; prompt: string; options: string[]; allow_none?: boolean; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
 	id: number;
@@ -40,6 +42,23 @@ export type Canteen = {
 	address?: string;
 	lat?: number;
 	lng?: number;
+};
+
+export type OSMResolveStatus = "ok" | "ambiguous" | "not_found" | "error";
+
+export type OSMAttribution = {
+	attribution: string;
+	attribution_url: string;
+	license: string;
+};
+
+export type CanteenOpeningHoursResponse = {
+	status: OSMResolveStatus;
+	opening_hours?: string | null;
+	kitchen_hours?: string | null;
+	confidence: number;
+	note?: string | null;
+	attribution: OSMAttribution;
 };
 
 export type DietType = "vegan" | "vegetarian" | "meat" | "unknown";
@@ -107,6 +126,11 @@ export type CanteenSearchResponse = {
 	index: CanteenIndexInfo;
 };
 
+export type TranscribeResponse = {
+	text: string;
+	duration_s?: number;
+};
+
 export class MensaBotClient {
 	private baseUrl: string;
 
@@ -136,14 +160,33 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean; filters?: ChatFilters } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
+
+		const filters = options.filters;
+		const hasFilters = filters && (filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0 || filters.priceCategory !== null);
+
+		const body: Record<string, unknown> = {
+			messages: payload,
+			include_tool_calls: options.includeToolCalls ?? false,
+			language: i18n.language,
+		};
+
+		if (hasFilters) {
+			body.filters = {
+				diet: filters.diet,
+				allergens: filters.allergens,
+				canteens: filters.canteens.map((c) => ({ id: c.id, name: c.name })),
+				price_category: filters.priceCategory,
+			};
+		}
+
 		const request = await fetch(this.baseUrl + "/chat", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ messages: payload, include_tool_calls: options.includeToolCalls ?? false })
+			body: JSON.stringify(body)
 		});
 
 		if (!request.ok) {
@@ -172,11 +215,56 @@ export class MensaBotClient {
 			};
 		}
 
+		if (res.status === "needs_clarification") {
+			return {
+				status: "needs_clarification",
+				prompt: res.prompt,
+				options: res.options ?? [],
+				allow_none: res.allow_none,
+				tool_calls: res.tool_calls,
+			};
+		}
+
 		if (res.status === "ok") {
 			return { status: "ok", reply: res.reply, tool_calls: res.tool_calls };
 		}
 
 		throw new Error("Unexpected chat API response shape");
+	}
+
+	async transcribeAudio(audio: Blob): Promise<TranscribeResponse> {
+		const request = await fetch(this.baseUrl + "/transcribe", {
+			method: "POST",
+			headers: {
+				"Content-Type": audio.type || "application/octet-stream",
+			},
+			body: audio,
+		});
+
+		if (!request.ok) {
+			let detail = "";
+			try {
+				const data = (await request.json()) as { detail?: string };
+				if (typeof data?.detail === "string") detail = data.detail;
+			} catch {
+				// ignore
+			}
+			throw new Error(detail ? `Transcribe API error: ${detail}` : `Transcribe API error: ${request.status} ${request.statusText}`);
+		}
+
+		let response: unknown;
+		try {
+			response = await request.json();
+		} catch {
+			throw new Error("Transcribe API returned invalid JSON");
+		}
+
+		const res = response as Partial<TranscribeResponse>;
+		if (typeof res.text === "string") {
+			return { text: res.text, duration_s: typeof res.duration_s === "number" ? res.duration_s : undefined };
+		}
+
+		throw new Error("Unexpected transcribe API response shape");
 	}
 
 	async listCanteens(params: { page?: number; perPage?: number; city?: string; hasCoordinates?: boolean; } = {}): Promise<CanteenListResponse> {
@@ -210,6 +298,11 @@ export class MensaBotClient {
 	async getCanteenInfo(canteenId: number): Promise<Canteen> {
 		const response = await this.getJson(`/canteens/${canteenId}`);
 		return response as Canteen;
+	}
+
+	async getCanteenOpeningHours(canteenId: number): Promise<CanteenOpeningHoursResponse> {
+		const response = await this.getJson(`/canteens/${canteenId}/opening-hours`);
+		return response as CanteenOpeningHoursResponse;
 	}
 
 	async getCanteenMenu(

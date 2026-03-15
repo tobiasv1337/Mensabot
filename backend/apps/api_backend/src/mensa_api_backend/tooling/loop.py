@@ -8,9 +8,10 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from ..config import settings
 from ..concurrency import get_llm_semaphore
+from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
-from ..models import ChatMessage, ChatResponse, ToolCallTrace
-from ..prompts import EMPTY_REPLY_NUDGE, LLM_BASE_SYSTEM_PROMPT, MISSING_TOOL_CALLS_NUDGE
+from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
+from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
 from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
@@ -100,14 +101,22 @@ def format_message_history(messages: List[ChatMessage], format: Literal["openai"
     return formatted_messages
 
 
-def prepare_message_log(message_log: List[ChatMessage]) -> List[ChatCompletionMessage]:
+def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> List[ChatCompletionMessage]:
     """Format the message log (history + current request) into the format required by the LLM."""
-    return [
+    system_messages = [
         {
             "role": "system",
-            "content": LLM_BASE_SYSTEM_PROMPT,
+            "content": get_string("system_prompt", lang),
         },
-        get_time_context(),
+        get_time_context(lang),
+    ]
+
+    filters_prompt = build_user_filters_prompt(user_filters, lang)
+    if filters_prompt:
+        system_messages.append({"role": "system", "content": filters_prompt})
+
+    return [
+        *system_messages,
         *format_message_history(message_log),
     ]
 
@@ -155,6 +164,7 @@ def _handle_non_tool_completion(
     messages: list[Dict[str, Any]],
     tool_traces: list[ToolCallTrace],
     include_tool_calls: bool,
+    lang: str = DEFAULT_LANGUAGE,
 ) -> LoopDecision:
     content = getattr(message, "content", None)
     if isinstance(content, str) and content.strip():
@@ -173,20 +183,61 @@ def _handle_non_tool_completion(
         finish_reason,
         iteration,
     )
-    messages.append({"role": "system", "content": EMPTY_REPLY_NUDGE})
+    messages.append({"role": "system", "content": get_string("empty_reply_nudge", lang)})
     return LoopDecision(response=None, continue_loop=True)
 
 
-def _nudge_missing_tool_calls(iteration: int, messages: list[Dict[str, Any]]) -> None:
+def _nudge_missing_tool_calls(iteration: int, messages: list[Dict[str, Any]], lang: str = DEFAULT_LANGUAGE) -> None:
     logger.warning(
         "LLM reported finish_reason=tool_calls but provided no tool_calls on iteration %d; nudging and retrying.",
         iteration,
     )
-    messages.append({"role": "system", "content": MISSING_TOOL_CALLS_NUDGE})
+    messages.append({"role": "system", "content": get_string("missing_tool_calls_nudge", lang)})
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False) -> ChatResponse:
-    messages = prepare_message_log(message_log)
+def _has_diet_or_allergen_context(tool_traces: list[ToolCallTrace]) -> bool:
+    """Return True when the response involves diet/allergen filtering that warrants a disclaimer."""
+    for trace in tool_traces:
+        args = trace.args
+        if not isinstance(args, dict):
+            continue
+        diet = args.get("diet_filter")
+        if diet and diet != "all":
+            return True
+        if args.get("exclude_allergens"):
+            return True
+        # Check nested batch requests
+        requests = args.get("requests")
+        if isinstance(requests, list):
+            for req in requests:
+                if not isinstance(req, dict):
+                    continue
+                if req.get("diet_filter") and req["diet_filter"] != "all":
+                    return True
+                if req.get("exclude_allergens"):
+                    return True
+    return False
+
+
+def _maybe_append_filter_warning(response: ChatResponse, tool_traces: list[ToolCallTrace], lang: str = DEFAULT_LANGUAGE) -> ChatResponse:
+    """Append a filter disclaimer to the reply when diet/allergen filtering was involved."""
+    if response.status != "ok":
+        return response
+    if not response.reply:
+        return response
+    if not _has_diet_or_allergen_context(tool_traces):
+        return response
+    response.reply = response.reply.rstrip() + get_string("diet_allergen_warning", lang)
+    return response
+
+
+async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, language: str = DEFAULT_LANGUAGE) -> ChatResponse:
+    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters, language)
+    return _maybe_append_filter_warning(response, tool_traces, language)
+
+
+async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> tuple[ChatResponse, list[ToolCallTrace]]:
+    messages = prepare_message_log(message_log, user_filters, lang)
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
 
@@ -196,7 +247,7 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
-            return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls)
+            return _build_chat_response(get_string("fallback_response", lang), tool_traces, include_tool_calls), tool_traces
 
         logger.debug("Received completion: %s", completion.model_dump())
         choice = _get_first_choice(completion)
@@ -210,18 +261,18 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
                 messages=messages,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
+                lang=lang,
             )
             if decision.response is not None:
-                return decision.response
+                return decision.response, tool_traces
             if decision.continue_loop:
                 continue
 
         if not tool_calls:
-            _nudge_missing_tool_calls(iteration, messages)
+            _nudge_missing_tool_calls(iteration, messages, lang)
             continue
 
-        if settings.llm_supports_tool_messages:
-            messages.append(sanitize_message(message))
+        messages.append(sanitize_message(message))
 
         logger.info("Number of tool calls: %d", len(tool_calls))
         early_response = await handle_tool_calls(
@@ -230,12 +281,14 @@ async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_cal
             tool_traces,
             iteration=iteration,
             include_tool_calls=include_tool_calls,
+            user_filters=user_filters,
+            language=lang,
         )
         if early_response is not None:
-            return early_response
+            return early_response, tool_traces
 
     logger.warning(
         "Max LLM iterations (%d) reached without obtaining a final response. Returning fallback message.",
         settings.max_llm_iterations,
     )
-    return _build_chat_response(settings.llm_fallback_response, tool_traces, include_tool_calls)
+    return _build_chat_response(get_string("fallback_response", lang), tool_traces, include_tool_calls), tool_traces

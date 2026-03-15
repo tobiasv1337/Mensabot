@@ -1,0 +1,617 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+from pathlib import Path
+from typing import Tuple, List, Dict, Sequence
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    import questionary
+    from questionary import Choice
+    import dotenv
+except ImportError:
+    print("Required packages not found. Please install them using: pip install -r setup/requirements.txt")
+    sys.exit(1)
+
+console = Console()
+
+BASE_DIR = str(Path(__file__).resolve().parent.parent)
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+ENV_EXAMPLE_FILE = os.path.join(BASE_DIR, ".env.example")
+TLS_CERT_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.crt")
+TLS_KEY_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.key")
+DEV_CERT_SCRIPT = os.path.join(BASE_DIR, "setup", "create-dev-cert.sh")
+
+def run_cmd(cmd: Sequence[str], cwd: str = BASE_DIR) -> Tuple[int, str, str]:
+    """Runs a command and returns the exit code, stdout, and stderr."""
+    if isinstance(cmd, str):
+        raise TypeError("run_cmd expects an argv sequence, not a shell string.")
+    process = subprocess.Popen(
+        list(cmd),
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout.strip(), stderr.strip()
+
+
+def run_cmd_live(cmd: Sequence[str], cwd: str = BASE_DIR) -> int:
+    """Runs a command attached to the current terminal for live output."""
+    if isinstance(cmd, str):
+        raise TypeError("run_cmd_live expects an argv sequence, not a shell string.")
+    process = subprocess.Popen(list(cmd), cwd=cwd)
+    return process.wait()
+
+def check_prerequisites():
+    """Checks if Docker and Docker Compose are installed and running."""
+    code, out, err = run_cmd(["docker", "info"])
+    if code != 0:
+        console.print(Panel("[bold red]Docker is not running or not installed.[/bold red]\nPlease start Docker and try again.", title="Error"))
+        details = "\n".join(part for part in (out, err) if part)
+        if details:
+            console.print(f"[dim]Docker details:[/dim] {details}")
+        sys.exit(1)
+        
+    code, out, err = run_cmd(["docker", "compose", "version"])
+    if code != 0:
+        console.print(Panel("[bold red]Docker Compose plugin is not installed.[/bold red]\nPlease install it and try again.", title="Error"))
+        sys.exit(1)
+
+def get_deployment_state() -> int:
+    """
+    Returns the current state:
+    1: Initial Setup (No .env file)
+    2: Configured, but Stopped
+    3: Currently Running
+    """
+    if not os.path.exists(ENV_FILE):
+        return 1
+        
+    code, out, err = run_cmd(["docker", "compose", "ps", "--services", "--filter", "status=running"])
+    if code == 0 and out.strip() != "":
+        # Some services are running
+        return 3
+        
+    return 2
+
+def display_header():
+    subprocess.call("clear" if os.name == "posix" else "cls", shell=True)
+    console.print(Panel("[bold blue]Mensabot Setup Wizard[/bold blue]\n[dim]Interactive configuration and deployment manager[/dim]", expand=False))
+
+def load_env_defaults(file_path: str) -> Dict:
+    """Loads a .env file into a dictionary for easy default lookups."""
+    if not os.path.exists(file_path):
+        return {}
+    return dotenv.dotenv_values(file_path)
+
+def load_env_descriptions(file_path: str) -> Dict:
+    """Parses a .env file and extracts the preceding comment block for each variable."""
+    descriptions = {}
+    if not os.path.exists(file_path):
+        return descriptions
+        
+    current_comment = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                current_comment = []
+                continue
+            if line.startswith("#"):
+                cleaned = line.lstrip("# ").strip()
+                if cleaned and not cleaned.startswith("======="):
+                    current_comment.append(cleaned)
+            elif "=" in line:
+                key = line.split("=", 1)[0].strip()
+                if current_comment:
+                    descriptions[key] = " ".join(current_comment)
+                current_comment = []
+    return descriptions
+
+def load_env_categories(file_path: str) -> List:
+    """Parses a .env file to dynamically extract categories and their associated keys."""
+    categories: List = []
+    if not os.path.exists(file_path):
+        return categories
+    
+    current_category = None
+    current_keys = []
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("# [CATEGORY]"):
+                if current_category and current_keys:
+                    categories.append({"name": current_category, "keys": current_keys})
+                current_category = line.replace("# [CATEGORY]", "").strip()
+                current_keys = []
+            elif "=" in line and not line.startswith("#") and "=======" not in line:
+                key = line.split("=", 1)[0].strip()
+                if current_category:
+                    current_keys.append(key)
+                    
+    if current_category and current_keys:
+        categories.append({"name": current_category, "keys": current_keys})
+        
+    return categories
+
+def save_env_var(key: str, value: str):
+    """Saves a variable to .env, preserving comments and structure using python-dotenv."""
+    if not os.path.exists(ENV_FILE) and os.path.exists(ENV_EXAMPLE_FILE):
+        import shutil
+        shutil.copy(ENV_EXAMPLE_FILE, ENV_FILE)
+    elif not os.path.exists(ENV_FILE):
+        Path(ENV_FILE).touch()
+    
+    # We must explicitly quote values if they might contain spaces or specials, but python-dotenv handles this mostly.
+    dotenv.set_key(ENV_FILE, key, value, quote_mode="always")
+
+def get_config_default(key: str, current_env: Dict, example_env: Dict) -> str:
+    """Safely retrieves a default value, prioritizing existing .env over .env.example."""
+    if key in current_env and current_env[key] is not None:
+        return current_env[key]
+    if key in example_env and example_env[key] is not None:
+        return example_env[key]
+    return ""
+
+
+def reconnect_stdin_to_terminal() -> bool:
+    """Rebind stdin to the controlling terminal when the launcher was piped into bash."""
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        return True
+
+    if not sys.stdout.isatty():
+        return False
+
+    try:
+        tty_in = open("/dev/tty", "r", encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+
+    sys.stdin = tty_in
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def ensure_interactive_terminal():
+    """Abort early with a clear error when the setup wizard has no usable terminal."""
+    if reconnect_stdin_to_terminal():
+        return
+
+    console.print(Panel(
+        "[bold red]The setup wizard requires an interactive terminal.[/bold red]\n\n"
+        "This usually happens when the installer was started without a controlling TTY.\n"
+        "Run it from a normal shell session and try again.",
+        title="Interactive Terminal Required",
+        expand=False
+    ))
+    sys.exit(1)
+
+
+def pause(message: str = "Press Enter to continue..."):
+    """Wait for user acknowledgment without crashing when stdin is unavailable."""
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        questionary.text(message).ask()
+        return
+    console.print(f"[dim]{message}[/dim]")
+
+
+def ensure_ssl_certificates() -> bool:
+    """Generate the development TLS certificate if no certificate pair exists yet."""
+    if os.path.exists(TLS_CERT_FILE) and os.path.exists(TLS_KEY_FILE):
+        return True
+
+    console.print(
+        "[yellow]TLS certificate files not found. Generating a local development certificate...[/yellow]"
+    )
+    code, out, err = run_cmd(["sh", DEV_CERT_SCRIPT])
+    if code == 0 and os.path.exists(TLS_CERT_FILE) and os.path.exists(TLS_KEY_FILE):
+        return True
+
+    console.print("[bold red]Failed to generate TLS certificate files.[/bold red]")
+    details = "\n".join(part for part in (out, err) if part)
+    if details:
+        console.print(details)
+    return False
+
+
+def guide_ssl_certificate():
+    """Displays instructions on handling Let's Encrypt SSL certificates."""
+    console.print(Panel(
+        "[bold green]SSL / HTTPS Configuration Guide[/bold green]\n\n"
+        "Mensabot expects its TLS certificate files at `nginx/certs/selfsigned.crt` and "
+        "`nginx/certs/selfsigned.key`.\n\n"
+        "If those files are missing, the setup wizard generates a local self-signed certificate "
+        "automatically before Docker Compose starts.\n\n"
+        "To use trusted certificates instead, the simplest way is Let's Encrypt (`certbot`).\n\n"
+        "1. Generate your certificates on your server:\n"
+        "   [dim]sudo certbot certonly --standalone -d yourdomain.com[/dim]\n\n"
+        "2. Replace the development certificate files in the Mensabot nginx directory:\n"
+        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ./nginx/certs/selfsigned.crt[/dim]\n"
+        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ./nginx/certs/selfsigned.key[/dim]\n\n"
+        "Mensabot's NGINX image uses exactly these two file paths during the build.",
+        expand=False
+    ))
+    pause()
+
+def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict):
+    """Walks the user through mandatory and critical fields only."""
+    console.print("\n[bold cyan]Express Setup[/bold cyan]")
+    console.print("We will configure the most important settings. Other settings will inherit defaults.")
+    
+    def get_default(key: str) -> str:
+        return get_config_default(key, current_env, example_env)
+        
+    def prompt_with_desc(key: str, prompt_text: str, default_val: str, hide=False) -> str:
+        desc = example_desc.get(key, "")
+        if desc:
+            console.print(f"\n[dim]{desc}[/dim]")
+        if hide:
+            return questionary.password(prompt_text).ask()
+        return questionary.text(prompt_text, default=default_val).ask()
+
+    # LLM Settings
+    console.print("\n[bold]1. LLM Settings[/bold]")
+    llm_base = prompt_with_desc("API_BACKEND_LLM_BASE_URL", "LLM API Base URL:", get_default("API_BACKEND_LLM_BASE_URL"))
+    if llm_base is None: return
+    save_env_var("API_BACKEND_LLM_BASE_URL", llm_base)
+    
+    llm_model = prompt_with_desc("API_BACKEND_LLM_MODEL", "LLM Model:", get_default("API_BACKEND_LLM_MODEL"))
+    if llm_model is None: return
+    save_env_var("API_BACKEND_LLM_MODEL", llm_model)
+    
+    llm_key = prompt_with_desc("API_BACKEND_LLM_API_KEY", "LLM API Key (hidden):", "", hide=True)
+    if llm_key is None: return
+    if llm_key: # Only save if they typed something, otherwise keep existing
+        save_env_var("API_BACKEND_LLM_API_KEY", llm_key)
+        
+    # Map Settings
+    console.print("\n[bold]2. Map Settings[/bold]")
+    map_light = prompt_with_desc("VITE_MAPTILER_STYLE_URL_LIGHT", "MapTiler Light Style URL (leave empty to skip):", get_default("VITE_MAPTILER_STYLE_URL_LIGHT"))
+    if map_light is None: return
+    save_env_var("VITE_MAPTILER_STYLE_URL_LIGHT", map_light)
+    
+    map_dark = prompt_with_desc("VITE_MAPTILER_STYLE_URL_DARK", "MapTiler Dark Style URL (leave empty to skip):", get_default("VITE_MAPTILER_STYLE_URL_DARK"))
+    if map_dark is None: return
+    save_env_var("VITE_MAPTILER_STYLE_URL_DARK", map_dark)
+    
+    # Nginx Auth
+    console.print("\n[bold]3. Security[/bold]")
+    desc_user = example_desc.get("BASIC_AUTH_USER", "")
+    if desc_user:
+        console.print(f"\n[dim]{desc_user}[/dim]")
+    enable_auth = questionary.confirm("Enable Nginx Basic Auth?", default=bool(get_default("BASIC_AUTH_USER"))).ask()
+    if enable_auth:
+        user = questionary.text("Username:", default=get_default("BASIC_AUTH_USER")).ask()
+        if user is None: return
+        pwd = questionary.password("Password:").ask()
+        if pwd is None: return
+        save_env_var("BASIC_AUTH_USER", user)
+        if pwd: save_env_var("BASIC_AUTH_PASS", pwd)
+    else:
+        save_env_var("BASIC_AUTH_USER", "")
+        save_env_var("BASIC_AUTH_PASS", "")
+        
+    # STT Settings
+    console.print("\n[bold]4. Voice / STT Settings[/bold]")
+    desc_stt = example_desc.get("STT_MODEL", "")
+    if desc_stt:
+        console.print(f"\n[dim]{desc_stt}[/dim]")
+    
+    stt_def = get_default("STT_MODEL")
+    stt_model = questionary.select(
+        "Whisper STT Model Size:",
+        choices=["tiny", "base", "small", "medium"],
+        default=stt_def if stt_def in ["tiny", "base", "small", "medium"] else "small"
+    ).ask()
+    if stt_model is None: return
+    save_env_var("STT_MODEL", stt_model)
+
+def flow_advanced_setup(current_env: Dict, example_env: Dict, example_desc: Dict):
+    """Walks through categories of settings for deep configuration."""
+    console.print("\n[bold cyan]Advanced Setup[/bold cyan]")
+    
+    def get_default(key: str) -> str:
+        return get_config_default(key, current_env, example_env)
+
+    def prompt_secret_value(key: str) -> None:
+        has_current_value = bool(current_env.get(key))
+        if has_current_value:
+            action = questionary.select(
+                f"{key}:",
+                choices=[
+                    Choice("Keep existing value", value="keep"),
+                    Choice("Replace value", value="replace"),
+                    Choice("Clear value", value="clear"),
+                ],
+                default="keep",
+                use_indicator=True,
+            ).ask()
+            if action in (None, "keep"):
+                return
+            if action == "clear":
+                save_env_var(key, "")
+                current_env[key] = ""
+                return
+
+        val = questionary.password(f"{key} (hidden):").ask()
+        if val is None:
+            return
+        if has_current_value and val == "":
+            console.print("[yellow]No new value entered. Keeping the existing value.[/yellow]")
+            return
+        save_env_var(key, val)
+        current_env[key] = val
+        
+    categories: List = load_env_categories(ENV_EXAMPLE_FILE)
+    if not categories:
+        categories = [
+            {"name": "Frontend & Map", "keys": ["VITE_API_BASE_URL", "VITE_MAPTILER_STYLE_URL_LIGHT", "VITE_MAPTILER_STYLE_URL_DARK"]},
+            {"name": "API Backend (LLM & Behavior)", "keys": ["API_BACKEND_LLM_BASE_URL", "API_BACKEND_LLM_MODEL", "API_BACKEND_LLM_API_KEY", "API_BACKEND_MAX_LLM_ITERATIONS", "API_BACKEND_LOG_LEVEL", "API_BACKEND_ENABLE_DEBUG_ENDPOINTS"]},
+            {"name": "Voice STT Service", "keys": ["STT_MODEL", "STT_LANGUAGE", "STT_AUTO_DOWNLOAD_MODEL", "STT_THREADS"]},
+            {"name": "MCP Server (OpenMensa / Overpass)", "keys": ["MENSA_MCP_OPENMENSA_BASE_URL", "MENSA_MCP_OVERPASS_URL", "MENSA_MCP_TIMEZONE"]},
+            {"name": "Security (Basic Auth)", "keys": ["BASIC_AUTH_USER", "BASIC_AUTH_PASS"]}
+        ]
+    
+    for cat in categories:
+        if questionary.confirm(f"Configure '{cat['name']}'?", default=True).ask():
+            console.print(f"\n[bold]{cat['name']}[/bold]")
+            for key in cat["keys"]:
+                key_str = str(key)
+                desc = example_desc.get(key_str, "")
+                if desc:
+                    console.print(f"\n[dim]{desc}[/dim]")
+                if "API_KEY" in key_str or "PASS" in key_str:
+                    prompt_secret_value(key_str)
+                elif "ENABLE" in key_str or "AUTO" in key_str:
+                    current_bool = str(get_default(key_str)).lower() == "true"
+                    val = questionary.confirm(f"{key_str}?", default=current_bool).ask()
+                    if val is not None: save_env_var(key_str, "true" if val else "false")
+                else:
+                    val = questionary.text(f"{key_str}:", default=get_default(key_str)).ask()
+                    if val is not None: save_env_var(key_str, val)
+
+def action_configure():
+    """Runs the interactive .env configuration flow."""
+    console.print("\n[yellow]Starting configuration...[/yellow]")
+    
+    current_env = load_env_defaults(ENV_FILE)
+    example_env = load_env_defaults(ENV_EXAMPLE_FILE)
+    example_desc = load_env_descriptions(ENV_EXAMPLE_FILE)
+    
+    mode = questionary.select(
+        "Select setup mode:",
+        choices=[
+            Choice("Express Setup (Mandatory fields only)", value="express"),
+            Choice("Advanced Setup (Walk through all categories)", value="advanced"),
+            Choice("View SSL Certificate Guide", value="ssl"),
+            Choice("Cancel", value="cancel")
+        ]
+    ).ask()
+    
+    if mode == "express":
+        flow_express_setup(current_env, example_env, example_desc)
+        guide_ssl_certificate()
+    elif mode == "advanced":
+        flow_advanced_setup(current_env, example_env, example_desc)
+        guide_ssl_certificate()
+    elif mode == "ssl":
+        guide_ssl_certificate()
+    
+    if mode in ["express", "advanced"]:
+        console.print("[green]Configuration saved![/green]")
+
+def action_start():
+    """Builds and starts the docker compose stack."""
+    console.print("\n[bold cyan]Deploying Mensabot[/bold cyan]")
+    if not ensure_ssl_certificates():
+        pause()
+        return
+    console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
+    code = run_cmd_live(["docker", "compose", "up", "-d", "--build"])
+
+    if code == 0:
+        console.print("[bold green]Mensabot started successfully![/bold green]")
+        console.print("It might take a minute for all services to become fully healthy.")
+    else:
+        console.print("[bold red]Error bringing up the stack:[/bold red]")
+        console.print("Docker Compose exited with a non-zero status.")
+    pause()
+
+def action_restart():
+    """Stops and restarts the docker compose stack to apply config changes."""
+    console.print("\n[bold cyan]Restarting Mensabot[/bold cyan]")
+    with console.status("Stopping current stack...", spinner="dots"):
+        run_cmd(["docker", "compose", "down"])
+
+    if not ensure_ssl_certificates():
+        pause()
+        return
+
+    console.print("Starting Docker Compose stack. Live Docker output is shown below.\n")
+    code = run_cmd_live(["docker", "compose", "up", "-d", "--build"])
+
+    if code == 0:
+        console.print("[bold green]Mensabot restarted successfully![/bold green]")
+    else:
+        console.print("[bold red]Error restarting the stack:[/bold red]")
+        console.print("Docker Compose exited with a non-zero status.")
+    pause()
+
+def action_update():
+    """Fetches updates from git, allows version selection, and pulls code."""
+    console.print("\n[bold cyan]Mensabot Update Manager[/bold cyan]")
+    
+    with console.status("Fetching latest available versions from GitHub...", spinner="dots"):
+        code_fetch, fetch_out, fetch_err = run_cmd(["git", "fetch", "--tags", "--all"])
+        code_tags, tags, tags_err = run_cmd(["git", "tag", "-l", "--sort=-v:refname"])
+        code_branches, branches_raw, branches_err = run_cmd(["git", "branch", "-r", "--sort=-committerdate"])
+
+    if code_fetch != 0:
+        console.print("[bold red]Error fetching latest versions from Git.[/bold red]")
+        details = "\n".join(part for part in (fetch_out, fetch_err) if part)
+        if details:
+            console.print(details)
+        pause()
+        return
+    
+    branch_list = []
+    if code_branches == 0:
+        for b in branches_raw.split("\n"):
+            b_clean = b.strip()
+            if "->" in b_clean or not b_clean: continue
+            if b_clean.startswith("origin/"):
+                branch_list.append(b_clean.replace("origin/", "", 1))
+            else:
+                branch_list.append(b_clean)
+                
+    tag_list = tags.split("\n") if code_tags == 0 and tags else []
+    
+    choices = []
+    if tag_list and tag_list[0]:
+        choices.append(Choice("--- Stable Releases (Tags) ---", value=None, disabled="Section Header"))
+        choices.extend([Choice(f"{t}", value=t) for t in tag_list if t])
+        
+    if branch_list:
+        choices.append(Choice("--- Development Branches ---", value=None, disabled="Section Header"))
+        choices.extend([Choice(f"{b}", value=b) for b in branch_list if b])
+        
+    choices.append(Choice("Cancel", value="cancel"))
+    
+    if len(choices) <= 1:
+        console.print("[red]Could not retrieve versions from Git.[/red]")
+        details = "\n".join(
+            part
+            for part in (
+                tags_err if code_tags != 0 else "",
+                branches_err if code_branches != 0 else "",
+            )
+            if part
+        )
+        if details:
+            console.print(details)
+        pause()
+        return
+
+    selected_ref = questionary.select(
+        "Select the version / branch you want to checkout/update to:",
+        choices=choices,
+        use_indicator=True
+    ).ask()
+    
+    if selected_ref == "cancel" or selected_ref is None:
+        return
+
+    is_branch = selected_ref in branch_list
+
+    with console.status(f"Checking out {selected_ref}...", spinner="dots"):
+        code, out, err = run_cmd(["git", "checkout", selected_ref])
+    if code != 0:
+        console.print("[bold red]Error checking out the selected version.[/bold red]")
+        details = "\n".join(part for part in (out, err) if part)
+        if details:
+            console.print(details)
+        pause()
+        return
+
+    if is_branch:
+        with console.status(f"Pulling latest changes for {selected_ref}...", spinner="dots"):
+            code, out, err = run_cmd(["git", "pull", "--ff-only", "origin", selected_ref])
+        if code != 0:
+            console.print("[bold red]Error pulling the latest changes for the selected branch.[/bold red]")
+            details = "\n".join(part for part in (out, err) if part)
+            if details:
+                console.print(details)
+            pause()
+            return
+
+    console.print(f"[bold green]Successfully switched Mensabot to version: {selected_ref}[/bold green]")
+    
+    if get_deployment_state() == 3:
+        if questionary.confirm("Mensabot is currently running. Do you want to restart it now to apply the update?").ask():
+            action_restart()
+    else:
+        if questionary.confirm("Do you want to start Mensabot now?").ask():
+            action_start()
+
+def action_stop():
+    """Stops the docker compose stack."""
+    console.print("\n[bold cyan]Stopping Mensabot[/bold cyan]")
+    with console.status("Stopping current stack...", spinner="dots"):
+        code, out, err = run_cmd(["docker", "compose", "down"])
+        
+    if code == 0:
+        console.print("[bold green]Mensabot stopped successfully.[/bold green]")
+    else:
+        console.print("[bold red]Error stopping the stack:[/bold red]")
+        console.print(err)
+    pause()
+
+def main_menu():
+    while True:
+        display_header()
+        state = get_deployment_state()
+        
+        choices = []
+        
+        if state == 1:
+            console.print("[yellow]State: Initial Setup (Not Configured)[/yellow]\n")
+            choices = [
+                Choice("Initial Configuration", value="config"),
+                Choice("Start / Deploy Mensabot (Disabled - Requires Configuration)", value=None, disabled="Requires Configuration"),
+                Choice("Restart Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
+                Choice("Update Mensabot Version (Disabled - Requires Configuration)", value=None, disabled="Requires Configuration"),
+                Choice("Stop Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
+                Choice("Exit", value="exit")
+            ]
+        elif state == 2:
+            console.print("[green]State: Configured, Stopped[/green]\n")
+            choices = [
+                Choice("Start / Deploy Mensabot", value="start"),
+                Choice("Reconfigure Settings", value="config"),
+                Choice("Restart Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
+                Choice("Update Mensabot Version", value="update"),
+                Choice("Stop Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
+                Choice("Exit", value="exit")
+            ]
+        elif state == 3:
+            console.print("[bold green]State: Running[/bold green]\n")
+            choices = [
+                Choice("Start / Deploy Mensabot (Disabled - Already Running)", value=None, disabled="Already Running"),
+                Choice("Reconfigure Settings (Requires restart to apply)", value="config"),
+                Choice("Restart Mensabot", value="restart"),
+                Choice("Update Mensabot Version", value="update"),
+                Choice("Stop Mensabot", value="stop"),
+                Choice("Exit", value="exit")
+            ]
+            
+        action = questionary.select(
+            "Select an action:",
+            choices=choices,
+            use_indicator=True,
+        ).ask()
+        
+        if action == "config":
+            action_configure()
+        elif action == "start":
+            action_start()
+        elif action == "restart":
+            action_restart()
+        elif action == "update":
+            action_update()
+        elif action == "stop":
+            action_stop()
+        elif action == "exit" or action is None:
+            console.print("[green]Exiting...[/green]")
+            sys.exit(0)
+
+if __name__ == "__main__":
+    ensure_interactive_terminal()
+    check_prerequisites()
+    main_menu()

@@ -1,16 +1,22 @@
 import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
 
-type MessageKind = "normal" | "location_prompt" | "directions_prompt";
+type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";
 
 type DirectionsMeta = {
 	lat?: number;
 	lng?: number;
 };
 
+type ClarificationMeta = {
+	options: string[];
+	allow_none?: boolean;
+};
+
 const CHAT_STORAGE_PREFIX = "chat-";
 const CHAT_INDEX_KEY = "mensabot-chats-index";
 const CHAT_ACTIVE_KEY = "mensabot-active-chat-id";
 const DEFAULT_CHAT_TITLE = "Neuer Chat";
+const ONBOARDING_CHAT_TITLE = "Onboarding";
 const TITLE_MAX_WORDS = 6;
 const TITLE_MAX_CHARS = 42;
 const PREVIEW_MAX_CHARS = 80;
@@ -22,15 +28,19 @@ export type ChatMessageData = {
 		kind: MessageKind;
 		toolCalls?: ToolCallTrace[];
 		directions?: DirectionsMeta;
+		clarification?: ClarificationMeta;
 	};
 };
 
 export type DietPreference = "vegetarian" | "vegan" | "meat" | null;
 
+export type PriceCategory = "students" | "employees" | "pupils" | "others" | null;
+
 export type ChatFilters = {
 	diet: DietPreference;
 	allergens: string[];
 	canteens: Canteen[];
+	priceCategory: PriceCategory;
 };
 
 export type ChatSummary = {
@@ -51,6 +61,7 @@ export const defaultChatFilters: ChatFilters = {
 	diet: null,
 	allergens: [],
 	canteens: [],
+	priceCategory: null,
 };
 
 const clampText = (value: string, maxChars: number) => {
@@ -74,6 +85,9 @@ const deriveTitleFromMessage = (value: string) => {
 	return normalizeTitle(base);
 };
 
+const isMeaningfulUserMessage = (message: Pick<ChatMessageData, "role" | "meta">) =>
+	message.role === "user" && message.meta.kind !== "onboarding";
+
 const buildPreview = (value?: string) => {
 	if (!value) return "";
 	const cleaned = value.replace(/\s+/g, " ").trim();
@@ -95,7 +109,7 @@ export class ChatMessage implements ChatMessageData {
 	constructor(role: "user" | "assistant", content: string, meta: ChatMessageData["meta"] = { kind: "normal" }) {
 		this.role = role;
 		this.content = content;
-		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions };
+		this.meta = { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions, clarification: meta.clarification };
 	}
 
 	toJSON(): ChatMessageData {
@@ -108,7 +122,7 @@ export class ChatMessage implements ChatMessageData {
 
 	static fromJSON(json: ChatMessageData) {
 		const meta: ChatMessageData["meta"] = json.meta ?? { kind: "normal" };
-		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions });
+		return new ChatMessage(json.role, json.content, { kind: meta.kind ?? "normal", toolCalls: meta.toolCalls, directions: meta.directions, clarification: meta.clarification });
 	}
 }
 
@@ -125,12 +139,12 @@ export class Chat {
 		this.id = id;
 		this.#messages = messages;
 		const sourceFilters = filters ?? defaultChatFilters;
-		this.#filters = { diet: sourceFilters.diet, allergens: [...sourceFilters.allergens], canteens: [...sourceFilters.canteens] };
+		this.#filters = { diet: sourceFilters.diet, allergens: [...sourceFilters.allergens], canteens: [...sourceFilters.canteens], priceCategory: sourceFilters.priceCategory ?? null };
 		this.#title = normalizeTitle(meta?.title ?? DEFAULT_CHAT_TITLE);
 		const now = Date.now();
 		this.#createdAt = typeof meta?.createdAt === "number" ? meta.createdAt : now;
 		this.#updatedAt = typeof meta?.updatedAt === "number" ? meta.updatedAt : this.#createdAt;
-		this.#hasUserMessage = messages.some((message) => message.role === "user");
+		this.#hasUserMessage = messages.some((message) => isMeaningfulUserMessage(message));
 	}
 
 	get messages() {
@@ -153,6 +167,10 @@ export class Chat {
 		return this.#updatedAt;
 	}
 
+	get hasUserMessage() {
+		return this.#hasUserMessage;
+	}
+
 	persist() {
 		try {
 			localStorage.setItem(`${CHAT_STORAGE_PREFIX}${this.id}`, JSON.stringify(this));
@@ -170,9 +188,16 @@ export class Chat {
 	}
 
 	addMessage(message: ChatMessage) {
-		const shouldAutoTitle = message.role === "user" && !this.#hasUserMessage && this.#title === DEFAULT_CHAT_TITLE;
+		const isMeaningfulUser = isMeaningfulUserMessage(message);
+		const shouldAutoTitle =
+			isMeaningfulUser &&
+			!this.#hasUserMessage &&
+			(this.#title === DEFAULT_CHAT_TITLE || this.#title === ONBOARDING_CHAT_TITLE);
 		this.#messages.push(message);
-		if (message.role === "user") {
+		if (message.meta.kind === "onboarding" && this.#title === DEFAULT_CHAT_TITLE) {
+			this.#title = ONBOARDING_CHAT_TITLE;
+		}
+		if (isMeaningfulUser) {
 			this.#hasUserMessage = true;
 		}
 		if (shouldAutoTitle) {
@@ -190,7 +215,7 @@ export class Chat {
 	}
 
 	setFilters(filters: ChatFilters) {
-		this.#filters = { ...filters, allergens: [...filters.allergens], canteens: [...filters.canteens] };
+		this.#filters = { ...filters, allergens: [...filters.allergens], canteens: [...filters.canteens], priceCategory: filters.priceCategory ?? null };
 		this.#updatedAt = Date.now();
 		this.persist();
 	}
@@ -216,7 +241,8 @@ export class Chat {
 		}
 
 		this.addMessage(new ChatMessage("user", message));
-		const response = await client.sendMessages(this.#messages, options);
+		const apiMessages = this.#messages.filter((m) => m.meta.kind !== "onboarding");
+		const response = await client.sendMessages(apiMessages, { ...options, filters: this.#filters });
 		const toolCalls = response.tool_calls && response.tool_calls.length > 0 ? response.tool_calls : undefined;
 
 		if (response.status === "needs_location") {
@@ -232,6 +258,20 @@ export class Chat {
 					directions: {
 						lat: response.lat ?? undefined,
 						lng: response.lng ?? undefined,
+					},
+				})
+			);
+			return response;
+		}
+
+		if (response.status === "needs_clarification") {
+			this.addMessage(
+				new ChatMessage("assistant", response.prompt, {
+					kind: "clarification_prompt",
+					toolCalls,
+					clarification: {
+						options: response.options,
+						allow_none: response.allow_none,
 					},
 				})
 			);
@@ -434,6 +474,7 @@ export class Chats {
 						diet: filters.diet ?? defaultChatFilters.diet,
 						allergens: Array.isArray(filters.allergens) ? filters.allergens : [],
 						canteens: Array.isArray(filters.canteens) ? filters.canteens : [],
+						priceCategory: filters.priceCategory ?? defaultChatFilters.priceCategory,
 					},
 					{
 						title: typeof parsed.title === "string" ? parsed.title : DEFAULT_CHAT_TITLE,

@@ -2,13 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { Page, Content } from "./PageLayout.styles";
 import ConfirmModal from "../components/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
+import { Button } from "../components/button/button";
+import { useTranslation } from "react-i18next";
+import { resetOnboarding } from "../services/onboarding";
 
 type SettingsPageProps = {
   onDeleteAllChats: () => void;
+  onResetOnboarding?: () => void;
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOnboarding }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const handleConfirmDelete = () => {
     setDeleteOpen(false);
@@ -36,33 +41,82 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
     <Page>
       <Content>
         <S.HeaderCard>
-          <S.HeaderEyebrow>System</S.HeaderEyebrow>
-          <S.HeaderTitle>Einstellungen</S.HeaderTitle>
+          <S.HeaderEyebrow>{t('settings.header.eyebrow')}</S.HeaderEyebrow>
+          <S.HeaderTitle>{t('settings.header.title')}</S.HeaderTitle>
           <S.HeaderSubtitle>
-            Verwalte deine App-Einstellungen und gespeicherten Daten.
+            {t('settings.header.subtitle')}
           </S.HeaderSubtitle>
         </S.HeaderCard>
 
         <S.SectionCard>
           <S.SectionHeader>
-            <S.SectionTitle>Daten & Speicher</S.SectionTitle>
-            <S.SectionSubtitle>Verwalte deine lokalen Chatdaten im Browser.</S.SectionSubtitle>
+            <S.SectionTitle>{t('settings.language.title')}</S.SectionTitle>
           </S.SectionHeader>
           <S.SectionBody>
+            <S.SettingRow $default>
+              <S.SettingInfo>
+                <S.SettingLabel>{t('settings.language.label')}</S.SettingLabel>
+              </S.SettingInfo>
+              <S.SettingActions>
+                <Button
+                  type="button"
+                  variant={i18n.language === 'de' ? "surfaceAccent" : "surfaceInsetBorder"}
+                  onClick={() => i18n.changeLanguage('de')}
+                >
+                  {t('settings.language.de')}
+                </Button>
+                <Button
+                  type="button"
+                  variant={i18n.language === 'en' ? "surfaceAccent" : "surfaceInsetBorder"}
+                  onClick={() => i18n.changeLanguage('en')}
+                >
+                  {t('settings.language.en')}
+                </Button>
+              </S.SettingActions>
+            </S.SettingRow>
+          </S.SectionBody>
+        </S.SectionCard>
+
+        <S.SectionCard>
+          <S.SectionHeader>
+            <S.SectionTitle>{t('settings.data.title')}</S.SectionTitle>
+            <S.SectionSubtitle>{t('settings.data.subtitle')}</S.SectionSubtitle>
+          </S.SectionHeader>
+          <S.SectionBody>
+            <S.SettingRow $default>
+              <S.SettingInfo>
+                <S.SettingLabel>{t('settings.onboarding.restart.label')}</S.SettingLabel>
+                <S.SettingDescription>
+                  {t('settings.onboarding.restart.description')}
+                </S.SettingDescription>
+              </S.SettingInfo>
+              <S.SettingActions>
+                <Button
+                  type="button"
+                  variant="surfaceInsetBorder"
+                  onClick={() => {
+                    resetOnboarding();
+                    onResetOnboarding?.();
+                  }}
+                >
+                  {t('settings.onboarding.restart.button')}
+                </Button>
+              </S.SettingActions>
+            </S.SettingRow>
             <S.SettingRow $danger>
               <S.SettingInfo>
-                <S.SettingLabel>Chat-Verlauf löschen</S.SettingLabel>
+                <S.SettingLabel>{t('settings.data.deleteChats.label')}</S.SettingLabel>
                 <S.SettingDescription>
-                  Entfernt alle gespeicherten Chats dauerhaft aus deinem Browser.
+                  {t('settings.data.deleteChats.description')}
                 </S.SettingDescription>
               </S.SettingInfo>
               <S.SettingActions>
                 <S.DangerButton type="button" onClick={() => setDeleteOpen(true)}>
-                  Alle Chats löschen
+                  {t('settings.data.deleteChats.button')}
                 </S.DangerButton>
               </S.SettingActions>
             </S.SettingRow>
-            <S.MutedNote>Chats werden lokal im Browser gespeichert.</S.MutedNote>
+            <S.MutedNote>{t('settings.data.deleteChats.note')}</S.MutedNote>
           </S.SectionBody>
         </S.SectionCard>
       </Content>
@@ -70,12 +124,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats }) => {
       {deleteOpen && (
         <ConfirmModal
           isOpen={deleteOpen}
-          title="Alle Chats löschen"
-          subtitle="Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden."
-          summary={{ label: "Zu löschende Daten", value: "Alle Chats" }}
-          note="Chats werden lokal im Browser gespeichert."
-          confirmLabel="Löschen"
-          cancelLabel="Abbrechen"
+          title={t('settings.modal.title')}
+          subtitle={t('settings.modal.subtitle')}
+          summary={{ label: t('settings.modal.summaryLabel'), value: t('settings.modal.summaryValue') }}
+          note={t('settings.modal.note')}
+          confirmLabel={t('settings.modal.confirm')}
+          cancelLabel={t('settings.modal.cancel')}
           onCancel={() => setDeleteOpen(false)}
           onConfirm={handleConfirmDelete}
           cancelButtonRef={cancelButtonRef}

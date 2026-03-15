@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Canteen } from "../../services/api";
 import { MensaBotClient } from "../../services/api";
 import type { ChatFilters } from "../../services/chats";
 import ScrollablePillRow from "./ScrollablePillRow";
 import CanteenSelector from "./CanteenSelector";
-import { ALLERGENS, DIET_OPTIONS, getAllergenLabel } from "./filterData";
+import { ALLERGENS, DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel } from "./filterData";
 import * as S from "./chat.styles";
 
 type FiltersEditorProps = {
@@ -14,6 +15,8 @@ type FiltersEditorProps = {
 };
 
 const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client }) => {
+  const { t } = useTranslation();
+
   const updateFiltersPartial = useCallback(
     (partial: Partial<ChatFilters>) => {
       onChange({ ...filters, ...partial });
@@ -62,7 +65,29 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
   return (
     <>
       <S.FilterSection>
-        <S.FilterLabel>Ernährungsweise</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.priceCategory")}</S.FilterLabel>
+        <ScrollablePillRow>
+          {PRICE_CATEGORY_OPTIONS.map((option) => (
+            <S.PillButton
+              key={option.value}
+              type="button"
+              $selected={filters.priceCategory === option.value}
+              $removable={filters.priceCategory === option.value}
+              onClick={() =>
+                updateFiltersPartial({
+                  priceCategory: filters.priceCategory === option.value ? null : option.value,
+                })
+              }
+            >
+              {filters.priceCategory === option.value && <S.PillRemove>×</S.PillRemove>}
+              {option.label}
+            </S.PillButton>
+          ))}
+        </ScrollablePillRow>
+      </S.FilterSection>
+
+      <S.FilterSection>
+        <S.FilterLabel>{t("chat.filters.diet")}</S.FilterLabel>
         <ScrollablePillRow>
           {DIET_OPTIONS.map((option) => (
             <S.PillButton
@@ -87,7 +112,7 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
       </S.FilterSection>
 
       <S.FilterSection>
-        <S.FilterLabel>Allergene</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.allergens")}</S.FilterLabel>
         <ScrollablePillRow>
           {[...filters.allergens, ...availableAllergens.map((allergen) => allergen.key)].map((allergenKey) => {
             const isSelected = filters.allergens.includes(allergenKey);
@@ -108,7 +133,7 @@ const FiltersEditor: React.FC<FiltersEditorProps> = ({ filters, onChange, client
       </S.FilterSection>
 
       <S.FilterSection>
-        <S.FilterLabel>Mensa</S.FilterLabel>
+        <S.FilterLabel>{t("chat.filters.canteen")}</S.FilterLabel>
         <CanteenSelector
           client={client}
           selectedCanteens={filters.canteens}

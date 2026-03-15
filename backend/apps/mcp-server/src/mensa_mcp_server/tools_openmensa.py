@@ -8,6 +8,8 @@ import anyio
 from typing import Annotated, Optional
 from pydantic import Field
 
+from openmensa_sdk import OpenMensaAPIError
+
 from .concurrency import get_io_semaphore
 from .server import mcp, make_openmensa_client
 from .settings import settings
@@ -33,8 +35,8 @@ from .schemas import (
     OpenMensaCanteenRefDTO,
 )
 
-from .osm_opening_hours import resolve_opening_hours_osm
 from .services.canteen_index import load_canteen_index
+from .services.opening_hours import fetch_opening_hours_osm_for_canteen
 from .services.openmensa import fetch_single_menu, normalize_menu_date
 
 # ------------------------------ internal helpers ------------------------------
@@ -104,17 +106,22 @@ async def search_canteens(
 
     async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
-    results, total = index.search(
-        query,
-        city=city,
-        near_lat=near_lat,
-        near_lng=near_lng,
-        radius_km=radius_km,
-        per_page=limit, # Map limit -> per_page
-        page=1,         # Default to first page
-        min_score=min_score,
-        has_coordinates=None, # Don't expose this filter to the LLM
-    )
+
+    # Can be a bit CPU-intensive, so run in thread to avoid blocking the event loop.
+    def _search():
+        return index.search(
+            query,
+            city=city,
+            near_lat=near_lat,
+            near_lng=near_lng,
+            radius_km=radius_km,
+            per_page=limit, # Map limit -> per_page
+            page=1,         # Default to first page
+            min_score=min_score,
+            has_coordinates=None, # Don't expose this filter to the LLM
+        )
+
+    results, total = await anyio.to_thread.run_sync(_search)
 
     return CanteenSearchResponseDTO(
         results=[
@@ -135,10 +142,12 @@ async def search_canteens(
 
 @mcp.tool()
 async def get_canteen_info(
-    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
+    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID.")],
 ) -> CanteenDTO:
     """
     Get canteen metadata: name, address, city, and GPS coordinates.
+
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
     
     Use after discovering a canteen ID from search_canteens to get full details.
     """
@@ -166,7 +175,7 @@ async def get_canteen_info(
 
 @mcp.tool()
 async def get_menu_for_date(
-    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID (e.g. 2019 for TU Hardenbergstraße Berlin)")],
+    canteen_id: Annotated[int, Field(ge=1, description="OpenMensa canteen ID.")],
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
     diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.")] = None,
@@ -174,6 +183,8 @@ async def get_menu_for_date(
 ) -> MenuResponsePublicDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
+
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
     
     Response status:
     - `ok`: Menu exists
@@ -232,23 +243,12 @@ async def get_menus_batch(
     """
     Fetch menus for multiple canteens/dates in one efficient call.
 
+    You have to retrieve the canteen_ids via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_ids.
+
     Preferred over repeated get_menu_for_date calls when fetching more than one menu.
     Each request can have its own diet_filter and allergen exclusions as in get_menu_for_date.
     The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     Responses preserve input order with same statuses as get_menu_for_date.
-
-            Example (all parameters used):
-            ```json
-            {
-                "tool": "get_menus_batch",
-                "parameters": {
-                    "requests": [
-                        {"canteen_id": 2019, "date": "2024-06-01", "diet_filter": "vegetarian", "exclude_allergens": ["gluten", "soy"], "price_category": "employees"},
-                        {"canteen_id": 42, "date": "2024-06-02", "diet_filter": "meat_only", "exclude_allergens": [], "price_category": "students"}
-                    ]
-                }
-            }
-            ```
     """
 
     def _fetch_batch() -> list[MenuResponsePublicDTO]:
@@ -296,6 +296,8 @@ async def get_opening_hours_osm_for_canteen(
 ) -> OSMResolveForCanteenResponseDTO:
     """Get opening hours from OpenStreetMap for an OpenMensa canteen ID.
 
+    You have to retrieve the canteen_id via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_id.
+
     This uses the canteen's OpenMensa coordinates and name as a hint, then performs
     a deterministic Overpass lookup.
 
@@ -305,62 +307,4 @@ async def get_opening_hours_osm_for_canteen(
     If you use opening hours returned by this tool in a user-facing response,
     include the provided attribution (usually: "© OpenStreetMap contributors").
     """
-    cache_key = osm_opening_hours_key(canteen_id=canteen_id)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return OSMResolveForCanteenResponseDTO.model_validate(cached)
-
-    def _fetch_canteen():
-        with make_openmensa_client() as client:
-            try:
-                return client.get_canteen(canteen_id)
-            except OpenMensaAPIError as e:
-                if e.status_code == 404:
-                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-                raise
-
-    async with get_io_semaphore():
-        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-
-    dto = _canteen_to_dto(canteen)
-
-    # If OpenMensa has no coordinates, we can't do deterministic OSM matching.
-    if dto.lat is None or dto.lng is None:
-        res = {
-            "status": "error",
-            "opening_hours": None,
-            "kitchen_hours": None,
-            "source": None,
-            "confidence": 0.0,
-            "candidates": [],
-            "note": "Canteen has no coordinates in OpenMensa data; cannot resolve via OSM.",
-            "attribution": {
-                "attribution": "© OpenStreetMap contributors",
-                "attribution_url": "https://www.openstreetmap.org/copyright",
-                "license": "ODbL 1.0",
-            },
-        }
-    else:
-        def _resolve():
-            return resolve_opening_hours_osm(
-                lat=dto.lat,
-                lon=dto.lng,
-                name_hint=dto.name,
-                radius_m=radius_m,
-                max_radius_m=max_radius_m,
-                max_candidates=max_candidates,
-            )
-
-        async with get_io_semaphore():
-            res = await anyio.to_thread.run_sync(_resolve)
-
-    res["openmensa"] = OpenMensaCanteenRefDTO(
-        canteen_id=canteen_id,
-        name=dto.name,
-        lat=dto.lat,
-        lng=dto.lng,
-    ).model_dump(exclude_none=True)
-
-    dto = OSMResolveForCanteenResponseDTO.model_validate(res)
-    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
-    return dto
+    return await fetch_opening_hours_osm_for_canteen(canteen_id=canteen_id, radius_m=radius_m, max_radius_m=max_radius_m, max_candidates=max_candidates)

@@ -67,7 +67,7 @@ export const SectionBody = styled.div`
   gap: 12px;
 `;
 
-export const SettingRow = styled.div<{ $danger?: boolean }>`
+export const SettingRow = styled.div<{ $danger?: boolean; $default?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,6 +82,13 @@ export const SettingRow = styled.div<{ $danger?: boolean }>`
     `
     border-color: ${theme.accent1}44;
     background: ${theme.accent1}10;
+  `}
+
+  ${({ $default, theme }) =>
+    $default &&
+    `
+    background: ${theme.surfaceCard};
+    border: 1px solid ${theme.surfaceCard}22;
   `}
 
   @media (max-width: 720px) {
