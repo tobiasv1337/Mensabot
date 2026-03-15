@@ -3,6 +3,7 @@
 import os
 import sys
 import subprocess
+import shlex
 from pathlib import Path
 from typing import Tuple, List, Dict, Any
 
@@ -24,6 +25,9 @@ console = Console()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 ENV_EXAMPLE_FILE = os.path.join(BASE_DIR, ".env.example")
+TLS_CERT_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.crt")
+TLS_KEY_FILE = os.path.join(BASE_DIR, "nginx", "certs", "selfsigned.key")
+DEV_CERT_SCRIPT = os.path.join(BASE_DIR, "create-dev-cert.sh")
 
 def run_cmd(cmd: str, shell: bool = True) -> Tuple[int, str, str]:
     """Runs a shell command and returns the exit code, stdout, and stderr."""
@@ -192,17 +196,40 @@ def pause(message: str = "Press Enter to continue..."):
     console.print(f"[dim]{message}[/dim]")
 
 
+def ensure_ssl_certificates() -> bool:
+    """Generate the development TLS certificate if no certificate pair exists yet."""
+    if os.path.exists(TLS_CERT_FILE) and os.path.exists(TLS_KEY_FILE):
+        return True
+
+    console.print(
+        "[yellow]TLS certificate files not found. Generating a local development certificate...[/yellow]"
+    )
+    code, out, err = run_cmd(f"sh {shlex.quote(DEV_CERT_SCRIPT)}")
+    if code == 0 and os.path.exists(TLS_CERT_FILE) and os.path.exists(TLS_KEY_FILE):
+        return True
+
+    console.print("[bold red]Failed to generate TLS certificate files.[/bold red]")
+    details = "\n".join(part for part in (out, err) if part)
+    if details:
+        console.print(details)
+    return False
+
+
 def guide_ssl_certificate():
     """Displays instructions on handling Let's Encrypt SSL certificates."""
     console.print(Panel(
         "[bold green]SSL / HTTPS Configuration Guide[/bold green]\n\n"
-        "To enable HTTPS, you need to provide SSL certificates. The simplest way is using Let's Encrypt (`certbot`).\n\n"
+        "Mensabot expects its TLS certificate files at `nginx/certs/selfsigned.crt` and "
+        "`nginx/certs/selfsigned.key`.\n\n"
+        "If those files are missing, the setup wizard generates a local self-signed certificate "
+        "automatically before Docker Compose starts.\n\n"
+        "To use trusted certificates instead, the simplest way is Let's Encrypt (`certbot`).\n\n"
         "1. Generate your certificates on your server:\n"
         "   [dim]sudo certbot certonly --standalone -d yourdomain.com[/dim]\n\n"
-        "2. Copy the resulting certificates to the Mensabot nginx directory:\n"
-        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ./nginx/certs/[/dim]\n"
-        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ./nginx/certs/[/dim]\n\n"
-        "Mensabot's NGINX is configured to automatically pick up these certificates.",
+        "2. Replace the development certificate files in the Mensabot nginx directory:\n"
+        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ./nginx/certs/selfsigned.crt[/dim]\n"
+        "   [dim]cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ./nginx/certs/selfsigned.key[/dim]\n\n"
+        "Mensabot's NGINX image uses exactly these two file paths during the build.",
         expand=False
     ))
     pause()
@@ -349,6 +376,9 @@ def action_configure():
 def action_start():
     """Builds and starts the docker compose stack."""
     console.print("\n[bold cyan]Deploying Mensabot[/bold cyan]")
+    if not ensure_ssl_certificates():
+        pause()
+        return
     with console.status("Starting Docker Compose stack (this might take a few minutes)...", spinner="dots"):
         code, out, err = run_cmd("docker compose up -d --build")
     
@@ -365,7 +395,11 @@ def action_restart():
     console.print("\n[bold cyan]Restarting Mensabot[/bold cyan]")
     with console.status("Stopping current stack...", spinner="dots"):
         run_cmd("docker compose down")
-    
+
+    if not ensure_ssl_certificates():
+        pause()
+        return
+
     with console.status("Starting Docker Compose stack...", spinner="dots"):
         code, out, err = run_cmd("docker compose up -d --build")
         

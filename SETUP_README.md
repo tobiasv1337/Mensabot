@@ -60,4 +60,4 @@ Select the version you want, and the wizard will securely check it out, pull the
 
 To serve Mensabot over a secure `https://` connection, the wizard provides an integrated guide for Let's Encrypt (`certbot`).
 
-Mensabot's included Nginx reverse proxy is pre-configured to automatically use Let's Encrypt certificates if they are placed in the correct `nginx/certs` directory. See the **View SSL Certificate Guide** option in the Configuration menu for precise, step-by-step shell commands.
+Mensabot's included Nginx reverse proxy expects its TLS files at `nginx/certs/selfsigned.crt` and `nginx/certs/selfsigned.key`. If those files are missing, the setup wizard automatically runs [`create-dev-cert.sh`](create-dev-cert.sh) before `docker compose up` so the nginx image can be built. To use a real certificate instead, replace those two files with your `fullchain.pem` and `privkey.pem` contents. See the **View SSL Certificate Guide** option in the Configuration menu for precise, step-by-step shell commands.
