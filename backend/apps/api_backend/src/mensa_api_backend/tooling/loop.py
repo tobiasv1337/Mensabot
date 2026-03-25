@@ -115,9 +115,15 @@ def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilter
     if filters_prompt:
         system_messages.append({"role": "system", "content": filters_prompt})
 
+    # Nudge comes last among system messages for strongest recency effect.
+    system_messages.append({"role": "system", "content": get_string("system_prompt_nudge", lang)})
+
+    # Truncate history to avoid context bloat in long conversations.
+    truncated_log = message_log[-settings.max_history_messages:]
+
     return [
         *system_messages,
-        *format_message_history(message_log),
+        *format_message_history(truncated_log),
     ]
 
 
