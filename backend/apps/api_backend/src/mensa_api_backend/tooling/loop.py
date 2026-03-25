@@ -8,7 +8,7 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from ..config import settings
 from ..concurrency import get_llm_semaphore
-from ..i18n import DEFAULT_LANGUAGE, get_string
+from ..i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, get_string
 from ..logging import logger
 from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import build_user_filters_prompt
@@ -104,6 +104,19 @@ def format_message_history(messages: List[ChatMessage], format: Literal["openai"
     return formatted_messages
 
 
+def _strip_filter_warning(content: str) -> str:
+    """Remove any appended diet/allergen warning suffix from an assistant message.
+
+    The warning is added after the loop returns, so it appears in the message history
+    on subsequent turns. Stripping it here prevents the LLM from mimicking it.
+    """
+    for lang in SUPPORTED_LANGUAGES:
+        warning = get_string("diet_allergen_warning", lang)
+        if warning and content.endswith(warning):
+            return content[: -len(warning)].rstrip()
+    return content
+
+
 def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> List[ChatCompletionMessage]:
     """Format the message log (history + current request) into the format required by the LLM."""
     system_messages = [
@@ -124,9 +137,18 @@ def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilter
     # Truncate history to avoid context bloat in long conversations.
     truncated_log = message_log[-settings.max_history_messages:]
 
+    # Strip any appended filter warnings from previous assistant messages so the
+    # LLM does not see them as part of its own output and re-append them itself.
+    sanitized_log: List[ChatMessage] = []
+    for msg in truncated_log:
+        if msg.role == "assistant" and msg.content:
+            sanitized_log.append(msg.model_copy(update={"content": _strip_filter_warning(msg.content)}))
+        else:
+            sanitized_log.append(msg)
+
     return [
         *system_messages,
-        *format_message_history(truncated_log),
+        *format_message_history(sanitized_log),
     ]
 
 
