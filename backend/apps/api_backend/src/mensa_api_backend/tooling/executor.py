@@ -35,9 +35,21 @@ class ParsedToolCall:
 
 def _normalize_tool_arg_value(value: Any) -> Any:
     if isinstance(value, str):
-        stripped = value.strip().lower()
-        if stripped in {"null", "none"}:
+        stripped = value.strip()
+        stripped_lower = stripped.lower()
+        if stripped_lower in {"null", "none"}:
             return None
+        # Transparently unwrap JSON-encoded arrays/objects that the LLM may produce
+        # as strings instead of native types (e.g. exclude_allergens='["soja"]').
+        if (stripped.startswith("[") and stripped.endswith("]")) or (
+            stripped.startswith("{") and stripped.endswith("}")
+        ):
+            try:
+                parsed = json.loads(stripped)
+                if isinstance(parsed, (list, dict)):
+                    return _normalize_tool_arg_value(parsed)
+            except json.JSONDecodeError:
+                pass
         return value
     if isinstance(value, list):
         return [_normalize_tool_arg_value(item) for item in value]
