@@ -112,6 +112,16 @@ def _record_tool_error(
     _append_tool_message(messages, call_id, tool_name, {"error": error})
 
 
+def _patch_invalid_tool_call(messages: List[Dict[str, Any]], call_id: str | None) -> None:
+    """Rewrite invalid JSON in the assistant message history so upstream proxies won't crash on retry."""
+    for msg in reversed(messages):
+        if msg.get("role") == "assistant" and "tool_calls" in msg:
+            for tc in msg.get("tool_calls", []):
+                if tc.get("id") == call_id and "function" in tc:
+                    tc["function"]["arguments"] = '{"_error": "patched_invalid_json_by_server"}'
+            break
+
+
 def _parse_tool_args(
     *,
     raw_args: Any,
@@ -143,6 +153,7 @@ def _parse_tool_args(
                     raw_args,
                     e,
                 )
+                _patch_invalid_tool_call(messages, call_id)
                 messages.append(
                     {
                         "role": "tool",
@@ -162,6 +173,7 @@ def _parse_tool_args(
         tool_name=tool_name,
         error="Tool call arguments missing or in an unsupported format",
     )
+    _patch_invalid_tool_call(messages, call_id)
     return None, True
 
 
