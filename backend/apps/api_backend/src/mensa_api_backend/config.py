@@ -30,6 +30,10 @@ class APIBackendSettings(BaseSettings):
     llm_retry_base_delay: float = 1.0
     llm_retry_max_delay: float = 30.0
 
+    # LLM-as-a-Judge: validate final responses before returning them.
+    llm_judge_enabled: bool = True
+    llm_judge_max_corrections: int = 5
+
     io_max_concurrency: int = 10
     llm_max_concurrency: int = 10
 

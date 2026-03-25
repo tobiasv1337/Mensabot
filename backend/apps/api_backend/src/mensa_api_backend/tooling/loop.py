@@ -273,6 +273,8 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
 
     tool_traces: list[ToolCallTrace] = []
+    judge_corrections_count = 0
+
     for iteration in range(1, settings.max_llm_iterations + 1):
         try:
             completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
@@ -295,7 +297,36 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
                 lang=lang,
             )
             if decision.response is not None:
-                return decision.response, tool_traces
+                # --- LLM-as-a-Judge checkpoint ---
+                if settings.llm_judge_enabled and judge_corrections_count < settings.llm_judge_max_corrections:
+                    from .judge import judge_response
+
+                    proposed_reply = decision.response.reply or ""
+                    verdict = await judge_response(messages, proposed_reply, lang)
+                    if verdict:
+                        logger.info(
+                            "Judge rejected response on iteration %d (correction %d/%d): %s",
+                            iteration, judge_corrections_count + 1, settings.llm_judge_max_corrections, verdict[:200],
+                        )
+                        tool_traces.append(ToolCallTrace(
+                            name="__judge_correction__",
+                            iteration=iteration,
+                            ok=False,
+                            result={"verdict": verdict},
+                            args={"proposed_reply": proposed_reply},
+                        ))
+                        messages.append({"role": "system", "content": verdict})
+                        judge_corrections_count += 1
+                        continue  # Give the LLM another chance
+                # --- End judge checkpoint ---
+                # Rebuild the response so it includes all accumulated tool_traces
+                # (including any judge correction entries added during earlier iterations).
+                final_response = _build_chat_response(
+                    decision.response.reply or "",
+                    tool_traces,
+                    include_tool_calls,
+                )
+                return final_response, tool_traces
             if decision.continue_loop:
                 continue
 
