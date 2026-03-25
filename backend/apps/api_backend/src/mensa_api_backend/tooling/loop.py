@@ -52,13 +52,16 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
     for attempt in range(1, settings.llm_max_retries + 1):
         try:
             async with get_llm_semaphore():
-                return await client.chat.completions.create(
+                kwargs = dict(
                     model=settings.llm_model,
                     messages=[sanitize_message(m) for m in messages],
                     tools=tools,
                     tool_choice="auto",
                     stream=False,
                 )
+                if settings.llm_temperature is not None:
+                    kwargs["temperature"] = settings.llm_temperature
+                return await client.chat.completions.create(**kwargs)
         except RateLimitError as err:
             last_error = err
             retry_after = None

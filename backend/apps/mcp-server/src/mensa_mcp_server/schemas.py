@@ -93,7 +93,7 @@ class WeekdayName(StrEnum):
 
 
 class PriceInfoDTO(DTO):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", exclude_none=True)
 
     students: float | None = Field(
         default=None,
