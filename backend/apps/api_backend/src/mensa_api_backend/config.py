@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,14 @@ class APIBackendSettings(BaseSettings):
     llm_api_key: str
     llm_base_url: str
     llm_model: str
+    llm_temperature: float | None = None
+
+    @field_validator("llm_temperature", mode="before")
+    @classmethod
+    def _empty_str_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
     log_level: str = "INFO"
     max_llm_iterations: int = 10

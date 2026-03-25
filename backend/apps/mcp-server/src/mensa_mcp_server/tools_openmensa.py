@@ -179,7 +179,7 @@ async def get_menu_for_date(
     date: Annotated[Optional[str], Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="Target date in YYYY-MM-DD format. If omitted or null, uses today's date.")] = None,
     diet_filter: Annotated[Optional[MenuDietFilter], Field(description="Filter meals by diet type (all, meat_only, vegetarian, vegan). Null or 'all' = no filter.")] = None,
     exclude_allergens: Annotated[Optional[list[str]], Field(default=None, description="Exclude meals containing any of these allergens (e.g. 'sesame', 'soja', 'peanut'). Null = no filter.")] = None,
-    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Filter to one price category (students/employees/pupils/others) if known. Null = no filter.")] = None,
+    price_category: Annotated[Optional[PriceCategory], Field(default=None, description="Show only this price category (students/employees/pupils/others); others are omitted. Null = all categories.")] = None,
 ) -> MenuResponsePublicDTO:
     """
     Get menu for a canteen on a specific date with optional diet/allergen filtering.
@@ -246,7 +246,8 @@ async def get_menus_batch(
     You have to retrieve the canteen_ids via `search_canteens` first to use this tool! Always call `search_canteens` before this tool to get the correct canteen_ids.
 
     Preferred over repeated get_menu_for_date calls when fetching more than one menu.
-    Each request can have its own diet_filter and allergen exclusions as in get_menu_for_date.
+    Each request can have its own diet_filter, allergen exclusions, and price_category as in get_menu_for_date.
+    For queries involving multiple people with different dietary or price requirements, prefer using separate request entries per person with their respective filters so results are independently correct.
     The diet_type and allergens are inferred from meal data and can't be guaranteed to be always correct. Don't fully rely on them. Always treat them with caution and inform users accordingly.
     Responses preserve input order with same statuses as get_menu_for_date.
     """
