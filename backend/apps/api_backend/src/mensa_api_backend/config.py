@@ -16,6 +16,7 @@ class APIBackendSettings(BaseSettings):
 
     log_level: str = "INFO"
     max_llm_iterations: int = 10
+    max_history_messages: int = 20
     llm_max_retries: int = 10
     llm_retry_base_delay: float = 1.0
     llm_retry_max_delay: float = 30.0
