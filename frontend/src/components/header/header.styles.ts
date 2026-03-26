@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
 export const Header = styled.header`
   position: fixed;
@@ -42,10 +43,18 @@ export const Right = styled.div`
   align-items: center;
 `;
 
-export const Brand = styled.div`
+export const Brand = styled(Link)`
   display: flex;
   align-items: center;
   gap: 14px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 14px;
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.surfaceAccent};
+    outline-offset: 4px;
+  }
 `;
 
 export const LogoImg = styled.img`

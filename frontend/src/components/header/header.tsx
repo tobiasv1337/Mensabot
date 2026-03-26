@@ -3,7 +3,7 @@ import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
 import { Button } from "../button/button";
 
-import { getNavLabel, type NavItem } from "../../types/navigation";
+import { getNavLabel, NAV_ROUTES, type NavItem } from "../../types/navigation";
 import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({
 
       {/* Center: Brand immer mittig */}
       <S.Left>
-        <S.Brand>
+        <S.Brand to={NAV_ROUTES.Home} aria-label="Go to landing page">
           <S.LogoImg src={mensaLogo} alt="Mensabot Logo" />
           <S.Title>Mensabot</S.Title>
         </S.Brand>
