@@ -30,6 +30,11 @@ class ChatRequest(BaseModel):
     judge_correction: bool = Field(default=True, alias="judgeCorrection")
 
 
+class ChatStreamRequestEnvelope(BaseModel):
+    type: Literal["chat.request"]
+    payload: ChatRequest
+
+
 class ToolCallTrace(BaseModel):
     id: str | None = None
     name: str
