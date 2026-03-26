@@ -5,16 +5,14 @@ Description: Provides OpenMensa-related tools for the MCP server.
 """
 
 import anyio
-from typing import Annotated, Optional
 from pydantic import Field
+from typing import Annotated, Optional
 
 from openmensa_sdk import OpenMensaAPIError
 
-from .concurrency import get_io_semaphore
-from .server import mcp, make_openmensa_client
-from .settings import settings
 from .cache import shared_cache
-from .cache_keys import openmensa_canteen_key, osm_opening_hours_key
+from .cache_keys import openmensa_canteen_key
+from .concurrency import get_io_semaphore
 from .schemas import (
     # OpenMensa DTOs
     CanteenDTO,
@@ -25,24 +23,20 @@ from .schemas import (
     MenuResponsePublicDTO,
     MenuBatchRequestDTO,
     MenuBatchResponsePublicDTO,
-    MenuDietFilter,
-    PriceCategory,
-    _canteen_to_dto,
     MealPublicDTO,
-
+    MenuDietFilter,
+    _canteen_to_dto,
     # OSM opening-hours DTOs
     OSMResolveForCanteenResponseDTO,
-    OpenMensaCanteenRefDTO,
+    PriceCategory,
 )
-
+from .server import mcp, make_openmensa_client
 from .services.canteen_index import load_canteen_index
 from .services.opening_hours import fetch_opening_hours_osm_for_canteen
 from .services.openmensa import fetch_single_menu, normalize_menu_date
+from .settings import settings
 
 # ------------------------------ internal helpers ------------------------------
-
-CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
-CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
 
 
 def _to_public_menu(menu: MenuResponseDTO) -> MenuResponsePublicDTO:
@@ -102,7 +96,6 @@ async def search_canteens(
     """
     if (near_lat is None) != (near_lng is None):
         raise ValueError("near_lat and near_lng must be provided together.")
-
 
     async with get_io_semaphore():
         index = await anyio.to_thread.run_sync(load_canteen_index)
@@ -169,7 +162,7 @@ async def get_canteen_info(
         canteen = await anyio.to_thread.run_sync(_fetch_canteen)
 
     dto = _canteen_to_dto(canteen)
-    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
+    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=settings.openmensa_canteen_info_cache_ttl_s)
     return dto
 
 
