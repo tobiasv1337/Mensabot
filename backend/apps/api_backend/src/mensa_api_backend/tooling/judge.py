@@ -75,7 +75,18 @@ async def judge_response(
     logger.info("Judge verdict: %s", verdict[:200])
 
     # If the judge says "OK" (or similar), the response is fine.
-    if verdict.lower().rstrip(".!") in _OK_MARKERS:
+    # Check the full text, the first line (stripped of markdown bold), and the last line.
+    normalised = verdict.lower().rstrip(".!")
+    if normalised in _OK_MARKERS:
+        return None
+
+    first_line = verdict.split("\n", 1)[0].strip().strip("*").strip().lower().rstrip(".!")
+    if first_line in _OK_MARKERS:
+        return None
+
+    # Check for a trailing verdict/urteil line like "Urteil: OK" or "Verdict: OK"
+    last_line = verdict.rstrip().rsplit("\n", 1)[-1].strip().strip("*").strip().lower().rstrip(".!")
+    if last_line in {"urteil: ok", "verdict: ok", "urteil: approved", "verdict: approved"}:
         return None
 
     return verdict
