@@ -12,6 +12,7 @@ from ..server import make_openmensa_client
 
 
 CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
+CACHE_TTL_OPENING_HOURS_ERROR_S = 60
 
 
 async def fetch_opening_hours_osm_for_canteen(
@@ -80,5 +81,6 @@ async def fetch_opening_hours_osm_for_canteen(
     ).model_dump(exclude_none=True)
 
     out = OSMResolveForCanteenResponseDTO.model_validate(res)
-    shared_cache.set(cache_key, out.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
+    ttl_s = CACHE_TTL_OPENING_HOURS_S if out.status != "error" else CACHE_TTL_OPENING_HOURS_ERROR_S
+    shared_cache.set(cache_key, out.model_dump(exclude_none=True), ttl_s=ttl_s)
     return out

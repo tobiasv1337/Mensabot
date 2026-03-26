@@ -13,12 +13,16 @@ This module contains the OSM/Overpass logic only. MCP tool functions live in too
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import re
+import time
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlsplit, urlunsplit
 
 import anyio
 import httpx
@@ -36,6 +40,8 @@ logger = logging.getLogger("mensa_mcp_server")
 DEFAULT_ATTRIBUTION = "© OpenStreetMap contributors"
 DEFAULT_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright"
 DEFAULT_LICENSE = "ODbL 1.0"
+_OVERPASS_SLOT_WAIT_RE = re.compile(r"Slot available after: .*?, in (\d+) seconds\.?", re.IGNORECASE)
+_OVERPASS_SLOTS_AVAILABLE_NOW_RE = re.compile(r"\b\d+\s+slots?\s+available\s+now\b", re.IGNORECASE)
 
 
 # ------------------------------ geometry + string helpers ------------------------------
@@ -190,20 +196,114 @@ class OSMOpeningHoursResolver:
     MAX_RETRIES = 10
     INITIAL_BACKOFF_S = 1.0
     MAX_BACKOFF_S = 16.0
+    MAX_RATE_LIMIT_WAIT_S = 120.0
     BACKOFF_MULTIPLIER = 2.0
 
     def __init__(
         self,
         overpass_url: str,
+        overpass_status_url: str | None,
         user_agent: str,
         timeout_s: float,
+        status_timeout_s: float,
         cache_ttl_s: int,
+        max_concurrency: int,
     ) -> None:
         self.overpass_url = overpass_url
+        self.overpass_status_url = overpass_status_url or self._derive_status_url(overpass_url)
         self.user_agent = user_agent
         self.timeout_s = timeout_s
+        self.status_timeout_s = status_timeout_s
         self.cache = shared_cache
         self.cache_ttl_s = cache_ttl_s
+        self._overpass_semaphore = asyncio.Semaphore(max(1, max_concurrency))
+        self._cooldown_lock = asyncio.Lock()
+        self._cooldown_until_monotonic = 0.0
+        self._inflight_lock = asyncio.Lock()
+        self._inflight_queries: dict[str, asyncio.Task[Dict[str, Any]]] = {}
+
+    @staticmethod
+    def _derive_status_url(overpass_url: str) -> str | None:
+        parts = urlsplit(overpass_url)
+        path = parts.path.rstrip("/")
+        if not path.endswith("/interpreter"):
+            return None
+        status_path = f"{path[:-len('/interpreter')]}/status"
+        return urlunsplit((parts.scheme, parts.netloc, status_path, "", ""))
+
+    @staticmethod
+    def _parse_retry_after_seconds(raw: str | None) -> float | None:
+        if not raw:
+            return None
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            pass
+        try:
+            return max(0.0, parsedate_to_datetime(raw).timestamp() - time.time())
+        except (TypeError, ValueError, IndexError, OverflowError):
+            return None
+
+    @staticmethod
+    def _parse_status_wait_seconds(status_text: str) -> float | None:
+        waits = [int(match.group(1)) for match in _OVERPASS_SLOT_WAIT_RE.finditer(status_text or "")]
+        if waits:
+            return float(min(waits))
+        if _OVERPASS_SLOTS_AVAILABLE_NOW_RE.search(status_text or ""):
+            return 0.0
+        return None
+
+    async def _wait_for_shared_cooldown(self) -> None:
+        while True:
+            async with self._cooldown_lock:
+                remaining_s = self._cooldown_until_monotonic - time.monotonic()
+            if remaining_s <= 0:
+                return
+            logger.info(f"Overpass rate limit cooldown active, waiting {remaining_s:.1f}s")
+            await anyio.sleep(remaining_s)
+
+    async def _extend_shared_cooldown(self, wait_s: float) -> None:
+        if wait_s <= 0:
+            return
+        capped_wait_s = min(self.MAX_RATE_LIMIT_WAIT_S, wait_s)
+        async with self._cooldown_lock:
+            self._cooldown_until_monotonic = max(
+                self._cooldown_until_monotonic,
+                time.monotonic() + capped_wait_s,
+            )
+
+    async def _read_status_wait_seconds(self, client: httpx.AsyncClient) -> float | None:
+        if not self.overpass_status_url:
+            return None
+        try:
+            resp = await client.get(self.overpass_status_url, timeout=self.status_timeout_s)
+            resp.raise_for_status()
+            wait_s = self._parse_status_wait_seconds(resp.text)
+            if wait_s is not None:
+                metrics.inc("overpass.http.status_hint_total")
+            return wait_s
+        except httpx.HTTPError as exc:
+            logger.debug(f"Overpass status lookup failed: {type(exc).__name__}: {exc}")
+            return None
+
+    async def _compute_rate_limit_wait_seconds(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        response: httpx.Response,
+        fallback_s: float,
+    ) -> tuple[float, str]:
+        retry_after_s = self._parse_retry_after_seconds(response.headers.get("Retry-After"))
+        if retry_after_s is not None:
+            wait_s = max(fallback_s, retry_after_s)
+            return min(self.MAX_RATE_LIMIT_WAIT_S, wait_s), "Retry-After"
+
+        status_wait_s = await self._read_status_wait_seconds(client)
+        if status_wait_s is not None:
+            wait_s = max(fallback_s, status_wait_s)
+            return min(self.MAX_RATE_LIMIT_WAIT_S, wait_s), "status endpoint"
+
+        return min(self.MAX_RATE_LIMIT_WAIT_S, fallback_s), "exponential backoff"
 
     async def _post_overpass_with_retry(self, query: str) -> Dict[str, Any]:
         """POST to Overpass with exponential backoff retry logic (async)."""
@@ -215,47 +315,58 @@ class OSMOpeningHoursResolver:
         ) as client:
             for attempt in range(1, self.MAX_RETRIES + 1):
                 try:
-                    logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
-                    metrics.inc("overpass.http.attempts_total")
-                    resp = await client.post(
-                        self.overpass_url,
-                        content=query.encode("utf-8"),
-                    )
-                    metrics.inc("overpass.http.responses_total")
-                    metrics.inc_labeled("overpass.http.status_total", str(resp.status_code))
+                    retry_wait_s: float | None = None
+                    retry_reason: str | None = None
+                    await self._wait_for_shared_cooldown()
+                    async with self._overpass_semaphore:
+                        await self._wait_for_shared_cooldown()
+                        logger.debug(f"Overpass request attempt {attempt}/{self.MAX_RETRIES}")
+                        metrics.inc("overpass.http.attempts_total")
+                        resp = await client.post(
+                            self.overpass_url,
+                            content=query.encode("utf-8"),
+                        )
+                        metrics.inc("overpass.http.responses_total")
+                        metrics.inc_labeled("overpass.http.status_total", str(resp.status_code))
 
-                    # Check for HTTP errors
-                    if resp.status_code == 429:
-                        metrics.inc("overpass.http.rate_limited_total")
-                        retry_after = resp.headers.get("Retry-After")
-                        if retry_after:
-                            try:
-                                backoff_s = min(self.MAX_BACKOFF_S, float(retry_after))
-                            except ValueError:
-                                # Ignore malformed Retry-After and keep exponential backoff.
-                                pass
+                        if resp.status_code == 429:
+                            metrics.inc("overpass.http.rate_limited_total")
+                            retry_wait_s, retry_reason = await self._compute_rate_limit_wait_seconds(
+                                client=client,
+                                response=resp,
+                                fallback_s=backoff_s,
+                            )
+                            await self._extend_shared_cooldown(retry_wait_s)
+                            if attempt >= self.MAX_RETRIES:
+                                raise RuntimeError(
+                                    f"Overpass rate limited (429); suggested wait {retry_wait_s:.1f}s ({retry_reason})."
+                                )
 
-                        if attempt < self.MAX_RETRIES:
-                            logger.warning(f"Overpass rate limited (429), retrying in {backoff_s}s")
-                            metrics.inc("overpass.http.retries_total")
-                            await anyio.sleep(backoff_s)
-                            backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                            continue
+                        elif resp.status_code >= 500:
+                            metrics.inc("overpass.http.server_error_total")
+                            if attempt >= self.MAX_RETRIES:
+                                raise RuntimeError(
+                                    f"Overpass server error {resp.status_code} after {self.MAX_RETRIES} attempts."
+                                )
+                            retry_wait_s = backoff_s
+                            retry_reason = "server error"
 
-                        resp.raise_for_status()
+                        else:
+                            resp.raise_for_status()
 
-                    if resp.status_code >= 500:
-                        metrics.inc("overpass.http.server_error_total")
-                        if attempt < self.MAX_RETRIES:
-                            logger.warning(f"Overpass server error ({resp.status_code}), retrying in {backoff_s}s")
-                            metrics.inc("overpass.http.retries_total")
-                            await anyio.sleep(backoff_s)
-                            backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
-                            continue
-
-                        resp.raise_for_status()
-
-                    resp.raise_for_status()
+                    if retry_wait_s is not None:
+                        if resp.status_code == 429:
+                            logger.info(
+                                f"Overpass rate limited (429; {retry_reason}), retrying in {retry_wait_s:.1f}s"
+                            )
+                        else:
+                            logger.warning(
+                                f"Overpass {retry_reason or 'retry'} ({resp.status_code}), retrying in {retry_wait_s:.1f}s"
+                            )
+                        metrics.inc("overpass.http.retries_total")
+                        await anyio.sleep(retry_wait_s)
+                        backoff_s = min(self.MAX_BACKOFF_S, backoff_s * self.BACKOFF_MULTIPLIER)
+                        continue
 
                     try:
                         data = resp.json()
@@ -270,6 +381,12 @@ class OSMOpeningHoursResolver:
                     logger.debug("Overpass request successful")
                     metrics.inc("overpass.http.success_total")
                     return data
+
+                except RuntimeError as e:
+                    if "Overpass rate limited (429)" not in str(e) and "Overpass server error" not in str(e):
+                        raise
+                    logger.error(str(e))
+                    raise
 
                 except httpx.TimeoutException:
                     metrics.inc("overpass.http.timeout_total")
@@ -325,8 +442,31 @@ class OSMOpeningHoursResolver:
             logger.debug("Overpass cache hit")
             return cached
 
-        data = await self._post_overpass_with_retry(query)
-        self.cache.set(cache_key, data, ttl_s=self.cache_ttl_s)
+        owner = False
+        async with self._inflight_lock:
+            cached = self.cache.get(cache_key)
+            if cached is not None:
+                logger.debug("Overpass cache hit")
+                return cached
+            task = self._inflight_queries.get(cache_key)
+            if task is None:
+                task = asyncio.create_task(self._post_overpass_with_retry(query))
+                self._inflight_queries[cache_key] = task
+                owner = True
+            else:
+                logger.debug("Overpass in-flight query hit")
+
+        try:
+            data = await task
+        finally:
+            if owner:
+                async with self._inflight_lock:
+                    current = self._inflight_queries.get(cache_key)
+                    if current is task:
+                        self._inflight_queries.pop(cache_key, None)
+
+        if owner:
+            self.cache.set(cache_key, data, ttl_s=self.cache_ttl_s)
         return data
 
     async def fetch_element(self, ref: OSMRef) -> Dict[str, Any] | None:
@@ -529,9 +669,12 @@ class OSMOpeningHoursResolver:
 
 _default_resolver = OSMOpeningHoursResolver(
     overpass_url=settings.overpass_url,
+    overpass_status_url=settings.overpass_status_url,
     user_agent=settings.overpass_user_agent,
     timeout_s=settings.overpass_timeout,
+    status_timeout_s=settings.overpass_status_timeout,
     cache_ttl_s=settings.overpass_cache_ttl_s,
+    max_concurrency=settings.overpass_max_concurrency,
 )
 
 
