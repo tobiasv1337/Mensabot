@@ -18,8 +18,9 @@ services:
       - .env
     environment:
       MENSA_MCP_CANTEEN_INDEX_PATH: /data/canteens.json
+      MENSA_MCP_SHARED_CACHE_PATH: /data/shared-cache.json
     volumes:
-      - canteen_data:/data
+      - backend_cache_data:/data
     expose:
       - "8000"
     depends_on:
@@ -65,5 +66,5 @@ services:
 
 volumes:
   portainer_data:
-  canteen_data:
+  backend_cache_data:
   stt_models:

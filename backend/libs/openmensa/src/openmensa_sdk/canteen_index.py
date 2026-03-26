@@ -26,7 +26,7 @@ from .models import Canteen
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INDEX_VERSION = 1
+CANTEEN_INDEX_VERSION = 1
 DEFAULT_INDEX_TTL_HOURS = 24.0
 
 DEFAULT_INDEX_PATH = os.getenv("OPENMENSA_CANTEEN_INDEX_PATH") or str(
@@ -298,6 +298,10 @@ class CanteenIndex:
     def from_dict(cls, payload: dict) -> CanteenIndex:
         if not isinstance(payload, dict):
             raise ValueError("Index payload must be a dict.")
+        if payload.get("version") != CANTEEN_INDEX_VERSION:
+            raise ValueError(
+                f"Index payload version {payload.get('version')!r} does not match expected version {CANTEEN_INDEX_VERSION}."
+            )
 
         updated_at = _parse_dt(payload.get("updated_at"))
         if updated_at is None:
@@ -334,7 +338,7 @@ class CanteenIndex:
         else:
             updated_at = updated_at.astimezone(dt.timezone.utc)
         return {
-            "version": DEFAULT_INDEX_VERSION,
+            "version": CANTEEN_INDEX_VERSION,
             "updated_at": updated_at.isoformat(),
             "total_canteens": len(self.canteens),
             "canteens": [c.to_dict() for c in self.canteens],

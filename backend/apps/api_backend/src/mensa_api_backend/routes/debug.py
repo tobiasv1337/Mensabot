@@ -30,6 +30,7 @@ async def get_debug_metrics(
 
     return {
         "cache": shared_cache.stats(reset=reset),
+        "cache_storage": shared_cache.storage_stats(),
         "external": metrics.snapshot(reset=reset),
         "canteen_index": {
             "path": path,

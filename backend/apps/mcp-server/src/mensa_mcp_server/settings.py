@@ -29,8 +29,10 @@ class MCPServerSettings(BaseSettings):
     canteen_index_path: str | None = None
     canteen_index_ttl_hours: float = 24.0
 
-    # Shared cache TTLs
+    # Shared cache
+    shared_cache_path: str | None = None
     shared_cache_default_ttl_s: int = 300
+    shared_cache_max_items: int = 4096
     openmensa_canteen_info_cache_ttl_s: int = 60 * 60 * 24
     openmensa_menu_cache_ttl_s: int = 60 * 60
     openmensa_menu_error_cache_ttl_s: int = 30
