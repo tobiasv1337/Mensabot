@@ -10,6 +10,7 @@ from mensa_mcp_server import mcp
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.server import make_openmensa_client
+from mensa_mcp_server.settings import settings as mcp_settings
 
 from ..concurrency import get_io_semaphore
 from ..config import settings
@@ -22,8 +23,6 @@ from ..prompts import (
     DIRECTIONS_TOOL_NAME,
     LOCATION_TOOL_NAME,
 )
-
-CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 
 
 @dataclass
@@ -329,7 +328,7 @@ async def _handle_directions_tool(
                         "lat": lat,
                         "lng": lng,
                     },
-                    ttl_s=CACHE_TTL_CANTEEN_INFO_S,
+                    ttl_s=mcp_settings.openmensa_canteen_info_cache_ttl_s,
                 )
             except OpenMensaAPIError as exc:
                 _record_tool_error(

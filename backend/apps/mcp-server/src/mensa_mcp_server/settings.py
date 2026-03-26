@@ -29,6 +29,15 @@ class MCPServerSettings(BaseSettings):
     canteen_index_path: str | None = None
     canteen_index_ttl_hours: float = 24.0
 
+    # Shared cache TTLs
+    shared_cache_default_ttl_s: int = 300
+    openmensa_canteen_info_cache_ttl_s: int = 60 * 60 * 24
+    openmensa_menu_cache_ttl_s: int = 60 * 60
+    openmensa_menu_error_cache_ttl_s: int = 30
+    opening_hours_cache_ttl_s: int = 60 * 60 * 24 * 7
+    opening_hours_error_cache_ttl_s: int = 60
+    mcp_tools_cache_ttl_s: int = 60 * 60 * 24
+
     # Timezone for date calculations
     timezone: str = "Europe/Berlin"
 

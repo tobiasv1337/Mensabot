@@ -5,6 +5,8 @@ from collections import OrderedDict
 from threading import Lock
 from typing import Any
 
+from .settings import settings
+
 
 class TTLCache:
     """Small in-memory TTL cache with FIFO eviction."""
@@ -99,4 +101,4 @@ class TTLCache:
             return out
 
 
-shared_cache = TTLCache()
+shared_cache = TTLCache(default_ttl_s=settings.shared_cache_default_ttl_s)

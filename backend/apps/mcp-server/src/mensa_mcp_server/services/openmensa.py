@@ -21,10 +21,6 @@ from ..schemas import (
 from ..settings import settings
 
 
-CACHE_TTL_MENU_S = 60 * 60
-CACHE_TTL_ERROR_S = 30
-
-
 def _local_today() -> dt.date:
     return dt.datetime.now(ZoneInfo(settings.timezone)).date()
 
@@ -127,7 +123,7 @@ def fetch_single_menu(
                 total_meals=0,
                 returned_meals=0,
             )
-            shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+            shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=settings.openmensa_menu_cache_ttl_s)
             return response
 
         response = MenuResponseDTO(
@@ -138,7 +134,7 @@ def fetch_single_menu(
             total_meals=0,
             returned_meals=0,
         )
-        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_ERROR_S)
+        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=settings.openmensa_menu_error_cache_ttl_s)
         return response
 
     if not meals:
@@ -150,7 +146,7 @@ def fetch_single_menu(
             total_meals=0,
             returned_meals=0,
         )
-        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+        shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=settings.openmensa_menu_cache_ttl_s)
         return response
 
     total_meals = len(meals)
@@ -170,5 +166,5 @@ def fetch_single_menu(
         total_meals=total_meals,
         returned_meals=len(filtered_meals),
     )
-    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_MENU_S)
+    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=settings.openmensa_menu_cache_ttl_s)
     return response
