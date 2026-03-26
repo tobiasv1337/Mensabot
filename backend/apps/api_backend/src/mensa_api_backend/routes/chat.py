@@ -15,5 +15,6 @@ async def chat(request: ChatRequest) -> ChatResponse:
         request.messages,
         include_tool_calls=request.include_tool_calls,
         user_filters=request.filters,
+        judge_correction=request.judge_correction,
         language=lang,
     )

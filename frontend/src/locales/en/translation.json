@@ -195,6 +195,13 @@
         "filter": "Filter",
         "newChat": "New Chat",
         "scrollToLatest": "Scroll to latest",
+        "mode": {
+            "label": "Response mode",
+            "fast": "Fast",
+            "fastDescription": "Respond faster without the extra quality review.",
+            "reliable": "Reliable",
+            "reliableDescription": "Use the quality judge for more reliable answers."
+        },
         "aiWarning": "AI-generated answers may contain errors.",
         "nameUser": "You",
         "nameBot": "MensaBot",

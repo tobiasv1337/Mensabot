@@ -235,7 +235,7 @@ export class Chat {
 		Chats.deleteById(this.id);
 	}
 
-	async send(client: MensaBotClient, message: string, options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async send(client: MensaBotClient, message: string, options: { includeToolCalls?: boolean; judgeCorrection?: boolean } = {}): Promise<ChatApiResponse> {
 		if (!(client instanceof MensaBotClient)) {
 			throw new Error("argument 0 must be an instance of MensaBotClient");
 		}

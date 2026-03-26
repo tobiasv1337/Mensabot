@@ -160,7 +160,7 @@ export class MensaBotClient {
 		}
 	}
 
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean; filters?: ChatFilters } = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean; filters?: ChatFilters; judgeCorrection?: boolean } = {}): Promise<ChatApiResponse> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 
 		const filters = options.filters;
@@ -170,6 +170,7 @@ export class MensaBotClient {
 			messages: payload,
 			include_tool_calls: options.includeToolCalls ?? false,
 			language: i18n.language,
+			judgeCorrection: options.judgeCorrection ?? true,
 		};
 
 		if (hasFilters) {

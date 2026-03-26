@@ -195,6 +195,13 @@
         "filter": "Filter",
         "newChat": "Neuer Chat",
         "scrollToLatest": "Zum neuesten",
+        "mode": {
+            "label": "Antwortmodus",
+            "fast": "Schnell",
+            "fastDescription": "Antwortet schneller ohne die zusätzliche Qualitätsprüfung.",
+            "reliable": "Zuverlässig",
+            "reliableDescription": "Nutzt die Qualitätsprüfung für verlässlichere Antworten."
+        },
         "aiWarning": "KI-generierte Antworten können Fehler enthalten.",
         "nameUser": "Du",
         "nameBot": "Mensabot",
