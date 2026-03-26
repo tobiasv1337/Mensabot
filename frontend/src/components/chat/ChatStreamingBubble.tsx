@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { ChatMessage } from "../../services/chats";
 import ChatBubble from "./ChatBubble";
-import { STREAMING_JUDGE_TRACE_ID, type ActiveStreamState } from "./chatStreamState";
+import type { ActiveStreamState } from "./chatStreamState";
 
 
 type ChatStreamingBubbleProps = {
@@ -23,30 +23,13 @@ const getStreamingStatusText = (stream: ActiveStreamState, t: ReturnType<typeof 
   return t("chat.streaming.finalizing");
 };
 
-const buildStreamingToolCalls = (stream: ActiveStreamState, judgeTraceLabel: string) => {
-  const toolCalls = stream.traces.map((entry) => entry.trace);
-  if (!stream.judge || stream.judge.state === "started") return toolCalls;
-
-  return [
-    ...toolCalls,
-    {
-      id: STREAMING_JUDGE_TRACE_ID,
-      name: judgeTraceLabel,
-      iteration: stream.judge.iteration,
-      ok: stream.judge.state === "passed" ? true : stream.judge.state === "rejected" ? false : undefined,
-      result: {
-        state: stream.judge.state,
-        verdict: stream.judge.verdict,
-      },
-    },
-  ];
-};
+const buildStreamingToolCalls = (stream: ActiveStreamState) => stream.traces.map((entry) => entry.trace);
 
 const ChatStreamingBubble: React.FC<ChatStreamingBubbleProps> = ({ stream, avatarSrc }) => {
   const { t } = useTranslation();
   const message = new ChatMessage("assistant", getStreamingStatusText(stream, t), {
     kind: "normal",
-    toolCalls: buildStreamingToolCalls(stream, t("chat.streaming.judgeTraceLabel")),
+    toolCalls: buildStreamingToolCalls(stream),
   });
   return <ChatBubble message={message} avatarSrc={avatarSrc} />;
 };

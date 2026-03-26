@@ -13,7 +13,7 @@ from ..logging import logger
 from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
-from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat
+from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
 from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
 
@@ -350,13 +350,15 @@ async def _run_tool_calling_loop_inner(
                             "Judge rejected response on iteration %d (correction %d/%d): %s",
                             iteration, judge_corrections_count + 1, settings.llm_judge_max_corrections, verdict[:200],
                         )
-                        tool_traces.append(ToolCallTrace(
+                        judge_trace = ToolCallTrace(
                             name="__judge_correction__",
                             iteration=iteration,
                             ok=False,
                             result={"verdict": verdict},
                             args={"proposed_reply": proposed_reply},
-                        ))
+                        )
+                        tool_traces.append(judge_trace)
+                        await sink.emit_tool_trace(trace_id=build_trace_id(None, iteration, len(tool_traces)), state="error", trace=judge_trace.model_copy(deep=True))
                         # Deliberate tradeoff: use the judge's free-form verdict verbatim
                         # as a system nudge because it improves correction quality here,
                         # even though it promotes user-influenced model output in priority.
