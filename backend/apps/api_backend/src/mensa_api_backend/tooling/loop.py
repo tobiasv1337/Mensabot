@@ -262,12 +262,12 @@ def _maybe_append_filter_warning(response: ChatResponse, tool_traces: list[ToolC
     return response
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, language: str = DEFAULT_LANGUAGE) -> ChatResponse:
-    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters, language)
+async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, judge_correction: bool = True, language: str = DEFAULT_LANGUAGE) -> ChatResponse:
+    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters, judge_correction, language)
     return _maybe_append_filter_warning(response, tool_traces, language)
 
 
-async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> tuple[ChatResponse, list[ToolCallTrace]]:
+async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, judge_correction: bool = True, lang: str = DEFAULT_LANGUAGE) -> tuple[ChatResponse, list[ToolCallTrace]]:
     messages = prepare_message_log(message_log, user_filters, lang)
     tools = await get_openai_tools_from_mcp()
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
@@ -298,7 +298,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
             )
             if decision.response is not None:
                 # --- LLM-as-a-Judge checkpoint ---
-                if settings.llm_judge_enabled and judge_corrections_count < settings.llm_judge_max_corrections:
+                if judge_correction and settings.llm_judge_enabled and judge_corrections_count < settings.llm_judge_max_corrections:
                     from .judge import judge_response
 
                     proposed_reply = decision.response.reply or ""

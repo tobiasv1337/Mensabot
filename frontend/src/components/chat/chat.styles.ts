@@ -60,12 +60,133 @@ export const HeaderCard = styled.div`
   z-index: 6;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 8px 0 10px;
   background: linear-gradient(180deg, ${({ theme }) => theme.surfacePage} 75%, transparent);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid ${({ theme }) => `${theme.textMuted}14`};
+
+  @media (max-width: 720px) {
+    gap: 8px;
+  }
+`;
+
+export const ModeMenu = styled.div`
+  position: relative;
+`;
+
+export const ModeMenuButton = styled.button`
+  height: 34px;
+  min-width: 96px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}30`};
+  background: ${({ theme }) => theme.surfacePage};
+  color: ${({ theme }) => theme.textPrimary};
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: ${({ theme }) => `${theme.accent1}55`};
+    box-shadow: 0 8px 16px ${({ theme }) => `${theme.textDark}12`};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.accent2};
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 720px) {
+    height: 32px;
+    min-width: 88px;
+    padding: 0 10px;
+  }
+`;
+
+export const ModeMenuLabel = styled.span`
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+`;
+
+export const ModeMenuCaret = styled.span<{ $open?: boolean }>`
+  font-size: 12px;
+  opacity: 0.72;
+  transition: transform 0.18s ease;
+  transform: ${({ $open }) => ($open ? "rotate(180deg)" : "none")};
+`;
+
+export const ModeMenuPopover = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: min(280px, calc(100vw - 32px));
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+  background: ${({ theme }) => theme.surfaceElevated};
+  box-shadow: 0 18px 36px ${({ theme }) => `${theme.textDark}18`};
+`;
+
+export const ModeMenuItem = styled.button<{ $selected?: boolean }>`
+  width: 100%;
+  border: none;
+  background: ${({ theme, $selected }) => ($selected ? `${theme.accent1}16` : "transparent")};
+  color: ${({ theme }) => theme.textPrimary};
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: ${({ theme, $selected }) => ($selected ? `${theme.accent1}20` : `${theme.textMuted}12`)};
+    transform: translateY(-1px);
+  }
+`;
+
+export const ModeMenuItemText = styled.span`
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+`;
+
+export const ModeMenuItemLabel = styled.span`
+  font-size: 13px;
+  font-weight: 700;
+`;
+
+export const ModeMenuItemMeta = styled.span`
+  font-size: 11px;
+  line-height: 1.35;
+  color: ${({ theme }) => theme.textSecondary};
+`;
+
+export const ModeMenuItemCheck = styled.span`
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.accent1};
 `;
 
 export const HeaderActions = styled.div`
@@ -73,6 +194,12 @@ export const HeaderActions = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  margin-left: auto;
+
+  @media (max-width: 720px) {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
 `;
 
 export const IconButton = styled.button<{ $variant?: "primary" | "ghost" }>`
@@ -112,6 +239,13 @@ export const IconButton = styled.button<{ $variant?: "primary" | "ghost" }>`
     outline: 2px solid ${({ theme }) => theme.accent2};
     outline-offset: 2px;
   }
+
+  @media (max-width: 720px) {
+    height: 32px;
+    min-width: 32px;
+    padding: 0 8px;
+    gap: 0;
+  }
 `;
 
 export const IconButtonLabel = styled.span`
@@ -123,12 +257,6 @@ export const IconButtonLabel = styled.span`
 
   @media (max-width: 720px) {
     display: none;
-  }
-`;
-
-export const IconButtonLabelAlways = styled(IconButtonLabel)`
-  @media (max-width: 720px) {
-    display: inline;
   }
 `;
 

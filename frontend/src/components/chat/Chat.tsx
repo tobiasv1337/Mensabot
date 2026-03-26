@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { getApiClient } from "../../services/apiClient";
+import { isJudgeCorrectionEnabled, type ChatMode } from "../../services/chatMode";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
@@ -36,6 +37,8 @@ const isNearBottom = (el: HTMLDivElement) => {
 type ChatProps = {
   chat: ChatModel;
   filters: ChatFilters;
+  chatMode: ChatMode;
+  onChatModeChange: (mode: ChatMode) => void;
   onFiltersChange: (filters: ChatFilters) => void;
   onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
   menuCanteen?: Canteen | null;
@@ -50,11 +53,11 @@ const cloneFilters = (filters: ChatFilters): ChatFilters => ({
   priceCategory: filters.priceCategory ?? null,
 });
 
-
-
 const Chat: React.FC<ChatProps> = ({
   chat,
   filters,
+  chatMode,
+  onChatModeChange,
   onFiltersChange,
   onStartNewChat,
   menuCanteen = null,
@@ -66,7 +69,6 @@ const Chat: React.FC<ChatProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
-
   const [version, setVersion] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -74,6 +76,7 @@ const Chat: React.FC<ChatProps> = ({
 
   const [inputValue, setInputValue] = useState("");
   const [focusSignal, setFocusSignal] = useState(0);
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [shortcutModalOpen, setShortcutModalOpen] = useState(false);
   const [shortcutDraft, setShortcutDraft] = useState<ShortcutInput>({
     name: "",
@@ -87,6 +90,7 @@ const Chat: React.FC<ChatProps> = ({
   const [clarificationHandled, setClarificationHandled] = useState(false);
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
   const initialMenuFetched = useRef(false);
   const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
 
@@ -181,6 +185,7 @@ const Chat: React.FC<ChatProps> = ({
   useEffect(() => {
     setFiltersOpen(false);
     setInputValue("");
+    setModeMenuOpen(false);
     setLocationPromptHandled(false);
     setLocationError("");
     setClarificationHandled(false);
@@ -191,7 +196,6 @@ const Chat: React.FC<ChatProps> = ({
       scrollToBottom();
     });
   }, [chat, scrollToBottom]);
-
 
   useEffect(() => {
     if (filters.allergens.length === 0) return;
@@ -220,6 +224,26 @@ const Chat: React.FC<ChatProps> = ({
 
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!modeMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (modeMenuRef.current?.contains(event.target as Node)) return;
+      setModeMenuOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setModeMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [modeMenuOpen]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -309,7 +333,7 @@ const Chat: React.FC<ChatProps> = ({
       setIsSending(true);
       try {
         shouldAutoScrollRef.current = true;
-        await chat.send(client, trimmed, { includeToolCalls: true });
+        await chat.send(client, trimmed, { includeToolCalls: true, judgeCorrection: isJudgeCorrectionEnabled(chatMode) });
         setVersion((v) => v + 1);
       } catch (err) {
         console.error("Chat send failed:", err);
@@ -324,7 +348,7 @@ const Chat: React.FC<ChatProps> = ({
         setIsSending(false);
       }
     },
-    [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, t]
+    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -402,6 +426,11 @@ const Chat: React.FC<ChatProps> = ({
   const handleResetFilters = useCallback(() => {
     updateFilters(defaultChatFilters);
   }, [updateFilters]);
+
+  const handleSelectMode = useCallback((mode: ChatMode) => {
+    onChatModeChange(mode);
+    setModeMenuOpen(false);
+  }, [onChatModeChange]);
 
   const hasActiveFilters =
     filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0 || filters.priceCategory !== null;
@@ -807,11 +836,69 @@ const Chat: React.FC<ChatProps> = ({
     : undefined;
 
   const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen && onboarding.step === "done";
+  const activeModeLabel = chatMode === "fast" ? t("chat.mode.fast") : t("chat.mode.reliable");
+  const activeModeDescription = chatMode === "fast" ? t("chat.mode.fastDescription") : t("chat.mode.reliableDescription");
+  const modeOptions: { value: ChatMode; label: string; description: string }[] = [
+    { value: "reliable", label: t("chat.mode.reliable"), description: t("chat.mode.reliableDescription") },
+    { value: "fast", label: t("chat.mode.fast"), description: t("chat.mode.fastDescription") },
+  ];
 
   return (
     <S.ChatShell>
       <S.HeaderCard>
+        <S.ModeMenu ref={modeMenuRef}>
+          <S.ModeMenuButton
+            type="button"
+            onClick={() => setModeMenuOpen((open) => !open)}
+            disabled={isSending}
+            aria-label={t("chat.mode.label")}
+            aria-haspopup="menu"
+            aria-expanded={modeMenuOpen}
+            title={activeModeDescription}
+          >
+            <S.ModeMenuLabel>{activeModeLabel}</S.ModeMenuLabel>
+            <S.ModeMenuCaret $open={modeMenuOpen}>▾</S.ModeMenuCaret>
+          </S.ModeMenuButton>
+          {modeMenuOpen && (
+            <S.ModeMenuPopover role="menu" aria-label={t("chat.mode.label")}>
+              {modeOptions.map((option) => (
+                <S.ModeMenuItem
+                  key={option.value}
+                  type="button"
+                  $selected={chatMode === option.value}
+                  onClick={() => handleSelectMode(option.value)}
+                  role="menuitemradio"
+                  aria-checked={chatMode === option.value}
+                >
+                  <S.ModeMenuItemText>
+                    <S.ModeMenuItemLabel>{option.label}</S.ModeMenuItemLabel>
+                    <S.ModeMenuItemMeta>{option.description}</S.ModeMenuItemMeta>
+                  </S.ModeMenuItemText>
+                  <S.ModeMenuItemCheck aria-hidden="true">{chatMode === option.value ? "✓" : ""}</S.ModeMenuItemCheck>
+                </S.ModeMenuItem>
+              ))}
+            </S.ModeMenuPopover>
+          )}
+        </S.ModeMenu>
         <S.HeaderActions>
+          <S.IconButton
+            type="button"
+            $variant="ghost"
+            onClick={() => setFiltersOpen((prev) => !prev)}
+            title={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
+            aria-label={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 5h18L14 13v6l-4 2v-8L3 5z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <S.IconButtonLabel>{filtersOpen ? t("chat.filterClose") : t("chat.filter")}</S.IconButtonLabel>
+          </S.IconButton>
           {hasActiveFilters && (
             <S.IconButton
               type="button"
@@ -835,27 +922,9 @@ const Chat: React.FC<ChatProps> = ({
                   strokeLinejoin="round"
                 />
               </svg>
-              <S.IconButtonLabelAlways>{t("chat.resetFilters")}</S.IconButtonLabelAlways>
+              <S.IconButtonLabel>{t("chat.resetFilters")}</S.IconButtonLabel>
             </S.IconButton>
           )}
-          <S.IconButton
-            type="button"
-            $variant="ghost"
-            onClick={() => setFiltersOpen((prev) => !prev)}
-            title={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
-            aria-label={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 5h18L14 13v6l-4 2v-8L3 5z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <S.IconButtonLabel>{filtersOpen ? t("chat.filterClose") : t("chat.filter")}</S.IconButtonLabel>
-          </S.IconButton>
           <S.IconButton
             type="button"
             $variant="primary"
@@ -872,7 +941,7 @@ const Chat: React.FC<ChatProps> = ({
                 strokeLinecap="round"
               />
             </svg>
-            <S.IconButtonLabelAlways>{t("chat.newChat")}</S.IconButtonLabelAlways>
+            <S.IconButtonLabel>{t("chat.newChat")}</S.IconButtonLabel>
           </S.IconButton>
         </S.HeaderActions>
       </S.HeaderCard>
