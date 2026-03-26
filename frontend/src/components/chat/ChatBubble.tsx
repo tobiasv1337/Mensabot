@@ -60,6 +60,35 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
             <S.ToolTraceGroup>
               <S.ToolTraceTitle>{t("chat.toolCalls", { count: toolCalls.length })}</S.ToolTraceTitle>
               {toolCalls.map((toolCall, toolIndex) => {
+                const isJudge = toolCall.name === "__judge_correction__";
+
+                if (isJudge) {
+                  const verdict = typeof toolCall.result === "object" && toolCall.result !== null
+                    ? (toolCall.result as Record<string, unknown>).verdict ?? ""
+                    : "";
+                  const proposedReply = typeof toolCall.args === "object" && toolCall.args !== null
+                    ? (toolCall.args as Record<string, unknown>).proposed_reply ?? ""
+                    : "";
+
+                  return (
+                    <S.JudgeDetails key={`judge-${toolIndex}`}>
+                      <summary>
+                        <span>
+                          <S.ToolCallName>{t("chat.judgeCorrectionLabel")}</S.ToolCallName>
+                          {toolCall.iteration && <S.ToolCallMeta>iter {toolCall.iteration}</S.ToolCallMeta>}
+                        </span>
+                        <S.JudgeStatus>{t("chat.judgeCorrected")}</S.JudgeStatus>
+                      </summary>
+                      <S.ToolCallBody>
+                        <S.ToolCallSectionTitle>{t("chat.judgeVerdict")}</S.ToolCallSectionTitle>
+                        <S.ToolCallCode>{String(verdict)}</S.ToolCallCode>
+                        <S.ToolCallSectionTitle>{t("chat.judgeRejectedReply")}</S.ToolCallSectionTitle>
+                        <S.ToolCallCode>{String(proposedReply)}</S.ToolCallCode>
+                      </S.ToolCallBody>
+                    </S.JudgeDetails>
+                  );
+                }
+
                 const status: "ok" | "error" | "info" =
                   toolCall.ok === false ? "error" : toolCall.ok === true ? "ok" : "info";
                 const requestPayload = toolCall.args ?? (toolCall.raw_args ? { raw_args: toolCall.raw_args } : undefined);
