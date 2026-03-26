@@ -131,6 +131,9 @@ export const streamChatResponse = async ({
 			if (settled) return;
 			settled = true;
 			clearAcceptTimer();
+			window.setTimeout(() => {
+				if (socket?.readyState === WebSocket.OPEN) socket.close(1000, "done");
+			}, 0);
 			resolve(response);
 		};
 

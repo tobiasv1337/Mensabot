@@ -63,18 +63,21 @@ class WebSocketChatProgressSink(ChatProgressSink):
         await self._send({"type": "chat.error", "code": code, "message": message})
 
 
-async def _wait_for_disconnect(websocket: WebSocket) -> None:
-    while True:
-        message = await websocket.receive()
-        if message.get("type") == "websocket.disconnect":
-            raise ClientDisconnectedError()
-
-
 async def _close_socket(websocket: WebSocket, code: int) -> None:
     if websocket.application_state == WebSocketState.DISCONNECTED:
         return
     with suppress(RuntimeError):
         await websocket.close(code=code)
+
+
+async def _wait_for_client_close(websocket: WebSocket, timeout_s: float = 2.0) -> None:
+    try:
+        while True:
+            message = await asyncio.wait_for(websocket.receive(), timeout=timeout_s)
+            if message.get("type") == "websocket.disconnect":
+                return
+    except asyncio.TimeoutError:
+        await _close_socket(websocket, 1000)
 
 
 @router.websocket("/api/chat/ws")
@@ -104,25 +107,7 @@ async def chat_ws(websocket: WebSocket) -> None:
 
     try:
         await sink.emit_request_accepted(request_id)
-        chat_task = asyncio.create_task(run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls, user_filters=request.filters, judge_correction=request.judge_correction, language=lang, progress_sink=sink))
-        disconnect_task = asyncio.create_task(_wait_for_disconnect(websocket))
-
-        done, pending = await asyncio.wait({chat_task, disconnect_task}, return_when=asyncio.FIRST_COMPLETED)
-
-        for task in pending:
-            task.cancel()
-            with suppress(asyncio.CancelledError):
-                await task
-
-        if disconnect_task in done:
-            with suppress(ClientDisconnectedError):
-                disconnect_task.result()
-            chat_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await chat_task
-            raise ClientDisconnectedError()
-
-        await chat_task
+        await run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls, user_filters=request.filters, judge_correction=request.judge_correction, language=lang, progress_sink=sink)
     except ClientDisconnectedError:
         logger.info("Client disconnected from chat websocket stream.")
         return
@@ -131,4 +116,4 @@ async def chat_ws(websocket: WebSocket) -> None:
         await _close_socket(websocket, 1011)
         return
 
-    await _close_socket(websocket, 1000)
+    await _wait_for_client_close(websocket)
