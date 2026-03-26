@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from mensabot_common.version import build_user_agent
+
 
 class MCPServerSettings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -13,7 +15,7 @@ class MCPServerSettings(BaseSettings):
     # OpenMensa API
     openmensa_base_url: str = "https://openmensa.org/api/v2"
     openmensa_timeout: float = 10.0
-    openmensa_user_agent: str = "mensabot-mcp-server/1.0.0"
+    openmensa_user_agent: str = build_user_agent("mensabot-mcp-server")
     mcp_name: str = "mensabot-openmensa-mcp-server"
 
     # Overpass / OSM
@@ -23,7 +25,7 @@ class MCPServerSettings(BaseSettings):
     overpass_status_timeout: float = 5.0
     overpass_cache_ttl_s: int = 900
     overpass_max_concurrency: int = 1
-    overpass_user_agent: str = "mensabot-mcp-server/1.0.0"
+    overpass_user_agent: str = build_user_agent("mensabot-mcp-server")
 
     # Canteen index
     canteen_index_path: str | None = None

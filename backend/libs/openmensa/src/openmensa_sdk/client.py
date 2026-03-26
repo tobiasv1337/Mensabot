@@ -12,6 +12,7 @@ import datetime as dt
 from .errors import OpenMensaAPIError
 from .models import Canteen, Day, Meal
 from .utils import _parse_date_str, _parse_next_page_from_link, _clean_params
+from mensabot_common.version import build_user_agent
 
 
 
@@ -40,7 +41,7 @@ class OpenMensaClient:
         base_url: str = DEFAULT_API_URL,
         session: Optional[requests.Session] = None,
         timeout: float = 10.0,
-        user_agent: str = "openmensa-wrapper/1.0",
+        user_agent: str = build_user_agent("openmensa-sdk"),
         extra_headers: Optional[Mapping[str, str]] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")

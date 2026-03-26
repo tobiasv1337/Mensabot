@@ -10,11 +10,12 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from mensabot_common.version import PROJECT_VERSION
+
 from .settings import settings
 
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = 1
 DEFAULT_SHARED_CACHE_PATH = str(
     Path(os.getenv("XDG_CACHE_HOME") or Path.home() / ".cache")
     / "mensabot"
@@ -88,12 +89,12 @@ class TTLCache:
             return
 
         version = payload.get("version")
-        if version != CACHE_VERSION:
+        if version != PROJECT_VERSION:
             logger.warning(
-                "Ignoring shared cache at %s because version %r is incompatible with expected version %d.",
+                "Ignoring shared cache at %s because version %r is incompatible with expected version %s.",
                 self.path,
                 version,
-                CACHE_VERSION,
+                PROJECT_VERSION,
             )
             self._store = OrderedDict()
             self._file_mtime = mtime
@@ -138,7 +139,7 @@ class TTLCache:
         os.makedirs(dir_path, exist_ok=True)
 
         payload = {
-            "version": CACHE_VERSION,
+            "version": PROJECT_VERSION,
             "updated_at": int(time.time()),
             "total_items": len(self._store),
             "entries": [
