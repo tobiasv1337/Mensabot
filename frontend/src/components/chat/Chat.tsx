@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
+import type { ChatStreamEvent } from "../../services/chatStream";
 import { getApiClient } from "../../services/apiClient";
 import { isJudgeCorrectionEnabled, type ChatMode } from "../../services/chatMode";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
+import ChatStreamingBubble from "./ChatStreamingBubble";
 import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
 import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
@@ -23,6 +25,7 @@ import {
   WEEKDAY_LABELS,
 } from "./chatCommands";
 import { buildMenuMarkdown } from "./chatFormatting";
+import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "./chatStreamState";
 import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
 
@@ -73,6 +76,7 @@ const Chat: React.FC<ChatProps> = ({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
+  const [activeStream, setActiveStream] = useState<ActiveStreamState | null>(null);
 
   const [inputValue, setInputValue] = useState("");
   const [focusSignal, setFocusSignal] = useState(0);
@@ -93,6 +97,7 @@ const Chat: React.FC<ChatProps> = ({
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const initialMenuFetched = useRef(false);
   const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
+  const streamAcceptedRef = useRef(false);
 
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
@@ -142,6 +147,8 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setClarificationHandled(false);
     setShowScrollToLatest(false);
+    setActiveStream(null);
+    streamAcceptedRef.current = false;
     shouldAutoScrollRef.current = true;
   }, [isSending, onStartNewChat]);
 
@@ -191,6 +198,8 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setClarificationHandled(false);
     setShowScrollToLatest(false);
+    setActiveStream(null);
+    streamAcceptedRef.current = false;
     shouldAutoScrollRef.current = true;
     onboardingStartedRef.current = false;
     requestAnimationFrame(() => {
@@ -255,7 +264,7 @@ const Chat: React.FC<ChatProps> = ({
         scrollToBottom();
       });
     }
-  }, [version, chat.messages.length, isSending, chat.id, scrollToBottom]);
+  }, [version, chat.messages.length, isSending, activeStream, chat.id, scrollToBottom]);
 
   useEffect(() => {
     const lastMsg = chat.messages[chat.messages.length - 1];
@@ -275,6 +284,13 @@ const Chat: React.FC<ChatProps> = ({
     setLocationPromptHandled(true);
     setClarificationHandled(true);
   }, [version, chat]);
+
+  const handleStreamEvent = useCallback((event: ChatStreamEvent) => {
+    if (event.type === "chat.accepted") {
+      streamAcceptedRef.current = true;
+    }
+    setActiveStream((prev) => applyStreamEvent(prev, event));
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -334,22 +350,44 @@ const Chat: React.FC<ChatProps> = ({
       setIsSending(true);
       try {
         shouldAutoScrollRef.current = true;
-        await chat.send(client, trimmed, { includeToolCalls: true, judgeCorrection: isJudgeCorrectionEnabled(chatMode) });
+        streamAcceptedRef.current = false;
+        setActiveStream(createInitialStreamState());
+        await chat.send(client, trimmed, {
+          includeToolCalls: true,
+          judgeCorrection: isJudgeCorrectionEnabled(chatMode),
+          onStreamEvent: handleStreamEvent,
+          onStreamFallback: () => setActiveStream(null),
+        });
+        setActiveStream(null);
+        streamAcceptedRef.current = false;
         setVersion((v) => v + 1);
       } catch (err) {
         console.error("Chat send failed:", err);
-        chat.addMessage(
-          new ChatMessage(
-            "assistant",
-            t("chat.serverError")
-          )
-        );
-        setVersion((v) => v + 1);
+        if (streamAcceptedRef.current) {
+          setActiveStream((prev) =>
+            prev
+              ? {
+                ...prev,
+                error: t("chat.streaming.transportError"),
+              }
+              : null
+          );
+        } else {
+          setActiveStream(null);
+          streamAcceptedRef.current = false;
+          chat.addMessage(
+            new ChatMessage(
+              "assistant",
+              t("chat.serverError")
+            )
+          );
+          setVersion((v) => v + 1);
+        }
       } finally {
         setIsSending(false);
       }
     },
-    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, t]
+    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, handleStreamEvent, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -1054,7 +1092,9 @@ const Chat: React.FC<ChatProps> = ({
               );
             })}
 
-            {isSending && (
+            {activeStream ? (
+              <ChatStreamingBubble stream={activeStream} avatarSrc={mensabotLogo} />
+            ) : isSending ? (
               <S.MessageRow>
                 <S.Avatar src={mensabotLogo} alt={t("chat.nameBot")} />
                 <S.MessageContent>
@@ -1066,7 +1106,7 @@ const Chat: React.FC<ChatProps> = ({
                   </S.TypingBubble>
                 </S.MessageContent>
               </S.MessageRow>
-            )}
+            ) : null}
 
           </S.MessageList>
         </S.MessagesScroll>

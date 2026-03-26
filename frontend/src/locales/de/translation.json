@@ -212,6 +212,18 @@
         "judgeCorrected": "korrigiert",
         "judgeVerdict": "Bewertung",
         "judgeRejectedReply": "Abgelehnte Antwort",
+        "streaming": {
+            "starting": "Anfrage wird gestartet...",
+            "waitingForLlm": "Ich denke nach...",
+            "executingTools": "Tools werden ausgeführt...",
+            "waitingForJudge": "Qualitätsprüfung läuft...",
+            "finalizing": "Antwort wird finalisiert...",
+            "judgeRunning": "Die Qualitätsprüfung prüft die Antwort...",
+            "judgeRejected": "Die Qualitätsprüfung verlangt einen weiteren Durchlauf...",
+            "judgePassed": "Qualitätsprüfung bestanden. Antwort wird finalisiert...",
+            "judgeTraceLabel": "Live-Qualitätsprüfung",
+            "transportError": "❌ Der Live-Stream wurde unterbrochen. Bitte versuche es erneut."
+        },
         "showMenuFor": "Zeige mir den Speiseplan der Mensa {{name}}{{date}}.",
         "dateForToday": " für heute",
         "dateFor": " für {{date}}",
