@@ -11,10 +11,4 @@ router = APIRouter()
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     lang = resolve_language(request.language)
-    return await run_tool_calling_loop(
-        request.messages,
-        include_tool_calls=request.include_tool_calls,
-        user_filters=request.filters,
-        judge_correction=request.judge_correction,
-        language=lang,
-    )
+    return await run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls, user_filters=request.filters, judge_correction=request.judge_correction, language=lang)
