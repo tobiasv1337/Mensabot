@@ -1,9 +1,6 @@
 import type { ChatStreamEvent, ChatStreamPhase, JudgeStatusState } from "../../services/chatStream";
 import type { ToolCallTrace } from "../../services/api";
 
-
-export const STREAMING_JUDGE_TRACE_ID = "__judge_status__";
-
 type ActiveJudgeState = {
   iteration: number;
   state: JudgeStatusState;
