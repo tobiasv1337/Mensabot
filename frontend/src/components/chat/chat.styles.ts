@@ -701,6 +701,62 @@ export const ToolCallStatus = styled.span<{ $status: "ok" | "error" | "info" }>`
   letter-spacing: 0.08em;
 `;
 
+export const JudgeDetails = styled.details`
+  margin-top: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: 100%;
+
+  summary {
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    list-style: none;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.65rem;
+    background: ${({ theme }) => theme.surfacePage};
+    border: 1px solid #d9960033;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '▾';
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+    justify-self: end;
+  }
+
+  &[open] summary {
+    border-color: #d9960066;
+  }
+
+  &[open] summary::after {
+    transform: rotate(180deg);
+  }
+`;
+
+export const JudgeStatus = styled.span`
+  background: ${({ theme }) => theme.accent2};
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.6rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+`;
+
 export const ActionRow = styled.div`
   margin-top: 0.75rem;
   display: flex;
@@ -1062,11 +1118,11 @@ export const VoiceButton = styled.button<{ $state?: "idle" | "recording" | "tran
   place-items: center;
   border: 1.5px solid
     ${({ theme, $state }) =>
-      $state === "recording"
-        ? `${theme.accent1}B3`
-        : $state === "transcribing"
-          ? `${theme.accent2}A3`
-          : `${theme.textMuted}44`};
+    $state === "recording"
+      ? `${theme.accent1}B3`
+      : $state === "transcribing"
+        ? `${theme.accent2}A3`
+        : `${theme.textMuted}44`};
   border-radius: 999px;
   background: ${({ theme, $state }) =>
     $state === "recording"
@@ -1083,17 +1139,17 @@ export const VoiceButton = styled.button<{ $state?: "idle" | "recording" | "tran
   &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: ${({ theme, $state }) =>
-      $state === "recording"
-        ? `0 10px 20px ${theme.accent1}33`
-        : $state === "transcribing"
-          ? `0 10px 20px ${theme.accent2}26`
-          : `0 10px 20px ${theme.textDark}14`};
+    $state === "recording"
+      ? `0 10px 20px ${theme.accent1}33`
+      : $state === "transcribing"
+        ? `0 10px 20px ${theme.accent2}26`
+        : `0 10px 20px ${theme.textDark}14`};
     border-color: ${({ theme, $state }) =>
-      $state === "recording"
-        ? `${theme.accent1}CC`
-        : $state === "transcribing"
-          ? `${theme.accent2}CC`
-          : `${theme.accent1}66`};
+    $state === "recording"
+      ? `${theme.accent1}CC`
+      : $state === "transcribing"
+        ? `${theme.accent2}CC`
+        : `${theme.accent1}66`};
   }
 
   &:disabled {
