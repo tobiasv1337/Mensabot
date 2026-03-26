@@ -32,9 +32,22 @@ import { openGoogleMaps } from "../../services/maps";
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
 
+type ChatMap<T> = Record<string, T | undefined>;
+type ChatStreamUpdate = ActiveStreamState | null | ((prev: ActiveStreamState | null) => ActiveStreamState | null);
+
 const isNearBottom = (el: HTMLDivElement) => {
   const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
   return remaining <= NEAR_BOTTOM_PX;
+};
+
+const updateChatMap = <T,>(state: ChatMap<T>, chatId: string, value: T | null): ChatMap<T> => {
+  if (value === null) {
+    if (state[chatId] === undefined) return state;
+    const next = { ...state };
+    delete next[chatId];
+    return next;
+  }
+  return state[chatId] === value ? state : { ...state, [chatId]: value };
 };
 
 type ChatProps = {
@@ -74,9 +87,9 @@ const Chat: React.FC<ChatProps> = ({
 
   const [version, setVersion] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [sendingByChatId, setSendingByChatId] = useState<ChatMap<true>>({});
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
-  const [activeStream, setActiveStream] = useState<ActiveStreamState | null>(null);
+  const [streamByChatId, setStreamByChatId] = useState<ChatMap<ActiveStreamState>>({});
 
   const [inputValue, setInputValue] = useState("");
   const [focusSignal, setFocusSignal] = useState(0);
@@ -97,7 +110,7 @@ const Chat: React.FC<ChatProps> = ({
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const initialMenuFetched = useRef(false);
   const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
-  const streamAcceptedRef = useRef(false);
+  const streamAcceptedRef = useRef<ChatMap<true>>({});
 
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
@@ -106,6 +119,34 @@ const Chat: React.FC<ChatProps> = ({
   const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const modeMenuPopoverId = useId();
+  const isSending = Boolean(sendingByChatId[chat.id]);
+  const activeStream = streamByChatId[chat.id] ?? null;
+
+  const setChatSending = useCallback(
+    (chatId: string, sending: boolean) => {
+      setSendingByChatId((prev) => updateChatMap(prev, chatId, sending ? true : null));
+    },
+    []
+  );
+
+  const setChatStream = useCallback(
+    (chatId: string, next: ChatStreamUpdate) => {
+      setStreamByChatId((prev) => {
+        const current = prev[chatId] ?? null;
+        const resolved = typeof next === "function" ? next(current) : next;
+        return updateChatMap(prev, chatId, resolved);
+      });
+    },
+    []
+  );
+
+  const setChatAccepted = useCallback((chatId: string, accepted: boolean) => {
+    if (accepted) {
+      streamAcceptedRef.current[chatId] = true;
+      return;
+    }
+    delete streamAcceptedRef.current[chatId];
+  }, []);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -147,8 +188,6 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setClarificationHandled(false);
     setShowScrollToLatest(false);
-    setActiveStream(null);
-    streamAcceptedRef.current = false;
     shouldAutoScrollRef.current = true;
   }, [isSending, onStartNewChat]);
 
@@ -198,8 +237,6 @@ const Chat: React.FC<ChatProps> = ({
     setLocationError("");
     setClarificationHandled(false);
     setShowScrollToLatest(false);
-    setActiveStream(null);
-    streamAcceptedRef.current = false;
     shouldAutoScrollRef.current = true;
     onboardingStartedRef.current = false;
     requestAnimationFrame(() => {
@@ -285,24 +322,18 @@ const Chat: React.FC<ChatProps> = ({
     setClarificationHandled(true);
   }, [version, chat]);
 
-  const handleStreamEvent = useCallback((event: ChatStreamEvent) => {
-    if (event.type === "chat.accepted") {
-      streamAcceptedRef.current = true;
-    }
-    setActiveStream((prev) => applyStreamEvent(prev, event));
-  }, []);
-
   const sendMessage = useCallback(
     async (text: string) => {
       if (isSending) return;
       const trimmed = text.trim();
       if (!trimmed) return;
+      const requestChatId = chat.id;
 
       if (trimmed.startsWith("/")) {
         const parsed = parseSlashCommand(trimmed.slice(1));
         if (!parsed.query) return;
 
-        setIsSending(true);
+        setChatSending(requestChatId, true);
         try {
           const resolved = resolvedCanteenRef.current;
           const normalizedCommand = parsed.rawQuery.trim().toLowerCase();
@@ -342,29 +373,35 @@ const Chat: React.FC<ChatProps> = ({
           );
           setVersion((v) => v + 1);
         } finally {
-          setIsSending(false);
+          setChatSending(requestChatId, false);
         }
         return;
       }
 
-      setIsSending(true);
+      setChatSending(requestChatId, true);
       try {
         shouldAutoScrollRef.current = true;
-        streamAcceptedRef.current = false;
-        setActiveStream(createInitialStreamState());
+        setChatAccepted(requestChatId, false);
+        setChatStream(requestChatId, createInitialStreamState());
         await chat.send(client, trimmed, {
           includeToolCalls: true,
           judgeCorrection: isJudgeCorrectionEnabled(chatMode),
-          onStreamEvent: handleStreamEvent,
-          onStreamFallback: () => setActiveStream(null),
+          onStreamEvent: (event: ChatStreamEvent) => {
+            if (event.type === "chat.accepted") setChatAccepted(requestChatId, true);
+            setChatStream(requestChatId, (prev) => applyStreamEvent(prev, event));
+          },
+          onStreamFallback: () => {
+            setChatAccepted(requestChatId, false);
+            setChatStream(requestChatId, null);
+          },
         });
-        setActiveStream(null);
-        streamAcceptedRef.current = false;
+        setChatAccepted(requestChatId, false);
+        setChatStream(requestChatId, null);
         setVersion((v) => v + 1);
       } catch (err) {
         console.error("Chat send failed:", err);
-        if (streamAcceptedRef.current) {
-          setActiveStream((prev) =>
+        if (streamAcceptedRef.current[requestChatId]) {
+          setChatStream(requestChatId, (prev) =>
             prev
               ? {
                 ...prev,
@@ -373,8 +410,8 @@ const Chat: React.FC<ChatProps> = ({
               : null
           );
         } else {
-          setActiveStream(null);
-          streamAcceptedRef.current = false;
+          setChatAccepted(requestChatId, false);
+          setChatStream(requestChatId, null);
           chat.addMessage(
             new ChatMessage(
               "assistant",
@@ -384,10 +421,10 @@ const Chat: React.FC<ChatProps> = ({
           setVersion((v) => v + 1);
         }
       } finally {
-        setIsSending(false);
+        setChatSending(requestChatId, false);
       }
     },
-    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, handleStreamEvent, t]
+    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, setChatAccepted, setChatSending, setChatStream, t]
   );
 
   const handleTranscribeAudio = useCallback(
