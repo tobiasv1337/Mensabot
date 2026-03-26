@@ -13,6 +13,7 @@ from ..logging import logger
 from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
+from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat
 from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
 
@@ -262,22 +263,60 @@ def _maybe_append_filter_warning(response: ChatResponse, tool_traces: list[ToolC
     return response
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, judge_correction: bool = True, language: str = DEFAULT_LANGUAGE) -> ChatResponse:
-    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters, judge_correction, language)
-    return _maybe_append_filter_warning(response, tool_traces, language)
+async def run_tool_calling_loop(
+    message_log: List[ChatMessage],
+    include_tool_calls: bool = False,
+    user_filters: UserFilters | None = None,
+    judge_correction: bool = True,
+    language: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
+) -> ChatResponse:
+    sink = progress_sink or NoOpChatProgressSink()
+    await sink.emit_phase("starting")
+
+    try:
+        response, tool_traces = await _run_tool_calling_loop_inner(
+            message_log,
+            include_tool_calls,
+            user_filters,
+            judge_correction,
+            language,
+            progress_sink=sink,
+        )
+        await sink.emit_phase("finalizing")
+        final_response = _maybe_append_filter_warning(response, tool_traces, language)
+        await sink.emit_result(final_response)
+        return final_response
+    except Exception as exc:
+        await sink.emit_error(
+            code="internal_error",
+            message=str(exc) or exc.__class__.__name__,
+        )
+        raise
 
 
-async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, judge_correction: bool = True, lang: str = DEFAULT_LANGUAGE) -> tuple[ChatResponse, list[ToolCallTrace]]:
+async def _run_tool_calling_loop_inner(
+    message_log: List[ChatMessage],
+    include_tool_calls: bool = False,
+    user_filters: UserFilters | None = None,
+    judge_correction: bool = True,
+    lang: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
+) -> tuple[ChatResponse, list[ToolCallTrace]]:
+    sink = progress_sink or NoOpChatProgressSink()
     messages = prepare_message_log(message_log, user_filters, lang)
-    tools = await get_openai_tools_from_mcp()
+    await sink.emit_phase("waiting_for_llm", iteration=1)
+    tools = await await_with_heartbeat(get_openai_tools_from_mcp(), sink, phase="waiting_for_llm", iteration=1)
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
 
     tool_traces: list[ToolCallTrace] = []
     judge_corrections_count = 0
 
     for iteration in range(1, settings.max_llm_iterations + 1):
+        if iteration > 1:
+            await sink.emit_phase("waiting_for_llm", iteration=iteration)
         try:
-            completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
+            completion = await await_with_heartbeat(create_chat_completion_with_retry(messages=messages, tools=tools), sink, phase="waiting_for_llm", iteration=iteration)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
             return _build_chat_response(get_string("fallback_response", lang), tool_traces, include_tool_calls), tool_traces
@@ -302,8 +341,11 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
                     from .judge import judge_response
 
                     proposed_reply = decision.response.reply or ""
-                    verdict = await judge_response(messages, proposed_reply, lang)
+                    await sink.emit_phase("waiting_for_judge", iteration=iteration)
+                    await sink.emit_judge_status(iteration=iteration, state="started")
+                    verdict = await await_with_heartbeat(judge_response(messages, proposed_reply, lang), sink, phase="waiting_for_judge", iteration=iteration)
                     if verdict:
+                        await sink.emit_judge_status(iteration=iteration, state="rejected", verdict=verdict)
                         logger.info(
                             "Judge rejected response on iteration %d (correction %d/%d): %s",
                             iteration, judge_corrections_count + 1, settings.llm_judge_max_corrections, verdict[:200],
@@ -322,6 +364,9 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
                         messages.append({"role": "system", "content": verdict})
                         judge_corrections_count += 1
                         continue  # Give the LLM another chance
+                    await sink.emit_judge_status(iteration=iteration, state="passed")
+                else:
+                    await sink.emit_judge_status(iteration=iteration, state="skipped")
                 # --- End judge checkpoint ---
                 # Rebuild the response so it includes all accumulated tool_traces
                 # (including any judge correction entries added during earlier iterations).
@@ -341,6 +386,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
         messages.append(sanitize_message(message))
 
         logger.info("Number of tool calls: %d", len(tool_calls))
+        await sink.emit_phase("executing_tools", iteration=iteration)
         early_response = await handle_tool_calls(
             tool_calls,
             messages,
@@ -349,6 +395,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
             include_tool_calls=include_tool_calls,
             user_filters=user_filters,
             language=lang,
+            progress_sink=sink,
         )
         if early_response is not None:
             return early_response, tool_traces

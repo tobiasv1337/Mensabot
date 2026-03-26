@@ -23,6 +23,7 @@ from ..prompts import (
     DIRECTIONS_TOOL_NAME,
     LOCATION_TOOL_NAME,
 )
+from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
 
 
 @dataclass
@@ -164,15 +165,16 @@ def _parse_tool_args(
                     raw_args,
                     e,
                 )
-                _patch_invalid_tool_call(messages, call_id)
-                messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": call_id,
-                        "name": tool_name,
-                        "content": f"Invalid JSON arguments: {e}",
-                    }
+                tool_trace.raw_args = raw_args
+                _record_tool_error(
+                    tool_trace=tool_trace,
+                    tool_traces=tool_traces,
+                    messages=messages,
+                    call_id=call_id,
+                    tool_name=tool_name,
+                    error=f"Invalid JSON arguments: {e}",
                 )
+                _patch_invalid_tool_call(messages, call_id)
                 return None, True
 
     tool_trace.raw_args = raw_args
@@ -442,6 +444,8 @@ async def _handle_mcp_tool(
     tool_traces: list[ToolCallTrace],
     messages: List[Dict[str, Any]],
     call_id: str | None,
+    iteration: int,
+    progress_sink: ChatProgressSink,
     user_filters: UserFilters | None = None,
     lang: str = DEFAULT_LANGUAGE,
 ) -> None:
@@ -466,7 +470,12 @@ async def _handle_mcp_tool(
             args = _apply_filters_to_menu_args(args, user_filters)
         tool_trace.args = args
 
-    result_payload = await call_mcp_tool(tool_name, args)
+    result_payload = await await_with_heartbeat(
+        call_mcp_tool(tool_name, args),
+        progress_sink,
+        phase="executing_tools",
+        iteration=iteration,
+    )
     if isinstance(result_payload, dict) and "error" in result_payload:
         tool_trace.ok = False
         tool_trace.error = result_payload.get("error")
@@ -489,10 +498,14 @@ async def handle_tool_calls(
     include_tool_calls: bool,
     user_filters: UserFilters | None = None,
     language: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
 ) -> ChatResponse | None:
-    for call in tool_calls:
+    sink = progress_sink or NoOpChatProgressSink()
+
+    for ordinal, call in enumerate(tool_calls, start=1):
         parsed = _parse_tool_call(call)
         tool_trace = ToolCallTrace(id=parsed.call_id, name=parsed.tool_name, iteration=iteration)
+        trace_id = build_trace_id(parsed.call_id, iteration, ordinal)
 
         args, skip = _parse_tool_args(
             raw_args=parsed.raw_args,
@@ -503,18 +516,35 @@ async def handle_tool_calls(
             messages=messages,
         )
         if skip:
+            if tool_trace.ok is False:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="error",
+                    trace=tool_trace.model_copy(deep=True),
+                )
             continue
 
         tool_trace.args = args
+        await sink.emit_tool_trace(
+            trace_id=trace_id,
+            state="started",
+            trace=tool_trace.model_copy(deep=True),
+        )
 
         if parsed.tool_name == LOCATION_TOOL_NAME:
-            return _handle_location_tool(
+            response = _handle_location_tool(
                 args=args,
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
                 lang=language,
             )
+            await sink.emit_tool_trace(
+                trace_id=trace_id,
+                state="completed",
+                trace=tool_trace.model_copy(deep=True),
+            )
+            return response
 
         if parsed.tool_name == DIRECTIONS_TOOL_NAME:
             response = await _handle_directions_tool(
@@ -528,17 +558,34 @@ async def handle_tool_calls(
                 lang=language,
             )
             if response is not None:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="completed",
+                    trace=tool_trace.model_copy(deep=True),
+                )
                 return response
+            if tool_trace.ok is False:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="error",
+                    trace=tool_trace.model_copy(deep=True),
+                )
             continue
 
         if parsed.tool_name == CLARIFICATION_TOOL_NAME:
-            return _handle_clarification_tool(
+            response = _handle_clarification_tool(
                 args=args,
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
                 lang=language,
             )
+            await sink.emit_tool_trace(
+                trace_id=trace_id,
+                state="completed",
+                trace=tool_trace.model_copy(deep=True),
+            )
+            return response
 
         await _handle_mcp_tool(
             tool_name=parsed.tool_name,
@@ -547,8 +594,15 @@ async def handle_tool_calls(
             tool_traces=tool_traces,
             messages=messages,
             call_id=parsed.call_id,
+            iteration=iteration,
+            progress_sink=sink,
             user_filters=user_filters,
             lang=language,
+        )
+        await sink.emit_tool_trace(
+            trace_id=trace_id,
+            state="error" if tool_trace.ok is False else "completed",
+            trace=tool_trace.model_copy(deep=True),
         )
 
     return None
