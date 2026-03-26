@@ -212,6 +212,18 @@
         "judgeCorrected": "corrected",
         "judgeVerdict": "Verdict",
         "judgeRejectedReply": "Rejected Reply",
+        "streaming": {
+            "starting": "Starting request...",
+            "waitingForLlm": "Thinking...",
+            "executingTools": "Running tools...",
+            "waitingForJudge": "Running quality check...",
+            "finalizing": "Finalizing answer...",
+            "judgeRunning": "Quality check is reviewing the answer...",
+            "judgeRejected": "Quality check requested another pass...",
+            "judgePassed": "Quality check passed. Finalizing...",
+            "judgeTraceLabel": "Live Quality Check",
+            "transportError": "❌ The live stream was interrupted. Please try again."
+        },
         "showMenuFor": "Show me the menu for {{name}}{{date}}.",
         "dateForToday": " for today",
         "dateFor": " for {{date}}",
