@@ -130,6 +130,7 @@ class TTLCache:
 
         self._store = loaded_store
         self._file_mtime = mtime
+        logger.info("Loaded shared cache from %s (%d items).", self.path, len(self._store))
 
     def _persist_locked(self) -> None:
         if not self.path:
@@ -171,6 +172,7 @@ class TTLCache:
                 pass
 
         self._file_mtime = self._get_file_mtime_locked()
+        logger.info("Persisted shared cache to %s (%d items).", self.path, len(self._store))
 
     def _prune_expired_locked(self, *, now: float | None = None) -> bool:
         current = time.time() if now is None else now

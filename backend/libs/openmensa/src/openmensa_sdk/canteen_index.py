@@ -81,6 +81,10 @@ _ALIAS_REPLACEMENTS = [
 ]
 
 
+class IncompatibleCanteenIndexVersionError(ValueError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class CanteenSearchResult:
     canteen: Canteen
@@ -299,7 +303,7 @@ class CanteenIndex:
         if not isinstance(payload, dict):
             raise ValueError("Index payload must be a dict.")
         if payload.get("version") != PROJECT_VERSION:
-            raise ValueError(
+            raise IncompatibleCanteenIndexVersionError(
                 f"Index payload version {payload.get('version')!r} does not match expected version {PROJECT_VERSION}."
             )
 
@@ -686,18 +690,24 @@ class CanteenIndexStore:
         except OSError:
             logger.exception("Failed to stat canteen index file: %s", self.path)
             return None
-        if self._index is not None and self._file_mtime == mtime:
+        if self._file_mtime == mtime:
             return self._index
 
         try:
             index = CanteenIndex.from_file(self.path)
+        except IncompatibleCanteenIndexVersionError as exc:
+            logger.warning("Ignoring canteen index at %s because it is incompatible: %s", self.path, exc)
+            self._index = None
+            self._file_mtime = mtime
+            return None
         except Exception:
             logger.exception("Failed to load canteen index from %s", self.path)
             self._index = None
-            self._file_mtime = None
+            self._file_mtime = mtime
             return None
         self._index = index
         self._file_mtime = mtime
+        logger.info("Loaded canteen index from %s (%d canteens).", self.path, len(index.canteens))
         return index
 
     def refresh(self, client: OpenMensaClient) -> CanteenIndex:
@@ -706,7 +716,7 @@ class CanteenIndexStore:
         index.to_file(self.path)
         self._index = index
         self._file_mtime = os.path.getmtime(self.path)
-        logger.info("Canteen index refreshed (%d canteens).", len(index.canteens))
+        logger.info("Refreshed canteen index and persisted it to %s (%d canteens).", self.path, len(index.canteens))
         return index
 
     def refresh_if_stale(self, client: OpenMensaClient, *, ttl_hours: float = DEFAULT_INDEX_TTL_HOURS) -> CanteenIndex:
