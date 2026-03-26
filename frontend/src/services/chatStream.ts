@@ -131,7 +131,6 @@ export const streamChatResponse = async ({
 			if (settled) return;
 			settled = true;
 			clearAcceptTimer();
-			closeSocket();
 			resolve(response);
 		};
 
