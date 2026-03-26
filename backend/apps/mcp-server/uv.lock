@@ -747,6 +747,7 @@ dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
     { name = "openmensa-sdk" },
+    { name = "pydantic" },
 ]
 
 [package.metadata]
@@ -755,6 +756,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.14.4" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "openmensa-sdk", editable = "../../libs/openmensa" },
+    { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [[package]]

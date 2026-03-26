@@ -13,14 +13,17 @@ class MCPServerSettings(BaseSettings):
     # OpenMensa API
     openmensa_base_url: str = "https://openmensa.org/api/v2"
     openmensa_timeout: float = 10.0
-    openmensa_user_agent: str = "mensabot-mcp-server/0.1"
+    openmensa_user_agent: str = "mensabot-mcp-server/1.0.0"
     mcp_name: str = "mensabot-openmensa-mcp-server"
 
     # Overpass / OSM
     overpass_url: str = "https://overpass-api.de/api/interpreter"
+    overpass_status_url: str | None = None
     overpass_timeout: float = 25.0
+    overpass_status_timeout: float = 5.0
     overpass_cache_ttl_s: int = 900
-    overpass_user_agent: str = "mensabot-mcp-server/0.1"
+    overpass_max_concurrency: int = 1
+    overpass_user_agent: str = "mensabot-mcp-server/1.0.0"
 
     # Canteen index
     canteen_index_path: str | None = None
