@@ -315,6 +315,10 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
                             result={"verdict": verdict},
                             args={"proposed_reply": proposed_reply},
                         ))
+                        # Deliberate tradeoff: use the judge's free-form verdict verbatim
+                        # as a system nudge because it improves correction quality here,
+                        # even though it promotes user-influenced model output in priority.
+                        # Might consider making prompt injection more difficult in the future if this becomes a problem.
                         messages.append({"role": "system", "content": verdict})
                         judge_corrections_count += 1
                         continue  # Give the LLM another chance
