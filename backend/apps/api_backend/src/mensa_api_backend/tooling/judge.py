@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from ..i18n import DEFAULT_LANGUAGE, get_string
+from ..i18n import DEFAULT_LANGUAGE, get_optional_string
 from ..logging import logger
 
 
@@ -32,7 +32,7 @@ async def judge_response(
     # and judge.py needs the retry-capable completion function from loop.py).
     from .loop import create_chat_completion_with_retry
 
-    judge_prompt = get_string("judge_system_prompt", lang)
+    judge_prompt = get_optional_string("judge_system_prompt", lang)
     if not judge_prompt:
         logger.warning("Judge system prompt not found for lang=%s; skipping judge.", lang)
         return None

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
 import { getApiClient } from "../../services/apiClient";
@@ -100,6 +100,7 @@ const Chat: React.FC<ChatProps> = ({
   const [commandCanteenError, setCommandCanteenError] = useState<string | null>(null);
   const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const modeMenuPopoverId = useId();
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -852,23 +853,22 @@ const Chat: React.FC<ChatProps> = ({
             onClick={() => setModeMenuOpen((open) => !open)}
             disabled={isSending}
             aria-label={t("chat.mode.label")}
-            aria-haspopup="menu"
             aria-expanded={modeMenuOpen}
+            aria-controls={modeMenuOpen ? modeMenuPopoverId : undefined}
             title={activeModeDescription}
           >
             <S.ModeMenuLabel>{activeModeLabel}</S.ModeMenuLabel>
             <S.ModeMenuCaret $open={modeMenuOpen}>▾</S.ModeMenuCaret>
           </S.ModeMenuButton>
           {modeMenuOpen && (
-            <S.ModeMenuPopover role="menu" aria-label={t("chat.mode.label")}>
+            <S.ModeMenuPopover id={modeMenuPopoverId} role="group" aria-label={t("chat.mode.label")}>
               {modeOptions.map((option) => (
                 <S.ModeMenuItem
                   key={option.value}
                   type="button"
                   $selected={chatMode === option.value}
                   onClick={() => handleSelectMode(option.value)}
-                  role="menuitemradio"
-                  aria-checked={chatMode === option.value}
+                  aria-pressed={chatMode === option.value}
                 >
                   <S.ModeMenuItemText>
                     <S.ModeMenuItemLabel>{option.label}</S.ModeMenuItemLabel>
