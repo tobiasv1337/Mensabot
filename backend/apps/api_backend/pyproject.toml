@@ -1,6 +1,6 @@
 [project]
 name = "mensa-api-backend"
-version = "1.0.0"
+version = "1.0.1"
 description = "Mensa API backend with FastMCP server for OpenMensa and LLM calling with tool support"
 keywords = ["mensabot", "tu-berlin", "mensa", "api", "backend", "fastmcp", "openmensa", "llm", "tools"]
 readme = "README.md"

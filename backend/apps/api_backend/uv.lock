@@ -858,7 +858,7 @@ wheels = [
 
 [[package]]
 name = "mensa-api-backend"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -883,7 +883,7 @@ requires-dist = [
 
 [[package]]
 name = "mensa-mcp-server"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../mcp-server" }
 dependencies = [
     { name = "anyio" },
@@ -906,7 +906,7 @@ requires-dist = [
 
 [[package]]
 name = "mensabot-common"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../../libs/mensabot-common" }
 
 [[package]]
@@ -951,7 +951,7 @@ wheels = [
 
 [[package]]
 name = "openmensa-sdk"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../../libs/openmensa" }
 dependencies = [
     { name = "mensabot-common" },
