@@ -258,6 +258,17 @@ def build_tls_sans(hosts: List[str]) -> str:
     return ",".join(entries)
 
 
+def strip_default_tls_sans(san_value: str) -> str:
+    """Drop built-in localhost SAN entries before persisting custom SAN config."""
+    entries: List[str] = []
+    for raw_part in san_value.split(","):
+        entry = raw_part.strip()
+        if not entry or entry in DEFAULT_TLS_SAN_ENTRIES or entry in entries:
+            continue
+        entries.append(entry)
+    return ",".join(entries)
+
+
 def configured_tls_san_entries(env_values: Dict) -> List[str]:
     """Return the SAN entries that should be present for the configured TLS hosts."""
     entries = list(DEFAULT_TLS_SAN_ENTRIES)
@@ -395,7 +406,7 @@ def configure_tls_hosts(current_env: Dict, example_env: Dict) -> None:
         return
 
     primary_host = hosts[0]
-    san_value = build_tls_sans(hosts)
+    san_value = strip_default_tls_sans(build_tls_sans(hosts))
 
     save_env_var(TLS_CN_ENV_KEY, primary_host)
     save_env_var(TLS_SANS_ENV_KEY, san_value)

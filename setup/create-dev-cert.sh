@@ -2,7 +2,7 @@
 # Create the development TLS certificate expected by the nginx image build.
 #
 # Defaults cover localhost access. For any other hostname or IP, provide
-# extra SAN entries, for example:
+# the non-localhost SAN entries, for example:
 #   MENSABOT_TLS_CN=mensabot.example.com \
 #   MENSABOT_TLS_SANS=DNS:mensabot.example.com,IP:130.61.213.97 \
 #   sh setup/create-dev-cert.sh
