@@ -153,7 +153,7 @@ What it does:
 - Installs Docker if needed
 - Clones or updates the repository
 - Creates a dedicated Python environment for the setup UI
-- Launches the interactive configuration and deployment wizard
+- Launches the interactive setup wizard, where you can select a release or branch before configuring and deploying
 
 This path is the best choice for first-time deployments. More details are in [SETUP_README.md](SETUP_README.md).
 

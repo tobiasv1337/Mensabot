@@ -447,11 +447,16 @@ def action_restart():
 def action_update():
     """Fetches updates from git, allows version selection, and pulls code."""
     console.print("\n[bold cyan]Mensabot Update Manager[/bold cyan]")
-    
+    deployment_state = get_deployment_state()
+
     with console.status("Fetching latest available versions from GitHub...", spinner="dots"):
-        code_fetch, fetch_out, fetch_err = run_cmd(["git", "fetch", "--tags", "--all"])
+        code_fetch, fetch_out, fetch_err = run_cmd(
+            ["git", "fetch", "origin", "+refs/heads/*:refs/remotes/origin/*", "--tags", "--prune"]
+        )
         code_tags, tags, tags_err = run_cmd(["git", "tag", "-l", "--sort=-v:refname"])
-        code_branches, branches_raw, branches_err = run_cmd(["git", "branch", "-r", "--sort=-committerdate"])
+        code_branches, branches_raw, branches_err = run_cmd(
+            ["git", "for-each-ref", "--sort=-committerdate", "--format=%(refname:short)", "refs/remotes/origin"]
+        )
 
     if code_fetch != 0:
         console.print("[bold red]Error fetching latest versions from Git.[/bold red]")
@@ -465,11 +470,11 @@ def action_update():
     if code_branches == 0:
         for b in branches_raw.split("\n"):
             b_clean = b.strip()
-            if "->" in b_clean or not b_clean: continue
-            if b_clean.startswith("origin/"):
-                branch_list.append(b_clean.replace("origin/", "", 1))
-            else:
-                branch_list.append(b_clean)
+            if not b_clean or b_clean == "origin/HEAD":
+                continue
+            branch_name = b_clean.replace("origin/", "", 1) if b_clean.startswith("origin/") else b_clean
+            if branch_name and branch_name not in branch_list:
+                branch_list.append(branch_name)
                 
     tag_list = tags.split("\n") if code_tags == 0 and tags else []
     
@@ -511,7 +516,15 @@ def action_update():
     is_branch = selected_ref in branch_list
 
     with console.status(f"Checking out {selected_ref}...", spinner="dots"):
-        code, out, err = run_cmd(["git", "checkout", selected_ref])
+        if is_branch:
+            local_branch_exists, _, _ = run_cmd(["git", "show-ref", "--verify", f"refs/heads/{selected_ref}"])
+            if local_branch_exists == 0:
+                checkout_cmd = ["git", "checkout", selected_ref]
+            else:
+                checkout_cmd = ["git", "checkout", "-b", selected_ref, "--track", f"origin/{selected_ref}"]
+        else:
+            checkout_cmd = ["git", "checkout", selected_ref]
+        code, out, err = run_cmd(checkout_cmd)
     if code != 0:
         console.print("[bold red]Error checking out the selected version.[/bold red]")
         details = "\n".join(part for part in (out, err) if part)
@@ -532,8 +545,14 @@ def action_update():
             return
 
     console.print(f"[bold green]Successfully switched Mensabot to version: {selected_ref}[/bold green]")
-    
-    if get_deployment_state() == 3:
+
+    if deployment_state == 1:
+        if questionary.confirm(
+            "Mensabot is not configured yet. Do you want to open the configuration wizard now?",
+            default=True,
+        ).ask():
+            action_configure()
+    elif deployment_state == 3:
         if questionary.confirm("Mensabot is currently running. Do you want to restart it now to apply the update?").ask():
             action_restart()
     else:
@@ -563,10 +582,10 @@ def main_menu():
         if state == 1:
             console.print("[yellow]State: Initial Setup (Not Configured)[/yellow]\n")
             choices = [
+                Choice("Select Mensabot Version", value="update"),
                 Choice("Initial Configuration", value="config"),
                 Choice("Start / Deploy Mensabot (Disabled - Requires Configuration)", value=None, disabled="Requires Configuration"),
                 Choice("Restart Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
-                Choice("Update Mensabot Version (Disabled - Requires Configuration)", value=None, disabled="Requires Configuration"),
                 Choice("Stop Mensabot (Disabled - Not Running)", value=None, disabled="Not Running"),
                 Choice("Exit", value="exit")
             ]
