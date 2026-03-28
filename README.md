@@ -188,6 +188,12 @@ cp .env.example .env
 bash setup/create-dev-cert.sh
 ```
 
+The generated certificate is intended for `https://localhost` and `https://127.0.0.1`.
+If users open Mensabot via a public hostname or IP address, either replace it with a trusted
+certificate or regenerate the self-signed certificate with the matching public hostname/IP in `.env`.
+If you already have `nginx/certs/selfsigned.crt` and `nginx/certs/selfsigned.key`, regenerate them
+after changing those settings so the new names are actually embedded into the certificate.
+
 4. Build and start the stack:
 
 ```bash
@@ -217,6 +223,7 @@ All configuration lives in `.env`. The complete reference is documented inline i
 | `VITE_MAPTILER_STYLE_URL_LIGHT` | Recommended | Light map style URL for the map page |
 | `VITE_MAPTILER_STYLE_URL_DARK` | Recommended | Dark map style URL for the map page |
 | `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` | Optional | Enables Nginx basic authentication for the whole deployment |
+| `MENSABOT_TLS_CN` | Optional | Public hostname or IP for the generated self-signed development certificate |
 | `STT_MODEL` | Optional | Whisper model size such as `tiny`, `base`, `small`, or `medium` |
 | `MENSA_MCP_TIMEZONE` | Optional | Timezone used for date resolution and prompts |
 
