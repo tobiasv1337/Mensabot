@@ -401,6 +401,74 @@
             "noAllergensSelected": "No allergens selected."
         }
     },
+    "installPromotion": {
+        "card": {
+            "title": "Install Mensabot",
+            "body": {
+                "native": "Keep Mensabot one tap away and launch it like an app on this device.",
+                "ios": "Add Mensabot to your Home Screen in Safari for faster access and a cleaner full-screen app.",
+                "mac": "Add Mensabot to your Dock in Safari so it opens like a regular desktop app."
+            }
+        },
+        "entry": {
+            "label": "Install Mensabot",
+            "description": {
+                "native": "Install Mensabot on this device for faster access and a cleaner app-style launch.",
+                "ios": "Open Safari's Share menu to add Mensabot to your Home Screen as a web app.",
+                "mac": "Use Safari's Share menu to add Mensabot to your Dock."
+            }
+        },
+        "actions": {
+            "install": "Install",
+            "howToInstall": "How to install",
+            "maybeLater": "Maybe later",
+            "dismiss": "No thanks",
+            "close": "Close"
+        },
+        "instructions": {
+            "sharedNote": "Installation only takes a moment. Once added, Mensabot opens faster and feels more like a native app.",
+            "ios": {
+                "title": "Install on iPhone or iPad",
+                "subtitle": "Use Safari to add Mensabot to your Home Screen.",
+                "steps": {
+                    "share": {
+                        "title": "Open Share",
+                        "body": "Tap the Share button in Safari."
+                    },
+                    "home": {
+                        "title": "Add to Home Screen",
+                        "body": "Choose Add to Home Screen."
+                    },
+                    "webapp": {
+                        "title": "Keep Open as Web App enabled",
+                        "body": "If Safari shows Open as Web App, leave it enabled."
+                    },
+                    "add": {
+                        "title": "Add Mensabot",
+                        "body": "Tap Add to finish the installation."
+                    }
+                }
+            },
+            "mac": {
+                "title": "Install on Mac",
+                "subtitle": "Use Safari to add Mensabot to your Dock.",
+                "steps": {
+                    "browser": {
+                        "title": "Open Mensabot in Safari",
+                        "body": "Make sure you are using Safari, not another browser."
+                    },
+                    "share": {
+                        "title": "Open Share",
+                        "body": "Click the Share button in Safari."
+                    },
+                    "dock": {
+                        "title": "Add to Dock",
+                        "body": "Choose Add to Dock to install Mensabot."
+                    }
+                }
+            }
+        }
+    },
     "settings": {
         "header": {
             "eyebrow": "System",
