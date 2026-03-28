@@ -125,7 +125,7 @@ flowchart TB
 |-- nginx/                       Reverse proxy, TLS, basic auth bootstrap
 |-- setup/                       Interactive setup wizard and certificate helper
 |-- docker-compose.yml           Full deployment stack
-|-- install.sh                   One-command bootstrap for servers
+|-- install.sh                   Bootstrap and management entry point
 `-- .env.example                 Complete configuration reference
 ```
 
@@ -139,7 +139,7 @@ flowchart TB
 
 ## Quick Start
 
-### Option A: Setup Wizard
+### Option A: Setup and Management Wizard
 
 For a fresh Linux VM or server, especially Debian/Ubuntu-based hosts, the simplest path is the interactive setup wizard:
 
@@ -156,7 +156,15 @@ What it does:
 - Creates a dedicated Python environment for the setup UI
 - Launches the interactive setup wizard for configuration and deployment
 
-This path is the best choice for first-time deployments. More details are in [SETUP_README.md](SETUP_README.md).
+Re-running the same command later is supported. If Mensabot is already present, `install.sh` reuses that checkout and reopens the same management menu so you can reconfigure settings, start, stop, restart, or update the deployment.
+
+If you are already inside the repository, you can reopen that menu directly with:
+
+```bash
+bash install.sh
+```
+
+This path is the best choice for first-time deployments and ongoing operations. More details are in [SETUP_README.md](SETUP_README.md).
 
 ### Option B: Manual Docker Compose
 

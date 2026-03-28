@@ -2,6 +2,8 @@
 
 The Mensabot Setup Wizard is a powerful, interactive command-line tool designed to make deploying, configuring, and updating Mensabot as easy as possible. It runs natively on Linux (optimized for Debian/Ubuntu) and handles everything from installing dependencies to managing Docker Compose stacks.
 
+`install.sh` is not only for the first install. Re-run it later to reopen the same setup manager for start, stop, restart, reconfiguration, and version updates.
+
 ## Quick Start
 
 To install and launch the Setup Wizard on a fresh Linux VM, run this single command:
@@ -16,6 +18,8 @@ This script will automatically:
 3. Clone or update the Mensabot repository at that ref.
 4. Set up a dedicated Python virtual environment for the interactive UI.
 5. Launch the Setup Wizard (`setup.py`) for configuration and deployment.
+
+If you already have the repository locally, run `bash install.sh` from the Mensabot root to reopen the same wizard without cloning a second copy.
 
 ---
 

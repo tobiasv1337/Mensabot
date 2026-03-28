@@ -9,6 +9,7 @@ from typing import Tuple, List, Dict, Sequence
 try:
     from rich.console import Console
     from rich.panel import Panel
+    from rich.text import Text
     import questionary
     from questionary import Choice
     import dotenv
@@ -81,13 +82,36 @@ def get_deployment_state() -> int:
 
 def display_header():
     subprocess.call("clear" if os.name == "posix" else "cls", shell=True)
-    console.print(Panel("[bold blue]Mensabot Setup Wizard[/bold blue]\n[dim]Interactive configuration and deployment manager[/dim]", expand=False))
+    console.print(Panel(
+        "[bold blue]Mensabot Setup Wizard[/bold blue]\n"
+        "[dim]Interactive configuration, deployment, and update manager[/dim]\n"
+        "[dim]Re-run ./install.sh from this repository any time to reopen this menu.[/dim]",
+        expand=False
+    ))
 
 def load_env_defaults(file_path: str) -> Dict:
     """Loads a .env file into a dictionary for easy default lookups."""
     if not os.path.exists(file_path):
         return {}
     return dotenv.dotenv_values(file_path)
+
+def format_comment_block(comment_lines: List[str]) -> str:
+    """Normalizes comment blocks while preserving paragraph breaks."""
+    normalized: List[str] = []
+    for line in comment_lines:
+        if not line.strip():
+            if normalized and normalized[-1] != "":
+                normalized.append("")
+            continue
+        normalized.append(line.rstrip())
+
+    while normalized and normalized[0] == "":
+        normalized.pop(0)
+    while normalized and normalized[-1] == "":
+        normalized.pop()
+
+    return "\n".join(normalized)
+
 
 def load_env_descriptions(file_path: str) -> Dict:
     """Parses a .env file and extracts the preceding comment block for each variable."""
@@ -98,20 +122,48 @@ def load_env_descriptions(file_path: str) -> Dict:
     current_comment = []
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
-            line = line.strip()
-            if not line:
-                current_comment = []
-                continue
-            if line.startswith("#"):
-                cleaned = line.lstrip("# ").strip()
-                if cleaned and not cleaned.startswith("======="):
-                    current_comment.append(cleaned)
-            elif "=" in line:
-                key = line.split("=", 1)[0].strip()
+            raw_line = line.rstrip("\n")
+            stripped_line = raw_line.strip()
+
+            if not stripped_line:
                 if current_comment:
-                    descriptions[key] = " ".join(current_comment)
+                    current_comment.append("")
+                continue
+
+            if raw_line.lstrip().startswith("#"):
+                comment_start = raw_line.index("#") + 1
+                cleaned = raw_line[comment_start:]
+                if cleaned.startswith(" "):
+                    cleaned = cleaned[1:]
+
+                marker = cleaned.strip()
+                if not marker:
+                    if current_comment:
+                        current_comment.append("")
+                    continue
+
+                if marker.startswith("=======") or marker.startswith("[CATEGORY]"):
+                    continue
+
+                current_comment.append(cleaned.rstrip())
+                continue
+
+            if "=" in raw_line:
+                key = raw_line.split("=", 1)[0].strip()
+                description = format_comment_block(current_comment)
+                if description:
+                    descriptions[key] = description
                 current_comment = []
+
     return descriptions
+
+
+def print_description(description: str) -> None:
+    """Render a variable description as dim text while preserving newlines."""
+    if not description:
+        return
+    console.print()
+    console.print(Text(description, style="dim"))
 
 def load_env_categories(file_path: str) -> List:
     """Parses a .env file to dynamically extract categories and their associated keys."""
@@ -250,8 +302,7 @@ def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict)
         
     def prompt_with_desc(key: str, prompt_text: str, default_val: str, hide=False) -> str:
         desc = example_desc.get(key, "")
-        if desc:
-            console.print(f"\n[dim]{desc}[/dim]")
+        print_description(desc)
         if hide:
             return questionary.password(prompt_text).ask()
         return questionary.text(prompt_text, default=default_val).ask()
@@ -284,8 +335,7 @@ def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict)
     # Nginx Auth
     console.print("\n[bold]3. Security[/bold]")
     desc_user = example_desc.get("BASIC_AUTH_USER", "")
-    if desc_user:
-        console.print(f"\n[dim]{desc_user}[/dim]")
+    print_description(desc_user)
     enable_auth = questionary.confirm("Enable Nginx Basic Auth?", default=bool(get_default("BASIC_AUTH_USER"))).ask()
     if enable_auth:
         user = questionary.text("Username:", default=get_default("BASIC_AUTH_USER")).ask()
@@ -301,8 +351,7 @@ def flow_express_setup(current_env: Dict, example_env: Dict, example_desc: Dict)
     # STT Settings
     console.print("\n[bold]4. Voice / STT Settings[/bold]")
     desc_stt = example_desc.get("STT_MODEL", "")
-    if desc_stt:
-        console.print(f"\n[dim]{desc_stt}[/dim]")
+    print_description(desc_stt)
     
     stt_def = get_default("STT_MODEL")
     stt_model = questionary.select(
@@ -365,8 +414,7 @@ def flow_advanced_setup(current_env: Dict, example_env: Dict, example_desc: Dict
             for key in cat["keys"]:
                 key_str = str(key)
                 desc = example_desc.get(key_str, "")
-                if desc:
-                    console.print(f"\n[dim]{desc}[/dim]")
+                print_description(desc)
                 if "API_KEY" in key_str or "PASS" in key_str:
                     prompt_secret_value(key_str)
                 elif "ENABLE" in key_str or "AUTO" in key_str:
