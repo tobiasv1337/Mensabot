@@ -9,6 +9,49 @@ export const Shell = styled.div`
   padding-top: 80px;
 `;
 
+export const StatusBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  background:
+    linear-gradient(135deg, ${({ theme }) => theme.surfaceAccent}22, ${({ theme }) => theme.surfacePage} 65%),
+    ${({ theme }) => theme.surfacePage};
+  border-bottom: 1px solid ${({ theme }) => theme.surfaceAccent}33;
+  color: ${({ theme }) => theme.textOnPage};
+
+  @media (max-width: 480px) {
+    padding: 14px 16px;
+    align-items: flex-start;
+  }
+`;
+
+export const StatusDot = styled.span`
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.surfaceAccent};
+  box-shadow: 0 0 0 6px ${({ theme }) => theme.surfaceAccent}22;
+`;
+
+export const StatusContent = styled.div`
+  display: grid;
+  gap: 4px;
+`;
+
+export const StatusTitle = styled.strong`
+  font-size: 0.95rem;
+  line-height: 1.2;
+`;
+
+export const StatusText = styled.span`
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 0.92rem;
+  line-height: 1.35;
+`;
+
 export const BodyGrid = styled.div<{ $collapsed?: boolean }>`
   display: grid;
   grid-template-columns: ${({ $collapsed }) =>
@@ -34,7 +77,8 @@ export const SidebarSlot = styled.div`
 `;
 
 export const Content = styled.main<{ $chat?: boolean; $flush?: boolean }>`
-  padding: ${({ $chat, $flush }) => ($flush ? "0" : $chat ? "24px 24px 0" : "24px")};
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
   ${({ $chat }) =>
@@ -46,6 +90,13 @@ export const Content = styled.main<{ $chat?: boolean; $flush?: boolean }>`
 
   background: ${({ theme }) => theme.surfacePage};
   color: ${({ theme }) => theme.textOnPage};
+`;
+
+export const ContentBody = styled.div<{ $chat?: boolean; $flush?: boolean }>`
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: ${({ $chat, $flush }) => ($flush ? "0" : $chat ? "24px 24px 0" : "24px")};
 
   @media (max-width: 480px) {
     padding: ${({ $chat, $flush }) => ($flush ? "0" : $chat ? "16px 16px 0" : "16px")};

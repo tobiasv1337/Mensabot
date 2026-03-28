@@ -18,6 +18,10 @@
         "loadMore": "Load more chats",
         "theme": "Theme"
     },
+    "appStatus": {
+        "offlineTitle": "You are offline.",
+        "offlineBody": "Saved chats and shortcuts stay available on this device. Live chat, canteen search, maps and transcription need a connection."
+    },
     "contact": {
         "eyebrow": "Legal Notice",
         "title": "Say Hello!",
@@ -110,6 +114,9 @@
         "found": "found",
         "emptyTitle": "No canteens found",
         "emptyBody": "Adjust your search or check if the name is correct.",
+        "offlineTitle": "Canteen search is unavailable offline",
+        "offlineBody": "Reconnect to search for canteens and load current canteen data.",
+        "offline": "Canteen search is unavailable while you are offline.",
         "selected": "Selected",
         "startChat": "Start chat",
         "routeTitle": "Open route in Google Maps",
@@ -124,6 +131,8 @@
         "searchAriaLabel": "Search for canteens on the map",
         "searchFor": "Search: \"{{query}}\"",
         "defaultHint": "Shows canteens in the current map view.",
+        "offlineTitle": "Map is unavailable offline",
+        "offlineBody": "Reconnect to load map tiles, canteen locations and nearby search.",
         "errorTitle": "MapTiler Configuration Missing",
         "errorBody": "Please set the environment variables VITE_MAPTILER_STYLE_URL_LIGHT and VITE_MAPTILER_STYLE_URL_DARK (each the complete Style-JSON URL incl. ?key=...).",
         "errorMissing": "Missing"
@@ -242,6 +251,7 @@
         "myLocation": "My Location: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Write a message or use / for quick actions",
+            "offlineDisabled": "You are offline. Saved chats stay available, but sending messages needs a connection.",
             "recording": "Recording... {{seconds}}s / {{max}}s",
             "transcribing": "Transcribing...",
             "sending": "Sending...",

@@ -18,6 +18,10 @@
         "loadMore": "Mehr Chats laden",
         "theme": "Theme"
     },
+    "appStatus": {
+        "offlineTitle": "Du bist offline.",
+        "offlineBody": "Gespeicherte Chats und Shortcuts bleiben auf diesem Gerät verfügbar. Live-Chat, Mensasuche, Karte und Transkription brauchen eine Verbindung."
+    },
     "contact": {
         "eyebrow": "Impressum",
         "title": "Sag Hallo!",
@@ -110,6 +114,9 @@
         "found": "gefunden",
         "emptyTitle": "Keine Mensen gefunden",
         "emptyBody": "Passe deine Suche an oder prüfe, ob der Name korrekt ist.",
+        "offlineTitle": "Mensasuche ist offline nicht verfügbar",
+        "offlineBody": "Verbinde dich erneut, um Mensen zu suchen und aktuelle Mensadaten zu laden.",
+        "offline": "Mensasuche ist nicht verfügbar, solange du offline bist.",
         "selected": "Ausgewählt",
         "startChat": "Chat starten",
         "routeTitle": "Route in Google Maps öffnen",
@@ -124,6 +131,8 @@
         "searchAriaLabel": "Suche nach Mensen auf der Karte",
         "searchFor": "Suche: \"{{query}}\"",
         "defaultHint": "Zeigt Mensen im aktuellen Kartenausschnitt.",
+        "offlineTitle": "Karte ist offline nicht verfügbar",
+        "offlineBody": "Verbinde dich erneut, um Kartendaten, Mensastandorte und die Suche in der Nähe zu laden.",
         "errorTitle": "MapTiler Konfiguration fehlt",
         "errorBody": "Bitte setze die Umgebungsvariablen VITE_MAPTILER_STYLE_URL_LIGHT und VITE_MAPTILER_STYLE_URL_DARK (jeweils die komplette Style-JSON URL inkl. ?key=...).",
         "errorMissing": "Fehlend"
@@ -242,6 +251,7 @@
         "myLocation": "Mein Standort: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
+            "offlineDisabled": "Du bist offline. Gespeicherte Chats bleiben verfügbar, aber zum Senden brauchst du eine Verbindung.",
             "recording": "Aufnahme läuft... {{seconds}}s / {{max}}s",
             "transcribing": "Transkription läuft...",
             "sending": "Senden...",

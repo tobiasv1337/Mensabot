@@ -12,11 +12,13 @@ const PER_PAGE = 24;
 interface CanteensPageProps {
   onSelectCanteen: (canteen: Canteen) => void;
   selectedCanteenIds?: number[];
+  isOffline?: boolean;
 }
 
 const CanteensPage: React.FC<CanteensPageProps> = ({
   onSelectCanteen,
   selectedCanteenIds = [],
+  isOffline = false,
 }) => {
   const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
@@ -53,6 +55,11 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
 
   const fetchData = useCallback(
     async (searchQuery: string, page: number, append: boolean, sort: "auto" | "distance" | "name" | "city", location: { lat: number, lng: number } | null) => {
+      if (isOffline) {
+        setLoadingState(null);
+        setError(t('canteens.offline'));
+        return;
+      }
       const currentRequest = ++requestId.current;
       if (!append) {
         setLoadingState(searchQuery ? "search" : "initial");
@@ -88,21 +95,32 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
         }
       }
     },
-    [client]
+    [client, isOffline, t]
   );
 
   // Initial load & search reaction
   useEffect(() => {
+    if (isOffline) {
+      requestId.current += 1;
+      setLoadingState(null);
+      if (items.length === 0) {
+        setPageInfo(null);
+        setTotalResults(null);
+      }
+      setError(t('canteens.offline'));
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       fetchData(query, 1, false, sortBy, userLocation);
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [query, sortBy, userLocation, fetchData]);
+  }, [query, sortBy, userLocation, fetchData, isOffline, items.length, t]);
 
   const handleLoadMore = useCallback(() => {
-    if (!pageInfo?.next_page || loadingState) return;
+    if (isOffline || !pageInfo?.next_page || loadingState) return;
     fetchData(query, pageInfo.next_page, true, sortBy, userLocation);
-  }, [pageInfo?.next_page, loadingState, fetchData, query, sortBy, userLocation]);
+  }, [isOffline, pageInfo?.next_page, loadingState, fetchData, query, sortBy, userLocation]);
 
   const isSearching = query.trim().length > 0;
   const hasMore = pageInfo?.has_next;
@@ -179,16 +197,18 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
               type="search"
               placeholder={t('canteens.searchPlaceholder')}
               value={query}
+              disabled={isOffline}
               onChange={(event) => setQuery(event.target.value)}
               aria-label={t('canteens.searchAriaLabel')}
             />
             <S.SearchActions>
-              <S.SearchButton type="submit" disabled={loadingState === "search"}>
+              <S.SearchButton type="submit" disabled={isOffline || loadingState === "search"}>
                 {loadingState === "search" ? t('canteens.searching') : t('canteens.search')}
               </S.SearchButton>
 
               <S.SortSelect
                 value={sortBy}
+                disabled={isOffline}
                 onChange={(e) => setSortBy(e.target.value as "auto" | "distance" | "name" | "city")}
                 aria-label="Sortieren nach"
               >
@@ -232,9 +252,9 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
           </S.SkeletonGrid>
         ) : items.length === 0 ? (
           <S.EmptyState>
-            <S.EmptyTitle>{t('canteens.emptyTitle')}</S.EmptyTitle>
+            <S.EmptyTitle>{isOffline ? t('canteens.offlineTitle') : t('canteens.emptyTitle')}</S.EmptyTitle>
             <S.EmptyBody>
-              {t('canteens.emptyBody')}
+              {isOffline ? t('canteens.offlineBody') : t('canteens.emptyBody')}
             </S.EmptyBody>
           </S.EmptyState>
         ) : (

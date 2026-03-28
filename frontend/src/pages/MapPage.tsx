@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 type MapPageProps = {
   onSelectCanteen: (canteen: Canteen) => void;
   selectedCanteenIds?: number[];
+  isOffline?: boolean;
 };
 
 const getStyleUrl = (options: { darkMode: boolean }) => {
@@ -18,7 +19,7 @@ const getStyleUrl = (options: { darkMode: boolean }) => {
   return options.darkMode ? dark : light;
 };
 
-const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds = [] }) => {
+const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds = [], isOffline = false }) => {
   const { darkMode } = useTheme();
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -45,6 +46,7 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
               type="search"
               placeholder={t('map.searchPlaceholder')}
               value={query}
+              disabled={isOffline}
               onChange={(event) => setQuery(event.target.value)}
               aria-label={t('map.searchAriaLabel')}
             />
@@ -62,7 +64,14 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
           </S.SearchMeta>
         </S.SearchCard>
 
-        {missingConfig ? (
+        {isOffline ? (
+          <S.ErrorCard role="alert">
+            <S.ErrorTitle>{t('map.offlineTitle')}</S.ErrorTitle>
+            <S.ErrorBody>
+              {t('map.offlineBody')}
+            </S.ErrorBody>
+          </S.ErrorCard>
+        ) : missingConfig ? (
           <S.ErrorCard role="alert">
             <S.ErrorTitle>{t('map.errorTitle')}</S.ErrorTitle>
             <S.ErrorBody>
