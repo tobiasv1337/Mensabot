@@ -16,6 +16,7 @@ type OnboardingStep =
 	| "allergy_question"
 	| "allergy_select"
 	| "hints"
+	| "quick_access_hint"
 	| "filter_disclaimer"
 	| "complete"
 	| "done";
@@ -201,6 +202,16 @@ export function useOnboarding(
 					if (action === "ok") {
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.quickAccessHint"));
+							setState((s) => ({ ...s, step: "quick_access_hint" }));
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
+					}
+					break;
+				}
+				case "quick_access_hint": {
+					if (action === "ok") {
+						setState((s) => ({ ...s, step: "transition" }));
+						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.filterDisclaimer"));
 							setState((s) => ({ ...s, step: "filter_disclaimer" }));
 						}, FOLLOW_UP_QUESTION_DELAY_MS);
@@ -298,6 +309,7 @@ export function useOnboarding(
 						{ id: "confirm", label: t("chat.onboarding.allergyConfirm"), onClick: () => advanceStep("confirm", t("chat.onboarding.allergyConfirm")) },
 					];
 				case "hints":
+				case "quick_access_hint":
 					return [
 						{ id: "ok", label: t("chat.onboarding.hintsOk"), onClick: () => advanceStep("ok", t("chat.onboarding.hintsOk")) },
 					];
