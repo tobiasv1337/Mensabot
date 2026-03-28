@@ -8,7 +8,7 @@ from starlette.websockets import WebSocketState
 
 from ..i18n import resolve_language
 from ..logging import logger
-from ..models import ChatStreamRequestEnvelope, ChatResponse
+from ..models import ChatStreamRequestEnvelope, ChatResponse, ToolCallTrace
 from ..streaming import ChatProgressSink, ChatStreamPhase, JudgeStatusState, ToolTraceState
 from ..tooling.loop import run_tool_calling_loop
 
@@ -47,7 +47,7 @@ class WebSocketChatProgressSink(ChatProgressSink):
             payload["iteration"] = iteration
         await self._send(payload)
 
-    async def emit_tool_trace(self, *, trace_id: str, state: ToolTraceState, trace) -> None:
+    async def emit_tool_trace(self, *, trace_id: str, state: ToolTraceState, trace: ToolCallTrace) -> None:
         await self._send({"type": "tool.trace", "trace_id": trace_id, "state": state, "trace": trace.model_dump(mode="json")})
 
     async def emit_judge_status(self, *, iteration: int, state: JudgeStatusState, verdict: str | None = None) -> None:

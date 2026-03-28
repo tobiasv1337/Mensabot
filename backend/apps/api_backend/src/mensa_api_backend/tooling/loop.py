@@ -2,6 +2,7 @@ import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal
+from uuid import uuid4
 
 from openai import AsyncOpenAI, RateLimitError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
@@ -287,10 +288,12 @@ async def run_tool_calling_loop(
         final_response = _maybe_append_filter_warning(response, tool_traces, language)
         await sink.emit_result(final_response)
         return final_response
-    except Exception as exc:
+    except Exception:
+        error_id = str(uuid4())
+        logger.exception("Unhandled exception in run_tool_calling_loop (error_id=%s)", error_id)
         await sink.emit_error(
             code="internal_error",
-            message=str(exc) or exc.__class__.__name__,
+            message=f"Internal server error (error_id={error_id})",
         )
         raise
 
