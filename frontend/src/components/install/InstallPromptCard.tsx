@@ -5,6 +5,7 @@ import * as S from "./installPrompt.styles";
 
 type InstallPromptCardProps = {
   placement?: "viewport" | "chat";
+  chatOffset?: number;
   title: string;
   body: string;
   actionLabel: string;
@@ -17,6 +18,7 @@ type InstallPromptCardProps = {
 
 const InstallPromptCard: React.FC<InstallPromptCardProps> = ({
   placement = "viewport",
+  chatOffset,
   title,
   body,
   actionLabel,
@@ -26,7 +28,7 @@ const InstallPromptCard: React.FC<InstallPromptCardProps> = ({
   onMaybeLater,
   onDismiss,
 }) => (
-  <S.CardShell $placement={placement} role="status" aria-live="polite">
+  <S.CardShell $placement={placement} $chatOffset={chatOffset} role="status" aria-live="polite">
     <S.Header>
       <S.IconBadge aria-hidden="true">
         <InstallIcon />
@@ -38,7 +40,7 @@ const InstallPromptCard: React.FC<InstallPromptCardProps> = ({
     </S.Header>
 
     <S.ActionRow>
-      <Button type="button" variant="surfaceAccent" onClick={onAction}>
+      <Button type="button" variant="accent1" onClick={onAction}>
         {actionLabel}
       </Button>
       <S.SecondaryActions>

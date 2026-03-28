@@ -1,25 +1,25 @@
 import styled, { css } from "styled-components";
 
-export const CardShell = styled.section<{ $placement: "viewport" | "chat" }>`
+export const CardShell = styled.section<{ $placement: "viewport" | "chat"; $chatOffset?: number }>`
   display: grid;
   gap: 14px;
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid ${({ theme }) => `${theme.surfaceAccent}44`};
-  background:
-    radial-gradient(circle at top right, ${({ theme }) => `${theme.surfaceAccent}26`}, transparent 45%),
-    linear-gradient(135deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
-  box-shadow: 0 22px 42px ${({ theme }) => `${theme.textDark}1C`};
+  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
+  background: ${({ theme }) => theme.surfaceCard};
+  box-shadow:
+    0 18px 42px ${({ theme }) => `${theme.textDark}26`},
+    0 6px 14px ${({ theme }) => `${theme.textDark}12`};
   width: ${({ $placement }) =>
     $placement === "chat" ? "min(360px, calc(100% - 48px))" : "min(360px, calc(100vw - 48px))"};
   z-index: ${({ $placement }) => ($placement === "chat" ? 8 : 30)};
 
-  ${({ $placement }) =>
+  ${({ $placement, $chatOffset = 144 }) =>
     $placement === "chat"
       ? css`
           position: absolute;
           right: 24px;
-          bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+          bottom: calc(${$chatOffset}px + env(safe-area-inset-bottom, 0px));
         `
       : css`
           position: fixed;
@@ -28,12 +28,12 @@ export const CardShell = styled.section<{ $placement: "viewport" | "chat" }>`
         `}
 
   @media (max-width: 720px) {
-    ${({ $placement }) =>
+    ${({ $placement, $chatOffset = 144 }) =>
       $placement === "chat"
         ? css`
             right: 16px;
             left: 16px;
-            bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(${$chatOffset}px + env(safe-area-inset-bottom, 0px));
             width: auto;
           `
         : css`
@@ -59,8 +59,8 @@ export const IconBadge = styled.span`
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: ${({ theme }) => `${theme.surfaceAccent}20`};
-  color: ${({ theme }) => theme.surfaceAccent};
+  background: ${({ theme }) => theme.surfaceInset};
+  color: ${({ theme }) => theme.textOnInset};
 `;
 
 export const HeaderContent = styled.div`
@@ -92,7 +92,7 @@ export const ActionRow = styled.div`
 export const SecondaryActions = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   align-items: center;
 `;
 

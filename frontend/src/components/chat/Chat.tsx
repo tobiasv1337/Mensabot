@@ -63,6 +63,7 @@ type ChatProps = {
   isOffline?: boolean;
   onSuccessfulChat?: () => void;
   onOnboardingActiveChange?: (active: boolean) => void;
+  onComposerHeightChange?: (height: number) => void;
 };
 
 const cloneFilters = (filters: ChatFilters): ChatFilters => ({
@@ -85,11 +86,13 @@ const Chat: React.FC<ChatProps> = ({
   isOffline = false,
   onSuccessfulChat,
   onOnboardingActiveChange,
+  onComposerHeightChange,
 }) => {
   const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
+  const composerRef = useRef<HTMLDivElement>(null);
 
   const [version, setVersion] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -170,6 +173,30 @@ const Chat: React.FC<ChatProps> = ({
   useEffect(() => () => {
     onOnboardingActiveChange?.(false);
   }, [onOnboardingActiveChange]);
+
+  useEffect(() => {
+    const node = composerRef.current;
+    if (!node) return undefined;
+
+    const reportHeight = () => {
+      onComposerHeightChange?.(node.offsetHeight);
+    };
+
+    reportHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      reportHeight();
+    });
+
+    resizeObserver.observe(node);
+    window.addEventListener("resize", reportHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", reportHeight);
+      onComposerHeightChange?.(0);
+    };
+  }, [onComposerHeightChange]);
 
   // Start onboarding whenever it hasn't been completed yet
   const onboardingStartedRef = useRef(false);
@@ -1177,7 +1204,7 @@ const Chat: React.FC<ChatProps> = ({
           </S.ScrollToLatest>
         )}
       </S.MessagesCard>
-      <S.ComposerCard>
+      <S.ComposerCard ref={composerRef}>
         <ChatInput
           value={inputValue}
           onChange={setInputValue}
