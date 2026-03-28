@@ -12,9 +12,10 @@ curl -sSL https://raw.githubusercontent.com/tobiasv1337/Mensabot/main/install.sh
 
 This script will automatically:
 1. Check for and install required system packages (like `git`, `python3`, `docker`).
-2. Clone the Mensabot repository.
-3. Set up a dedicated Python virtual environment for the interactive UI.
-4. Launch the Setup Wizard (`setup.py`), where you can pick a release tag or branch before configuring and deploying.
+2. Let you pick a release tag or branch before the repository is cloned or updated.
+3. Clone or update the Mensabot repository at that ref.
+4. Set up a dedicated Python virtual environment for the interactive UI.
+5. Launch the Setup Wizard (`setup.py`) for configuration and deployment.
 
 ---
 
@@ -42,9 +43,9 @@ This mode allows you to granularly configure every possible Mensabot parameter. 
 
 ## Deploying and Updating
 
-The wizard is state-aware. When you launch it, it will detect if Mensabot is currently running, stopped, or unconfigured, and present a dynamic set of actions.
+The installer lets you choose a release or branch before the repository is prepared. After that, the wizard is state-aware: when it launches, it detects whether Mensabot is currently running, stopped, or unconfigured and presents a dynamic set of actions.
 
-On a fresh install, the initial menu now also includes **Select Mensabot Version**, so you can switch to a stable release tag or development branch before you create `.env` values or start the stack.
+On a fresh install, the wizard menu also includes **Select Mensabot Version**, so you can switch again later before you create `.env` values or start the stack.
 
 ### Start / Restart
 Easily build the Docker Compose stack and bring the services online. The tool will show a clean loading spinner while Docker does the heavy lifting. If you change your `.env` configuration, use the **Restart** option to apply the updates.

@@ -151,9 +151,10 @@ What it does:
 
 - Installs missing system dependencies on Debian/Ubuntu-based systems
 - Installs Docker if needed
-- Clones or updates the repository
+- Lets you select a release tag or branch before cloning or updating the repository
+- Clones or updates the repository at the selected ref
 - Creates a dedicated Python environment for the setup UI
-- Launches the interactive setup wizard, where you can select a release or branch before configuring and deploying
+- Launches the interactive setup wizard for configuration and deployment
 
 This path is the best choice for first-time deployments. More details are in [SETUP_README.md](SETUP_README.md).
 
