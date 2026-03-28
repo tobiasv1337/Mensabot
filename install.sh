@@ -7,7 +7,9 @@ set -e
 
 REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
-BRANCH="main"
+DEFAULT_REF="main"
+SELECTED_REF="${MENSABOT_REF:-$DEFAULT_REF}"
+SELECTED_REF_TYPE="branch"
 PRIMARY_USER="${SUDO_USER:-$(id -un)}"
 CURRENT_USER="$(id -un)"
 
@@ -23,6 +25,24 @@ success() {
 error() {
     echo -e "\033[1;31m[x]\033[0m $1"
     exit 1
+}
+
+prompt_tty() {
+    if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+        printf "%b" "$1" > /dev/tty
+        return 0
+    fi
+    return 1
+}
+
+read_from_tty() {
+    local __resultvar="$1"
+    local input
+    if ! [ -r /dev/tty ]; then
+        return 1
+    fi
+    IFS= read -r input < /dev/tty || return 1
+    printf -v "$__resultvar" '%s' "$input"
 }
 
 run_privileged() {
@@ -49,15 +69,142 @@ run_as_primary_user() {
     fi
 }
 
+validate_selected_ref() {
+    if git ls-remote --exit-code --heads "$REPO_URL" "refs/heads/$SELECTED_REF" &> /dev/null; then
+        SELECTED_REF_TYPE="branch"
+        return 0
+    fi
+
+    if git ls-remote --exit-code --tags --refs "$REPO_URL" "refs/tags/$SELECTED_REF" &> /dev/null; then
+        SELECTED_REF_TYPE="tag"
+        return 0
+    fi
+
+    return 1
+}
+
+select_repository_ref() {
+    local remote_refs tags_output branches_output selection selection_index ref_name
+    local -a tags branches option_refs option_types
+
+    if [ -n "${MENSABOT_REF:-}" ]; then
+        validate_selected_ref || error "Requested ref '$SELECTED_REF' from MENSABOT_REF was not found on GitHub."
+        info "Using requested Mensabot ref from MENSABOT_REF: $SELECTED_REF"
+        return
+    fi
+
+    if ! [ -r /dev/tty ] || ! [ -w /dev/tty ]; then
+        info "No interactive terminal available for version selection. Using default ref '$SELECTED_REF'."
+        return
+    fi
+
+    info "Fetching available Mensabot versions..."
+    if ! remote_refs="$(git ls-remote --heads --tags --refs "$REPO_URL" 2>/dev/null)"; then
+        info "Could not retrieve versions from GitHub. Continuing with default ref '$SELECTED_REF'."
+        return
+    fi
+
+    while read -r _ ref_name; do
+        [ -n "$ref_name" ] || continue
+        case "$ref_name" in
+            refs/tags/*)
+                tags+=("${ref_name#refs/tags/}")
+                ;;
+            refs/heads/*)
+                branches+=("${ref_name#refs/heads/}")
+                ;;
+        esac
+    done <<< "$remote_refs"
+
+    if [ ${#tags[@]} -gt 0 ]; then
+        tags_output="$(printf '%s\n' "${tags[@]}" | sort -rV)"
+        mapfile -t tags <<< "$tags_output"
+    fi
+
+    if [ ${#branches[@]} -gt 0 ]; then
+        branches_output="$(printf '%s\n' "${branches[@]}" | sort)"
+        mapfile -t branches <<< "$branches_output"
+    fi
+
+    prompt_tty "\nSelect the Mensabot version before configuration and deployment.\n"
+    prompt_tty "Press Enter to keep the default (${SELECTED_REF}), choose a number, or type a ref name manually.\n\n"
+
+    local i=1
+    if [ ${#tags[@]} -gt 0 ]; then
+        prompt_tty "Stable releases:\n"
+        for ref_name in "${tags[@]}"; do
+            prompt_tty "  $i) $ref_name [tag]\n"
+            option_refs+=("$ref_name")
+            option_types+=("tag")
+            i=$((i + 1))
+        done
+        prompt_tty "\n"
+    fi
+
+    if [ ${#branches[@]} -gt 0 ]; then
+        prompt_tty "Development branches:\n"
+        for ref_name in "${branches[@]}"; do
+            prompt_tty "  $i) $ref_name [branch]\n"
+            option_refs+=("$ref_name")
+            option_types+=("branch")
+            i=$((i + 1))
+        done
+        prompt_tty "\n"
+    fi
+
+    while true; do
+        prompt_tty "Install ref [${SELECTED_REF}]: "
+        read_from_tty selection || break
+
+        if [ -z "$selection" ]; then
+            validate_selected_ref || error "Default ref '$SELECTED_REF' was not found on GitHub."
+            break
+        fi
+
+        if [[ "$selection" =~ ^[0-9]+$ ]]; then
+            selection_index=$((selection - 1))
+            if [ "$selection_index" -ge 0 ] && [ "$selection_index" -lt "${#option_refs[@]}" ]; then
+                SELECTED_REF="${option_refs[$selection_index]}"
+                SELECTED_REF_TYPE="${option_types[$selection_index]}"
+                break
+            fi
+        else
+            SELECTED_REF="$selection"
+            if validate_selected_ref; then
+                break
+            fi
+        fi
+
+        SELECTED_REF="$DEFAULT_REF"
+        prompt_tty "Invalid selection. Enter a listed number, a branch name, a tag, or press Enter for '${DEFAULT_REF}'.\n"
+    done
+
+    info "Selected Mensabot ref: $SELECTED_REF"
+}
+
+checkout_selected_ref() {
+    if [ "$SELECTED_REF_TYPE" = "branch" ]; then
+        if git show-ref --verify --quiet "refs/heads/$SELECTED_REF"; then
+            git checkout "$SELECTED_REF"
+        else
+            git checkout -b "$SELECTED_REF" --track "origin/$SELECTED_REF"
+        fi
+        git pull --ff-only origin "$SELECTED_REF"
+    else
+        git checkout "$SELECTED_REF"
+    fi
+}
+
 # Verify base dependencies exist or attempt to install them via apt
 info "Checking system requirements..."
 
 if ! command -v apt-get &> /dev/null; then
     info "Warning: This automated script is optimized for Debian/Ubuntu (apt)."
     info "It appears you are running a different operating system."
-    read -p "Do you want to continue anyway? Ensure git, python3, python3-venv, and docker are installed manually. (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    prompt_tty "Do you want to continue anyway? Ensure git, python3, python3-venv, and docker are installed manually. (y/N) "
+    read_from_tty continue_anyway || error "Setup aborted because no interactive terminal was available."
+    prompt_tty "\n"
+    if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
         error "Setup aborted by user."
     fi
 else
@@ -87,19 +234,20 @@ else
     success "Docker is already installed."
 fi
 
+select_repository_ref
+
 # Clone the Mensabot repository or update it if it already exists
 info "Preparing Mensabot repository..."
 if [ -d "$CLONE_DIR/.git" ]; then
-    info "Directory $CLONE_DIR already exists. Updating branch $BRANCH..."
+    info "Directory $CLONE_DIR already exists. Updating ref $SELECTED_REF..."
     cd "$CLONE_DIR"
-    git fetch origin
-    git checkout "$BRANCH"
-    git pull origin "$BRANCH"
+    git fetch origin "+refs/heads/*:refs/remotes/origin/*" --tags --prune
+    checkout_selected_ref
 elif [ -d "$CLONE_DIR" ]; then
     error "Directory $CLONE_DIR exists but is not a git repository. Please remove it or rename it."
 else
-    info "Cloning Mensabot repository..."
-    git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$CLONE_DIR"
+    info "Cloning Mensabot repository at ref $SELECTED_REF..."
+    git clone --branch "$SELECTED_REF" --single-branch "$REPO_URL" "$CLONE_DIR"
     cd "$CLONE_DIR"
 fi
 
