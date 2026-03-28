@@ -1,6 +1,6 @@
 [project]
 name = "openmensa-sdk"
-version = "0.1.0"
+version = "1.0.1"
 description = "Typed OpenMensa API v2 wrapper (dataclasses, stable to_dict, pagination)."
 keywords = ["openmensa", "api", "sdk", "canteen", "mensa"]
 readme = "README.md"
@@ -12,6 +12,7 @@ maintainers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "mensabot-common",
     "rapidfuzz>=3.14.3",
     "requests>=2.32.5",
 ]
@@ -22,3 +23,6 @@ openmensa = "openmensa_sdk.cli:main"
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+mensabot-common = { path = "../mensabot-common", editable = true }

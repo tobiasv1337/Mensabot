@@ -33,15 +33,32 @@ def _load_locale(lang: str) -> dict[str, str]:
         return {}
 
 
+def _resolve_template(key: str, lang: str = DEFAULT_LANGUAGE, *, fallback_to_default: bool = True) -> str | None:
+    """Resolve a localized template string without applying a missing-key sentinel."""
+    locale = _load_locale(lang) if lang in SUPPORTED_LANGUAGES else {}
+    template = locale.get(key)
+    if template is None and fallback_to_default:
+        template = _load_locale(DEFAULT_LANGUAGE).get(key)
+    return template
+
+
+def get_optional_string(key: str, lang: str = DEFAULT_LANGUAGE, *, fallback_to_default: bool = True, **kwargs: object) -> str | None:
+    """Look up a localized string and return ``None`` if no matching key exists."""
+    template = _resolve_template(key, lang, fallback_to_default=fallback_to_default)
+    if template is None:
+        return None
+    return template.format(**kwargs) if kwargs else template
+
+
 def get_string(key: str, lang: str = DEFAULT_LANGUAGE, **kwargs: object) -> str:
     """Look up a localized string by key.
 
     Falls back to English if the key is missing from the requested locale.
     Supports Python str.format() interpolation via **kwargs.
     """
-    locale = _load_locale(lang) if lang in SUPPORTED_LANGUAGES else {}
-    fallback = _load_locale(DEFAULT_LANGUAGE)
-    template = locale.get(key) or fallback.get(key, f"[MISSING: {key}]")
+    template = _resolve_template(key, lang)
+    if template is None:
+        template = f"[MISSING: {key}]"
     return template.format(**kwargs) if kwargs else template
 
 

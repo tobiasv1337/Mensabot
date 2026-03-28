@@ -2,17 +2,19 @@ import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal
+from uuid import uuid4
 
 from openai import AsyncOpenAI, RateLimitError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from ..config import settings
 from ..concurrency import get_llm_semaphore
-from ..i18n import DEFAULT_LANGUAGE, get_string
+from ..i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, get_string
 from ..logging import logger
 from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
+from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
 from .executor import handle_tool_calls
 from .registry import get_openai_tools_from_mcp
 
@@ -52,13 +54,16 @@ async def create_chat_completion_with_retry(messages: List[Dict[str, Any]], tool
     for attempt in range(1, settings.llm_max_retries + 1):
         try:
             async with get_llm_semaphore():
-                return await client.chat.completions.create(
+                kwargs = dict(
                     model=settings.llm_model,
                     messages=[sanitize_message(m) for m in messages],
                     tools=tools,
                     tool_choice="auto",
                     stream=False,
                 )
+                if settings.llm_temperature is not None:
+                    kwargs["temperature"] = settings.llm_temperature
+                return await client.chat.completions.create(**kwargs)
         except RateLimitError as err:
             last_error = err
             retry_after = None
@@ -101,6 +106,19 @@ def format_message_history(messages: List[ChatMessage], format: Literal["openai"
     return formatted_messages
 
 
+def _strip_filter_warning(content: str) -> str:
+    """Remove any appended diet/allergen warning suffix from an assistant message.
+
+    The warning is added after the loop returns, so it appears in the message history
+    on subsequent turns. Stripping it here prevents the LLM from mimicking it.
+    """
+    for lang in SUPPORTED_LANGUAGES:
+        warning = get_string("diet_allergen_warning", lang)
+        if warning and content.endswith(warning):
+            return content[: -len(warning)].rstrip()
+    return content
+
+
 def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> List[ChatCompletionMessage]:
     """Format the message log (history + current request) into the format required by the LLM."""
     system_messages = [
@@ -115,9 +133,24 @@ def prepare_message_log(message_log: List[ChatMessage], user_filters: UserFilter
     if filters_prompt:
         system_messages.append({"role": "system", "content": filters_prompt})
 
+    # Nudge comes last among system messages for strongest recency effect.
+    system_messages.append({"role": "system", "content": get_string("system_prompt_nudge", lang)})
+
+    # Truncate history to avoid context bloat in long conversations.
+    truncated_log = message_log[-settings.max_history_messages:]
+
+    # Strip any appended filter warnings from previous assistant messages so the
+    # LLM does not see them as part of its own output and re-append them itself.
+    sanitized_log: List[ChatMessage] = []
+    for msg in truncated_log:
+        if msg.role == "assistant" and msg.content:
+            sanitized_log.append(msg.model_copy(update={"content": _strip_filter_warning(msg.content)}))
+        else:
+            sanitized_log.append(msg)
+
     return [
         *system_messages,
-        *format_message_history(message_log),
+        *format_message_history(sanitized_log),
     ]
 
 
@@ -231,20 +264,62 @@ def _maybe_append_filter_warning(response: ChatResponse, tool_traces: list[ToolC
     return response
 
 
-async def run_tool_calling_loop(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, language: str = DEFAULT_LANGUAGE) -> ChatResponse:
-    response, tool_traces = await _run_tool_calling_loop_inner(message_log, include_tool_calls, user_filters, language)
-    return _maybe_append_filter_warning(response, tool_traces, language)
+async def run_tool_calling_loop(
+    message_log: List[ChatMessage],
+    include_tool_calls: bool = False,
+    user_filters: UserFilters | None = None,
+    judge_correction: bool = True,
+    language: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
+) -> ChatResponse:
+    sink = progress_sink or NoOpChatProgressSink()
+    await sink.emit_phase("starting")
+
+    try:
+        response, tool_traces = await _run_tool_calling_loop_inner(
+            message_log,
+            include_tool_calls,
+            user_filters,
+            judge_correction,
+            language,
+            progress_sink=sink,
+        )
+        await sink.emit_phase("finalizing")
+        final_response = _maybe_append_filter_warning(response, tool_traces, language)
+        await sink.emit_result(final_response)
+        return final_response
+    except Exception:
+        error_id = str(uuid4())
+        logger.exception("Unhandled exception in run_tool_calling_loop (error_id=%s)", error_id)
+        await sink.emit_error(
+            code="internal_error",
+            message=f"Internal server error (error_id={error_id})",
+        )
+        raise
 
 
-async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_tool_calls: bool = False, user_filters: UserFilters | None = None, lang: str = DEFAULT_LANGUAGE) -> tuple[ChatResponse, list[ToolCallTrace]]:
+async def _run_tool_calling_loop_inner(
+    message_log: List[ChatMessage],
+    include_tool_calls: bool = False,
+    user_filters: UserFilters | None = None,
+    judge_correction: bool = True,
+    lang: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
+) -> tuple[ChatResponse, list[ToolCallTrace]]:
+    sink = progress_sink or NoOpChatProgressSink()
     messages = prepare_message_log(message_log, user_filters, lang)
-    tools = await get_openai_tools_from_mcp()
+    await sink.emit_phase("waiting_for_llm", iteration=1)
+    tools = await await_with_heartbeat(get_openai_tools_from_mcp(), sink, phase="waiting_for_llm", iteration=1)
     logger.debug("OpenAI tools fetched from MCP: %s", json.dumps(tools, indent=2))
 
     tool_traces: list[ToolCallTrace] = []
+    judge_corrections_count = 0
+
     for iteration in range(1, settings.max_llm_iterations + 1):
+        if iteration > 1:
+            await sink.emit_phase("waiting_for_llm", iteration=iteration)
         try:
-            completion = await create_chat_completion_with_retry(messages=messages, tools=tools)
+            completion = await await_with_heartbeat(create_chat_completion_with_retry(messages=messages, tools=tools), sink, phase="waiting_for_llm", iteration=iteration)
         except RateLimitError as e:
             logger.error("LLM completion failed after retry logic due to rate limit: %s", str(e))
             return _build_chat_response(get_string("fallback_response", lang), tool_traces, include_tool_calls), tool_traces
@@ -264,7 +339,48 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
                 lang=lang,
             )
             if decision.response is not None:
-                return decision.response, tool_traces
+                # --- LLM-as-a-Judge checkpoint ---
+                if judge_correction and settings.llm_judge_enabled and judge_corrections_count < settings.llm_judge_max_corrections:
+                    from .judge import judge_response
+
+                    proposed_reply = decision.response.reply or ""
+                    await sink.emit_phase("waiting_for_judge", iteration=iteration)
+                    await sink.emit_judge_status(iteration=iteration, state="started")
+                    verdict = await await_with_heartbeat(judge_response(messages, proposed_reply, lang), sink, phase="waiting_for_judge", iteration=iteration)
+                    if verdict:
+                        await sink.emit_judge_status(iteration=iteration, state="rejected", verdict=verdict)
+                        logger.info(
+                            "Judge rejected response on iteration %d (correction %d/%d): %s",
+                            iteration, judge_corrections_count + 1, settings.llm_judge_max_corrections, verdict[:200],
+                        )
+                        judge_trace = ToolCallTrace(
+                            name="__judge_correction__",
+                            iteration=iteration,
+                            ok=False,
+                            result={"verdict": verdict},
+                            args={"proposed_reply": proposed_reply},
+                        )
+                        tool_traces.append(judge_trace)
+                        await sink.emit_tool_trace(trace_id=build_trace_id(None, iteration, len(tool_traces)), state="error", trace=judge_trace.model_copy(deep=True))
+                        # Deliberate tradeoff: use the judge's free-form verdict verbatim
+                        # as a system nudge because it improves correction quality here,
+                        # even though it promotes user-influenced model output in priority.
+                        # Might consider making prompt injection more difficult in the future if this becomes a problem.
+                        messages.append({"role": "system", "content": verdict})
+                        judge_corrections_count += 1
+                        continue  # Give the LLM another chance
+                    await sink.emit_judge_status(iteration=iteration, state="passed")
+                else:
+                    await sink.emit_judge_status(iteration=iteration, state="skipped")
+                # --- End judge checkpoint ---
+                # Rebuild the response so it includes all accumulated tool_traces
+                # (including any judge correction entries added during earlier iterations).
+                final_response = _build_chat_response(
+                    decision.response.reply or "",
+                    tool_traces,
+                    include_tool_calls,
+                )
+                return final_response, tool_traces
             if decision.continue_loop:
                 continue
 
@@ -275,6 +391,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
         messages.append(sanitize_message(message))
 
         logger.info("Number of tool calls: %d", len(tool_calls))
+        await sink.emit_phase("executing_tools", iteration=iteration)
         early_response = await handle_tool_calls(
             tool_calls,
             messages,
@@ -283,6 +400,7 @@ async def _run_tool_calling_loop_inner(message_log: List[ChatMessage], include_t
             include_tool_calls=include_tool_calls,
             user_filters=user_filters,
             language=lang,
+            progress_sink=sink,
         )
         if early_response is not None:
             return early_response, tool_traces

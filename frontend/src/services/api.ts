@@ -16,6 +16,7 @@
  */
 
 import type { ChatFilters, ChatMessage } from "./chats";
+import { streamChatResponse, type ChatStreamEvent } from "./chatStream";
 import i18n from "../i18n";
 
 export type ToolCallTrace = {
@@ -131,6 +132,14 @@ export type TranscribeResponse = {
 	duration_s?: number;
 };
 
+type SendMessagesOptions = {
+	includeToolCalls?: boolean;
+	filters?: ChatFilters;
+	judgeCorrection?: boolean;
+	onStreamEvent?: (event: ChatStreamEvent) => void;
+	onStreamFallback?: () => void;
+};
+
 export class MensaBotClient {
 	private baseUrl: string;
 
@@ -138,29 +147,7 @@ export class MensaBotClient {
 		this.baseUrl = baseUrl;
 	}
 
-	private async getJson(path: string, params?: URLSearchParams): Promise<unknown> {
-		const queryString = params?.toString();
-		const url = this.baseUrl + path + (queryString ? `?${queryString}` : "");
-
-		const request = await fetch(url, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-
-		if (!request.ok) {
-			throw new Error(`API error: ${request.status} ${request.statusText}`);
-		}
-
-		try {
-			return await request.json();
-		} catch {
-			throw new Error("API returned invalid JSON");
-		}
-	}
-
-	async sendMessages(messages: ChatMessage[], options: { includeToolCalls?: boolean; filters?: ChatFilters } = {}): Promise<ChatApiResponse> {
+	private buildChatRequestBody(messages: ChatMessage[], options: SendMessagesOptions): Record<string, unknown> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 
 		const filters = options.filters;
@@ -170,6 +157,7 @@ export class MensaBotClient {
 			messages: payload,
 			include_tool_calls: options.includeToolCalls ?? false,
 			language: i18n.language,
+			judgeCorrection: options.judgeCorrection ?? true,
 		};
 
 		if (hasFilters) {
@@ -181,25 +169,10 @@ export class MensaBotClient {
 			};
 		}
 
-		const request = await fetch(this.baseUrl + "/chat", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(body)
-		});
+		return body;
+	}
 
-		if (!request.ok) {
-			throw new Error(`Chat API error: ${request.status} ${request.statusText}`);
-		}
-
-		let response: unknown;
-		try {
-			response = await request.json();
-		} catch {
-			throw new Error("Chat API returned invalid JSON");
-		}
-
+	private normalizeChatApiResponse(response: unknown): ChatApiResponse {
 		const res = response as ChatApiResponse;
 		if (res.status === "needs_location") {
 			return { status: "needs_location", prompt: res.prompt, tool_calls: res.tool_calls };
@@ -230,6 +203,66 @@ export class MensaBotClient {
 		}
 
 		throw new Error("Unexpected chat API response shape");
+	}
+
+	private async getJson(path: string, params?: URLSearchParams): Promise<unknown> {
+		const queryString = params?.toString();
+		const url = this.baseUrl + path + (queryString ? `?${queryString}` : "");
+
+		const request = await fetch(url, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+
+		if (!request.ok) {
+			throw new Error(`API error: ${request.status} ${request.statusText}`);
+		}
+
+		try {
+			return await request.json();
+		} catch {
+			throw new Error("API returned invalid JSON");
+		}
+	}
+
+	private async sendMessagesRest(body: Record<string, unknown>): Promise<ChatApiResponse> {
+		const request = await fetch(this.baseUrl + "/chat", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(body)
+		});
+
+		if (!request.ok) {
+			throw new Error(`Chat API error: ${request.status} ${request.statusText}`);
+		}
+
+		let response: unknown;
+		try {
+			response = await request.json();
+		} catch {
+			throw new Error("Chat API returned invalid JSON");
+		}
+
+		return this.normalizeChatApiResponse(response);
+	}
+
+	async sendMessages(messages: ChatMessage[], options: SendMessagesOptions = {}): Promise<ChatApiResponse> {
+		const body = this.buildChatRequestBody(messages, options);
+		if (typeof WebSocket === "undefined") {
+			return await this.sendMessagesRest(body);
+		}
+		return await streamChatResponse({
+			baseUrl: this.baseUrl,
+			body,
+			fallback: () => this.sendMessagesRest(body),
+			normalizeResponse: (response) => this.normalizeChatApiResponse(response),
+			onEvent: options.onStreamEvent,
+			onFallback: options.onStreamFallback,
+		});
 	}
 
 	async transcribeAudio(audio: Blob): Promise<TranscribeResponse> {

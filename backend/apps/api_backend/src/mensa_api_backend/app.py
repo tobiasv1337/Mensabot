@@ -1,14 +1,28 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from mensa_mcp_server.cache import shared_cache
+
 from .routes.canteens import router as canteens_router
 from .routes.chat import router as chat_router
+from .routes.chat_ws import router as chat_ws_router
 from .routes.debug import router as debug_router
 from .routes.transcribe import router as transcribe_router
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    shared_cache.load()
+    try:
+        yield
+    finally:
+        shared_cache.flush()
+
+
 def create_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
 
     # Allow local dev frontends to call the API.
     app.add_middleware(
@@ -25,6 +39,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(chat_router)
+    app.include_router(chat_ws_router)
     app.include_router(canteens_router)
     app.include_router(debug_router)
     app.include_router(transcribe_router)

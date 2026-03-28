@@ -76,7 +76,7 @@ flowchart TB
 
     subgraph V["Persistent Storage"]
         Models["stt_models volume"]
-        Data["canteen_data volume"]
+        Data["backend_cache_data volume"]
     end
 
     U --> App
@@ -215,8 +215,22 @@ All configuration lives in `.env`. The complete reference is documented inline i
 
 - The chat experience depends on the LLM settings being valid.
 - The map page needs both MapTiler style URLs. If they are empty, the rest of the app still works, but the map page shows a configuration error.
-- In Docker, the canteen index is persisted automatically to the `canteen_data` volume.
+- In Docker, the canteen index and shared backend cache are persisted automatically to the `backend_cache_data` volume.
+- The OpenMensa and Overpass user-agent settings in `.env.example` are optional overrides. If they are left unset, Mensabot derives them from the root `VERSION` file automatically.
 - The frontend consumes environment values at build time. If you change frontend-facing variables, rebuild the image.
+
+### Versioning
+
+- The root [`VERSION`](VERSION) file is the single source of truth for the current Mensabot version.
+- The shared backend cache and persisted canteen index both embed that version and are invalidated automatically when it changes.
+- Default OpenMensa and Overpass user agents are also derived from `VERSION` unless you override them explicitly in `.env`.
+- After changing `VERSION`, run:
+
+```bash
+python3 backend/scripts/sync_versions.py
+```
+
+- The sync script updates Python package versions and frontend package metadata. It does not rewrite your real `.env`.
 
 ## Running Locally for Development
 
@@ -291,7 +305,7 @@ The default `docker-compose.yml` starts these services:
 Persistent volumes:
 
 - `stt_models`: caches downloaded whisper models
-- `canteen_data`: stores the generated canteen index
+- `backend_cache_data`: stores the generated canteen index and the shared backend cache
 - `portainer_data`: stores Portainer state
 
 ## API Overview

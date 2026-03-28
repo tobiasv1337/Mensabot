@@ -23,10 +23,10 @@ from rapidfuzz import fuzz
 from .client import OpenMensaClient
 from .errors import OpenMensaAPIError
 from .models import Canteen
+from mensabot_common.version import PROJECT_VERSION
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INDEX_VERSION = 1
 DEFAULT_INDEX_TTL_HOURS = 24.0
 
 DEFAULT_INDEX_PATH = os.getenv("OPENMENSA_CANTEEN_INDEX_PATH") or str(
@@ -79,6 +79,10 @@ _ALIAS_REPLACEMENTS = [
     ("humboldt universitaet", "hu"),
     ("humboldt universitat", "hu"),
 ]
+
+
+class IncompatibleCanteenIndexVersionError(ValueError):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -298,6 +302,10 @@ class CanteenIndex:
     def from_dict(cls, payload: dict) -> CanteenIndex:
         if not isinstance(payload, dict):
             raise ValueError("Index payload must be a dict.")
+        if payload.get("version") != PROJECT_VERSION:
+            raise IncompatibleCanteenIndexVersionError(
+                f"Index payload version {payload.get('version')!r} does not match expected version {PROJECT_VERSION}."
+            )
 
         updated_at = _parse_dt(payload.get("updated_at"))
         if updated_at is None:
@@ -334,7 +342,7 @@ class CanteenIndex:
         else:
             updated_at = updated_at.astimezone(dt.timezone.utc)
         return {
-            "version": DEFAULT_INDEX_VERSION,
+            "version": PROJECT_VERSION,
             "updated_at": updated_at.isoformat(),
             "total_canteens": len(self.canteens),
             "canteens": [c.to_dict() for c in self.canteens],
@@ -682,18 +690,24 @@ class CanteenIndexStore:
         except OSError:
             logger.exception("Failed to stat canteen index file: %s", self.path)
             return None
-        if self._index is not None and self._file_mtime == mtime:
+        if self._file_mtime == mtime:
             return self._index
 
         try:
             index = CanteenIndex.from_file(self.path)
+        except IncompatibleCanteenIndexVersionError as exc:
+            logger.warning("Ignoring canteen index at %s because it is incompatible: %s", self.path, exc)
+            self._index = None
+            self._file_mtime = mtime
+            return None
         except Exception:
             logger.exception("Failed to load canteen index from %s", self.path)
             self._index = None
-            self._file_mtime = None
+            self._file_mtime = mtime
             return None
         self._index = index
         self._file_mtime = mtime
+        logger.info("Loaded canteen index from %s (%d canteens).", self.path, len(index.canteens))
         return index
 
     def refresh(self, client: OpenMensaClient) -> CanteenIndex:
@@ -702,7 +716,7 @@ class CanteenIndexStore:
         index.to_file(self.path)
         self._index = index
         self._file_mtime = os.path.getmtime(self.path)
-        logger.info("Canteen index refreshed (%d canteens).", len(index.canteens))
+        logger.info("Refreshed canteen index and persisted it to %s (%d canteens).", self.path, len(index.canteens))
         return index
 
     def refresh_if_stale(self, client: OpenMensaClient, *, ttl_hours: float = DEFAULT_INDEX_TTL_HOURS) -> CanteenIndex:

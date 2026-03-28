@@ -1,0 +1,16 @@
+[project]
+name = "mensabot-common"
+version = "1.0.1"
+description = "Shared runtime helpers and metadata for Mensabot services."
+authors = [
+  { name = "Tobias Veselsky", email = "veselsky@tu-berlin.de" },
+]
+maintainers = [
+  { name = "Tobias Veselsky", email = "veselsky@tu-berlin.de" },
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"

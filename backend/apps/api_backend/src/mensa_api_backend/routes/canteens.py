@@ -7,6 +7,7 @@ from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCateg
 from mensa_mcp_server.services.opening_hours import fetch_opening_hours_osm_for_canteen
 from mensa_mcp_server.services.openmensa import fetch_single_menu, normalize_menu_date
 from mensa_mcp_server.server import make_openmensa_client
+from mensa_mcp_server.settings import settings as mcp_settings
 from openmensa_sdk import OpenMensaAPIError
 
 from ..concurrency import get_io_semaphore
@@ -23,7 +24,6 @@ from ..services.canteen_index import canteen_to_out, load_canteen_index
 
 router = APIRouter()
 
-CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
 
 @router.get("/api/canteens", response_model=CanteenListResponse)
 async def list_canteens(
@@ -135,7 +135,7 @@ async def get_canteen_info_api(canteen_id: int):
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
     response = canteen_to_out(canteen)
-    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=CACHE_TTL_CANTEEN_INFO_S)
+    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=mcp_settings.openmensa_canteen_info_cache_ttl_s)
     return response
 
 

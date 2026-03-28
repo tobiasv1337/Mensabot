@@ -136,16 +136,17 @@ async def request_user_clarification(
     After the user selects an option, that selection is provided in the next user message.
     Use that next user message as input and continue.
 
-    Use this tool when:
+    You MUST call this tool (instead of writing a text response) whenever:
     - search_canteens returns multiple plausible results and you are uncertain which one the user means
-    - The user's request is ambiguous and could refer to different canteens, cities, or options
+    - The user's request is ambiguous and could refer to different canteens, cities, or options (e.g. "TU", "Uni", "Hauptmensa")
     - You need the user to choose between specific alternatives
     - You want to ask the user a simple yes/no question with clear button options
     - You can provide a concise predefined option list (2-10 options)
 
-    Important:
-    - If the user should choose from predefined options, call this tool instead of listing options in plain text.
-    - Do not ask users to choose by typing when clickable options can be provided.
-    - If the ambiguity is primarily geographic across many cities/areas, prefer request_user_location first.
+    NEVER list options as plain text in your response when this tool can be used instead.
+    NEVER output a numbered or bulleted list of canteens/cities and ask the user to reply with a number or name.
+    Always call this tool — it shows clickable buttons which are far better UX than plain text choices.
+
+    If the ambiguity is primarily geographic across many cities/areas and you have no short list yet, prefer request_user_location first.
     """
     return {"prompt": prompt, "options": options, "allow_none": allow_none}

@@ -13,6 +13,7 @@ import MapPage from "./MapPage";
 import ContactPage from "./ContactPage";
 import LandingPage from "./LandingPage";
 import type { Canteen } from "../services/api";
+import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 
@@ -57,6 +58,7 @@ const ChatPage: React.FC = () => {
 
   const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
   const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
+  const [chatMode, setChatMode] = useState<ChatMode>(() => loadChatMode());
 
   const [chatPages, setChatPages] = useState(1);
 
@@ -99,6 +101,8 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     Chats.setActiveId(activeChatId);
   }, [chat, activeChatId]);
+
+  useEffect(() => { saveChatMode(chatMode); }, [chatMode]);
 
 
   const updateChatFilters = useCallback(
@@ -237,6 +241,8 @@ const ChatPage: React.FC = () => {
               <Chat
                 chat={chat}
                 filters={filters}
+                chatMode={chatMode}
+                onChatModeChange={setChatMode}
                 onFiltersChange={updateChatFilters}
                 onStartNewChat={startNewChat}
                 menuCanteen={menuCanteen}

@@ -1,10 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Canteen, CanteenSearchResult } from "../../services/api";
+import type { ChatStreamEvent } from "../../services/chatStream";
 import { getApiClient } from "../../services/apiClient";
+import { isJudgeCorrectionEnabled, type ChatMode } from "../../services/chatMode";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
+import ChatStreamingBubble from "./ChatStreamingBubble";
 import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
 import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
@@ -22,20 +25,36 @@ import {
   WEEKDAY_LABELS,
 } from "./chatCommands";
 import { buildMenuMarkdown } from "./chatFormatting";
+import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "./chatStreamState";
 import * as S from "./chat.styles";
 import { openGoogleMaps } from "../../services/maps";
 
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
 
+type ChatMap<T> = Record<string, T | undefined>;
+type ChatStreamUpdate = ActiveStreamState | null | ((prev: ActiveStreamState | null) => ActiveStreamState | null);
+
 const isNearBottom = (el: HTMLDivElement) => {
   const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
   return remaining <= NEAR_BOTTOM_PX;
 };
 
+const updateChatMap = <T,>(state: ChatMap<T>, chatId: string, value: T | null): ChatMap<T> => {
+  if (value === null) {
+    if (state[chatId] === undefined) return state;
+    const next = { ...state };
+    delete next[chatId];
+    return next;
+  }
+  return state[chatId] === value ? state : { ...state, [chatId]: value };
+};
+
 type ChatProps = {
   chat: ChatModel;
   filters: ChatFilters;
+  chatMode: ChatMode;
+  onChatModeChange: (mode: ChatMode) => void;
   onFiltersChange: (filters: ChatFilters) => void;
   onStartNewChat: (options?: { preselectedCanteen?: Canteen | null }) => void;
   menuCanteen?: Canteen | null;
@@ -50,11 +69,11 @@ const cloneFilters = (filters: ChatFilters): ChatFilters => ({
   priceCategory: filters.priceCategory ?? null,
 });
 
-
-
 const Chat: React.FC<ChatProps> = ({
   chat,
   filters,
+  chatMode,
+  onChatModeChange,
   onFiltersChange,
   onStartNewChat,
   menuCanteen = null,
@@ -66,14 +85,15 @@ const Chat: React.FC<ChatProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
-
   const [version, setVersion] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [sendingByChatId, setSendingByChatId] = useState<ChatMap<true>>({});
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
+  const [streamByChatId, setStreamByChatId] = useState<ChatMap<ActiveStreamState>>({});
 
   const [inputValue, setInputValue] = useState("");
   const [focusSignal, setFocusSignal] = useState(0);
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [shortcutModalOpen, setShortcutModalOpen] = useState(false);
   const [shortcutDraft, setShortcutDraft] = useState<ShortcutInput>({
     name: "",
@@ -87,8 +107,10 @@ const Chat: React.FC<ChatProps> = ({
   const [clarificationHandled, setClarificationHandled] = useState(false);
   const menuRequestId = useRef(0);
   const commandRequestId = useRef(0);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
   const initialMenuFetched = useRef(false);
   const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
+  const streamAcceptedRef = useRef<ChatMap<true>>({});
 
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
@@ -96,6 +118,35 @@ const Chat: React.FC<ChatProps> = ({
   const [commandCanteenError, setCommandCanteenError] = useState<string | null>(null);
   const [commandUserLocation, setCommandUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [commandLocationStatus, setCommandLocationStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const modeMenuPopoverId = useId();
+  const isSending = Boolean(sendingByChatId[chat.id]);
+  const activeStream = streamByChatId[chat.id] ?? null;
+
+  const setChatSending = useCallback(
+    (chatId: string, sending: boolean) => {
+      setSendingByChatId((prev) => updateChatMap(prev, chatId, sending ? true : null));
+    },
+    []
+  );
+
+  const setChatStream = useCallback(
+    (chatId: string, next: ChatStreamUpdate) => {
+      setStreamByChatId((prev) => {
+        const current = prev[chatId] ?? null;
+        const resolved = typeof next === "function" ? next(current) : next;
+        return updateChatMap(prev, chatId, resolved);
+      });
+    },
+    []
+  );
+
+  const setChatAccepted = useCallback((chatId: string, accepted: boolean) => {
+    if (accepted) {
+      streamAcceptedRef.current[chatId] = true;
+      return;
+    }
+    delete streamAcceptedRef.current[chatId];
+  }, []);
 
   const updateFilters = useCallback(
     (next: ChatFilters) => {
@@ -181,6 +232,7 @@ const Chat: React.FC<ChatProps> = ({
   useEffect(() => {
     setFiltersOpen(false);
     setInputValue("");
+    setModeMenuOpen(false);
     setLocationPromptHandled(false);
     setLocationError("");
     setClarificationHandled(false);
@@ -191,7 +243,6 @@ const Chat: React.FC<ChatProps> = ({
       scrollToBottom();
     });
   }, [chat, scrollToBottom]);
-
 
   useEffect(() => {
     if (filters.allergens.length === 0) return;
@@ -222,6 +273,26 @@ const Chat: React.FC<ChatProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!modeMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (modeMenuRef.current?.contains(event.target as Node)) return;
+      setModeMenuOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setModeMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [modeMenuOpen]);
+
+  useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
@@ -230,7 +301,7 @@ const Chat: React.FC<ChatProps> = ({
         scrollToBottom();
       });
     }
-  }, [version, chat.messages.length, isSending, chat.id, scrollToBottom]);
+  }, [version, chat.messages.length, isSending, activeStream, chat.id, scrollToBottom]);
 
   useEffect(() => {
     const lastMsg = chat.messages[chat.messages.length - 1];
@@ -256,12 +327,13 @@ const Chat: React.FC<ChatProps> = ({
       if (isSending) return;
       const trimmed = text.trim();
       if (!trimmed) return;
+      const requestChatId = chat.id;
 
       if (trimmed.startsWith("/")) {
         const parsed = parseSlashCommand(trimmed.slice(1));
         if (!parsed.query) return;
 
-        setIsSending(true);
+        setChatSending(requestChatId, true);
         try {
           const resolved = resolvedCanteenRef.current;
           const normalizedCommand = parsed.rawQuery.trim().toLowerCase();
@@ -301,30 +373,58 @@ const Chat: React.FC<ChatProps> = ({
           );
           setVersion((v) => v + 1);
         } finally {
-          setIsSending(false);
+          setChatSending(requestChatId, false);
         }
         return;
       }
 
-      setIsSending(true);
+      setChatSending(requestChatId, true);
       try {
         shouldAutoScrollRef.current = true;
-        await chat.send(client, trimmed, { includeToolCalls: true });
+        setChatAccepted(requestChatId, false);
+        setChatStream(requestChatId, createInitialStreamState());
+        await chat.send(client, trimmed, {
+          includeToolCalls: true,
+          judgeCorrection: isJudgeCorrectionEnabled(chatMode),
+          onStreamEvent: (event: ChatStreamEvent) => {
+            if (event.type === "chat.accepted") setChatAccepted(requestChatId, true);
+            setChatStream(requestChatId, (prev) => applyStreamEvent(prev, event));
+          },
+          onStreamFallback: () => {
+            setChatAccepted(requestChatId, false);
+            setChatStream(requestChatId, null);
+          },
+        });
+        setChatAccepted(requestChatId, false);
+        setChatStream(requestChatId, null);
         setVersion((v) => v + 1);
       } catch (err) {
         console.error("Chat send failed:", err);
-        chat.addMessage(
-          new ChatMessage(
-            "assistant",
-            t("chat.serverError")
-          )
-        );
-        setVersion((v) => v + 1);
+        if (streamAcceptedRef.current[requestChatId]) {
+          setChatStream(requestChatId, (prev) =>
+            prev
+              ? {
+                ...prev,
+                error: t("chat.streaming.transportError"),
+              }
+              : null
+          );
+        } else {
+          setChatAccepted(requestChatId, false);
+          setChatStream(requestChatId, null);
+          chat.addMessage(
+            new ChatMessage(
+              "assistant",
+              t("chat.serverError")
+            )
+          );
+          setVersion((v) => v + 1);
+        }
       } finally {
-        setIsSending(false);
+        setChatSending(requestChatId, false);
       }
     },
-    [chat, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, t]
+    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, setChatAccepted, setChatSending, setChatStream, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -402,6 +502,11 @@ const Chat: React.FC<ChatProps> = ({
   const handleResetFilters = useCallback(() => {
     updateFilters(defaultChatFilters);
   }, [updateFilters]);
+
+  const handleSelectMode = useCallback((mode: ChatMode) => {
+    onChatModeChange(mode);
+    setModeMenuOpen(false);
+  }, [onChatModeChange]);
 
   const hasActiveFilters =
     filters.diet !== null || filters.allergens.length > 0 || filters.canteens.length > 0 || filters.priceCategory !== null;
@@ -807,11 +912,68 @@ const Chat: React.FC<ChatProps> = ({
     : undefined;
 
   const showWelcomeMessage = chat.messages.length === 0 && !menuCanteen && onboarding.step === "done";
+  const activeModeLabel = chatMode === "fast" ? t("chat.mode.fast") : t("chat.mode.reliable");
+  const activeModeDescription = chatMode === "fast" ? t("chat.mode.fastDescription") : t("chat.mode.reliableDescription");
+  const modeOptions: { value: ChatMode; label: string; description: string }[] = [
+    { value: "reliable", label: t("chat.mode.reliable"), description: t("chat.mode.reliableDescription") },
+    { value: "fast", label: t("chat.mode.fast"), description: t("chat.mode.fastDescription") },
+  ];
 
   return (
     <S.ChatShell>
       <S.HeaderCard>
+        <S.ModeMenu ref={modeMenuRef}>
+          <S.ModeMenuButton
+            type="button"
+            onClick={() => setModeMenuOpen((open) => !open)}
+            disabled={isSending}
+            aria-label={t("chat.mode.label")}
+            aria-expanded={modeMenuOpen}
+            aria-controls={modeMenuOpen ? modeMenuPopoverId : undefined}
+            title={activeModeDescription}
+          >
+            <S.ModeMenuLabel>{activeModeLabel}</S.ModeMenuLabel>
+            <S.ModeMenuCaret $open={modeMenuOpen}>▾</S.ModeMenuCaret>
+          </S.ModeMenuButton>
+          {modeMenuOpen && (
+            <S.ModeMenuPopover id={modeMenuPopoverId} role="group" aria-label={t("chat.mode.label")}>
+              {modeOptions.map((option) => (
+                <S.ModeMenuItem
+                  key={option.value}
+                  type="button"
+                  $selected={chatMode === option.value}
+                  onClick={() => handleSelectMode(option.value)}
+                  aria-pressed={chatMode === option.value}
+                >
+                  <S.ModeMenuItemText>
+                    <S.ModeMenuItemLabel>{option.label}</S.ModeMenuItemLabel>
+                    <S.ModeMenuItemMeta>{option.description}</S.ModeMenuItemMeta>
+                  </S.ModeMenuItemText>
+                  <S.ModeMenuItemCheck aria-hidden="true">{chatMode === option.value ? "✓" : ""}</S.ModeMenuItemCheck>
+                </S.ModeMenuItem>
+              ))}
+            </S.ModeMenuPopover>
+          )}
+        </S.ModeMenu>
         <S.HeaderActions>
+          <S.IconButton
+            type="button"
+            $variant="ghost"
+            onClick={() => setFiltersOpen((prev) => !prev)}
+            title={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
+            aria-label={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 5h18L14 13v6l-4 2v-8L3 5z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <S.IconButtonLabel>{filtersOpen ? t("chat.filterClose") : t("chat.filter")}</S.IconButtonLabel>
+          </S.IconButton>
           {hasActiveFilters && (
             <S.IconButton
               type="button"
@@ -835,27 +997,9 @@ const Chat: React.FC<ChatProps> = ({
                   strokeLinejoin="round"
                 />
               </svg>
-              <S.IconButtonLabelAlways>{t("chat.resetFilters")}</S.IconButtonLabelAlways>
+              <S.IconButtonLabel>{t("chat.resetFilters")}</S.IconButtonLabel>
             </S.IconButton>
           )}
-          <S.IconButton
-            type="button"
-            $variant="ghost"
-            onClick={() => setFiltersOpen((prev) => !prev)}
-            title={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
-            aria-label={filtersOpen ? t("chat.filterClose") : t("chat.filterOpen")}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 5h18L14 13v6l-4 2v-8L3 5z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <S.IconButtonLabel>{filtersOpen ? t("chat.filterClose") : t("chat.filter")}</S.IconButtonLabel>
-          </S.IconButton>
           <S.IconButton
             type="button"
             $variant="primary"
@@ -872,7 +1016,7 @@ const Chat: React.FC<ChatProps> = ({
                 strokeLinecap="round"
               />
             </svg>
-            <S.IconButtonLabelAlways>{t("chat.newChat")}</S.IconButtonLabelAlways>
+            <S.IconButtonLabel>{t("chat.newChat")}</S.IconButtonLabel>
           </S.IconButton>
         </S.HeaderActions>
       </S.HeaderCard>
@@ -985,7 +1129,9 @@ const Chat: React.FC<ChatProps> = ({
               );
             })}
 
-            {isSending && (
+            {activeStream ? (
+              <ChatStreamingBubble stream={activeStream} avatarSrc={mensabotLogo} />
+            ) : isSending ? (
               <S.MessageRow>
                 <S.Avatar src={mensabotLogo} alt={t("chat.nameBot")} />
                 <S.MessageContent>
@@ -997,7 +1143,7 @@ const Chat: React.FC<ChatProps> = ({
                   </S.TypingBubble>
                 </S.MessageContent>
               </S.MessageRow>
-            )}
+            ) : null}
 
           </S.MessageList>
         </S.MessagesScroll>

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessage(BaseModel):
@@ -21,10 +21,18 @@ class UserFilters(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     messages: list[ChatMessage]
     include_tool_calls: bool = False
     filters: UserFilters | None = None
     language: str | None = None
+    judge_correction: bool = Field(default=True, alias="judgeCorrection")
+
+
+class ChatStreamRequestEnvelope(BaseModel):
+    type: Literal["chat.request"]
+    payload: ChatRequest
 
 
 class ToolCallTrace(BaseModel):

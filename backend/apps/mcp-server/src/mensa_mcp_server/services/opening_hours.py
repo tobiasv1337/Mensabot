@@ -9,9 +9,7 @@ from ..concurrency import get_io_semaphore
 from ..osm_opening_hours import resolve_opening_hours_osm
 from ..schemas import OSMResolveForCanteenResponseDTO, OpenMensaCanteenRefDTO, _canteen_to_dto
 from ..server import make_openmensa_client
-
-
-CACHE_TTL_OPENING_HOURS_S = 60 * 60 * 24
+from ..settings import settings
 
 
 async def fetch_opening_hours_osm_for_canteen(
@@ -80,5 +78,6 @@ async def fetch_opening_hours_osm_for_canteen(
     ).model_dump(exclude_none=True)
 
     out = OSMResolveForCanteenResponseDTO.model_validate(res)
-    shared_cache.set(cache_key, out.model_dump(exclude_none=True), ttl_s=CACHE_TTL_OPENING_HOURS_S)
+    ttl_s = settings.opening_hours_cache_ttl_s if out.status != "error" else settings.opening_hours_error_cache_ttl_s
+    shared_cache.set(cache_key, out.model_dump(exclude_none=True), ttl_s=ttl_s)
     return out

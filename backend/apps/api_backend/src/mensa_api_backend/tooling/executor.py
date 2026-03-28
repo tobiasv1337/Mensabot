@@ -10,6 +10,7 @@ from mensa_mcp_server import mcp
 from mensa_mcp_server.cache import shared_cache
 from mensa_mcp_server.cache_keys import openmensa_canteen_key
 from mensa_mcp_server.server import make_openmensa_client
+from mensa_mcp_server.settings import settings as mcp_settings
 
 from ..concurrency import get_io_semaphore
 from ..config import settings
@@ -22,8 +23,7 @@ from ..prompts import (
     DIRECTIONS_TOOL_NAME,
     LOCATION_TOOL_NAME,
 )
-
-CACHE_TTL_CANTEEN_INFO_S = 60 * 60 * 24
+from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
 
 
 @dataclass
@@ -35,9 +35,21 @@ class ParsedToolCall:
 
 def _normalize_tool_arg_value(value: Any) -> Any:
     if isinstance(value, str):
-        stripped = value.strip().lower()
-        if stripped in {"null", "none"}:
+        stripped = value.strip()
+        stripped_lower = stripped.lower()
+        if stripped_lower in {"null", "none"}:
             return None
+        # Transparently unwrap JSON-encoded arrays/objects that the LLM may produce
+        # as strings instead of native types (e.g. exclude_allergens='["soja"]').
+        if (stripped.startswith("[") and stripped.endswith("]")) or (
+            stripped.startswith("{") and stripped.endswith("}")
+        ):
+            try:
+                parsed = json.loads(stripped)
+                if isinstance(parsed, (list, dict)):
+                    return _normalize_tool_arg_value(parsed)
+            except json.JSONDecodeError:
+                pass
         return value
     if isinstance(value, list):
         return [_normalize_tool_arg_value(item) for item in value]
@@ -112,6 +124,16 @@ def _record_tool_error(
     _append_tool_message(messages, call_id, tool_name, {"error": error})
 
 
+def _patch_invalid_tool_call(messages: List[Dict[str, Any]], call_id: str | None) -> None:
+    """Rewrite invalid JSON in the assistant message history so upstream proxies won't crash on retry."""
+    for msg in reversed(messages):
+        if msg.get("role") == "assistant" and "tool_calls" in msg:
+            for tc in msg.get("tool_calls", []):
+                if tc.get("id") == call_id and "function" in tc:
+                    tc["function"]["arguments"] = '{"_error": "patched_invalid_json_by_server"}'
+            break
+
+
 def _parse_tool_args(
     *,
     raw_args: Any,
@@ -143,14 +165,16 @@ def _parse_tool_args(
                     raw_args,
                     e,
                 )
-                messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": call_id,
-                        "name": tool_name,
-                        "content": f"Invalid JSON arguments: {e}",
-                    }
+                tool_trace.raw_args = raw_args
+                _record_tool_error(
+                    tool_trace=tool_trace,
+                    tool_traces=tool_traces,
+                    messages=messages,
+                    call_id=call_id,
+                    tool_name=tool_name,
+                    error=f"Invalid JSON arguments: {e}",
                 )
+                _patch_invalid_tool_call(messages, call_id)
                 return None, True
 
     tool_trace.raw_args = raw_args
@@ -162,6 +186,7 @@ def _parse_tool_args(
         tool_name=tool_name,
         error="Tool call arguments missing or in an unsupported format",
     )
+    _patch_invalid_tool_call(messages, call_id)
     return None, True
 
 
@@ -305,7 +330,7 @@ async def _handle_directions_tool(
                         "lat": lat,
                         "lng": lng,
                     },
-                    ttl_s=CACHE_TTL_CANTEEN_INFO_S,
+                    ttl_s=mcp_settings.openmensa_canteen_info_cache_ttl_s,
                 )
             except OpenMensaAPIError as exc:
                 _record_tool_error(
@@ -419,6 +444,8 @@ async def _handle_mcp_tool(
     tool_traces: list[ToolCallTrace],
     messages: List[Dict[str, Any]],
     call_id: str | None,
+    iteration: int,
+    progress_sink: ChatProgressSink,
     user_filters: UserFilters | None = None,
     lang: str = DEFAULT_LANGUAGE,
 ) -> None:
@@ -443,7 +470,12 @@ async def _handle_mcp_tool(
             args = _apply_filters_to_menu_args(args, user_filters)
         tool_trace.args = args
 
-    result_payload = await call_mcp_tool(tool_name, args)
+    result_payload = await await_with_heartbeat(
+        call_mcp_tool(tool_name, args),
+        progress_sink,
+        phase="executing_tools",
+        iteration=iteration,
+    )
     if isinstance(result_payload, dict) and "error" in result_payload:
         tool_trace.ok = False
         tool_trace.error = result_payload.get("error")
@@ -466,10 +498,14 @@ async def handle_tool_calls(
     include_tool_calls: bool,
     user_filters: UserFilters | None = None,
     language: str = DEFAULT_LANGUAGE,
+    progress_sink: ChatProgressSink | None = None,
 ) -> ChatResponse | None:
-    for call in tool_calls:
+    sink = progress_sink or NoOpChatProgressSink()
+
+    for ordinal, call in enumerate(tool_calls, start=1):
         parsed = _parse_tool_call(call)
         tool_trace = ToolCallTrace(id=parsed.call_id, name=parsed.tool_name, iteration=iteration)
+        trace_id = build_trace_id(parsed.call_id, iteration, ordinal)
 
         args, skip = _parse_tool_args(
             raw_args=parsed.raw_args,
@@ -480,18 +516,35 @@ async def handle_tool_calls(
             messages=messages,
         )
         if skip:
+            if tool_trace.ok is False:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="error",
+                    trace=tool_trace.model_copy(deep=True),
+                )
             continue
 
         tool_trace.args = args
+        await sink.emit_tool_trace(
+            trace_id=trace_id,
+            state="started",
+            trace=tool_trace.model_copy(deep=True),
+        )
 
         if parsed.tool_name == LOCATION_TOOL_NAME:
-            return _handle_location_tool(
+            response = _handle_location_tool(
                 args=args,
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
                 lang=language,
             )
+            await sink.emit_tool_trace(
+                trace_id=trace_id,
+                state="completed",
+                trace=tool_trace.model_copy(deep=True),
+            )
+            return response
 
         if parsed.tool_name == DIRECTIONS_TOOL_NAME:
             response = await _handle_directions_tool(
@@ -505,17 +558,34 @@ async def handle_tool_calls(
                 lang=language,
             )
             if response is not None:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="completed",
+                    trace=tool_trace.model_copy(deep=True),
+                )
                 return response
+            if tool_trace.ok is False:
+                await sink.emit_tool_trace(
+                    trace_id=trace_id,
+                    state="error",
+                    trace=tool_trace.model_copy(deep=True),
+                )
             continue
 
         if parsed.tool_name == CLARIFICATION_TOOL_NAME:
-            return _handle_clarification_tool(
+            response = _handle_clarification_tool(
                 args=args,
                 tool_trace=tool_trace,
                 tool_traces=tool_traces,
                 include_tool_calls=include_tool_calls,
                 lang=language,
             )
+            await sink.emit_tool_trace(
+                trace_id=trace_id,
+                state="completed",
+                trace=tool_trace.model_copy(deep=True),
+            )
+            return response
 
         await _handle_mcp_tool(
             tool_name=parsed.tool_name,
@@ -524,8 +594,15 @@ async def handle_tool_calls(
             tool_traces=tool_traces,
             messages=messages,
             call_id=parsed.call_id,
+            iteration=iteration,
+            progress_sink=sink,
             user_filters=user_filters,
             lang=language,
+        )
+        await sink.emit_tool_trace(
+            trace_id=trace_id,
+            state="error" if tool_trace.ok is False else "completed",
+            trace=tool_trace.model_copy(deep=True),
         )
 
     return None

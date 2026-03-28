@@ -1,4 +1,5 @@
 import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
+import type { ChatStreamEvent } from "./chatStream";
 
 type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";
 
@@ -235,7 +236,16 @@ export class Chat {
 		Chats.deleteById(this.id);
 	}
 
-	async send(client: MensaBotClient, message: string, options: { includeToolCalls?: boolean } = {}): Promise<ChatApiResponse> {
+	async send(
+		client: MensaBotClient,
+		message: string,
+		options: {
+			includeToolCalls?: boolean;
+			judgeCorrection?: boolean;
+			onStreamEvent?: (event: ChatStreamEvent) => void;
+			onStreamFallback?: () => void;
+		} = {},
+	): Promise<ChatApiResponse> {
 		if (!(client instanceof MensaBotClient)) {
 			throw new Error("argument 0 must be an instance of MensaBotClient");
 		}
