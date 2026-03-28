@@ -77,6 +77,7 @@ export const SidebarSlot = styled.div`
 `;
 
 export const Content = styled.main<{ $chat?: boolean; $flush?: boolean }>`
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;

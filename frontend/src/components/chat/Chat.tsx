@@ -61,6 +61,8 @@ type ChatProps = {
   shortcuts: Shortcut[];
   onCreateShortcut: (shortcut: ShortcutInput) => void;
   isOffline?: boolean;
+  onSuccessfulChat?: () => void;
+  onOnboardingActiveChange?: (active: boolean) => void;
 };
 
 const cloneFilters = (filters: ChatFilters): ChatFilters => ({
@@ -81,6 +83,8 @@ const Chat: React.FC<ChatProps> = ({
   shortcuts,
   onCreateShortcut,
   isOffline = false,
+  onSuccessfulChat,
+  onOnboardingActiveChange,
 }) => {
   const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
@@ -158,6 +162,14 @@ const Chat: React.FC<ChatProps> = ({
   );
 
   const onboarding = useOnboarding(chat, updateFilters, () => setVersion((v) => v + 1));
+
+  useEffect(() => {
+    onOnboardingActiveChange?.(onboarding.isActive);
+  }, [onOnboardingActiveChange, onboarding.isActive]);
+
+  useEffect(() => () => {
+    onOnboardingActiveChange?.(false);
+  }, [onOnboardingActiveChange]);
 
   // Start onboarding whenever it hasn't been completed yet
   const onboardingStartedRef = useRef(false);
@@ -400,6 +412,7 @@ const Chat: React.FC<ChatProps> = ({
         });
         setChatAccepted(requestChatId, false);
         setChatStream(requestChatId, null);
+        onSuccessfulChat?.();
         setVersion((v) => v + 1);
       } catch (err) {
         console.error("Chat send failed:", err);
@@ -427,7 +440,7 @@ const Chat: React.FC<ChatProps> = ({
         setChatSending(requestChatId, false);
       }
     },
-    [chat, chatMode, client, isOffline, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, setChatAccepted, setChatSending, setChatStream, t]
+    [chat, chatMode, client, isOffline, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, onSuccessfulChat, setChatAccepted, setChatSending, setChatStream, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -1164,7 +1177,6 @@ const Chat: React.FC<ChatProps> = ({
           </S.ScrollToLatest>
         )}
       </S.MessagesCard>
-
       <S.ComposerCard>
         <ChatInput
           value={inputValue}

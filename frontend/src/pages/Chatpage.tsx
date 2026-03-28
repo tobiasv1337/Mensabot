@@ -18,6 +18,10 @@ import { useOnlineStatus } from "../services/networkStatus";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 import { useTranslation } from "react-i18next";
+import { useInstallPromotion } from "../services/installPromotion";
+import InstallPromptCard from "../components/install/InstallPromptCard";
+import InstallInstructionsModal from "../components/install/InstallInstructionsModal";
+import { getInstallPromptCopy } from "../components/install/installCopy";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const CHAT_PAGE_SIZE = 10;
@@ -50,6 +54,7 @@ const ChatPage: React.FC = () => {
   }, [activeNavMatch, location.pathname, navigate]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOnboardingActive, setIsOnboardingActive] = useState(false);
   const isChatView = activeNav === "ChatBot";
 
   const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
@@ -68,6 +73,23 @@ const ChatPage: React.FC = () => {
   const [chatPages, setChatPages] = useState(1);
 
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
+  const {
+    state: installPromotionState,
+    markCountedSession,
+    markSuccessfulChat,
+    showPrompt,
+    hidePrompt,
+    dismissPrompt,
+    promptInstall,
+    closeInstructions,
+  } = useInstallPromotion({ isOnline, isOnboardingActive });
+  const installPromptCopy = getInstallPromptCopy(installPromotionState.capability, t);
+  const canShowInstallPromptRoute =
+    activeNav === "Home" ||
+    activeNav === "ChatBot" ||
+    activeNav === "Canteens" ||
+    activeNav === "Map" ||
+    activeNav === "ProjectFacts";
 
   useEffect(() => {
     const className = "chat-lock-scroll";
@@ -78,6 +100,33 @@ const ChatPage: React.FC = () => {
     }
     return () => document.body.classList.remove(className);
   }, [isChatView]);
+
+  useEffect(() => {
+    markCountedSession();
+  }, [markCountedSession]);
+
+  useEffect(() => {
+    if (!canShowInstallPromptRoute) {
+      hidePrompt();
+      return;
+    }
+
+    if (installPromotionState.canShowProactive && !installPromotionState.promptVisible) {
+      showPrompt();
+      return;
+    }
+
+    if (installPromotionState.promptVisible && !installPromotionState.isPromptEligible) {
+      hidePrompt();
+    }
+  }, [
+    canShowInstallPromptRoute,
+    hidePrompt,
+    installPromotionState.canShowProactive,
+    installPromotionState.isPromptEligible,
+    installPromotionState.promptVisible,
+    showPrompt,
+  ]);
 
 
   useSyncExternalStore(Chats.subscribe, Chats.getVersion, Chats.getVersion);
@@ -179,6 +228,22 @@ const ChatPage: React.FC = () => {
     [startNewChat, setActiveNav]
   );
 
+  const proactiveInstallPrompt = installPromotionState.promptVisible && installPromptCopy ? (
+    <InstallPromptCard
+      placement={activeNav === "ChatBot" ? "chat" : "viewport"}
+      title={installPromptCopy.title}
+      body={installPromptCopy.body}
+      actionLabel={installPromptCopy.actionLabel}
+      maybeLaterLabel={t("installPromotion.actions.maybeLater")}
+      dismissLabel={t("installPromotion.actions.dismiss")}
+      onAction={() => {
+        void promptInstall();
+      }}
+      onMaybeLater={hidePrompt}
+      onDismiss={dismissPrompt}
+    />
+  ) : null;
+
   return (
     <S.PageRoot>
       <Header
@@ -266,9 +331,12 @@ const ChatPage: React.FC = () => {
                   shortcuts={shortcuts}
                   onCreateShortcut={addShortcut}
                   isOffline={isOffline}
+                  onSuccessfulChat={markSuccessfulChat}
+                  onOnboardingActiveChange={setIsOnboardingActive}
                 />
               )}
             </S.ContentBody>
+            {proactiveInstallPrompt}
           </S.Content>
         </S.BodyGrid>
 
@@ -287,6 +355,11 @@ const ChatPage: React.FC = () => {
           hasMoreChats={hasMoreChats}
         />
       </S.Shell>
+      <InstallInstructionsModal
+        capability={installPromotionState.capability}
+        isOpen={installPromotionState.instructionsOpen}
+        onClose={closeInstructions}
+      />
     </S.PageRoot>
   );
 };
