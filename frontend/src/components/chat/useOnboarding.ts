@@ -8,6 +8,7 @@ import type { MessageAction } from "./ChatBubble";
 type OnboardingStep =
 	| "idle"
 	| "welcome"
+	| "transition"
 	| "data_notice"
 	| "price_category_select"
 	| "diet_question"
@@ -115,6 +116,7 @@ export function useOnboarding(
 				case "price_category_select": {
 					if (action === "none") {
 						addBotMessage(t("chat.onboarding.noPriceCategorySelected"));
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.dietQuestion"));
 							setState((s) => ({ ...s, step: "diet_question" }));
@@ -125,7 +127,7 @@ export function useOnboarding(
 					const category = action as PriceCategory;
 					const categoryLabel = PRICE_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? action;
 					addBotMessage(t("chat.onboarding.priceCategorySelected", { category: categoryLabel }));
-					setState((s) => ({ ...s, selectedPriceCategory: category }));
+					setState((s) => ({ ...s, selectedPriceCategory: category, step: "transition" }));
 					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.dietQuestion"));
 						setState((s) => ({ ...s, step: "diet_question" }));
@@ -138,6 +140,7 @@ export function useOnboarding(
 						setState((s) => ({ ...s, step: "diet_select" }));
 					} else if (action === "no") {
 						addBotMessage(t("chat.onboarding.noDietSelected"));
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
@@ -148,6 +151,7 @@ export function useOnboarding(
 				case "diet_select": {
 					if (action === "none") {
 						addBotMessage(t("chat.onboarding.noDietSelected"));
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
@@ -158,7 +162,7 @@ export function useOnboarding(
 					const diet = action as DietPreference;
 					const dietLabel = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
 					addBotMessage(t("chat.onboarding.dietSelected", { diet: dietLabel }));
-					setState((s) => ({ ...s, selectedDiet: diet }));
+					setState((s) => ({ ...s, selectedDiet: diet, step: "transition" }));
 					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.allergyQuestion"));
 						setState((s) => ({ ...s, step: "allergy_question" }));
@@ -171,6 +175,7 @@ export function useOnboarding(
 						setState((s) => ({ ...s, step: "allergy_select" }));
 					} else if (action === "no") {
 						addBotMessage(t("chat.onboarding.noAllergensSelected"));
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
@@ -190,6 +195,7 @@ export function useOnboarding(
 						} else {
 							addBotMessage(t("chat.onboarding.noAllergensSelected"));
 						}
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
