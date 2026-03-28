@@ -537,8 +537,7 @@ export const MessageContent = styled.div<{ $isUser?: boolean }>`
   align-items: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
   min-width: 0;
   flex: 1 1 auto;
-  max-width: 78vw;
-  max-width: min(78vw, 680px);
+  max-width: min(78%, 680px);
   overflow-x: hidden;
   gap: 6px;
 `;
@@ -998,6 +997,7 @@ export const ComposerRow = styled.div`
 
 export const ComposerInputShell = styled.div`
   flex: 1;
+  min-width: 0;
   position: relative;
   display: grid;
   gap: 0;
@@ -1020,6 +1020,7 @@ export const ComposerTopRow = styled.div`
   display: flex;
   gap: 10px;
   align-items: flex-end;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 18px 18px 0 0;
   background: ${({ theme }) => theme.surfaceCard};
@@ -1027,6 +1028,7 @@ export const ComposerTopRow = styled.div`
 
 export const ComposerTextarea = styled.textarea`
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   resize: none;
@@ -1141,6 +1143,7 @@ export const ShortcutRow = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 8px 10px 10px;
 `;
 
@@ -1176,6 +1179,7 @@ export const ShortcutAddButton = styled.button`
 
 export const ShortcutPillRow = styled(PillRow)`
   flex: 1;
+  min-width: 0;
   gap: 8px;
   padding: 4px 0 2px;
 `;
