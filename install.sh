@@ -149,6 +149,7 @@ select_repository_ref() {
 
     if ! [ -r /dev/tty ] || ! [ -w /dev/tty ]; then
         info "No interactive terminal available for version selection. Using default ref '$SELECTED_REF'."
+        validate_selected_ref || error "Default ref '$SELECTED_REF' could not be validated on the selected repository remote '$TARGET_REPO_URL'. Set MENSABOT_REF to a valid branch or tag and rerun this script."
         return
     fi
 
