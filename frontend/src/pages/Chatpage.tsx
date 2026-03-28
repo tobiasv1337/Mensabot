@@ -14,8 +14,10 @@ import ContactPage from "./ContactPage";
 import LandingPage from "./LandingPage";
 import type { Canteen } from "../services/api";
 import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
+import { useOnlineStatus } from "../services/networkStatus";
 import { useShortcuts } from "../services/shortcuts";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
+import { useTranslation } from "react-i18next";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const CHAT_PAGE_SIZE = 10;
@@ -29,8 +31,11 @@ const resolveInitialChatId = () => {
 };
 
 const ChatPage: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const isOffline = !isOnline;
 
   const activeNavMatch = navItemFromPath(location.pathname);
   const activeNav = activeNavMatch ?? "Home";
@@ -205,51 +210,65 @@ const ChatPage: React.FC = () => {
           </S.SidebarSlot>
 
           <S.Content $chat={isChatView} $flush={activeNav === "Home"}>
-            {activeNav === "Canteens" ? (
-              <CanteensPage
-                onSelectCanteen={handleSelectCanteen}
-                selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
-              />
-            ) : activeNav === "ProjectFacts" ? (
-              <ProjectFactsPage />
-            ) : activeNav === "LegalNotice" ? (
-              <ContactPage />
-            ) : activeNav === "Shortcuts" ? (
-              <ShortcutsPage
-                shortcuts={shortcuts}
-                onCreateShortcut={addShortcut}
-                onUpdateShortcut={updateShortcut}
-                onDeleteShortcut={deleteShortcut}
-              />
-            ) : activeNav === "Settings" ? (
-              <SettingsPage
-                onDeleteAllChats={handleDeleteAllChats}
-                onResetOnboarding={() => {
-                  const fresh = Chats.create();
-                  activateChat(fresh.id);
-                  navigate(NAV_ROUTES.ChatBot);
-                }}
-              />
-            ) : activeNav === "Map" ? (
-              <MapPage
-                onSelectCanteen={handleSelectCanteen}
-                selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
-              />
-            ) : activeNav === "Home" ? (
-              <LandingPage onStartChat={() => startNewChat()} />
-            ) : (
-              <Chat
-                chat={chat}
-                filters={filters}
-                chatMode={chatMode}
-                onChatModeChange={setChatMode}
-                onFiltersChange={updateChatFilters}
-                onStartNewChat={startNewChat}
-                menuCanteen={menuCanteen}
-                shortcuts={shortcuts}
-                onCreateShortcut={addShortcut}
-              />
+            {isOffline && (
+              <S.StatusBanner role="status" aria-live="polite">
+                <S.StatusDot aria-hidden="true" />
+                <S.StatusContent>
+                  <S.StatusTitle>{t('appStatus.offlineTitle')}</S.StatusTitle>
+                  <S.StatusText>{t('appStatus.offlineBody')}</S.StatusText>
+                </S.StatusContent>
+              </S.StatusBanner>
             )}
+            <S.ContentBody $chat={isChatView} $flush={activeNav === "Home"}>
+              {activeNav === "Canteens" ? (
+                <CanteensPage
+                  onSelectCanteen={handleSelectCanteen}
+                  selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
+                  isOffline={isOffline}
+                />
+              ) : activeNav === "ProjectFacts" ? (
+                <ProjectFactsPage isOffline={isOffline} />
+              ) : activeNav === "LegalNotice" ? (
+                <ContactPage />
+              ) : activeNav === "Shortcuts" ? (
+                <ShortcutsPage
+                  shortcuts={shortcuts}
+                  onCreateShortcut={addShortcut}
+                  onUpdateShortcut={updateShortcut}
+                  onDeleteShortcut={deleteShortcut}
+                />
+              ) : activeNav === "Settings" ? (
+                <SettingsPage
+                  onDeleteAllChats={handleDeleteAllChats}
+                  onResetOnboarding={() => {
+                    const fresh = Chats.create();
+                    activateChat(fresh.id);
+                    navigate(NAV_ROUTES.ChatBot);
+                  }}
+                />
+              ) : activeNav === "Map" ? (
+                <MapPage
+                  isOffline={isOffline}
+                  onSelectCanteen={handleSelectCanteen}
+                  selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
+                />
+              ) : activeNav === "Home" ? (
+                <LandingPage onStartChat={() => startNewChat()} />
+              ) : (
+                <Chat
+                  chat={chat}
+                  filters={filters}
+                  chatMode={chatMode}
+                  onChatModeChange={setChatMode}
+                  onFiltersChange={updateChatFilters}
+                  onStartNewChat={startNewChat}
+                  menuCanteen={menuCanteen}
+                  shortcuts={shortcuts}
+                  onCreateShortcut={addShortcut}
+                  isOffline={isOffline}
+                />
+              )}
+            </S.ContentBody>
           </S.Content>
         </S.BodyGrid>
 

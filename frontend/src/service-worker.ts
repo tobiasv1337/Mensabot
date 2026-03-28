@@ -1,13 +1,14 @@
 /// <reference lib="webworker" />
 
 import { clientsClaim } from 'workbox-core'
-import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
-import { registerRoute, setCatchHandler } from 'workbox-routing'
-import { NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies'
+import { cleanupOutdatedCaches, createHandlerBoundToURL, matchPrecache, precacheAndRoute } from 'workbox-precaching'
+import { NavigationRoute, registerRoute, setCatchHandler } from 'workbox-routing'
+import { StaleWhileRevalidate } from 'workbox-strategies'
 
 declare let self: ServiceWorkerGlobalScope
 
 const OFFLINE_URL = '/offline.html'
+const APP_SHELL_URL = '/index.html'
 const RUNTIME_CACHE_NAME = 'mensabot-runtime-v1'
 
 self.skipWaiting()
@@ -21,11 +22,9 @@ self.addEventListener('activate', (event) => {
 })
 
 registerRoute(
-  ({ request, url }) =>
-    request.mode === 'navigate' &&
-    url.origin === self.location.origin &&
-    !url.pathname.startsWith('/api'),
-  new NetworkOnly(),
+  new NavigationRoute(createHandlerBoundToURL(APP_SHELL_URL), {
+    denylist: [/^\/api(?:\/|$)/],
+  }),
 )
 
 registerRoute(
@@ -42,6 +41,11 @@ registerRoute(
 setCatchHandler(async ({ request }) => {
   if (request.destination !== 'document') {
     return Response.error()
+  }
+
+  const appShellResponse = await matchPrecache(APP_SHELL_URL)
+  if (appShellResponse) {
+    return appShellResponse
   }
 
   const offlineResponse = await matchPrecache(OFFLINE_URL)

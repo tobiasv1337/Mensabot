@@ -22,7 +22,11 @@ import { Button } from "../components/button/button";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
-const ProjectFactsPage: React.FC = () => {
+type ProjectFactsPageProps = {
+    isOffline?: boolean;
+};
+
+const ProjectFactsPage: React.FC<ProjectFactsPageProps> = ({ isOffline = false }) => {
     const { t } = useTranslation();
     const theme = useTheme();
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
@@ -53,6 +57,8 @@ const ProjectFactsPage: React.FC = () => {
     }, [totalCanteens, totalCities]);
 
     useEffect(() => {
+        if (isOffline) return;
+
         const fetchStats = async () => {
             try {
                 const response = await client.searchCanteens({
@@ -68,7 +74,7 @@ const ProjectFactsPage: React.FC = () => {
         };
 
         fetchStats();
-    }, [client]);
+    }, [client, isOffline]);
 
     // Data for the upper section cards
     const facts = [

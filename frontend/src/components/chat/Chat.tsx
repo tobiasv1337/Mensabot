@@ -60,6 +60,7 @@ type ChatProps = {
   menuCanteen?: Canteen | null;
   shortcuts: Shortcut[];
   onCreateShortcut: (shortcut: ShortcutInput) => void;
+  isOffline?: boolean;
 };
 
 const cloneFilters = (filters: ChatFilters): ChatFilters => ({
@@ -79,6 +80,7 @@ const Chat: React.FC<ChatProps> = ({
   menuCanteen = null,
   shortcuts,
   onCreateShortcut,
+  isOffline = false,
 }) => {
   const { t } = useTranslation();
   const client = useMemo(() => getApiClient(), []);
@@ -324,6 +326,7 @@ const Chat: React.FC<ChatProps> = ({
 
   const sendMessage = useCallback(
     async (text: string) => {
+      if (isOffline) return;
       if (isSending) return;
       const trimmed = text.trim();
       if (!trimmed) return;
@@ -424,7 +427,7 @@ const Chat: React.FC<ChatProps> = ({
         setChatSending(requestChatId, false);
       }
     },
-    [chat, chatMode, client, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, setChatAccepted, setChatSending, setChatStream, t]
+    [chat, chatMode, client, isOffline, isSending, commandUserLocation, updateFiltersPartial, fetchAndAppendMenu, setChatAccepted, setChatSending, setChatStream, t]
   );
 
   const handleTranscribeAudio = useCallback(
@@ -1169,8 +1172,16 @@ const Chat: React.FC<ChatProps> = ({
           onSend={sendMessage}
           onTranscribeAudio={handleTranscribeAudio}
           maxVoiceSeconds={180}
-          disabled={isSending || onboarding.isActive}
-          placeholder={isSending ? t("chat.input.sending") : onboarding.isActive ? t("chat.onboarding.inputDisabled") : undefined}
+          disabled={isOffline || isSending || onboarding.isActive}
+          placeholder={
+            isOffline
+              ? t("chat.input.offlineDisabled")
+              : isSending
+                ? t("chat.input.sending")
+                : onboarding.isActive
+                  ? t("chat.onboarding.inputDisabled")
+                  : undefined
+          }
           shortcuts={shortcuts}
           onShortcutAdd={handleOpenShortcutModal}
           onShortcutSelect={handleApplyShortcut}
