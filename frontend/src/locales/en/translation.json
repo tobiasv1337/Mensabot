@@ -378,8 +378,6 @@
             "dataAccept": "Understood & Accept",
             "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
             "priceCategoryNo": "Skip",
-            "priceCategorySelected": "Price category: **{{category}}**",
-            "noPriceCategorySelected": "No price category selected.",
             "dietQuestion": "Do you have a **dietary preference** I should consider?",
             "dietYes": "Yes",
             "dietNo": "No preference",
@@ -394,11 +392,7 @@
             "inputDisabled": "Please complete the onboarding first",
             "filterDisclaimer": "⚠️ **Important:** Filtering by diet type and **allergens** is **not fully supported** by most canteen data sources. We **cannot guarantee** the correctness of the filtering. Please treat the results only as **pre-filtering** and never rely 100% on the generated responses.",
             "filterDisclaimerAccept": "Understood",
-            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices.",
-            "dietSelected": "Dietary preference: **{{diet}}**",
-            "allergensSelected": "Allergens: **{{allergens}}**",
-            "noDietSelected": "No dietary preference selected.",
-            "noAllergensSelected": "No allergens selected."
+            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices."
         }
     },
     "installPromotion": {
