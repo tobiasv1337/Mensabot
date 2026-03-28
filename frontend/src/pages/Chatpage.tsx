@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useInstallPromotion } from "../services/installPromotion";
 import InstallPromptCard from "../components/install/InstallPromptCard";
 import InstallInstructionsModal from "../components/install/InstallInstructionsModal";
-import { getInstallPromptCopy } from "../components/install/installCopy";
+import { getInstallEntryCopy, getInstallPromptCopy } from "../components/install/installCopy";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const CHAT_PAGE_SIZE = 10;
@@ -84,6 +84,7 @@ const ChatPage: React.FC = () => {
     closeInstructions,
   } = useInstallPromotion({ isOnline, isOnboardingActive });
   const installPromptCopy = getInstallPromptCopy(installPromotionState.capability, t);
+  const installEntryCopy = getInstallEntryCopy(installPromotionState.capability, t);
   const canShowInstallPromptRoute =
     activeNav === "Home" ||
     activeNav === "ChatBot" ||
@@ -243,6 +244,14 @@ const ChatPage: React.FC = () => {
       onDismiss={dismissPrompt}
     />
   ) : null;
+  const persistentInstallEntry = installPromotionState.shouldShowPersistentEntry && installEntryCopy
+    ? {
+        ...installEntryCopy,
+        onClick: () => {
+          void promptInstall();
+        },
+      }
+    : null;
 
   return (
     <S.PageRoot>
@@ -271,6 +280,7 @@ const ChatPage: React.FC = () => {
               onNewChat={startNewChat}
               onLoadMoreChats={loadMoreChats}
               hasMoreChats={hasMoreChats}
+              installEntry={persistentInstallEntry}
             />
           </S.SidebarSlot>
 
@@ -310,6 +320,7 @@ const ChatPage: React.FC = () => {
                     activateChat(fresh.id);
                     navigate(NAV_ROUTES.ChatBot);
                   }}
+                  installEntry={persistentInstallEntry}
                 />
               ) : activeNav === "Map" ? (
                 <MapPage
@@ -353,6 +364,7 @@ const ChatPage: React.FC = () => {
           onNewChat={startNewChat}
           onLoadMoreChats={loadMoreChats}
           hasMoreChats={hasMoreChats}
+          installEntry={persistentInstallEntry}
         />
       </S.Shell>
       <InstallInstructionsModal
