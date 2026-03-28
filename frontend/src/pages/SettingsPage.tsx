@@ -9,9 +9,19 @@ import { resetOnboarding } from "../services/onboarding";
 type SettingsPageProps = {
   onDeleteAllChats: () => void;
   onResetOnboarding?: () => void;
+  installEntry?: {
+    label: string;
+    description: string;
+    actionLabel: string;
+    onClick: () => void;
+  } | null;
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOnboarding }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({
+  onDeleteAllChats,
+  onResetOnboarding,
+  installEntry = null,
+}) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
@@ -76,6 +86,31 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onDeleteAllChats, onResetOn
             </S.SettingRow>
           </S.SectionBody>
         </S.SectionCard>
+
+        {installEntry && (
+          <S.SectionCard>
+            <S.SectionHeader>
+              <S.SectionTitle>{installEntry.label}</S.SectionTitle>
+            </S.SectionHeader>
+            <S.SectionBody>
+              <S.SettingRow $default>
+                <S.SettingInfo>
+                  <S.SettingLabel>{installEntry.label}</S.SettingLabel>
+                  <S.SettingDescription>{installEntry.description}</S.SettingDescription>
+                </S.SettingInfo>
+                <S.SettingActions>
+                  <Button
+                    type="button"
+                    variant="surfaceAccent"
+                    onClick={installEntry.onClick}
+                  >
+                    {installEntry.actionLabel}
+                  </Button>
+                </S.SettingActions>
+              </S.SettingRow>
+            </S.SectionBody>
+          </S.SectionCard>
+        )}
 
         <S.SectionCard>
           <S.SectionHeader>

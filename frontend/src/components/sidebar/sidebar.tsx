@@ -16,6 +16,7 @@ import {
   MapIcon,
   MensenIcon,
   NewChatIcon,
+  InstallIcon,
   ProjectFactsIcon,
   SettingsIcon,
   ShortcutsIcon,
@@ -38,6 +39,10 @@ interface SidebarProps {
   onNewChat: () => void;
   onLoadMoreChats: () => void;
   hasMoreChats: boolean;
+  installEntry?: {
+    label: string;
+    onClick: () => void;
+  } | null;
 
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -76,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
   onLoadMoreChats,
   hasMoreChats,
+  installEntry = null,
   isCollapsed = false,
   onToggleCollapse,
 }) => {
@@ -100,6 +106,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNewChat = () => {
     onNewChat();
+    if (mode === "drawer") {
+      onCloseDrawer();
+    }
+  };
+
+  const handleInstallClick = () => {
+    installEntry?.onClick();
     if (mode === "drawer") {
       onCloseDrawer();
     }
@@ -162,37 +175,55 @@ const Sidebar: React.FC<SidebarProps> = ({
             ))}
           </S.NavSection>
 
+          {!isCollapsed && <S.SectionTitle>{t('sidebar.settingsSection')}</S.SectionTitle>}
+
+          <S.NavSection>
+            <Button
+              variant="default"
+              size="fill"
+              active={activeNav === "Shortcuts"}
+              collapsed={isCollapsed}
+              onClick={() => handleNavSelection("Shortcuts")}
+              title={isCollapsed ? t('nav.shortcuts') : undefined}
+            >
+              <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
+              <ButtonTextWrapper $collapsed={isCollapsed}>
+                {t('nav.shortcuts')}
+              </ButtonTextWrapper>
+            </Button>
+
+            <Button
+              variant="default"
+              size="fill"
+              active={activeNav === "Settings"}
+              collapsed={isCollapsed}
+              onClick={() => handleNavSelection("Settings")}
+              title={isCollapsed ? t('nav.settings') : undefined}
+            >
+              <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
+              <ButtonTextWrapper $collapsed={isCollapsed}>
+                {t('nav.settings')}
+              </ButtonTextWrapper>
+            </Button>
+
+            {installEntry && (
+              <Button
+                variant="default"
+                size="fill"
+                collapsed={isCollapsed}
+                onClick={handleInstallClick}
+                title={isCollapsed ? installEntry.label : undefined}
+              >
+                <ButtonIconWrapper><InstallIcon /></ButtonIconWrapper>
+                <ButtonTextWrapper $collapsed={isCollapsed}>
+                  {installEntry.label}
+                </ButtonTextWrapper>
+              </Button>
+            )}
+          </S.NavSection>
+
           {!isCollapsed && (
             <>
-              <S.SectionTitle>{t('sidebar.settingsSection')}</S.SectionTitle>
-
-              <S.NavSection>
-                <Button
-                  variant="default"
-                  size="fill"
-                  active={activeNav === "Shortcuts"}
-                  collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Shortcuts")}>
-                  <ButtonIconWrapper><ShortcutsIcon /></ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    {t('nav.shortcuts')}
-                  </ButtonTextWrapper>
-                </Button>
-
-                <Button
-                  variant="default"
-                  size="fill"
-                  active={activeNav === "Settings"}
-                  collapsed={isCollapsed}
-                  onClick={() => handleNavSelection("Settings")}>
-                  <ButtonIconWrapper><SettingsIcon /></ButtonIconWrapper>
-                  <ButtonTextWrapper $collapsed={isCollapsed}>
-                    {t('nav.settings')}
-                  </ButtonTextWrapper>
-                </Button>
-
-              </S.NavSection>
-
               <S.SectionTitle>{t('sidebar.chats')}</S.SectionTitle>
               <S.ChatList>
                 {chats.length === 0 && (
