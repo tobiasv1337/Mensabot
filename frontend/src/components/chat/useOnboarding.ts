@@ -27,6 +27,9 @@ type OnboardingState = {
 	selectedAllergens: string[];
 };
 
+const INITIAL_ONBOARDING_DELAY_MS = 2000;
+const FOLLOW_UP_QUESTION_DELAY_MS = 1000;
+
 export function useOnboarding(
 	chat: ChatModel,
 	onFiltersChange: (filters: ChatFilters) => void,
@@ -97,7 +100,7 @@ export function useOnboarding(
 		scheduledTimeout(() => {
 			addBotMessage(t("chat.onboarding.dataNotice"));
 			setState((s) => ({ ...s, step: "data_notice" }));
-		}, 600);
+		}, INITIAL_ONBOARDING_DELAY_MS);
 	}, [chat.id, addBotMessage, scheduledTimeout, t]);
 
 	const advanceStep = useCallback(
@@ -108,105 +111,99 @@ export function useOnboarding(
 			switch (state.step) {
 				case "data_notice": {
 					if (action === "accept") {
-						addBotMessage(t("chat.onboarding.priceCategorySelect"));
-						setState((s) => ({ ...s, step: "price_category_select" }));
+						setState((s) => ({ ...s, step: "transition" }));
+						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.priceCategorySelect"));
+							setState((s) => ({ ...s, step: "price_category_select" }));
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
 				case "price_category_select": {
 					if (action === "none") {
-						addBotMessage(t("chat.onboarding.noPriceCategorySelected"));
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.dietQuestion"));
 							setState((s) => ({ ...s, step: "diet_question" }));
-						}, 400);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 						break;
 					}
 					// action is the price category value
 					const category = action as PriceCategory;
-					const categoryLabel = PRICE_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? action;
-					addBotMessage(t("chat.onboarding.priceCategorySelected", { category: categoryLabel }));
 					setState((s) => ({ ...s, selectedPriceCategory: category, step: "transition" }));
 					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.dietQuestion"));
 						setState((s) => ({ ...s, step: "diet_question" }));
-					}, 400);
+					}, FOLLOW_UP_QUESTION_DELAY_MS);
 					break;
 				}
 				case "diet_question": {
 					if (action === "yes") {
-						addBotMessage(t("chat.onboarding.dietSelect"));
-						setState((s) => ({ ...s, step: "diet_select" }));
+						setState((s) => ({ ...s, step: "transition" }));
+						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.dietSelect"));
+							setState((s) => ({ ...s, step: "diet_select" }));
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					} else if (action === "no") {
-						addBotMessage(t("chat.onboarding.noDietSelected"));
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
-						}, 400);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
 				case "diet_select": {
 					if (action === "none") {
-						addBotMessage(t("chat.onboarding.noDietSelected"));
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.allergyQuestion"));
 							setState((s) => ({ ...s, step: "allergy_question" }));
-						}, 400);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 						break;
 					}
 					// action is the diet value
 					const diet = action as DietPreference;
-					const dietLabel = DIET_OPTIONS.find((o) => o.value === diet)?.label ?? action;
-					addBotMessage(t("chat.onboarding.dietSelected", { diet: dietLabel }));
 					setState((s) => ({ ...s, selectedDiet: diet, step: "transition" }));
 					scheduledTimeout(() => {
 						addBotMessage(t("chat.onboarding.allergyQuestion"));
 						setState((s) => ({ ...s, step: "allergy_question" }));
-					}, 400);
+					}, FOLLOW_UP_QUESTION_DELAY_MS);
 					break;
 				}
 				case "allergy_question": {
 					if (action === "yes") {
-						addBotMessage(t("chat.onboarding.allergySelect"));
-						setState((s) => ({ ...s, step: "allergy_select" }));
+						setState((s) => ({ ...s, step: "transition" }));
+						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.allergySelect"));
+							setState((s) => ({ ...s, step: "allergy_select" }));
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					} else if (action === "no") {
-						addBotMessage(t("chat.onboarding.noAllergensSelected"));
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
-						}, 400);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
 				case "allergy_select": {
 					if (action === "confirm") {
-						const selected = state.selectedAllergens;
-						if (selected.length > 0) {
-							const labels = selected.map((k) => {
-								const a = ALLERGENS.find((al) => al.key === k);
-								return a ? a.label : k;
-							});
-							addBotMessage(t("chat.onboarding.allergensSelected", { allergens: labels.join(", ") }));
-						} else {
-							addBotMessage(t("chat.onboarding.noAllergensSelected"));
-						}
 						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
 							addBotMessage(t("chat.onboarding.hints"));
 							setState((s) => ({ ...s, step: "hints" }));
-						}, 400);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
 				case "hints": {
 					if (action === "ok") {
-						addBotMessage(t("chat.onboarding.filterDisclaimer"));
-						setState((s) => ({ ...s, step: "filter_disclaimer" }));
+						setState((s) => ({ ...s, step: "transition" }));
+						scheduledTimeout(() => {
+							addBotMessage(t("chat.onboarding.filterDisclaimer"));
+							setState((s) => ({ ...s, step: "filter_disclaimer" }));
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
@@ -219,12 +216,15 @@ export function useOnboarding(
 							canteens: [],
 							priceCategory: state.selectedPriceCategory,
 						});
-						addBotMessage(t("chat.onboarding.complete"));
-						markOnboardingCompleted();
-						setState((s) => ({ ...s, step: "complete" }));
+						setState((s) => ({ ...s, step: "transition" }));
 						scheduledTimeout(() => {
-							setState((s) => ({ ...s, step: "done" }));
-						}, 800);
+							addBotMessage(t("chat.onboarding.complete"));
+							markOnboardingCompleted();
+							setState((s) => ({ ...s, step: "complete" }));
+							scheduledTimeout(() => {
+								setState((s) => ({ ...s, step: "done" }));
+							}, 800);
+						}, FOLLOW_UP_QUESTION_DELAY_MS);
 					}
 					break;
 				}
