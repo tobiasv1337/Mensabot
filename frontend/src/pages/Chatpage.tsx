@@ -55,6 +55,7 @@ const ChatPage: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
+  const [chatComposerHeight, setChatComposerHeight] = useState(0);
   const isChatView = activeNav === "ChatBot";
 
   const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
@@ -232,6 +233,7 @@ const ChatPage: React.FC = () => {
   const proactiveInstallPrompt = installPromotionState.promptVisible && installPromptCopy ? (
     <InstallPromptCard
       placement={activeNav === "ChatBot" ? "chat" : "viewport"}
+      chatOffset={chatComposerHeight > 0 ? chatComposerHeight + 20 : 156}
       title={installPromptCopy.title}
       body={installPromptCopy.body}
       actionLabel={installPromptCopy.actionLabel}
@@ -344,6 +346,7 @@ const ChatPage: React.FC = () => {
                   isOffline={isOffline}
                   onSuccessfulChat={markSuccessfulChat}
                   onOnboardingActiveChange={setIsOnboardingActive}
+                  onComposerHeightChange={setChatComposerHeight}
                 />
               )}
             </S.ContentBody>
