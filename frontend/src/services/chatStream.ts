@@ -83,14 +83,17 @@ type StreamChatResponseOptions = {
 const DEFAULT_ACCEPT_TIMEOUT_MS = 1500;
 
 const buildChatStreamUrl = (baseUrl: string, path: string) => {
-	const target = `${baseUrl}${path}`;
-	if (/^https?:\/\//.test(target)) {
-		const url = new URL(target);
+	const basePath = baseUrl.replace(/\/+$/, "");
+	const relativePath = path.replace(/^\/+/, "");
+	const joinedPath = basePath ? `${basePath}/${relativePath}` : `/${relativePath}`;
+
+	if (/^https?:\/\//.test(basePath)) {
+		const url = new URL(joinedPath);
 		url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 		return url.toString();
 	}
 
-	const normalizedPath = target.startsWith("/") ? target : `/${target}`;
+	const normalizedPath = joinedPath.startsWith("/") ? joinedPath : `/${joinedPath}`;
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 	return `${protocol}//${window.location.host}${normalizedPath}`;
 };

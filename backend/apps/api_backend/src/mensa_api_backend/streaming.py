@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Literal, Protocol, TypeVar
+from typing import Any, Coroutine, Literal, Protocol, TypeVar
 
 from .models import ChatResponse, ToolCallTrace
 
@@ -105,14 +105,14 @@ def build_trace_id(call_id: str | None, iteration: int, ordinal: int) -> str:
 
 
 async def await_with_heartbeat(
-    awaitable,
+    coroutine: Coroutine[Any, Any, T],
     progress_sink: ChatProgressSink,
     *,
     phase: ChatStreamPhase,
     iteration: int | None = None,
     heartbeat_interval_s: float = 3.0,
 ) -> T:
-    task = asyncio.create_task(awaitable)
+    task = asyncio.create_task(coroutine)
     loop = asyncio.get_running_loop()
     started_at = loop.time()
 
