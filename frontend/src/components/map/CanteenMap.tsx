@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import { getApiClient } from "@/shared/api/getApiClient";
 import type { Canteen, CanteenOpeningHoursResponse, CanteenSearchResponse } from "@/shared/api/MensaBotClient";
 import { openGoogleMaps } from "@/shared/services/maps";
-import { useTheme } from "../../theme/useTheme";
+import { useTheme } from "@/shared/theme/useTheme";
 import * as S from "./CanteenMap.styles";
 
 type Props = {

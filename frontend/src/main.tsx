@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './app/App.tsx'
-import { ThemeProvider } from './theme/themeProvider.tsx'
+import { ThemeProvider } from './shared/theme/themeProvider.tsx'
 import './app/i18n';
 
 createRoot(document.getElementById('root')!).render(

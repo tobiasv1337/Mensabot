@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useAppShellContext } from "../layouts/useAppShellContext";
-import { useTheme } from "../theme/useTheme";
+import { useTheme } from "@/shared/theme/useTheme";
 import { Page, Content } from "./PageLayout.styles";
 import CanteenMap from "../components/map/CanteenMap";
 import * as S from "./MapPage.styles";
