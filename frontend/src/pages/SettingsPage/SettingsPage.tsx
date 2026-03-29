@@ -5,7 +5,7 @@ import * as S from "./SettingsPage.styles";
 import { Button } from "@/shared/ui/button/Button";
 import { useAppShellContext } from "@/layouts/useAppShellContext";
 import { useTranslation } from "react-i18next";
-import { resetOnboarding } from "@/services/onboarding";
+import { resetOnboarding } from "@/features/chat/model/onboarding";
 
 const SettingsPage: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { useTranslation } from "react-i18next";
 import { MensaBotClient, type Canteen, type CanteenSearchResult } from "@/shared/api/MensaBotClient";
 import ScrollablePillRow from "./ScrollablePillRow";
-import * as S from "./chat.styles";
+import * as S from "./ChatView.styles";
 
 type CanteenSelectorProps = {
   client: MensaBotClient;

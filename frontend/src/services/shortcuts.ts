@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import type { ChatFilters } from "./chats";
-import { defaultChatFilters } from "./chats";
+import type { ChatFilters } from "@/features/chat/model/chats";
+import { defaultChatFilters } from "@/features/chat/model/chats";
 
 export type Shortcut = {
   id: string;

@@ -4,8 +4,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import type { ChatMessage } from "../../services/chats";
-import * as S from "./chat.styles";
+import type { ChatMessage } from "../model/chats";
+import * as S from "./ChatView.styles";
 
 export type MessageAction = {
   id: string;

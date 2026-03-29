@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import type { Canteen } from "@/shared/api/MensaBotClient";
-import type { ChatMode } from "../services/chatMode";
-import type { Chat, ChatFilters } from "../services/chats";
+import type { ChatMode } from "@/features/chat/model/chatMode";
+import type { Chat, ChatFilters } from "@/features/chat/model/chats";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
 
 export type AppShellInstallEntry = {

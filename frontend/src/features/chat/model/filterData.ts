@@ -1,8 +1,8 @@
 import i18n from "@/app/i18n";
-import type { ChatFilters, PriceCategory } from "../../services/chats";
-import vegetarianIcon from "../../assets/vegetarian.svg";
-import veganIcon from "../../assets/vegan.svg";
-import meatIcon from "../../assets/meat.svg";
+import type { ChatFilters, PriceCategory } from "./chats";
+import vegetarianIcon from "@/assets/vegetarian.svg";
+import veganIcon from "@/assets/vegan.svg";
+import meatIcon from "@/assets/meat.svg";
 
 /**
  * Diet options - `value` is the API key (never translated),

@@ -2,7 +2,7 @@
  * @file
  * This is the API client for `/backend/apps/api_backend/src/mensa_api_backend`.
  * You can work with it directly although it is advised to work with the
- * storage-integrated higher-level classes from `./chats.ts`.
+ * storage-integrated higher-level classes from `@/features/chat/model/chats.ts`.
  * 
  * With `chats.ts`, sending a message would look like the following:
  * ```tsx
@@ -16,8 +16,8 @@
  */
 
 import i18n from "@/app/i18n";
-import { streamChatResponse, type ChatStreamEvent } from "@/services/chatStream";
-import type { ChatFilters, ChatMessage } from "@/services/chats";
+import { streamChatResponse, type ChatStreamEvent } from "@/features/chat/model/chatStream";
+import type { ChatFilters, ChatMessage } from "@/features/chat/model/chats";
 
 export type ToolCallTrace = {
 	id?: string;
