@@ -1,14 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import mensaLogo from "../assets/mensabot-logo-gradient.svg";
-import * as S from "./LandingPage.styles";
+import * as S from "./HomePage.styles";
 import { ChatIcon, MensenIcon, ShortcutsIcon } from "../components/icons";
 
-interface LandingPageProps {
+interface HomePageProps {
   onStartChat: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStartChat }) => {
+const HomePage: React.FC<HomePageProps> = ({ onStartChat }) => {
   const { t } = useTranslation();
 
   const features = [
@@ -74,4 +74,4 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartChat }) => {
   );
 };
 
-export default LandingPage;
+export default HomePage;
