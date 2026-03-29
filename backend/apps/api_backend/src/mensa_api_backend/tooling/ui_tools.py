@@ -11,7 +11,7 @@ from mensa_mcp_server.settings import settings as mcp_settings
 from ..concurrency import get_io_semaphore
 from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
-from ..models import ChatResponse, ToolCallTrace
+from ..models import ChatNeedsClarificationResponse, ChatNeedsDirectionsResponse, ChatNeedsLocationResponse, ChatResponse, ToolCallTrace
 from .parsing import record_tool_error
 
 
@@ -22,7 +22,7 @@ def handle_location_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: l
     tool_trace.ok = True
     tool_trace.result = {"needs_location": True, "prompt": prompt_text}
     tool_traces.append(tool_trace)
-    return ChatResponse(status="needs_location", prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return ChatNeedsLocationResponse(prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
 async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], messages: List[Dict[str, Any]], call_id: str | None, tool_name: str, include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> ChatResponse | None:
@@ -84,7 +84,7 @@ async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_t
     tool_trace.ok = True
     tool_trace.result = {"needs_directions": True, "prompt": prompt_text, "lat": lat, "lng": lng}
     tool_traces.append(tool_trace)
-    return ChatResponse(status="needs_directions", prompt=prompt_text, lat=lat, lng=lng, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return ChatNeedsDirectionsResponse(prompt=prompt_text, lat=lat, lng=lng, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
 def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> ChatResponse:
@@ -104,4 +104,4 @@ def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_trac
     tool_trace.ok = True
     tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
     tool_traces.append(tool_trace)
-    return ChatResponse(status="needs_clarification", prompt=prompt_text, options=options, allow_none=allow_none, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return ChatNeedsClarificationResponse(prompt=prompt_text, options=options, allow_none=allow_none, tool_calls=(tool_traces or None) if include_tool_calls else None)
