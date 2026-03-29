@@ -150,7 +150,7 @@ const ChatPage: React.FC = () => {
     if (activeChatId === "init_pending" && !initDoneRef.current) {
       initDoneRef.current = true;
       const fresh = Chats.create();
-      activateChat(fresh.id);
+      queueMicrotask(() => activateChat(fresh.id));
     }
   }, [activeChatId, activateChat]);
 
