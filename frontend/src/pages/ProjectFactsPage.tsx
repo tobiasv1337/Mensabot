@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { MensaBotClient } from "../services/api";
+import React from "react";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 import { useTheme } from "styled-components";
 import * as S from "./ProjectFactsPage.styles";
@@ -20,59 +19,14 @@ import {
     GitHubIcon,
 } from "../shared/ui/icons";
 import { Button } from "../shared/ui/button/Button";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
+import { useProjectStats } from "../features/projectFacts/hooks/useProjectStats";
 
 const ProjectFactsPage: React.FC = () => {
     const { t } = useTranslation();
     const { isOffline } = useAppShellContext();
     const theme = useTheme();
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
-
-    // Logic to determine if we should force full viewport height for the upper part
-    const [isFullScreen, setIsFullScreen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const lowerRef = useRef<HTMLElement>(null);
-
-    const client = useMemo(() => new MensaBotClient(API_BASE_URL), []);
-    const [totalCanteens, setTotalCanteens] = useState<number | null>(null);
-    const [totalCities, setTotalCities] = useState<number | null>(null);
-
-    useEffect(() => {
-        const checkHeight = () => {
-            if (wrapperRef.current && lowerRef.current) {
-                // measure natural heights.
-                const wrapperHeight = wrapperRef.current.scrollHeight;
-                const lowerHeight = lowerRef.current.scrollHeight;
-                const totalContentHeight = wrapperHeight + lowerHeight;
-                setIsFullScreen(totalContentHeight > window.innerHeight);
-            }
-        };
-
-        checkHeight();
-        window.addEventListener('resize', checkHeight);
-        return () => window.removeEventListener('resize', checkHeight);
-    }, [totalCanteens, totalCities]);
-
-    useEffect(() => {
-        if (isOffline) return;
-
-        const fetchStats = async () => {
-            try {
-                const response = await client.searchCanteens({
-                    query: "",
-                    page: 1,
-                    perPage: 1,
-                });
-                setTotalCanteens(response.index.total_canteens);
-                setTotalCities(response.index.total_cities);
-            } catch (error) {
-                console.error("Failed to fetch project stats:", error);
-            }
-        };
-
-        fetchStats();
-    }, [client, isOffline]);
+    const { wrapperRef, lowerRef, isFullScreen, totalCanteens, totalCities } = useProjectStats(isOffline);
 
     // Data for the upper section cards
     const facts = [

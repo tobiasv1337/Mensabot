@@ -1,150 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CanteenSearchResult, PageInfo } from "../services/api";
-import { getApiClient } from "../services/apiClient";
+import React from "react";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
 import { openGoogleMaps } from "../services/maps";
 import { useTranslation } from "react-i18next";
-
-
-const PER_PAGE = 24;
+import { useCanteenSearch } from "../features/canteens/hooks/useCanteenSearch";
 
 const CanteensPage: React.FC = () => {
   const { t } = useTranslation();
   const { onSelectCanteen, selectedCanteenIds, isOffline } = useAppShellContext();
-  const client = useMemo(() => getApiClient(), []);
-  const requestId = useRef(0);
-
-  const [query, setQuery] = useState("");
-  const [items, setItems] = useState<CanteenSearchResult[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-  const [totalResults, setTotalResults] = useState<number | null>(null);
-  const [totalCanteens, setTotalCanteens] = useState<number | null>(null);
-  const [totalCities, setTotalCities] = useState<number | null>(null);
-  const [loadingState, setLoadingState] = useState<"initial" | "search" | "more" | null>("initial");
-  const [error, setError] = useState<string | null>(null);
-
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [sortBy, setSortBy] = useState<"auto" | "distance" | "name" | "city">("auto");
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.log("Location access denied or error:", error);
-        }
-      );
-    }
-  }, []);
-
-  const fetchData = useCallback(
-    async (searchQuery: string, page: number, append: boolean, sort: "auto" | "distance" | "name" | "city", location: { lat: number, lng: number } | null) => {
-      if (isOffline) {
-        setLoadingState(null);
-        setError(t('canteens.offline'));
-        return;
-      }
-      const currentRequest = ++requestId.current;
-      if (!append) {
-        setLoadingState(searchQuery ? "search" : "initial");
-      } else {
-        setLoadingState("more");
-      }
-      setError(null);
-
-      try {
-        const response = await client.searchCanteens({
-          query: searchQuery,
-          page: page,
-          perPage: PER_PAGE,
-          nearLat: location?.lat,
-          nearLng: location?.lng,
-          sortBy: sort,
-          minScore: 0,
-        });
-
-        if (currentRequest !== requestId.current) return;
-
-        setItems((prev) => append ? [...prev, ...response.results] : response.results);
-        setPageInfo(response.page_info);
-        setTotalResults(response.total_results);
-        setTotalCanteens(response.index.total_canteens);
-        setTotalCities(response.index.total_cities);
-      } catch {
-        if (currentRequest !== requestId.current) return;
-        setError(t('canteens.error'));
-      } finally {
-        if (currentRequest === requestId.current) {
-          setLoadingState(null);
-        }
-      }
-    },
-    [client, isOffline, t]
-  );
-
-  // Initial load & search reaction
-  useEffect(() => {
-    if (isOffline) {
-      requestId.current += 1;
-      setLoadingState(null);
-      if (items.length === 0) {
-        setPageInfo(null);
-        setTotalResults(null);
-      }
-      setError(t('canteens.offline'));
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      fetchData(query, 1, false, sortBy, userLocation);
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [query, sortBy, userLocation, fetchData, isOffline, items.length, t]);
-
-  const handleLoadMore = useCallback(() => {
-    if (isOffline || !pageInfo?.next_page || loadingState) return;
-    fetchData(query, pageInfo.next_page, true, sortBy, userLocation);
-  }, [isOffline, pageInfo?.next_page, loadingState, fetchData, query, sortBy, userLocation]);
-
-  const isSearching = query.trim().length > 0;
-  const hasMore = pageInfo?.has_next;
-  const showSkeletons = (loadingState === "initial" || loadingState === "search") && items.length === 0;
-
-  // Infinite Scroll Observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && loadingState === null) {
-          handleLoadMore();
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, loadingState, handleLoadMore]);
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Search is handled by useEffect on query change
-  };
-
-  const handleClear = () => {
-    setQuery("");
-    setError(null);
-  };
+  const {
+    query,
+    setQuery,
+    sortBy,
+    setSortBy,
+    items,
+    totalResults,
+    totalCanteens,
+    totalCities,
+    loadingState,
+    error,
+    observerTarget,
+    isSearching,
+    hasMore,
+    showSkeletons,
+    handleClear,
+    handleSubmit,
+  } = useCanteenSearch(isOffline);
 
   return (
     <Page>
