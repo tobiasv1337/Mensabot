@@ -1,4 +1,4 @@
-import type { Canteen, ToolCallTrace } from "@/shared/api/MensaBotClient";
+import type { Canteen, ClarificationSelectionMode, ToolCallTrace } from "@/shared/api/MensaBotClient";
 
 export type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";
 
@@ -7,10 +7,7 @@ export type DirectionsMeta = {
   lng?: number;
 };
 
-export type ClarificationMeta = {
-  options: string[];
-  allow_none?: boolean;
-};
+export type ClarificationMeta = { options: string[]; selection_mode?: ClarificationSelectionMode; allow_no_match?: boolean };
 
 export type ChatRequestMessage = {
   role: "user" | "assistant";

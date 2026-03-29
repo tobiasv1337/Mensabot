@@ -54,7 +54,7 @@ The app is designed to work well in two contexts:
 - Filter-aware prompts for diet, allergens, canteens, and price categories
 - Structured follow-up flows for:
   - location requests
-  - clarification prompts
+  - single-choice and multi-choice clarification prompts
   - directions prompts
 - Reusable shortcuts that combine a prompt template with filter presets
 - Slash-command style menu lookup for canteens, for example:
@@ -312,7 +312,7 @@ The frontend does more than render plain text responses. The chat layer is struc
 - normal assistant replies
 - location prompts
 - directions prompts
-- clarification prompts
+- single-choice and multi-choice clarification prompts
 - tool-call tracing and progressive stream state updates
 
 ### Filter Model

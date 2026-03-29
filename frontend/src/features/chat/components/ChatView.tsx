@@ -80,6 +80,8 @@ const ChatView: React.FC<ChatViewProps> = ({
     isRequestingLocation,
     locationError,
     clarificationHandled,
+    clarificationSelections,
+    clarificationNoMatchSelected,
     updateFilters,
     sendMessage,
     handleStartNewChat,
@@ -88,6 +90,9 @@ const ChatView: React.FC<ChatViewProps> = ({
     handleSelfLocation,
     handleOpenDirections,
     handleClarificationSelect,
+    handleClarificationToggleOption,
+    handleClarificationToggleNoMatch,
+    handleClarificationSubmit,
     handleResetFilters,
     handleSelectMode,
     handleOpenShortcutModal,
@@ -301,29 +306,29 @@ const ChatView: React.FC<ChatViewProps> = ({
               const shouldShowDirectionsActions = message.meta.kind === "directions_prompt";
               const shouldShowClarificationActions =
                 message.meta.kind === "clarification_prompt" && isLast && !clarificationHandled;
+              const clarification = message.meta.clarification;
+              const clarificationOptions = clarification?.options ?? [];
+              const clarificationMode = clarification?.selection_mode ?? "single";
+              const allowNoMatch = clarification?.allow_no_match ?? true;
+              const clarificationNoneLabel = clarificationNoMatchSelected ? `✓ ${t("chat.clarificationNone")}` : t("chat.clarificationNone");
+              const clarificationSubmitDisabled = isSending || (!clarificationNoMatchSelected && clarificationSelections.length === 0);
 
               const onboardingActions = isOnboardingMessage ? getActions(index, chat.messages.length) : [];
 
               const clarificationActions: MessageAction[] = shouldShowClarificationActions
-                ? [
-                    ...(message.meta.clarification?.options ?? []).map((option, optionIndex) => ({
-                      id: `clarification-${optionIndex}`,
-                      label: option,
-                      onClick: () => handleClarificationSelect(option),
-                      disabled: isSending,
-                    })),
-                    ...(message.meta.clarification?.allow_none !== false
-                      ? [
-                          {
-                            id: "clarification-none",
-                            label: t("chat.clarificationNone"),
-                            onClick: () => handleClarificationSelect(t("chat.clarificationNone")),
-                            variant: "secondary" as const,
-                            disabled: isSending,
-                          },
-                        ]
-                      : []),
-                  ]
+                ? clarificationMode === "multi"
+                  ? [
+                      ...clarificationOptions.map((option, optionIndex) => {
+                        const selected = clarificationSelections.includes(option);
+                        return { id: `clarification-${optionIndex}`, label: selected ? `✓ ${option}` : option, onClick: () => handleClarificationToggleOption(option), variant: selected ? ("primary" as const) : ("secondary" as const), disabled: isSending, selected, pressed: selected };
+                      }),
+                      ...(allowNoMatch ? [{ id: "clarification-none", label: clarificationNoneLabel, onClick: handleClarificationToggleNoMatch, variant: clarificationNoMatchSelected ? ("primary" as const) : ("secondary" as const), disabled: isSending, selected: clarificationNoMatchSelected, pressed: clarificationNoMatchSelected }] : []),
+                      { id: "clarification-submit", label: t("chat.clarificationSubmit"), onClick: handleClarificationSubmit, disabled: clarificationSubmitDisabled },
+                    ]
+                  : [
+                      ...clarificationOptions.map((option, optionIndex) => ({ id: `clarification-${optionIndex}`, label: option, onClick: () => handleClarificationSelect(option), disabled: isSending })),
+                      ...(allowNoMatch ? [{ id: "clarification-none", label: t("chat.clarificationNone"), onClick: () => handleClarificationSelect(t("chat.clarificationNone")), variant: "secondary" as const, disabled: isSending }] : []),
+                    ]
                 : [];
 
               const actions: MessageAction[] =
@@ -360,7 +365,8 @@ const ChatView: React.FC<ChatViewProps> = ({
                         ? clarificationActions
                         : [];
 
-              const actionsNote = shouldShowLocationActions ? locationError || undefined : undefined;
+              const actionsNote = shouldShowLocationActions ? locationError || undefined : shouldShowClarificationActions && clarificationMode === "multi" ? t("chat.clarificationMultiHint") : undefined;
+              const actionsNoteTone = shouldShowLocationActions && locationError ? ("error" as const) : ("default" as const);
 
               return (
                 <ChatBubble
@@ -369,6 +375,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                   avatarSrc={mensabotLogo}
                   actions={actions}
                   actionsNote={actionsNote}
+                  actionsNoteTone={actionsNoteTone}
                 />
               );
             })}

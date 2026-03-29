@@ -30,11 +30,13 @@ export type ToolCallTrace = {
 	iteration?: number;
 };
 
+export type ClarificationSelectionMode = "single" | "multi";
+
 export type ChatApiResponse =
 	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_directions"; prompt: string; lat?: number | null; lng?: number | null; tool_calls?: ToolCallTrace[] }
-	| { status: "needs_clarification"; prompt: string; options: string[]; allow_none?: boolean; tool_calls?: ToolCallTrace[] };
+	| { status: "needs_clarification"; prompt: string; options: string[]; selection_mode?: ClarificationSelectionMode; allow_no_match?: boolean; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
 	id: number;
@@ -193,7 +195,8 @@ export class MensaBotClient {
 				status: "needs_clarification",
 				prompt: res.prompt,
 				options: res.options ?? [],
-				allow_none: res.allow_none,
+				selection_mode: res.selection_mode === "multi" ? "multi" : "single",
+				allow_no_match: res.allow_no_match,
 				tool_calls: res.tool_calls,
 			};
 		}

@@ -248,6 +248,9 @@
         "manualLocation": "Manuell eingeben",
         "openRoute": "Route öffnen",
         "clarificationNone": "Keine dieser Optionen",
+        "clarificationSubmit": "Auswahl senden",
+        "clarificationMultiHint": "Wähle eine oder mehrere Optionen aus und sende sie dann ab.",
+        "clarificationSelectedPrefix": "Ausgewählte Optionen:",
         "myLocation": "Mein Standort: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",

@@ -13,6 +13,8 @@ export type MessageAction = {
   onClick: () => void;
   variant?: "primary" | "secondary";
   disabled?: boolean;
+  selected?: boolean;
+  pressed?: boolean;
 };
 
 const TOOL_PAYLOAD_PREVIEW_LIMIT = 6000;
@@ -43,9 +45,16 @@ type ChatBubbleProps = {
   avatarSrc?: string;
   actions?: MessageAction[];
   actionsNote?: React.ReactNode;
+  actionsNoteTone?: "default" | "error";
 };
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [], actionsNote }) => {
+const ChatBubble: React.FC<ChatBubbleProps> = ({
+  message,
+  avatarSrc,
+  actions = [],
+  actionsNote,
+  actionsNoteTone = "default",
+}) => {
   const { t } = useTranslation();
   const isUser = message.role === "user";
   const toolCalls = message.meta.toolCalls ?? [];
@@ -141,11 +150,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, avatarSrc, actions = [
                   onClick={action.onClick}
                   disabled={action.disabled}
                   $variant={action.variant}
+                  $selected={action.selected}
+                  aria-pressed={action.pressed}
                 >
                   {action.label}
                 </S.ActionButton>
               ))}
-              {actionsNote && <S.InlineError>{actionsNote}</S.InlineError>}
+              {actionsNote && <S.ActionNote $tone={actionsNoteTone}>{actionsNote}</S.ActionNote>}
             </S.ActionRow>
           )}
         </S.Bubble>
