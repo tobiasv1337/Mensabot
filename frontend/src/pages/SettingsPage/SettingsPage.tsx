@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Page, Content } from "./PageLayout.styles";
-import ConfirmModal from "../shared/ui/modal/ConfirmModal";
+import { Page, Content } from "@/shared/ui/page/PageLayout.styles";
+import ConfirmModal from "@/shared/ui/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
-import { Button } from "../shared/ui/button/Button";
-import { useAppShellContext } from "../layouts/useAppShellContext";
+import { Button } from "@/shared/ui/button/Button";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
 import { useTranslation } from "react-i18next";
-import { resetOnboarding } from "../services/onboarding";
+import { resetOnboarding } from "@/services/onboarding";
 
 const SettingsPage: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);

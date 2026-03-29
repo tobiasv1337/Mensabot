@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useAppShellContext } from "../layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
 import { useTheme } from "@/shared/theme/useTheme";
-import { Page, Content } from "./PageLayout.styles";
-import CanteenMap from "../components/map/CanteenMap";
+import { Page, Content } from "@/shared/ui/page/PageLayout.styles";
+import CanteenMap from "./CanteenMap";
 import * as S from "./MapPage.styles";
 import { useTranslation } from "react-i18next";
-import { getMapStyleConfig } from "../features/map/mapConfig";
+import { getMapStyleConfig } from "./mapConfig";
 
 const MapPage: React.FC = () => {
   const { darkMode } = useTheme();

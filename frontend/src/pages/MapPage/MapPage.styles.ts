@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
-export { HeroCard, HeroEyebrow, HeroTitle, HeroSubtitle } from "../shared/ui/page/PageHero.styles";
-export { SearchCard, SearchRow, SearchInput, SearchActions, ClearButton, SearchMeta, MetaPill } from "../shared/ui/page/PageSearch.styles";
+export { HeroCard, HeroEyebrow, HeroTitle, HeroSubtitle } from "@/shared/ui/page/PageHero.styles";
+export { SearchCard, SearchRow, SearchInput, SearchActions, ClearButton, SearchMeta, MetaPill } from "@/shared/ui/page/PageSearch.styles";
 
 export const ErrorCard = styled.div`
   padding: 18px;

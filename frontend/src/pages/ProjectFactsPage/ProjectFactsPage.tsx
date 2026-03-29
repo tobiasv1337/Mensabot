@@ -1,11 +1,11 @@
 import React from "react";
-import { useAppShellContext } from "../layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
 import { useTheme } from "styled-components";
 import * as S from "./ProjectFactsPage.styles";
-import heroImageLight from "../assets/ChatPageImageLight.jpeg";
-import heroImageDark from "../assets/ChatPageImageDark.jpeg";
-import * as P from "../shared/ui/page/PageHero.styles";
-import * as PS from "../shared/ui/page/PageSearch.styles";
+import heroImageLight from "@/assets/ChatPageImageLight.jpeg";
+import heroImageDark from "@/assets/ChatPageImageDark.jpeg";
+import * as P from "@/shared/ui/page/PageHero.styles";
+import * as PS from "@/shared/ui/page/PageSearch.styles";
 
 import { useTranslation } from "react-i18next";
 import {
@@ -17,9 +17,9 @@ import {
     OpenSourceIcon,
     ShortcutsIcon,
     GitHubIcon,
-} from "../shared/ui/icons";
-import { Button } from "../shared/ui/button/Button";
-import { useProjectStats } from "../features/projectFacts/hooks/useProjectStats";
+} from "@/shared/ui/icons";
+import { Button } from "@/shared/ui/button/Button";
+import { useProjectStats } from "./useProjectStats";
 
 const ProjectFactsPage: React.FC = () => {
     const { t } = useTranslation();

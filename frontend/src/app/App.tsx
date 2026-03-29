@@ -2,14 +2,14 @@ import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 const AppShell = lazy(() => import("../layouts/AppShell"));
-const HomePage = lazy(() => import("../pages/HomePage"));
-const ChatPage = lazy(() => import("../pages/ChatPage"));
-const CanteensPage = lazy(() => import("../pages/CanteensPage"));
-const MapPage = lazy(() => import("../pages/MapPage"));
-const ProjectFactsPage = lazy(() => import("../pages/ProjectFactsPage"));
-const LegalNoticePage = lazy(() => import("../pages/LegalNoticePage"));
-const ShortcutsPage = lazy(() => import("../pages/ShortcutsPage"));
-const SettingsPage = lazy(() => import("../pages/SettingsPage"));
+const HomePage = lazy(() => import("../pages/HomePage/HomePage"));
+const ChatPage = lazy(() => import("../pages/ChatPage/ChatPage"));
+const CanteensPage = lazy(() => import("../pages/CanteensPage/CanteensPage"));
+const MapPage = lazy(() => import("../pages/MapPage/MapPage"));
+const ProjectFactsPage = lazy(() => import("../pages/ProjectFactsPage/ProjectFactsPage"));
+const LegalNoticePage = lazy(() => import("../pages/LegalNoticePage/LegalNoticePage"));
+const ShortcutsPage = lazy(() => import("../pages/ShortcutsPage/ShortcutsPage"));
+const SettingsPage = lazy(() => import("../pages/SettingsPage/SettingsPage"));
 
 const withSuspense = (element: React.ReactNode) => (
   <Suspense fallback={null}>{element}</Suspense>
