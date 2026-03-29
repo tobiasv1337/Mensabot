@@ -1,19 +1,18 @@
 import React from "react";
-import * as S from "./header.styles";
-import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
-import { Button } from "../button/button";
-
-import { getNavLabel, NAV_ROUTES, type NavItem } from "../../types/navigation";
+import * as S from "./AppHeader.styles";
+import mensaLogo from "../../../assets/mensabot-logo-gradient.svg";
+import { Button } from "../../../components/button/button";
+import { getNavLabel, NAV_ROUTES, type NavItem } from "../navigation";
 import { useTranslation } from "react-i18next";
 
-interface HeaderProps {
+interface AppHeaderProps {
   activeNav: NavItem;
   navItems: NavItem[];
   onNavClick: (i: NavItem) => void;
   onToggleSidebar: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({
+const AppHeader: React.FC<AppHeaderProps> = ({
   activeNav,
   navItems,
   onNavClick,
@@ -58,4 +57,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header;
+export default AppHeader;
