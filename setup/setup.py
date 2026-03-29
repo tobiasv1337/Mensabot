@@ -15,7 +15,7 @@ try:
     from questionary import Choice
     import dotenv
 except ImportError:
-    print("Required packages not found. Please install them using: pip install -r setup/requirements.txt")
+    print("Required setup dependencies are missing. Run `bash install.sh` from the repository root to bootstrap the setup wizard.")
     sys.exit(1)
 
 console = Console()
