@@ -15,7 +15,7 @@ const withSuspense = (element: React.ReactNode) => (
   <Suspense fallback={null}>{element}</Suspense>
 );
 
-export default function AppRoutes() {
+export default function App() {
   return (
     <Routes>
       <Route path="/" element={withSuspense(<AppShell />)}>

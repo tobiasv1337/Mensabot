@@ -1,4 +1,4 @@
-import i18n from "../../i18n";
+import i18n from "@/app/i18n";
 import type { Canteen, MenuResponse, PriceInfo } from "@/shared/api/MensaBotClient";
 
 const PRICE_FORMATTER = new Intl.NumberFormat("de-DE", {
