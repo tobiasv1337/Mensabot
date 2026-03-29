@@ -28,7 +28,7 @@ The project is built as a full stack application:
 - Natural-language chat for menus, prices, opening hours, and canteen discovery
 - Live canteen data based on OpenMensa and OpenStreetMap/Overpass
 - Designed for 1,000+ OpenMensa-supported canteens
-- Interactive disambiguation with location requests and clarification buttons
+- Interactive disambiguation with location requests and single- or multi-choice clarification buttons
 - Voice input with local speech-to-text transcription
 - Map view with MapLibre and custom MapTiler styles
 - Saved chat sessions and reusable prompt shortcuts in the browser

@@ -53,7 +53,8 @@ class ChatResponse(BaseModel):
     lat: float | None = None
     lng: float | None = None
     options: list[str] | None = None
-    allow_none: bool | None = None
+    selection_mode: Literal["single", "multi"] | None = None
+    allow_no_match: bool | None = None
     tool_calls: list[ToolCallTrace] | None = None
 
 
@@ -82,7 +83,8 @@ class InternalChatNeedsClarificationResponse(_BaseInternalChatResponse):
     status: Literal["needs_clarification"] = "needs_clarification"
     prompt: str
     options: list[str]
-    allow_none: bool
+    selection_mode: Literal["single", "multi"]
+    allow_no_match: bool
 
 
 InternalChatResponse: TypeAlias = InternalChatOkResponse | InternalChatNeedsLocationResponse | InternalChatNeedsDirectionsResponse | InternalChatNeedsClarificationResponse
@@ -93,7 +95,7 @@ def to_public_chat_response(response: InternalChatResponse) -> ChatResponse:
         case InternalChatOkResponse(): return ChatResponse(status=response.status, reply=response.reply, tool_calls=response.tool_calls)
         case InternalChatNeedsLocationResponse(): return ChatResponse(status=response.status, prompt=response.prompt, tool_calls=response.tool_calls)
         case InternalChatNeedsDirectionsResponse(): return ChatResponse(status=response.status, prompt=response.prompt, lat=response.lat, lng=response.lng, tool_calls=response.tool_calls)
-        case InternalChatNeedsClarificationResponse(): return ChatResponse(status=response.status, prompt=response.prompt, options=response.options, allow_none=response.allow_none, tool_calls=response.tool_calls)
+        case InternalChatNeedsClarificationResponse(): return ChatResponse(status=response.status, prompt=response.prompt, options=response.options, selection_mode=response.selection_mode, allow_no_match=response.allow_no_match, tool_calls=response.tool_calls)
         case _: raise TypeError(f"Unsupported internal chat response: {type(response).__name__}")
 
 

@@ -232,10 +232,7 @@ export class Chat {
 				new ChatMessage("assistant", response.prompt, {
 					kind: "clarification_prompt",
 					toolCalls,
-					clarification: {
-						options: response.options,
-						allow_none: response.allow_none,
-					},
+					clarification: { options: response.options, selection_mode: response.selection_mode, allow_no_match: response.allow_no_match },
 				})
 			);
 			return response;

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
 
 import anyio
 from mensabot_backend_core.canteen_service import CanteenLookupError, CanteenNotFoundError, fetch_canteen_info
@@ -8,6 +8,18 @@ from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
 from ..models import InternalChatNeedsClarificationResponse, InternalChatNeedsDirectionsResponse, InternalChatNeedsLocationResponse, InternalChatResponse, ToolCallTrace
 from .parsing import record_tool_error
+
+
+def _parse_boolish(value: Any, *, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() not in {"false", "0", "no", "f", "off"}
+    return default
+
+
+def _parse_clarification_selection_mode(value: Any) -> Literal["single", "multi"]:
+    return "multi" if isinstance(value, str) and value.strip().lower() == "multi" else "single"
 
 
 def handle_location_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> InternalChatResponse:
@@ -76,17 +88,16 @@ def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_trac
     prompt = args.get("prompt") if isinstance(args, dict) else None
     prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("clarification_fallback_prompt", lang)
     options = args.get("options") if isinstance(args, dict) else None
-    if not isinstance(options, list) or len(options) < 1:
-        options = []
-    allow_none_raw = args.get("allow_none", True) if isinstance(args, dict) else True
-    if isinstance(allow_none_raw, bool):
-        allow_none = allow_none_raw
-    elif isinstance(allow_none_raw, str):
-        allow_none = allow_none_raw.strip().lower() not in {"false", "0", "no", "f", "off"}
+    if isinstance(options, list):
+        options = [str(option).strip() for option in options if str(option).strip()]
     else:
-        allow_none = True
-    logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
+        options = []
+    selection_mode_raw = args.get("selection_mode", "single") if isinstance(args, dict) else "single"
+    selection_mode = _parse_clarification_selection_mode(selection_mode_raw)
+    allow_no_match_raw = args.get("allow_no_match", True) if isinstance(args, dict) else True
+    allow_no_match = _parse_boolish(allow_no_match_raw, default=True)
+    logger.info("Clarification request tool triggered with prompt: %s, options: %s, selection_mode: %s, allow_no_match: %s", prompt_text, options, selection_mode, allow_no_match)
     tool_trace.ok = True
-    tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
+    tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "selection_mode": selection_mode, "allow_no_match": allow_no_match}
     tool_traces.append(tool_trace)
-    return InternalChatNeedsClarificationResponse(prompt=prompt_text, options=options, allow_none=allow_none, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return InternalChatNeedsClarificationResponse(prompt=prompt_text, options=options, selection_mode=selection_mode, allow_no_match=allow_no_match, tool_calls=(tool_traces or None) if include_tool_calls else None)

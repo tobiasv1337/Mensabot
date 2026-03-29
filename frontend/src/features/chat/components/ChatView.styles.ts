@@ -892,19 +892,25 @@ export const ActionRow = styled.div`
   align-items: center;
 `;
 
-export const ActionButton = styled.button<{ $variant?: "primary" | "secondary" }>`
-  background: ${({ theme, $variant }) => ($variant === "secondary" ? theme.surfaceAccent : theme.accent1)};
-  color: ${({ theme, $variant }) => ($variant === "secondary" ? theme.textOnAccent : theme.textOnAccent1)};
+export const ActionButton = styled.button<{ $variant?: "primary" | "secondary"; $selected?: boolean }>`
+  background: ${({ theme, $variant, $selected }) =>
+    $selected ? theme.accent1 : $variant === "secondary" ? theme.surfaceAccent : theme.accent1};
+  color: ${({ theme, $variant, $selected }) =>
+    $selected ? theme.textOnAccent1 : $variant === "secondary" ? theme.textOnAccent : theme.textOnAccent1};
   padding: 0.55rem 1rem;
-  border: none;
+  border: 1px solid
+    ${({ theme, $variant, $selected }) =>
+      $selected ? `${theme.accent1}66` : $variant === "secondary" ? `${theme.textMuted}33` : "transparent"};
   border-radius: 0.6rem;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
-  transition: transform 0.2s ease;
+  box-shadow: ${({ theme, $selected }) => ($selected ? `0 10px 20px ${theme.accent1}26` : "none")};
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
+    box-shadow: ${({ theme, $selected }) => ($selected ? `0 12px 24px ${theme.accent1}33` : "none")};
   }
 
   &:disabled {
@@ -918,8 +924,8 @@ export const ActionButton = styled.button<{ $variant?: "primary" | "secondary" }
   }
 `;
 
-export const InlineError = styled.span`
-  color: ${({ theme }) => theme.accent1};
+export const ActionNote = styled.span<{ $tone?: "default" | "error" }>`
+  color: ${({ theme, $tone }) => ($tone === "error" ? theme.accent1 : theme.textSecondary)};
   font-size: 0.8rem;
   font-weight: 600;
 `;

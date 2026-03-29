@@ -100,6 +100,8 @@ export const useChatController = ({
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [clarificationHandled, setClarificationHandled] = useState(false);
+  const [clarificationSelections, setClarificationSelections] = useState<string[]>([]);
+  const [clarificationNoMatchSelected, setClarificationNoMatchSelected] = useState(false);
   const [commandActiveIndex, setCommandActiveIndex] = useState(0);
   const [commandCanteenResults, setCommandCanteenResults] = useState<CanteenSearchResult[]>([]);
   const [commandCanteenLoading, setCommandCanteenLoading] = useState(false);
@@ -222,6 +224,8 @@ export const useChatController = ({
     setLocationPromptHandled(false);
     setLocationError("");
     setClarificationHandled(false);
+    setClarificationSelections([]);
+    setClarificationNoMatchSelected(false);
     resolvedCanteenRef.current = null;
   }, [chat.id]);
 
@@ -250,11 +254,15 @@ export const useChatController = ({
 
     if (lastMessage.meta?.kind === "clarification_prompt") {
       setClarificationHandled(false);
+      setClarificationSelections([]);
+      setClarificationNoMatchSelected(false);
       return;
     }
 
     setLocationPromptHandled(true);
     setClarificationHandled(true);
+    setClarificationSelections([]);
+    setClarificationNoMatchSelected(false);
   }, [chat, version]);
 
   const sendMessage = useCallback(
@@ -460,6 +468,34 @@ export const useChatController = ({
     [isSending, sendMessage],
   );
 
+  const handleClarificationToggleOption = useCallback(
+    (option: string) => {
+      if (isSending) return;
+
+      setClarificationNoMatchSelected(false);
+      setClarificationSelections((current) => current.includes(option) ? current.filter((item) => item !== option) : [...current, option]);
+    },
+    [isSending],
+  );
+
+  const handleClarificationToggleNoMatch = useCallback(() => {
+    if (isSending) return;
+
+    setClarificationSelections([]);
+    setClarificationNoMatchSelected((current) => !current);
+  }, [isSending]);
+
+  const handleClarificationSubmit = useCallback(() => {
+    if (isSending) return;
+
+    const message = clarificationNoMatchSelected ? t("chat.clarificationNone") : clarificationSelections.length > 0 ? `${t("chat.clarificationSelectedPrefix")}\n${clarificationSelections.map((option) => `- ${option}`).join("\n")}` : "";
+
+    if (!message) return;
+
+    setClarificationHandled(true);
+    void sendMessage(message);
+  }, [clarificationNoMatchSelected, clarificationSelections, isSending, sendMessage, t]);
+
   const handleResetFilters = useCallback(() => {
     updateFilters(defaultChatFilters);
   }, [updateFilters]);
@@ -481,6 +517,8 @@ export const useChatController = ({
     setLocationPromptHandled(false);
     setLocationError("");
     setClarificationHandled(false);
+    setClarificationSelections([]);
+    setClarificationNoMatchSelected(false);
     requestAutoScroll();
   }, [isSending, onStartNewChat, requestAutoScroll]);
 
@@ -936,6 +974,8 @@ export const useChatController = ({
     isRequestingLocation,
     locationError,
     clarificationHandled,
+    clarificationSelections,
+    clarificationNoMatchSelected,
     updateFilters,
     sendMessage,
     handleStartNewChat,
@@ -944,6 +984,9 @@ export const useChatController = ({
     handleSelfLocation,
     handleOpenDirections,
     handleClarificationSelect,
+    handleClarificationToggleOption,
+    handleClarificationToggleNoMatch,
+    handleClarificationSubmit,
     handleResetFilters,
     handleSelectMode,
     handleOpenShortcutModal,
