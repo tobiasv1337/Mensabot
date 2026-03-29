@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, Literal, TypeAlias
+from typing import Any, Dict, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,11 +46,18 @@ class ToolCallTrace(BaseModel):
     iteration: int | None = None
 
 
-class _BaseChatResponse(BaseModel):
+class ChatResponse(BaseModel):
+    status: Literal["ok", "needs_location", "needs_directions", "needs_clarification"]
+    reply: str | None = None
+    prompt: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    options: list[str] | None = None
+    allow_none: bool | None = None
     tool_calls: list[ToolCallTrace] | None = None
 
 
-class ChatOkResponse(_BaseChatResponse):
+class ChatOkResponse(ChatResponse):
     status: Literal["ok"] = "ok"
     reply: str
     prompt: None = None
@@ -60,7 +67,7 @@ class ChatOkResponse(_BaseChatResponse):
     allow_none: None = None
 
 
-class ChatNeedsLocationResponse(_BaseChatResponse):
+class ChatNeedsLocationResponse(ChatResponse):
     status: Literal["needs_location"] = "needs_location"
     reply: None = None
     prompt: str
@@ -70,7 +77,7 @@ class ChatNeedsLocationResponse(_BaseChatResponse):
     allow_none: None = None
 
 
-class ChatNeedsDirectionsResponse(_BaseChatResponse):
+class ChatNeedsDirectionsResponse(ChatResponse):
     status: Literal["needs_directions"] = "needs_directions"
     reply: None = None
     prompt: str
@@ -80,7 +87,7 @@ class ChatNeedsDirectionsResponse(_BaseChatResponse):
     allow_none: None = None
 
 
-class ChatNeedsClarificationResponse(_BaseChatResponse):
+class ChatNeedsClarificationResponse(ChatResponse):
     status: Literal["needs_clarification"] = "needs_clarification"
     reply: None = None
     prompt: str
@@ -88,12 +95,6 @@ class ChatNeedsClarificationResponse(_BaseChatResponse):
     lng: None = None
     options: list[str]
     allow_none: bool
-
-
-ChatResponse: TypeAlias = Annotated[
-    ChatOkResponse | ChatNeedsLocationResponse | ChatNeedsDirectionsResponse | ChatNeedsClarificationResponse,
-    Field(discriminator="status"),
-]
 
 
 class TranscribeResponse(BaseModel):
