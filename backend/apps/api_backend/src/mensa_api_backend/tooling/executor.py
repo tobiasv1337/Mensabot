@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from ..i18n import DEFAULT_LANGUAGE
-from ..models import ChatResponse, ToolCallTrace, UserFilters
+from ..models import InternalChatResponse, ToolCallTrace, UserFilters
 from ..prompts import CLARIFICATION_TOOL_NAME, DIRECTIONS_TOOL_NAME, LOCATION_TOOL_NAME
 from ..streaming import ChatProgressSink, NoOpChatProgressSink, build_trace_id
 from .filter_policy import ResolvedUserFilters, validate_tool_filters
@@ -20,7 +20,7 @@ async def handle_tool_calls(
     user_filters: UserFilters | None = None,
     language: str = DEFAULT_LANGUAGE,
     progress_sink: ChatProgressSink | None = None,
-) -> ChatResponse | None:
+) -> InternalChatResponse | None:
     sink = progress_sink or NoOpChatProgressSink()
     resolved_filters = ResolvedUserFilters.from_user_filters(user_filters)
     for ordinal, call in enumerate(tool_calls, start=1):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -57,44 +57,44 @@ class ChatResponse(BaseModel):
     tool_calls: list[ToolCallTrace] | None = None
 
 
-class ChatOkResponse(ChatResponse):
+class _BaseInternalChatResponse(BaseModel):
+    tool_calls: list[ToolCallTrace] | None = None
+
+
+class InternalChatOkResponse(_BaseInternalChatResponse):
     status: Literal["ok"] = "ok"
     reply: str
-    prompt: None = None
-    lat: None = None
-    lng: None = None
-    options: None = None
-    allow_none: None = None
 
 
-class ChatNeedsLocationResponse(ChatResponse):
+class InternalChatNeedsLocationResponse(_BaseInternalChatResponse):
     status: Literal["needs_location"] = "needs_location"
-    reply: None = None
     prompt: str
-    lat: None = None
-    lng: None = None
-    options: None = None
-    allow_none: None = None
 
 
-class ChatNeedsDirectionsResponse(ChatResponse):
+class InternalChatNeedsDirectionsResponse(_BaseInternalChatResponse):
     status: Literal["needs_directions"] = "needs_directions"
-    reply: None = None
     prompt: str
     lat: float
     lng: float
-    options: None = None
-    allow_none: None = None
 
 
-class ChatNeedsClarificationResponse(ChatResponse):
+class InternalChatNeedsClarificationResponse(_BaseInternalChatResponse):
     status: Literal["needs_clarification"] = "needs_clarification"
-    reply: None = None
     prompt: str
-    lat: None = None
-    lng: None = None
     options: list[str]
     allow_none: bool
+
+
+InternalChatResponse: TypeAlias = InternalChatOkResponse | InternalChatNeedsLocationResponse | InternalChatNeedsDirectionsResponse | InternalChatNeedsClarificationResponse
+
+
+def to_public_chat_response(response: InternalChatResponse) -> ChatResponse:
+    match response:
+        case InternalChatOkResponse(): return ChatResponse(status=response.status, reply=response.reply, tool_calls=response.tool_calls)
+        case InternalChatNeedsLocationResponse(): return ChatResponse(status=response.status, prompt=response.prompt, tool_calls=response.tool_calls)
+        case InternalChatNeedsDirectionsResponse(): return ChatResponse(status=response.status, prompt=response.prompt, lat=response.lat, lng=response.lng, tool_calls=response.tool_calls)
+        case InternalChatNeedsClarificationResponse(): return ChatResponse(status=response.status, prompt=response.prompt, options=response.options, allow_none=response.allow_none, tool_calls=response.tool_calls)
+        case _: raise TypeError(f"Unsupported internal chat response: {type(response).__name__}")
 
 
 class TranscribeResponse(BaseModel):

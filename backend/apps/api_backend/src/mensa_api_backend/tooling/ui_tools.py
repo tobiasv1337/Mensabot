@@ -11,21 +11,21 @@ from mensa_mcp_server.settings import settings as mcp_settings
 from ..concurrency import get_io_semaphore
 from ..i18n import DEFAULT_LANGUAGE, get_string
 from ..logging import logger
-from ..models import ChatNeedsClarificationResponse, ChatNeedsDirectionsResponse, ChatNeedsLocationResponse, ChatResponse, ToolCallTrace
+from ..models import InternalChatNeedsClarificationResponse, InternalChatNeedsDirectionsResponse, InternalChatNeedsLocationResponse, InternalChatResponse, ToolCallTrace
 from .parsing import record_tool_error
 
 
-def handle_location_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> ChatResponse:
+def handle_location_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> InternalChatResponse:
     prompt = args.get("prompt") if isinstance(args, dict) else None
     prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("location_fallback_prompt", lang)
     logger.info("Location request tool triggered with prompt: %s", prompt_text)
     tool_trace.ok = True
     tool_trace.result = {"needs_location": True, "prompt": prompt_text}
     tool_traces.append(tool_trace)
-    return ChatNeedsLocationResponse(prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return InternalChatNeedsLocationResponse(prompt=prompt_text, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
-async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], messages: List[Dict[str, Any]], call_id: str | None, tool_name: str, include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> ChatResponse | None:
+async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], messages: List[Dict[str, Any]], call_id: str | None, tool_name: str, include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> InternalChatResponse | None:
     prompt = args.get("prompt") if isinstance(args, dict) else None
     prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("directions_fallback_prompt", lang)
     raw_canteen_id = args.get("canteen_id") if isinstance(args, dict) else None
@@ -84,10 +84,10 @@ async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_t
     tool_trace.ok = True
     tool_trace.result = {"needs_directions": True, "prompt": prompt_text, "lat": lat, "lng": lng}
     tool_traces.append(tool_trace)
-    return ChatNeedsDirectionsResponse(prompt=prompt_text, lat=lat, lng=lng, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return InternalChatNeedsDirectionsResponse(prompt=prompt_text, lat=lat, lng=lng, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
-def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> ChatResponse:
+def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_traces: list[ToolCallTrace], include_tool_calls: bool, lang: str = DEFAULT_LANGUAGE) -> InternalChatResponse:
     prompt = args.get("prompt") if isinstance(args, dict) else None
     prompt_text = prompt if (isinstance(prompt, str) and prompt.strip()) else get_string("clarification_fallback_prompt", lang)
     options = args.get("options") if isinstance(args, dict) else None
@@ -104,4 +104,4 @@ def handle_clarification_tool(*, args: Any, tool_trace: ToolCallTrace, tool_trac
     tool_trace.ok = True
     tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
     tool_traces.append(tool_trace)
-    return ChatNeedsClarificationResponse(prompt=prompt_text, options=options, allow_none=allow_none, tool_calls=(tool_traces or None) if include_tool_calls else None)
+    return InternalChatNeedsClarificationResponse(prompt=prompt_text, options=options, allow_none=allow_none, tool_calls=(tool_traces or None) if include_tool_calls else None)

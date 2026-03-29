@@ -11,7 +11,7 @@ from ..config import settings
 from ..concurrency import get_llm_semaphore
 from ..i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, get_string
 from ..logging import logger
-from ..models import ChatMessage, ChatOkResponse, ChatResponse, ToolCallTrace, UserFilters
+from ..models import ChatMessage, ChatResponse, InternalChatOkResponse, InternalChatResponse, ToolCallTrace, UserFilters, to_public_chat_response
 from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
 from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
@@ -24,7 +24,7 @@ client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_ur
 
 @dataclass
 class LoopDecision:
-    response: ChatResponse | None
+    response: InternalChatResponse | None
     continue_loop: bool
 
 
@@ -158,8 +158,8 @@ def _build_chat_response(
     reply: str,
     tool_traces: list[ToolCallTrace],
     include_tool_calls: bool,
-) -> ChatResponse:
-    return ChatOkResponse(reply=reply, tool_calls=(tool_traces or None) if include_tool_calls else None)
+) -> InternalChatResponse:
+    return InternalChatOkResponse(reply=reply, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
 def _get_first_choice(completion: ChatCompletion):
@@ -272,7 +272,7 @@ async def run_tool_calling_loop(
     await sink.emit_phase("starting")
 
     try:
-        response, tool_traces = await _run_tool_calling_loop_inner(
+        internal_response, tool_traces = await _run_tool_calling_loop_inner(
             message_log,
             include_tool_calls,
             user_filters,
@@ -281,7 +281,7 @@ async def run_tool_calling_loop(
             progress_sink=sink,
         )
         await sink.emit_phase("finalizing")
-        final_response = _maybe_append_filter_warning(response, tool_traces, language)
+        final_response = _maybe_append_filter_warning(to_public_chat_response(internal_response), tool_traces, language)
         await sink.emit_result(final_response)
         return final_response
     except Exception:
@@ -301,7 +301,7 @@ async def _run_tool_calling_loop_inner(
     judge_correction: bool = True,
     lang: str = DEFAULT_LANGUAGE,
     progress_sink: ChatProgressSink | None = None,
-) -> tuple[ChatResponse, list[ToolCallTrace]]:
+) -> tuple[InternalChatResponse, list[ToolCallTrace]]:
     sink = progress_sink or NoOpChatProgressSink()
     messages = prepare_message_log(message_log, user_filters, lang)
     await sink.emit_phase("waiting_for_llm", iteration=1)
