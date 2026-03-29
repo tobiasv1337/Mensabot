@@ -1,8 +1,8 @@
 import React from "react";
-import Modal from "../modal/Modal";
-import { Button } from "../button/button";
+import Modal from "../../shared/ui/modal/Modal";
+import { Button } from "../../shared/ui/button/Button";
 import { getInstallInstructionsCopy } from "./installCopy";
-import * as M from "../modal/modal.styles";
+import * as M from "../../shared/ui/modal/Modal.styles";
 import * as S from "./installPrompt.styles";
 import type { InstallCapability } from "../../services/installPromotion";
 import { useTranslation } from "react-i18next";

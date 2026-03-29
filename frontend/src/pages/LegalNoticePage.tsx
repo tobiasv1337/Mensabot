@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import * as S from './LegalNoticePage.styles';
-import * as P from '../components/page/PageHero.styles';
-import { Button } from '../components/button/button';
-import { MailIcon, GitHubIcon } from "../components/icons";
-import { TuLogo, QualityAndUsabilityLogo } from "../components/iconsLogos";
+import * as P from '../shared/ui/page/PageHero.styles';
+import { Button } from '../shared/ui/button/Button';
+import { MailIcon, GitHubIcon } from "../shared/ui/icons";
+import { TuLogo, QualityAndUsabilityLogo } from "../shared/ui/iconsLogos";
 
 const LegalNoticePage: React.FC = () => {
     const { t } = useTranslation();

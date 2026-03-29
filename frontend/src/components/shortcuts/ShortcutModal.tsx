@@ -4,9 +4,9 @@ import type { ChatFilters } from "../../services/chats";
 import type { ShortcutInput } from "../../services/shortcuts";
 import FiltersEditor from "../chat/FiltersEditor";
 import { normalizeAllergenList } from "../chat/filterData";
-import * as ChatStyles from "../chat/chat.styles";
-import Modal from "../modal/Modal";
-import * as S from "../modal/modal.styles";
+import * as Actions from "../../shared/ui/modal/ModalAction.styles";
+import Modal from "../../shared/ui/modal/Modal";
+import * as S from "../../shared/ui/modal/Modal.styles";
 import { useTranslation } from "react-i18next";
 
 type ShortcutModalProps = {
@@ -139,17 +139,17 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({
           />
         </S.FiltersSection>
 
-        {nameError && <ChatStyles.InlineError>{nameError}</ChatStyles.InlineError>}
+        {nameError && <Actions.InlineError>{nameError}</Actions.InlineError>}
       </S.ModalBody>
 
       <S.ModalFooter>
         <S.FooterNote>{t('shortcutModal.footerNote')}</S.FooterNote>
-        <ChatStyles.ActionButton type="button" $variant="secondary" onClick={handleCancel}>
+        <Actions.ActionButton type="button" $variant="secondary" onClick={handleCancel}>
           {t('shortcutModal.cancel')}
-        </ChatStyles.ActionButton>
-        <ChatStyles.ActionButton type="button" $variant="primary" onClick={handleSave}>
+        </Actions.ActionButton>
+        <Actions.ActionButton type="button" $variant="primary" onClick={handleSave}>
           {mode === "create" ? t('shortcutModal.saveCreate') : t('shortcutModal.saveEdit')}
-        </ChatStyles.ActionButton>
+        </Actions.ActionButton>
       </S.ModalFooter>
     </Modal>
   );

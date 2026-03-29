@@ -4,8 +4,8 @@ import { getNavLabel, type NavItem } from "../navigation";
 import { useTheme } from "../../../theme/useTheme";
 import { useTranslation } from "react-i18next";
 import type { ChatSummary } from "../../../services/chats";
-import { Button } from "../../../components/button/button";
-import { ButtonIconWrapper, ButtonTextWrapper } from "../../../components/button/button.styles";
+import { Button } from "../../../shared/ui/button/Button";
+import { ButtonIconWrapper, ButtonTextWrapper } from "../../../shared/ui/button/Button.styles";
 
 import {
   ChatIcon,
@@ -22,7 +22,7 @@ import {
   ShortcutsIcon,
   SideBarIcon,
   SystemModeIcon
-} from "../../../components/icons";
+} from "../../../shared/ui/icons";
 
 interface AppSidebarProps {
   mode: "desktop" | "drawer";

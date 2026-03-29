@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Page, Content } from "./PageLayout.styles";
-import ConfirmModal from "../components/modal/ConfirmModal";
+import ConfirmModal from "../shared/ui/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
-import { Button } from "../components/button/button";
+import { Button } from "../shared/ui/button/Button";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { resetOnboarding } from "../services/onboarding";
