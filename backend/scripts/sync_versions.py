@@ -22,6 +22,7 @@ def sync_pyproject_versions() -> None:
         "backend/apps/api_backend/pyproject.toml",
         "backend/apps/mcp-server/pyproject.toml",
         "backend/apps/stt_server/pyproject.toml",
+        "backend/libs/mensabot-backend-core/pyproject.toml",
         "backend/libs/mensabot-common/pyproject.toml",
         "backend/libs/openmensa/pyproject.toml",
     ]:
