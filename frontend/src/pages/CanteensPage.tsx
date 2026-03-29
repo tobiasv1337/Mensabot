@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Canteen, CanteenSearchResult, PageInfo } from "../services/api";
+import type { CanteenSearchResult, PageInfo } from "../services/api";
 import { getApiClient } from "../services/apiClient";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
 import { openGoogleMaps } from "../services/maps";
@@ -9,18 +10,9 @@ import { useTranslation } from "react-i18next";
 
 const PER_PAGE = 24;
 
-interface CanteensPageProps {
-  onSelectCanteen: (canteen: Canteen) => void;
-  selectedCanteenIds?: number[];
-  isOffline?: boolean;
-}
-
-const CanteensPage: React.FC<CanteensPageProps> = ({
-  onSelectCanteen,
-  selectedCanteenIds = [],
-  isOffline = false,
-}) => {
+const CanteensPage: React.FC = () => {
   const { t } = useTranslation();
+  const { onSelectCanteen, selectedCanteenIds, isOffline } = useAppShellContext();
   const client = useMemo(() => getApiClient(), []);
   const requestId = useRef(0);
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { MensaBotClient } from "../services/api";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import { useTheme } from "styled-components";
 import * as S from "./ProjectFactsPage.styles";
 import heroImageLight from "../assets/ChatPageImageLight.jpeg";
@@ -22,12 +23,9 @@ import { Button } from "../components/button/button";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
-type ProjectFactsPageProps = {
-    isOffline?: boolean;
-};
-
-const ProjectFactsPage: React.FC<ProjectFactsPageProps> = ({ isOffline = false }) => {
+const ProjectFactsPage: React.FC = () => {
     const { t } = useTranslation();
+    const { isOffline } = useAppShellContext();
     const theme = useTheme();
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
 

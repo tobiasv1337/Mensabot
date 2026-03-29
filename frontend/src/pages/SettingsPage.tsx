@@ -3,27 +3,14 @@ import { Page, Content } from "./PageLayout.styles";
 import ConfirmModal from "../components/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
 import { Button } from "../components/button/button";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { resetOnboarding } from "../services/onboarding";
 
-type SettingsPageProps = {
-  onDeleteAllChats: () => void;
-  onResetOnboarding?: () => void;
-  installEntry?: {
-    label: string;
-    description: string;
-    actionLabel: string;
-    onClick: () => void;
-  } | null;
-};
-
-const SettingsPage: React.FC<SettingsPageProps> = ({
-  onDeleteAllChats,
-  onResetOnboarding,
-  installEntry = null,
-}) => {
+const SettingsPage: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { t, i18n } = useTranslation();
+  const { onDeleteAllChats, onResetOnboarding, installEntry } = useAppShellContext();
 
   const handleConfirmDelete = () => {
     setDeleteOpen(false);

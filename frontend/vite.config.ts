@@ -42,6 +42,16 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          maplibre: ['maplibre-gl'],
+          markdown: ['react-markdown', 'remark-gfm', 'rehype-raw', 'rehype-sanitize'],
+        },
+      },
+    },
+  },
   envDir: "../",
   server: {
     proxy: {
