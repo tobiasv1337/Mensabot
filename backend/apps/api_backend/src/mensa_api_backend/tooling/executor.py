@@ -19,11 +19,11 @@ from ..logging import logger
 from ..models import ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import (
     CLARIFICATION_TOOL_NAME,
-    DIET_PREFERENCE_TO_FILTER,
     DIRECTIONS_TOOL_NAME,
     LOCATION_TOOL_NAME,
 )
 from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
+from .filter_policy import ResolvedUserFilters, validate_tool_filters
 
 
 @dataclass
@@ -117,11 +117,14 @@ def _record_tool_error(
     call_id: str | None,
     tool_name: str,
     error: str,
+    payload: Dict[str, Any] | None = None,
 ) -> None:
     tool_trace.ok = False
     tool_trace.error = error
+    if payload is not None:
+        tool_trace.result = payload
     tool_traces.append(tool_trace)
-    _append_tool_message(messages, call_id, tool_name, {"error": error})
+    _append_tool_message(messages, call_id, tool_name, payload or {"error": error})
 
 
 def _patch_invalid_tool_call(messages: List[Dict[str, Any]], call_id: str | None) -> None:
@@ -385,7 +388,7 @@ def _handle_clarification_tool(
     options = args.get("options") if isinstance(args, dict) else None
     if not isinstance(options, list) or len(options) < 1:
         options = []
-        
+
     allow_none_raw = args.get("allow_none", True) if isinstance(args, dict) else True
     if isinstance(allow_none_raw, bool):
         allow_none = allow_none_raw
@@ -393,7 +396,7 @@ def _handle_clarification_tool(
         allow_none = allow_none_raw.strip().lower() not in {"false", "0", "no", "f", "off"}
     else:
         allow_none = True
-        
+
     logger.info("Clarification request tool triggered with prompt: %s, options: %s", prompt_text, options)
     tool_trace.ok = True
     tool_trace.result = {"needs_clarification": True, "prompt": prompt_text, "options": options, "allow_none": allow_none}
@@ -407,35 +410,6 @@ def _handle_clarification_tool(
     )
 
 
-MENU_TOOL_NAMES = frozenset({"get_menu_for_date", "get_menus_batch"})
-
-
-def _apply_filters_to_menu_args(args: dict, user_filters: UserFilters) -> dict:
-    """Override diet_filter, exclude_allergens and price_category in menu tool call arguments based on user filters."""
-    if user_filters.diet:
-        mapped = DIET_PREFERENCE_TO_FILTER.get(user_filters.diet)
-        if mapped:
-            args["diet_filter"] = mapped
-
-    if user_filters.allergens:
-        args["exclude_allergens"] = list(user_filters.allergens)
-
-    if user_filters.price_category:
-        args["price_category"] = user_filters.price_category
-
-    return args
-
-
-def _apply_filters_to_batch_args(args: dict, user_filters: UserFilters) -> dict:
-    """Override diet_filter and exclude_allergens in each request of a get_menus_batch call."""
-    requests = args.get("requests")
-    if isinstance(requests, list):
-        for req in requests:
-            if isinstance(req, dict):
-                _apply_filters_to_menu_args(req, user_filters)
-    return args
-
-
 async def _handle_mcp_tool(
     *,
     tool_name: str,
@@ -446,8 +420,6 @@ async def _handle_mcp_tool(
     call_id: str | None,
     iteration: int,
     progress_sink: ChatProgressSink,
-    user_filters: UserFilters | None = None,
-    lang: str = DEFAULT_LANGUAGE,
 ) -> None:
     if args is None:
         args = {}
@@ -462,13 +434,6 @@ async def _handle_mcp_tool(
             error="Tool arguments must be a JSON object",
         )
         return
-
-    if user_filters and tool_name in MENU_TOOL_NAMES:
-        if tool_name == "get_menus_batch":
-            args = _apply_filters_to_batch_args(args, user_filters)
-        else:
-            args = _apply_filters_to_menu_args(args, user_filters)
-        tool_trace.args = args
 
     result_payload = await await_with_heartbeat(
         call_mcp_tool(tool_name, args),
@@ -501,6 +466,7 @@ async def handle_tool_calls(
     progress_sink: ChatProgressSink | None = None,
 ) -> ChatResponse | None:
     sink = progress_sink or NoOpChatProgressSink()
+    resolved_filters = ResolvedUserFilters.from_user_filters(user_filters)
 
     for ordinal, call in enumerate(tool_calls, start=1):
         parsed = _parse_tool_call(call)
@@ -525,6 +491,23 @@ async def handle_tool_calls(
             continue
 
         tool_trace.args = args
+        policy_error = validate_tool_filters(tool_name=parsed.tool_name, args=args, resolved_filters=resolved_filters)
+        if policy_error is not None:
+            _record_tool_error(
+                tool_trace=tool_trace,
+                tool_traces=tool_traces,
+                messages=messages,
+                call_id=parsed.call_id,
+                tool_name=parsed.tool_name,
+                error=str(policy_error.get("error") or "Active UI filters blocked this tool call."),
+                payload=policy_error,
+            )
+            await sink.emit_tool_trace(
+                trace_id=trace_id,
+                state="error",
+                trace=tool_trace.model_copy(deep=True),
+            )
+            continue
         await sink.emit_tool_trace(
             trace_id=trace_id,
             state="started",
@@ -596,8 +579,6 @@ async def handle_tool_calls(
             call_id=parsed.call_id,
             iteration=iteration,
             progress_sink=sink,
-            user_filters=user_filters,
-            lang=language,
         )
         await sink.emit_tool_trace(
             trace_id=trace_id,
