@@ -15,8 +15,8 @@ class CanteenFilter(BaseModel):
 
 class UserFilters(BaseModel):
     diet: Literal["vegetarian", "vegan", "meat"] | None = None
-    allergens: list[str] = []
-    canteens: list[CanteenFilter] = []
+    allergens: list[str] = Field(default_factory=list)
+    canteens: list[CanteenFilter] = Field(default_factory=list)
     price_category: Literal["students", "employees", "pupils", "others"] | None = None
 
 
