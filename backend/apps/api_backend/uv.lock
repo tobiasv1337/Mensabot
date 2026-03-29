@@ -866,6 +866,7 @@ dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
     { name = "mensa-mcp-server" },
+    { name = "mensabot-backend-core" },
     { name = "openai" },
     { name = "uvicorn" },
 ]
@@ -877,6 +878,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.14.4" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mensa-mcp-server", editable = "../mcp-server" },
+    { name = "mensabot-backend-core", editable = "../../libs/mensabot-backend-core" },
     { name = "openai", specifier = ">=2.16.0" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
@@ -889,6 +891,7 @@ dependencies = [
     { name = "anyio" },
     { name = "fastmcp" },
     { name = "httpx" },
+    { name = "mensabot-backend-core" },
     { name = "mensabot-common" },
     { name = "openmensa-sdk" },
     { name = "pydantic" },
@@ -899,9 +902,33 @@ requires-dist = [
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "fastmcp", specifier = ">=2.14.4" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mensabot-backend-core", editable = "../../libs/mensabot-backend-core" },
     { name = "mensabot-common", editable = "../../libs/mensabot-common" },
     { name = "openmensa-sdk", editable = "../../libs/openmensa" },
     { name = "pydantic", specifier = ">=2.12.5" },
+]
+
+[[package]]
+name = "mensabot-backend-core"
+version = "1.0.1"
+source = { editable = "../../libs/mensabot-backend-core" }
+dependencies = [
+    { name = "anyio" },
+    { name = "httpx" },
+    { name = "mensabot-common" },
+    { name = "openmensa-sdk" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anyio", specifier = ">=4.12.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mensabot-common", editable = "../../libs/mensabot-common" },
+    { name = "openmensa-sdk", editable = "../../libs/openmensa" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pydantic-settings", specifier = ">=2.10.1" },
 ]
 
 [[package]]
