@@ -1,5 +1,5 @@
 import React from "react";
-import Chat from "../components/chat/Chat";
+import ChatView from "../features/chat/components/ChatView";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 
 const ChatPage: React.FC = () => {
@@ -20,7 +20,7 @@ const ChatPage: React.FC = () => {
   } = useAppShellContext();
 
   return (
-    <Chat
+    <ChatView
       chat={chat}
       filters={filters}
       chatMode={chatMode}

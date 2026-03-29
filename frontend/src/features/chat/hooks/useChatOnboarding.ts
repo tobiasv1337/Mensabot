@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference, type PriceCategory } from "../../services/chats";
-import { isOnboardingCompleted, markOnboardingCompleted } from "../../services/onboarding";
-import { DIET_OPTIONS, ALLERGENS, PRICE_CATEGORY_OPTIONS } from "./filterData";
-import type { MessageAction } from "./ChatBubble";
+import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference, type PriceCategory } from "../../../services/chats";
+import { isOnboardingCompleted, markOnboardingCompleted } from "../../../services/onboarding";
+import { DIET_OPTIONS, ALLERGENS, PRICE_CATEGORY_OPTIONS } from "../../../components/chat/filterData";
+import type { MessageAction } from "../../../components/chat/ChatBubble";
 
 type OnboardingStep =
 	| "idle"
@@ -40,7 +40,7 @@ const createInitialOnboardingState = (): OnboardingState => ({
 	selectedAllergens: [],
 });
 
-export function useOnboarding(
+export function useChatOnboarding(
 	chat: ChatModel,
 	onFiltersChange: (filters: ChatFilters) => void,
 	onMessagesChanged: () => void,
