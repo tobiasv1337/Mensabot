@@ -8,14 +8,9 @@ const Wrapper = styled.div`
   color: ${({ theme }) => theme.textMuted};
 `;
 
-
 const AiWarningText: React.FC = () => {
   const { t } = useTranslation();
-  return (
-    <Wrapper>
-      {t("chat.aiWarning")}
-    </Wrapper>
-  )
-}
+  return <Wrapper>{t("chat.aiWarning")}</Wrapper>;
+};
 
 export default AiWarningText;

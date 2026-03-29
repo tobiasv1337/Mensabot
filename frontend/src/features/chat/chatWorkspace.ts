@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react";
 import type { Canteen } from "@/shared/api/MensaBotClient";
 import type { ChatMode } from "./model/chatMode";
-import type { Chat, ChatFilters, ChatSummary } from "./model/chats";
+import type { Chat } from "./model/chatStore";
+import type { ChatFilters, ChatSummary } from "./model/chatTypes";
 
 export type ChatWorkspaceContextValue = {
   activeChatId: string;

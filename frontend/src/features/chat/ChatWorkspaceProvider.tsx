@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Canteen } from "@/shared/api/MensaBotClient";
 import { type ChatMode, loadChatMode, saveChatMode } from "./model/chatMode";
-import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "./model/chats";
-import { ChatWorkspaceContext } from "./useChatWorkspace";
+import { Chats, Chat as ChatModel, type Chat as ChatSession } from "./model/chatStore";
+import type { ChatFilters } from "./model/chatTypes";
+import { defaultChatFilters } from "./model/chatTypes";
+import { ChatWorkspaceContext } from "./chatWorkspace";
 
 const CHAT_PAGE_SIZE = 10;
 

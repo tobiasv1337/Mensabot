@@ -1,21 +1,22 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { Canteen } from "@/shared/api/MensaBotClient";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters } from "../model/chats";
-import type { ChatMode } from "../model/chatMode";
 import type { Shortcut, ShortcutInput } from "@/features/shortcuts/model/shortcuts";
+import { ChatMessage, type Chat as ChatModel } from "../model/chatStore";
+import type { ChatMode } from "../model/chatMode";
+import type { ChatFilters } from "../model/chatTypes";
 import ChatBubble, { type MessageAction } from "./ChatBubble";
 import ChatStreamingBubble from "./ChatStreamingBubble";
 import ChatInput from "./ChatInput";
 import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
-import AiWarningText from "./AiWarning/AiWarningText";
+import AiWarningText from "./AiWarningText";
 import ShortcutModal from "@/features/shortcuts/components/ShortcutModal";
 import mensabotLogo from "@/assets/mensabot-logo-gradient-round.svg";
-import * as S from "./ChatView.styles";
 import { useChatController } from "../hooks/useChatController";
 import { useChatOnboarding } from "../hooks/useChatOnboarding";
 import { useChatScrollState } from "../hooks/useChatScrollState";
+import * as S from "./ChatView.styles";
 
 type ChatViewProps = {
   chat: ChatModel;
