@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import App from './app/App.tsx'
 import { ThemeProvider } from './shared/theme/themeProvider.tsx'
 import './app/i18n';
