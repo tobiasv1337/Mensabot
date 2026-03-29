@@ -6,12 +6,7 @@ import { Page, Content } from "./PageLayout.styles";
 import CanteenMap from "../components/map/CanteenMap";
 import * as S from "./MapPage.styles";
 import { useTranslation } from "react-i18next";
-
-const getStyleUrl = (options: { darkMode: boolean }) => {
-  const light = import.meta.env.VITE_MAPTILER_STYLE_URL_LIGHT ?? "";
-  const dark = import.meta.env.VITE_MAPTILER_STYLE_URL_DARK ?? "";
-  return options.darkMode ? dark : light;
-};
+import { getMapStyleConfig } from "../features/map/mapConfig";
 
 const MapPage: React.FC = () => {
   const { darkMode } = useTheme();
@@ -19,10 +14,10 @@ const MapPage: React.FC = () => {
   const { onSelectCanteen, selectedCanteenIds, isOffline } = useAppShellContext();
   const [query, setQuery] = useState("");
 
-  const styleUrl = useMemo(() => getStyleUrl({ darkMode }), [darkMode]);
-  const missingLight = !(import.meta.env.VITE_MAPTILER_STYLE_URL_LIGHT ?? "").trim();
-  const missingDark = !(import.meta.env.VITE_MAPTILER_STYLE_URL_DARK ?? "").trim();
-  const missingConfig = missingLight || missingDark;
+  const { styleUrl, missingLight, missingDark, missingConfig } = useMemo(
+    () => getMapStyleConfig(darkMode),
+    [darkMode],
+  );
 
   return (
     <Page>
