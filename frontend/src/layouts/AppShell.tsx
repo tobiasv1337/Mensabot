@@ -3,15 +3,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import { NAV_ROUTES, navItemFromPath, type NavItem } from "../types/navigation";
-import * as S from "./Chatpage.styles";
+import * as S from "./AppShell.styles";
 import Chat from "../components/chat/Chat.tsx";
-import CanteensPage from "./CanteensPage";
-import ShortcutsPage from "./ShortcutsPage";
-import ProjectFactsPage from "./ProjectFactsPage";
-import SettingsPage from "./SettingsPage";
-import MapPage from "./MapPage";
-import ContactPage from "./ContactPage";
-import LandingPage from "./LandingPage";
+import CanteensPage from "../pages/CanteensPage";
+import ShortcutsPage from "../pages/ShortcutsPage";
+import ProjectFactsPage from "../pages/ProjectFactsPage";
+import SettingsPage from "../pages/SettingsPage";
+import MapPage from "../pages/MapPage";
+import LegalNoticePage from "../pages/LegalNoticePage";
+import HomePage from "../pages/HomePage";
 import type { Canteen } from "../services/api";
 import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
 import { useOnlineStatus } from "../services/networkStatus";
@@ -34,7 +34,7 @@ const resolveInitialChatId = () => {
   return null;
 };
 
-const ChatPage: React.FC = () => {
+const AppShell: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -306,7 +306,7 @@ const ChatPage: React.FC = () => {
               ) : activeNav === "ProjectFacts" ? (
                 <ProjectFactsPage isOffline={isOffline} />
               ) : activeNav === "LegalNotice" ? (
-                <ContactPage />
+                <LegalNoticePage />
               ) : activeNav === "Shortcuts" ? (
                 <ShortcutsPage
                   shortcuts={shortcuts}
@@ -331,7 +331,7 @@ const ChatPage: React.FC = () => {
                   selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
                 />
               ) : activeNav === "Home" ? (
-                <LandingPage onStartChat={() => startNewChat()} />
+                <HomePage onStartChat={() => startNewChat()} />
               ) : (
                 <Chat
                   chat={chat}
@@ -379,4 +379,4 @@ const ChatPage: React.FC = () => {
   );
 };
 
-export default ChatPage;
+export default AppShell;

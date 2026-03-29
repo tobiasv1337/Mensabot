@@ -1,12 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import * as S from './ContactPage.styles';
+import * as S from './LegalNoticePage.styles';
 import * as P from '../components/page/PageHero.styles';
 import { Button } from '../components/button/button';
 import { MailIcon, GitHubIcon } from "../components/icons";
 import { TuLogo, QualityAndUsabilityLogo } from "../components/iconsLogos";
 
-const ContactPage: React.FC = () => {
+const LegalNoticePage: React.FC = () => {
     const { t } = useTranslation();
 
     return (
@@ -68,4 +68,4 @@ const ContactPage: React.FC = () => {
     );
 };
 
-export default ContactPage;
+export default LegalNoticePage;
