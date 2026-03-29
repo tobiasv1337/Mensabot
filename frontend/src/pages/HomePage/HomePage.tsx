@@ -1,9 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import mensaLogo from "../assets/mensabot-logo-gradient.svg";
-import { useAppShellContext } from "../layouts/useAppShellContext";
+import mensaLogo from "@/assets/mensabot-logo-gradient.svg";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
 import * as S from "./HomePage.styles";
-import { ChatIcon, MensenIcon, ShortcutsIcon } from "../shared/ui/icons";
+import { ChatIcon, MensenIcon, ShortcutsIcon } from "@/shared/ui/icons";
 
 const HomePage: React.FC = () => {
   const { t } = useTranslation();

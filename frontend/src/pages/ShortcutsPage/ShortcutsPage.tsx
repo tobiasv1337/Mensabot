@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getApiClient } from "@/shared/api/getApiClient";
-import type { Shortcut, ShortcutInput } from "../services/shortcuts";
-import { useAppShellContext } from "../layouts/useAppShellContext";
-import { defaultChatFilters } from "../services/chats";
-import ShortcutModal from "../components/shortcuts/ShortcutModal";
-import ConfirmModal from "../shared/ui/modal/ConfirmModal";
-import { DIET_OPTIONS, getAllergenLabel } from "../components/chat/filterData";
+import type { Shortcut, ShortcutInput } from "@/services/shortcuts";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
+import { defaultChatFilters } from "@/services/chats";
+import ShortcutModal from "@/components/shortcuts/ShortcutModal";
+import ConfirmModal from "@/shared/ui/modal/ConfirmModal";
+import { DIET_OPTIONS, getAllergenLabel } from "@/components/chat/filterData";
 import * as S from "./ShortcutsPage.styles";
 import { useTranslation } from "react-i18next";
 

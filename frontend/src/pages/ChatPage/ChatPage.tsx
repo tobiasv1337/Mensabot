@@ -1,6 +1,6 @@
 import React from "react";
-import ChatView from "../features/chat/components/ChatView";
-import { useAppShellContext } from "../layouts/useAppShellContext";
+import ChatView from "@/features/chat/components/ChatView";
+import { useAppShellContext } from "@/layouts/useAppShellContext";
 
 const ChatPage: React.FC = () => {
   const {
