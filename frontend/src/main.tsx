@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
-import App from './App.tsx'
+import App from './app/App.tsx'
 import { ThemeProvider } from './theme/themeProvider.tsx'
-import './i18n';
+import './app/i18n';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
