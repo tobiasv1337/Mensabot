@@ -1,38 +1,44 @@
-import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppHeader from "../features/shell/components/AppHeader";
 import AppSidebar from "../features/shell/components/AppSidebar";
 import { NAV_ROUTES, navItemFromPath, type NavItem } from "../features/shell/navigation";
 import * as S from "./AppShell.styles";
 import type { Canteen } from "../services/api";
-import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
 import { useOnlineStatus } from "../services/networkStatus";
 import { useShortcuts } from "../services/shortcuts";
-import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../services/chats";
 import { useTranslation } from "react-i18next";
 import { useInstallPromotion } from "../services/installPromotion";
 import InstallPromptCard from "../components/install/InstallPromptCard";
 import InstallInstructionsModal from "../components/install/InstallInstructionsModal";
 import { getInstallEntryCopy, getInstallPromptCopy } from "../components/install/installCopy";
 import type { AppShellContextValue } from "./useAppShellContext";
+import { ChatWorkspaceProvider } from "../features/chat/ChatWorkspaceProvider";
+import { useChatWorkspace } from "../features/chat/useChatWorkspace";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
-const CHAT_PAGE_SIZE = 10;
-
-const resolveInitialChatId = () => {
-  const activeId = Chats.getActiveId();
-  if (activeId && Chats.exists(activeId)) return activeId;
-  const recent = Chats.listPage(0, 1)[0]?.id;
-  if (recent) return recent;
-  return null;
-};
-
-const AppShell: React.FC = () => {
+const AppShellContent: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const isOffline = !isOnline;
+  const {
+    activeChatId,
+    chat,
+    filters,
+    menuCanteen,
+    chatMode,
+    recentChats,
+    hasMoreChats,
+    loadMoreChats,
+    setChatMode,
+    updateChatFilters,
+    startNewChat,
+    selectChat,
+    resetActiveChat,
+    deleteAllChats,
+  } = useChatWorkspace();
 
   const activeNav = navItemFromPath(location.pathname) ?? "Home";
   const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
@@ -47,21 +53,6 @@ const AppShell: React.FC = () => {
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
   const [chatComposerHeight, setChatComposerHeight] = useState(0);
   const isChatView = activeNav === "ChatBot";
-
-  const [activeChatId, setActiveChatId] = useState<string>(() => resolveInitialChatId() ?? "init_pending");
-
-  const [chat, setChat] = useState<ChatSession>(() => {
-    if (activeChatId === "init_pending") {
-      return new ChatModel("init_pending", [], defaultChatFilters);
-    }
-    return Chats.getById(activeChatId, true)!;
-  });
-
-  const [filters, setFilters] = useState<ChatFilters>(() => chat.filters ?? defaultChatFilters);
-  const [menuCanteen, setMenuCanteen] = useState<Canteen | null>(null);
-  const [chatMode, setChatMode] = useState<ChatMode>(() => loadChatMode());
-
-  const [chatPages, setChatPages] = useState(1);
 
   const { shortcuts, addShortcut, updateShortcut, deleteShortcut } = useShortcuts();
   const {
@@ -120,111 +111,54 @@ const AppShell: React.FC = () => {
     showPrompt,
   ]);
 
-
-  useSyncExternalStore(Chats.subscribe, Chats.getVersion, Chats.getVersion);
-
-  const recentChats = Chats.listPage(0, chatPages * CHAT_PAGE_SIZE);
-  const hasMoreChats = Chats.listPage(recentChats.length, 1).length > 0;
-
-  const activateChat = useCallback((id: string, options?: { menuCanteen?: Canteen | null }) => {
-    const nextChat = Chats.getById(id, true)!;
-    setActiveChatId(id);
-    setChat(nextChat);
-    setFilters(nextChat.filters ?? defaultChatFilters);
-    setMenuCanteen(options?.menuCanteen ?? null);
-  }, []);
-
-  // Handle lazy creation of the initial chat to avoid side-effects in render
-  const initDoneRef = useRef(false);
-  useEffect(() => {
-    if (activeChatId === "init_pending" && !initDoneRef.current) {
-      initDoneRef.current = true;
-      const fresh = Chats.create();
-      queueMicrotask(() => activateChat(fresh.id));
-    }
-  }, [activeChatId, activateChat]);
-
-  useEffect(() => {
-    Chats.setActiveId(activeChatId);
-  }, [chat, activeChatId]);
-
-  useEffect(() => { saveChatMode(chatMode); }, [chatMode]);
-
-
-  const updateChatFilters = useCallback(
-    (next: ChatFilters) => {
-      chat.setFilters(next);
-      setFilters(next);
-    },
-    [chat]
-  );
-
-  const loadMoreChats = useCallback(() => {
-    if (!hasMoreChats) return;
-    setChatPages((prev) => prev + 1);
-  }, [hasMoreChats]);
-
-  const startNewChat = useCallback(
+  const handleStartNewChat = useCallback(
     (options?: { preselectedCanteen?: Canteen | null }) => {
-      const baseFilters = filters ?? defaultChatFilters;
-      const nextFilters: ChatFilters = {
-        ...baseFilters,
-        canteens: options?.preselectedCanteen
-          ? [options.preselectedCanteen]
-          : baseFilters.canteens ?? [],
-      };
-      const targetChat = (chat.hasUserMessage || chat.id === "init_pending") ? Chats.create() : chat;
-      targetChat.setFilters(nextFilters);
-      activateChat(targetChat.id, { menuCanteen: options?.preselectedCanteen ?? null });
+      startNewChat(options);
       navigate(NAV_ROUTES.ChatBot);
     },
-    [filters, chat, activateChat, navigate]
+    [navigate, startNewChat],
   );
 
   const handleDeleteAllChats = useCallback(() => {
-    Chats.deleteAll();
-    const fresh = Chats.create();
-    setChatPages(1);
-    activateChat(fresh.id);
+    deleteAllChats();
     navigate(NAV_ROUTES.ChatBot);
     setDrawerOpen(false);
-  }, [activateChat, navigate]);
+  }, [deleteAllChats, navigate]);
 
   const handleSelectChat = useCallback(
     (id: string) => {
-      activateChat(id);
+      selectChat(id);
       setActiveNav("ChatBot");
       setDrawerOpen(false);
     },
-    [activateChat, setActiveNav]
+    [selectChat, setActiveNav],
   );
 
   const handleSelectCanteen = useCallback(
     (canteen: Canteen) => {
-      startNewChat({ preselectedCanteen: canteen });
+      handleStartNewChat({ preselectedCanteen: canteen });
       setDrawerOpen(false);
     },
-    [startNewChat]
+    [handleStartNewChat],
   );
 
   const handleSidebarNavClick = useCallback(
     (target: NavItem) => {
       if (target === "ChatBot") {
-        startNewChat();
+        handleStartNewChat();
         setDrawerOpen(false);
         return;
       }
 
       setActiveNav(target);
     },
-    [startNewChat, setActiveNav]
+    [handleStartNewChat, setActiveNav],
   );
 
   const handleResetOnboarding = useCallback(() => {
-    const fresh = Chats.create();
-    activateChat(fresh.id);
+    resetActiveChat();
     navigate(NAV_ROUTES.ChatBot);
-  }, [activateChat, navigate]);
+  }, [navigate, resetActiveChat]);
 
   const proactiveInstallPrompt = installPromotionState.promptVisible && installPromptCopy ? (
     <InstallPromptCard
@@ -261,7 +195,7 @@ const AppShell: React.FC = () => {
     shortcuts,
     installEntry: persistentInstallEntry,
     onSelectCanteen: handleSelectCanteen,
-    onStartNewChat: startNewChat,
+    onStartNewChat: handleStartNewChat,
     onCreateShortcut: addShortcut,
     onUpdateShortcut: updateShortcut,
     onDeleteShortcut: deleteShortcut,
@@ -298,7 +232,7 @@ const AppShell: React.FC = () => {
               chats={recentChats}
               activeChatId={activeChatId}
               onSelectChat={handleSelectChat}
-              onNewChat={startNewChat}
+              onNewChat={handleStartNewChat}
               onLoadMoreChats={loadMoreChats}
               hasMoreChats={hasMoreChats}
               installEntry={persistentInstallEntry}
@@ -332,7 +266,7 @@ const AppShell: React.FC = () => {
           chats={recentChats}
           activeChatId={activeChatId}
           onSelectChat={handleSelectChat}
-          onNewChat={startNewChat}
+          onNewChat={handleStartNewChat}
           onLoadMoreChats={loadMoreChats}
           hasMoreChats={hasMoreChats}
           installEntry={persistentInstallEntry}
@@ -346,5 +280,11 @@ const AppShell: React.FC = () => {
     </S.PageRoot>
   );
 };
+
+const AppShell: React.FC = () => (
+  <ChatWorkspaceProvider>
+    <AppShellContent />
+  </ChatWorkspaceProvider>
+);
 
 export default AppShell;
