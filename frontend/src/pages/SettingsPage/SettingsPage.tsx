@@ -3,7 +3,7 @@ import { Page, Content } from "@/shared/ui/page/PageLayout.styles";
 import ConfirmModal from "@/shared/ui/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
 import { Button } from "@/shared/ui/button/Button";
-import { useAppShellContext } from "@/layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { resetOnboarding } from "@/features/chat/model/onboarding";
 

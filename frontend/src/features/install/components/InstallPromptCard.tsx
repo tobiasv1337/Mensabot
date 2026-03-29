@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "../../shared/ui/button/Button";
-import { InstallIcon } from "../../shared/ui/icons";
+import { Button } from "@/shared/ui/button/Button";
+import { InstallIcon } from "@/shared/ui/icons";
 import * as S from "./installPrompt.styles";
 
 type InstallPromptCardProps = {

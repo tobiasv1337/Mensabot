@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from "react";
 import type { MensaBotClient } from "@/shared/api/MensaBotClient";
 import type { ChatFilters } from "@/features/chat/model/chats";
-import type { ShortcutInput } from "@/services/shortcuts";
+import type { ShortcutInput } from "@/features/shortcuts/model/shortcuts";
 import FiltersEditor from "@/features/chat/components/FiltersEditor";
 import { normalizeAllergenList } from "@/features/chat/model/filterData";
 import * as Actions from "@/shared/ui/modal/ModalAction.styles";

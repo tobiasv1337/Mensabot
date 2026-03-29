@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getApiClient } from "@/shared/api/getApiClient";
-import type { Shortcut, ShortcutInput } from "@/services/shortcuts";
-import { useAppShellContext } from "@/layouts/useAppShellContext";
+import type { Shortcut, ShortcutInput } from "@/features/shortcuts/model/shortcuts";
+import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { defaultChatFilters } from "@/features/chat/model/chats";
-import ShortcutModal from "@/components/shortcuts/ShortcutModal";
+import ShortcutModal from "@/features/shortcuts/components/ShortcutModal";
 import ConfirmModal from "@/shared/ui/modal/ConfirmModal";
 import { DIET_OPTIONS, getAllergenLabel } from "@/features/chat/model/filterData";
 import * as S from "./ShortcutsPage.styles";

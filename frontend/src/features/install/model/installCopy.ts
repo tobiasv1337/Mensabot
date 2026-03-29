@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { InstallCapability } from "../../services/installPromotion";
+import type { InstallCapability } from "./useInstallPromotion";
 
 type InstallPromptCopy = {
   title: string;

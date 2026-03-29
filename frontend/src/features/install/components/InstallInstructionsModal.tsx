@@ -1,10 +1,10 @@
 import React from "react";
-import Modal from "../../shared/ui/modal/Modal";
-import { Button } from "../../shared/ui/button/Button";
-import { getInstallInstructionsCopy } from "./installCopy";
-import * as M from "../../shared/ui/modal/Modal.styles";
+import Modal from "@/shared/ui/modal/Modal";
+import { Button } from "@/shared/ui/button/Button";
+import { getInstallInstructionsCopy } from "../model/installCopy";
+import * as M from "@/shared/ui/modal/Modal.styles";
 import * as S from "./installPrompt.styles";
-import type { InstallCapability } from "../../services/installPromotion";
+import type { InstallCapability } from "../model/useInstallPromotion";
 import { useTranslation } from "react-i18next";
 
 type InstallInstructionsModalProps = {
