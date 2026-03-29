@@ -1,7 +1,7 @@
 // The logic and JSX of the component
 import React, { forwardRef } from 'react';
-import type { ButtonProps } from './button.types';
-import { StyledButton, ButtonTextWrapper, ButtonIconWrapper } from './button.styles';
+import type { ButtonProps } from './Button.types';
+import { StyledButton, ButtonTextWrapper, ButtonIconWrapper } from './Button.styles';
 
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(

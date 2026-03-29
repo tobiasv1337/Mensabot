@@ -1,6 +1,6 @@
 // The styled components for the Button component
-import type { Theme } from "../../theme/colors.ts";
-import type { ButtonProps } from "./button.types.ts";
+import type { Theme } from "../../../theme/colors.ts";
+import type { ButtonProps } from "./Button.types.ts";
 import styled, { css } from 'styled-components';
 
 interface StyledButtonProps {

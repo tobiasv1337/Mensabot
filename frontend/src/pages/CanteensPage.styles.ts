@@ -1,6 +1,6 @@
 import styled, { keyframes } from "styled-components";
-export { HeroCard, HeroEyebrow, HeroTitle, HeroSubtitle } from "../components/page/PageHero.styles";
-export { SearchCard, SearchRow, SearchInput, SearchActions, ClearButton, SearchMeta, MetaPill } from "../components/page/PageSearch.styles";
+export { HeroCard, HeroEyebrow, HeroTitle, HeroSubtitle } from "../shared/ui/page/PageHero.styles";
+export { SearchCard, SearchRow, SearchInput, SearchActions, ClearButton, SearchMeta, MetaPill } from "../shared/ui/page/PageSearch.styles";
 
 const fadeUp = keyframes`
   from {

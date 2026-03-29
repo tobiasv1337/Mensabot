@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import * as S from "./modal.styles";
+import * as S from "./Modal.styles";
 
 type ModalProps = {
   isOpen: boolean;

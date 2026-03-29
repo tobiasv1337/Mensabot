@@ -1,7 +1,7 @@
 import React from "react";
 import Modal from "./Modal";
-import * as S from "./modal.styles";
-import * as ChatStyles from "../chat/chat.styles";
+import * as S from "./Modal.styles";
+import * as Actions from "./ModalAction.styles";
 
 type ConfirmModalProps = {
   isOpen: boolean;
@@ -58,7 +58,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
       <S.ModalFooter>
         {note && <S.FooterNote>{note}</S.FooterNote>}
-        <ChatStyles.ActionButton
+        <Actions.ActionButton
           type="button"
           $variant="secondary"
           onClick={onCancel}
@@ -66,15 +66,15 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           ref={cancelButtonRef}
         >
           {cancelLabel}
-        </ChatStyles.ActionButton>
-        <ChatStyles.ActionButton
+        </Actions.ActionButton>
+        <Actions.ActionButton
           type="button"
           $variant="primary"
           onClick={onConfirm}
           disabled={confirmDisabled}
         >
           {confirmLabel}
-        </ChatStyles.ActionButton>
+        </Actions.ActionButton>
       </S.ModalFooter>
     </Modal>
   );

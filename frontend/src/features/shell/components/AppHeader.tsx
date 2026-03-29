@@ -1,7 +1,7 @@
 import React from "react";
 import * as S from "./AppHeader.styles";
 import mensaLogo from "../../../assets/mensabot-logo-gradient.svg";
-import { Button } from "../../../components/button/button";
+import { Button } from "../../../shared/ui/button/Button";
 import { getNavLabel, NAV_ROUTES, type NavItem } from "../navigation";
 import { useTranslation } from "react-i18next";
 
