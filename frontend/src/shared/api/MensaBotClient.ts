@@ -2,9 +2,9 @@
  * @file
  * This is the API client for `/backend/apps/api_backend/src/mensa_api_backend`.
  * You can work with it directly although it is advised to work with the
- * storage-integrated higher-level classes from `@/features/chat/model/chats.ts`.
+ * storage-integrated higher-level chat classes from `@/features/chat/model/chatStore.ts`.
  * 
- * With `chats.ts`, sending a message would look like the following:
+ * With `Chat` and `Chats`, sending a message would look like the following:
  * ```tsx
  * const chat = Chats.getById("my-chat");
  * const response = await chat.send(client, "Hello");
@@ -17,7 +17,7 @@
 
 import i18n from "@/app/i18n";
 import { streamChatResponse, type ChatStreamEvent } from "@/features/chat/model/chatStream";
-import type { ChatFilters, ChatMessage } from "@/features/chat/model/chats";
+import type { ChatFilters, ChatRequestMessage } from "@/features/chat/model/chatTypes";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -147,7 +147,7 @@ export class MensaBotClient {
 		this.baseUrl = baseUrl;
 	}
 
-	private buildChatRequestBody(messages: ChatMessage[], options: SendMessagesOptions): Record<string, unknown> {
+	private buildChatRequestBody(messages: ChatRequestMessage[], options: SendMessagesOptions): Record<string, unknown> {
 		const payload = messages.map((message) => ({ role: message.role, content: message.content }));
 
 		const filters = options.filters;
@@ -250,7 +250,7 @@ export class MensaBotClient {
 		return this.normalizeChatApiResponse(response);
 	}
 
-	async sendMessages(messages: ChatMessage[], options: SendMessagesOptions = {}): Promise<ChatApiResponse> {
+	async sendMessages(messages: ChatRequestMessage[], options: SendMessagesOptions = {}): Promise<ChatApiResponse> {
 		const body = this.buildChatRequestBody(messages, options);
 		if (typeof WebSocket === "undefined") {
 			return await this.sendMessagesRest(body);

@@ -14,7 +14,7 @@ import InstallInstructionsModal from "@/features/install/components/InstallInstr
 import { getInstallEntryCopy, getInstallPromptCopy } from "@/features/install/model/installCopy";
 import type { AppShellContextValue } from "./useAppShellContext";
 import { ChatWorkspaceProvider } from "@/features/chat/ChatWorkspaceProvider";
-import { useChatWorkspace } from "@/features/chat/useChatWorkspace";
+import { useChatWorkspace } from "@/features/chat/chatWorkspace";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const AppShellContent: React.FC = () => {

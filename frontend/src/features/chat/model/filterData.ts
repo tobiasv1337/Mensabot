@@ -1,5 +1,5 @@
 import i18n from "@/app/i18n";
-import type { ChatFilters, PriceCategory } from "./chats";
+import type { ChatFilters, PriceCategory } from "./chatTypes";
 import vegetarianIcon from "@/assets/vegetarian.svg";
 import veganIcon from "@/assets/vegan.svg";
 import meatIcon from "@/assets/meat.svg";

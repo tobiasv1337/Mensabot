@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { MensaBotClient, type Canteen } from "@/shared/api/MensaBotClient";
-import type { ChatFilters } from "../model/chats";
+import type { ChatFilters } from "../model/chatTypes";
 import ScrollablePillRow from "./ScrollablePillRow";
 import CanteenSelector from "./CanteenSelector";
 import { ALLERGENS, DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel } from "../model/filterData";

@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import type { MensaBotClient } from "@/shared/api/MensaBotClient";
-import type { ChatFilters } from "@/features/chat/model/chats";
+import type { ChatFilters } from "@/features/chat/model/chatTypes";
 import type { ShortcutInput } from "@/features/shortcuts/model/shortcuts";
 import FiltersEditor from "@/features/chat/components/FiltersEditor";
 import { normalizeAllergenList } from "@/features/chat/model/filterData";

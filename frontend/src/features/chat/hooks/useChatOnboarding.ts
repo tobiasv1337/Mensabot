@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters, type DietPreference, type PriceCategory } from "../model/chats";
+import { ChatMessage, type Chat as ChatModel } from "../model/chatStore";
+import type { ChatFilters, DietPreference, PriceCategory } from "../model/chatTypes";
 import { isOnboardingCompleted, markOnboardingCompleted } from "../model/onboarding";
 import { DIET_OPTIONS, ALLERGENS, PRICE_CATEGORY_OPTIONS } from "../model/filterData";
 import type { MessageAction } from "../components/ChatBubble";

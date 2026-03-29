@@ -1,17 +1,7 @@
-import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "@/shared/api/MensaBotClient";
+import { MensaBotClient, type ChatApiResponse } from "@/shared/api/MensaBotClient";
 import type { ChatStreamEvent } from "./chatStream";
-
-type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";
-
-type DirectionsMeta = {
-	lat?: number;
-	lng?: number;
-};
-
-type ClarificationMeta = {
-	options: string[];
-	allow_none?: boolean;
-};
+import type { ChatFilters, ChatMessageData, ChatSummary } from "./chatTypes";
+import { defaultChatFilters } from "./chatTypes";
 
 const CHAT_STORAGE_PREFIX = "chat-";
 const CHAT_INDEX_KEY = "mensabot-chats-index";
@@ -22,47 +12,10 @@ const TITLE_MAX_WORDS = 6;
 const TITLE_MAX_CHARS = 42;
 const PREVIEW_MAX_CHARS = 80;
 
-export type ChatMessageData = {
-	role: "user" | "assistant";
-	content: string;
-	meta: {
-		kind: MessageKind;
-		toolCalls?: ToolCallTrace[];
-		directions?: DirectionsMeta;
-		clarification?: ClarificationMeta;
-	};
-};
-
-export type DietPreference = "vegetarian" | "vegan" | "meat" | null;
-
-export type PriceCategory = "students" | "employees" | "pupils" | "others" | null;
-
-export type ChatFilters = {
-	diet: DietPreference;
-	allergens: string[];
-	canteens: Canteen[];
-	priceCategory: PriceCategory;
-};
-
-export type ChatSummary = {
-	id: string;
-	title: string;
-	createdAt: number;
-	updatedAt: number;
-	preview?: string;
-};
-
 type ChatIndex = {
 	version: 1;
 	order: string[];
 	byId: Record<string, ChatSummary>;
-};
-
-export const defaultChatFilters: ChatFilters = {
-	diet: null,
-	allergens: [],
-	canteens: [],
-	priceCategory: null,
 };
 
 const clampText = (value: string, maxChars: number) => {

@@ -3,7 +3,7 @@ import * as S from "./AppSidebar.styles";
 import { getNavLabel, type NavItem } from "../navigation";
 import { useTheme } from "@/shared/theme/useTheme";
 import { useTranslation } from "react-i18next";
-import type { ChatSummary } from "@/features/chat/model/chats";
+import type { ChatSummary } from "@/features/chat/model/chatTypes";
 import { Button } from "../../../shared/ui/button/Button";
 import { ButtonIconWrapper, ButtonTextWrapper } from "../../../shared/ui/button/Button.styles";
 

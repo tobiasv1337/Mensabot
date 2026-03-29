@@ -1,10 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { ChatMessage } from "../model/chats";
-import ChatBubble from "./ChatBubble";
+import { ChatMessage } from "../model/chatStore";
 import type { ActiveStreamState } from "../model/chatStreamState";
-
+import ChatBubble from "./ChatBubble";
 
 type ChatStreamingBubbleProps = {
   stream: ActiveStreamState;
