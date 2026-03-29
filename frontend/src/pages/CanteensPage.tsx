@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Canteen, CanteenSearchResult, PageInfo } from "../services/api";
 import { getApiClient } from "../services/apiClient";
 import * as S from "./CanteensPage.styles";
-import { Page, Content } from "./PageLayout.styles";
+import { Page, Content } from "../components/ui/PageLayout.styles";
 import { openGoogleMaps } from "../services/maps";
 import { useTranslation } from "react-i18next";
 
@@ -198,7 +198,7 @@ const CanteensPage: React.FC<CanteensPageProps> = ({
               placeholder={t('canteens.searchPlaceholder')}
               value={query}
               disabled={isOffline}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
               aria-label={t('canteens.searchAriaLabel')}
             />
             <S.SearchActions>

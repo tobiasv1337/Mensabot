@@ -4,8 +4,8 @@ import { useTheme } from "styled-components";
 import * as S from "./ProjectFactsPage.styles";
 import heroImageLight from "../assets/ChatPageImageLight.jpeg";
 import heroImageDark from "../assets/ChatPageImageDark.jpeg";
-import * as P from "../components/page/PageHero.styles";
-import * as PS from "../components/page/PageSearch.styles";
+import * as P from "../components/ui/PageHero.styles";
+import * as PS from "../components/ui/PageSearch.styles";
 
 import { useTranslation } from "react-i18next";
 import {
@@ -17,7 +17,7 @@ import {
     OpenSourceIcon,
     ShortcutsIcon,
     GitHubIcon,
-} from "../components/icons";
+} from "../assets/icons/icons";
 import { Button } from "../components/button/button";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";

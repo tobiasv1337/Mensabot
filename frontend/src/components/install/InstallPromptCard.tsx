@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../button/button";
-import { InstallIcon } from "../icons";
+import { InstallIcon } from "../../assets/icons/icons";
 import * as S from "./installPrompt.styles";
 
 type InstallPromptCardProps = {

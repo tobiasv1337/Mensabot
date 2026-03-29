@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import mensaLogo from "../assets/mensabot-logo-gradient.svg";
 import * as S from "./LandingPage.styles";
-import { ChatIcon, MensenIcon, ShortcutsIcon } from "../components/icons";
+import { ChatIcon, MensenIcon, ShortcutsIcon } from "../assets/icons/icons";
 
 interface LandingPageProps {
   onStartChat: () => void;

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Canteen } from "../services/api";
 import { useTheme } from "../theme/useTheme";
-import { Page, Content } from "./PageLayout.styles";
+import { Page, Content } from "../components/ui/PageLayout.styles";
 import CanteenMap from "../components/map/CanteenMap";
 import * as S from "./MapPage.styles";
 import { useTranslation } from "react-i18next";
@@ -40,14 +40,14 @@ const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds =
           </S.HeroSubtitle>
         </S.HeroCard>
 
-        <S.SearchCard onSubmit={(e) => e.preventDefault()}>
+        <S.SearchCard onSubmit={(e: React.FormEvent) => e.preventDefault()}>
           <S.SearchRow>
             <S.SearchInput
               type="search"
               placeholder={t('map.searchPlaceholder')}
               value={query}
               disabled={isOffline}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
               aria-label={t('map.searchAriaLabel')}
             />
             <S.SearchActions>

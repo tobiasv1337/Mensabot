@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import * as S from "./sidebar.styles";
-import { getNavLabel, type NavItem } from "../../types/navigation";
+import { getNavLabel, type NavItem } from "../../lib/navigation";
 import { useTheme } from "../../theme/useTheme";
 import { useTranslation } from "react-i18next";
 import type { ChatSummary } from "../../services/chats";
@@ -22,7 +22,7 @@ import {
   ShortcutsIcon,
   SideBarIcon,
   SystemModeIcon
-} from "../icons";
+} from "../../assets/icons/icons";
 
 interface SidebarProps {
   mode: "desktop" | "drawer";

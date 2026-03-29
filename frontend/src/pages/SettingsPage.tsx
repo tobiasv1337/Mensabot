@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Page, Content } from "./PageLayout.styles";
+import { Page, Content } from "../components/ui/PageLayout.styles";
 import ConfirmModal from "../components/modal/ConfirmModal";
 import * as S from "./SettingsPage.styles";
 import { Button } from "../components/button/button";

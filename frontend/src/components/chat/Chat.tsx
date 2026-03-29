@@ -12,7 +12,7 @@ import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatIn
 import FiltersEditor from "./FiltersEditor";
 import ScrollablePillRow from "./ScrollablePillRow";
 import ShortcutModal from "../shortcuts/ShortcutModal";
-import AiWarningText from "./AiWarning/AiWarningText";
+import AiWarningText from "./AiWarningText";
 import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
 import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
 import { useOnboarding } from "./useOnboarding";

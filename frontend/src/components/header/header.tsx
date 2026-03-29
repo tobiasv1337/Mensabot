@@ -3,7 +3,7 @@ import * as S from "./header.styles";
 import mensaLogo from "../../assets/mensabot-logo-gradient.svg";
 import { Button } from "../button/button";
 
-import { getNavLabel, NAV_ROUTES, type NavItem } from "../../types/navigation";
+import { getNavLabel, NAV_ROUTES, type NavItem } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 
 interface HeaderProps {

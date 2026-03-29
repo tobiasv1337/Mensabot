@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import * as S from './ContactPage.styles';
-import * as P from '../components/page/PageHero.styles';
+import * as P from '../components/ui/PageHero.styles';
 import { Button } from '../components/button/button';
-import { MailIcon, GitHubIcon } from "../components/icons";
-import { TuLogo, QualityAndUsabilityLogo } from "../components/iconsLogos";
+import { MailIcon, GitHubIcon } from "../assets/icons/icons";
+import { TuLogo, QualityAndUsabilityLogo } from "../assets/icons/iconsLogos";
 
 const ContactPage: React.FC = () => {
     const { t } = useTranslation();
