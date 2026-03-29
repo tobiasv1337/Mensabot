@@ -1,5 +1,5 @@
 import type { ChatStreamEvent, ChatStreamPhase, JudgeStatusState } from "../../services/chatStream";
-import type { ToolCallTrace } from "../../services/api";
+import type { ToolCallTrace } from "@/shared/api/MensaBotClient";
 
 type ActiveJudgeState = {
   iteration: number;

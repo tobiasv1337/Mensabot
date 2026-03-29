@@ -1,4 +1,4 @@
-import type { ChatApiResponse, ToolCallTrace } from "./api";
+import type { ChatApiResponse, ToolCallTrace } from "@/shared/api/MensaBotClient";
 
 export type ChatStreamPhase =
 	| "starting"

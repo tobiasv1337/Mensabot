@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Canteen } from "../../services/api";
+import type { Canteen } from "@/shared/api/MensaBotClient";
 import type { ChatMode } from "../../services/chatMode";
 import type { Chat, ChatFilters, ChatSummary } from "../../services/chats";
 

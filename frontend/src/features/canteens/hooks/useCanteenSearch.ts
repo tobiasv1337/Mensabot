@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { CanteenSearchResult, PageInfo } from "../../../services/api";
-import { getApiClient } from "../../../services/apiClient";
+import { getApiClient } from "@/shared/api/getApiClient";
+import type { CanteenSearchResult, PageInfo } from "@/shared/api/MensaBotClient";
 
 const PER_PAGE = 24;
 

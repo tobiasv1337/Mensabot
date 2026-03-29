@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import type { Canteen, CanteenOpeningHoursResponse, CanteenSearchResponse } from "../../services/api";
-import { getApiClient } from "../../services/apiClient";
-import { openGoogleMaps } from "../../services/maps";
+import { getApiClient } from "@/shared/api/getApiClient";
+import type { Canteen, CanteenOpeningHoursResponse, CanteenSearchResponse } from "@/shared/api/MensaBotClient";
+import { openGoogleMaps } from "@/shared/services/maps";
 import { useTheme } from "../../theme/useTheme";
 import * as S from "./CanteenMap.styles";
 

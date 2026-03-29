@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getApiClient } from "../../../services/apiClient";
+import { getApiClient } from "@/shared/api/getApiClient";
 
 export const useProjectStats = (isOffline: boolean) => {
   const client = useMemo(() => getApiClient(), []);
