@@ -6,7 +6,7 @@ import { openGoogleMaps } from "@/shared/services/maps";
 import type { ChatStreamEvent } from "../model/chatStream";
 import { isJudgeCorrectionEnabled, type ChatMode } from "../model/chatMode";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../model/chats";
-import type { Shortcut, ShortcutInput } from "@/services/shortcuts";
+import type { Shortcut, ShortcutInput } from "@/features/shortcuts/model/shortcuts";
 import type { CommandMenuGroup, CommandMenuItem } from "../components/ChatInput";
 import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "../model/filterData";
 import {

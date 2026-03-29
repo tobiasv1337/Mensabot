@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import AppHeader from "../features/shell/components/AppHeader";
-import AppSidebar from "../features/shell/components/AppSidebar";
-import { NAV_ROUTES, navItemFromPath, type NavItem } from "../features/shell/navigation";
+import AppHeader from "@/features/shell/components/AppHeader";
+import AppSidebar from "@/features/shell/components/AppSidebar";
+import { NAV_ROUTES, navItemFromPath, type NavItem } from "@/features/shell/navigation";
 import * as S from "./AppShell.styles";
 import type { Canteen } from "@/shared/api/MensaBotClient";
 import { useOnlineStatus } from "@/shared/services/networkStatus";
-import { useShortcuts } from "../services/shortcuts";
+import { useShortcuts } from "@/features/shortcuts/model/shortcuts";
 import { useTranslation } from "react-i18next";
-import { useInstallPromotion } from "../services/installPromotion";
-import InstallPromptCard from "../components/install/InstallPromptCard";
-import InstallInstructionsModal from "../components/install/InstallInstructionsModal";
-import { getInstallEntryCopy, getInstallPromptCopy } from "../components/install/installCopy";
+import { useInstallPromotion } from "@/features/install/model/useInstallPromotion";
+import InstallPromptCard from "@/features/install/components/InstallPromptCard";
+import InstallInstructionsModal from "@/features/install/components/InstallInstructionsModal";
+import { getInstallEntryCopy, getInstallPromptCopy } from "@/features/install/model/installCopy";
 import type { AppShellContextValue } from "./useAppShellContext";
-import { ChatWorkspaceProvider } from "../features/chat/ChatWorkspaceProvider";
-import { useChatWorkspace } from "../features/chat/useChatWorkspace";
+import { ChatWorkspaceProvider } from "@/features/chat/ChatWorkspaceProvider";
+import { useChatWorkspace } from "@/features/chat/useChatWorkspace";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const AppShellContent: React.FC = () => {

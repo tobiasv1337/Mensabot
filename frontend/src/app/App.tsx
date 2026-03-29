@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-const AppShell = lazy(() => import("../layouts/AppShell"));
+const AppShell = lazy(() => import("../layouts/AppShell/AppShell"));
 const HomePage = lazy(() => import("../pages/HomePage/HomePage"));
 const ChatPage = lazy(() => import("../pages/ChatPage/ChatPage"));
 const CanteensPage = lazy(() => import("../pages/CanteensPage/CanteensPage"));

@@ -1,5 +1,5 @@
 import React from "react";
-import { useAppShellContext } from "@/layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTheme } from "styled-components";
 import * as S from "./ProjectFactsPage.styles";
 import heroImageLight from "@/assets/ChatPageImageLight.jpeg";

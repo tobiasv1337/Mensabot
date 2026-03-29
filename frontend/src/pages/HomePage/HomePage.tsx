@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import mensaLogo from "@/assets/mensabot-logo-gradient.svg";
-import { useAppShellContext } from "@/layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import * as S from "./HomePage.styles";
 import { ChatIcon, MensenIcon, ShortcutsIcon } from "@/shared/ui/icons";
 

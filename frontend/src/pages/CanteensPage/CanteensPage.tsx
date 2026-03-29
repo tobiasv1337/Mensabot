@@ -1,5 +1,5 @@
 import React from "react";
-import { useAppShellContext } from "@/layouts/useAppShellContext";
+import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "@/shared/ui/page/PageLayout.styles";
 import { openGoogleMaps } from "@/shared/services/maps";
