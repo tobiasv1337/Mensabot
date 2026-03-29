@@ -25,7 +25,7 @@ async def fetch_opening_hours_osm_for_canteen(
     - the MCP tool `get_opening_hours_osm_for_canteen`
     - the FastAPI route `/api/canteens/{id}/opening-hours`
     """
-    cache_key = osm_opening_hours_key(canteen_id=canteen_id)
+    cache_key = osm_opening_hours_key(canteen_id=canteen_id, radius_m=radius_m, max_radius_m=max_radius_m, max_candidates=max_candidates)
     cached = shared_cache.get(cache_key)
     if cached is not None:
         return OSMResolveForCanteenResponseDTO.model_validate(cached)
