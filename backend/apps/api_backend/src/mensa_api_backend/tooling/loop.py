@@ -11,7 +11,7 @@ from ..config import settings
 from ..concurrency import get_llm_semaphore
 from ..i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, get_string
 from ..logging import logger
-from ..models import ChatMessage, ChatResponse, ToolCallTrace, UserFilters
+from ..models import ChatMessage, ChatOkResponse, ChatResponse, ToolCallTrace, UserFilters
 from ..prompts import build_user_filters_prompt
 from ..services.time_context import get_time_context
 from ..streaming import ChatProgressSink, NoOpChatProgressSink, await_with_heartbeat, build_trace_id
@@ -159,11 +159,7 @@ def _build_chat_response(
     tool_traces: list[ToolCallTrace],
     include_tool_calls: bool,
 ) -> ChatResponse:
-    return ChatResponse(
-        status="ok",
-        reply=reply,
-        tool_calls=(tool_traces or None) if include_tool_calls else None,
-    )
+    return ChatOkResponse(reply=reply, tool_calls=(tool_traces or None) if include_tool_calls else None)
 
 
 def _get_first_choice(completion: ChatCompletion):

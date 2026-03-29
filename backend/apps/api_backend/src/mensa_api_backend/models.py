@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal
+from typing import Annotated, Any, Dict, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,15 +46,54 @@ class ToolCallTrace(BaseModel):
     iteration: int | None = None
 
 
-class ChatResponse(BaseModel):
-    status: Literal["ok", "needs_location", "needs_directions", "needs_clarification"]
-    reply: str | None = None
-    prompt: str | None = None
-    lat: float | None = None
-    lng: float | None = None
-    options: list[str] | None = None
-    allow_none: bool | None = None
+class _BaseChatResponse(BaseModel):
     tool_calls: list[ToolCallTrace] | None = None
+
+
+class ChatOkResponse(_BaseChatResponse):
+    status: Literal["ok"] = "ok"
+    reply: str
+    prompt: None = None
+    lat: None = None
+    lng: None = None
+    options: None = None
+    allow_none: None = None
+
+
+class ChatNeedsLocationResponse(_BaseChatResponse):
+    status: Literal["needs_location"] = "needs_location"
+    reply: None = None
+    prompt: str
+    lat: None = None
+    lng: None = None
+    options: None = None
+    allow_none: None = None
+
+
+class ChatNeedsDirectionsResponse(_BaseChatResponse):
+    status: Literal["needs_directions"] = "needs_directions"
+    reply: None = None
+    prompt: str
+    lat: float
+    lng: float
+    options: None = None
+    allow_none: None = None
+
+
+class ChatNeedsClarificationResponse(_BaseChatResponse):
+    status: Literal["needs_clarification"] = "needs_clarification"
+    reply: None = None
+    prompt: str
+    lat: None = None
+    lng: None = None
+    options: list[str]
+    allow_none: bool
+
+
+ChatResponse: TypeAlias = Annotated[
+    ChatOkResponse | ChatNeedsLocationResponse | ChatNeedsDirectionsResponse | ChatNeedsClarificationResponse,
+    Field(discriminator="status"),
+]
 
 
 class TranscribeResponse(BaseModel):
