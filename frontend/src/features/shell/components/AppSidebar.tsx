@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import * as S from "./AppSidebar.styles";
 import { getNavLabel, type NavItem } from "../navigation";
-import { useTheme } from "../../../theme/useTheme";
+import { useTheme } from "@/shared/theme/useTheme";
 import { useTranslation } from "react-i18next";
 import type { ChatSummary } from "../../../services/chats";
 import { Button } from "../../../shared/ui/button/Button";
