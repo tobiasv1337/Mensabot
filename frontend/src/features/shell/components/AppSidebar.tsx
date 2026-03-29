@@ -1,11 +1,11 @@
 import React, { useCallback } from "react";
-import * as S from "./sidebar.styles";
-import { getNavLabel, type NavItem } from "../../types/navigation";
-import { useTheme } from "../../theme/useTheme";
+import * as S from "./AppSidebar.styles";
+import { getNavLabel, type NavItem } from "../navigation";
+import { useTheme } from "../../../theme/useTheme";
 import { useTranslation } from "react-i18next";
-import type { ChatSummary } from "../../services/chats";
-import { Button } from "../button/button";
-import { ButtonIconWrapper, ButtonTextWrapper } from "../button/button.styles";
+import type { ChatSummary } from "../../../services/chats";
+import { Button } from "../../../components/button/button";
+import { ButtonIconWrapper, ButtonTextWrapper } from "../../../components/button/button.styles";
 
 import {
   ChatIcon,
@@ -22,9 +22,9 @@ import {
   ShortcutsIcon,
   SideBarIcon,
   SystemModeIcon
-} from "../icons";
+} from "../../../components/icons";
 
-interface SidebarProps {
+interface AppSidebarProps {
   mode: "desktop" | "drawer";
   drawerOpen: boolean;
   onCloseDrawer: () => void;
@@ -68,7 +68,7 @@ const getIcon = (item: string) => {
   }
 };
 
-const Sidebar: React.FC<SidebarProps> = ({
+const AppSidebar: React.FC<AppSidebarProps> = ({
   mode,
   drawerOpen,
   onCloseDrawer,
@@ -293,4 +293,4 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+export default AppSidebar;

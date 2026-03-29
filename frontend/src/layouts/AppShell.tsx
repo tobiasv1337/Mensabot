@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import Header from "../components/header/header";
-import Sidebar from "../components/sidebar/sidebar";
-import { NAV_ROUTES, navItemFromPath, type NavItem } from "../types/navigation";
+import AppHeader from "../features/shell/components/AppHeader";
+import AppSidebar from "../features/shell/components/AppSidebar";
+import { NAV_ROUTES, navItemFromPath, type NavItem } from "../features/shell/navigation";
 import * as S from "./AppShell.styles";
 import type { Canteen } from "../services/api";
 import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
@@ -276,7 +276,7 @@ const AppShell: React.FC = () => {
 
   return (
     <S.PageRoot>
-      <Header
+      <AppHeader
         activeNav={activeNav}
         navItems={NAV_ITEMS}
         onNavClick={setActiveNav}
@@ -286,7 +286,7 @@ const AppShell: React.FC = () => {
       <S.Shell>
         <S.BodyGrid $collapsed={isCollapsed}>
           <S.SidebarSlot>
-            <Sidebar
+            <AppSidebar
               mode="desktop"
               drawerOpen={true}
               isCollapsed={isCollapsed}
@@ -322,7 +322,7 @@ const AppShell: React.FC = () => {
           </S.Content>
         </S.BodyGrid>
 
-        <Sidebar
+        <AppSidebar
           mode="drawer"
           drawerOpen={drawerOpen}
           onCloseDrawer={() => setDrawerOpen(false)}
