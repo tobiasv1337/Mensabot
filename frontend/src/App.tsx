@@ -5,7 +5,7 @@ import Header from "./components/header/header";
 import Sidebar from "./components/sidebar/sidebar";
 import { NAV_ROUTES, navItemFromPath, type NavItem } from "./lib/navigation";
 import * as S from "./pages/AppLayout.styles";
-import Chat from "./components/chat/Chat.tsx";
+import Chat from "./pages/ChatPage";
 import CanteensPage from "./pages/CanteensPage";
 import ShortcutsPage from "./pages/ShortcutsPage";
 import ProjectFactsPage from "./pages/ProjectFactsPage";

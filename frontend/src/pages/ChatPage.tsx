@@ -1,21 +1,21 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Canteen, CanteenSearchResult } from "../../services/api";
-import type { ChatStreamEvent } from "../../services/chatStream";
-import { getApiClient } from "../../services/apiClient";
-import { isJudgeCorrectionEnabled, type ChatMode } from "../../services/chatMode";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../services/chats";
-import type { Shortcut, ShortcutInput } from "../../services/shortcuts";
-import ChatBubble, { type MessageAction } from "./ChatBubble";
-import ChatStreamingBubble from "./ChatStreamingBubble";
-import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "./ChatInput";
-import FiltersEditor from "./FiltersEditor";
-import ScrollablePillRow from "./ScrollablePillRow";
-import ShortcutModal from "../shortcuts/ShortcutModal";
-import AiWarningText from "./AiWarningText";
-import mensabotLogo from "../../assets/mensabot-logo-gradient-round.svg";
-import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "./filterData";
-import { useOnboarding } from "./useOnboarding";
+import type { Canteen, CanteenSearchResult } from "../services/api";
+import type { ChatStreamEvent } from "../services/chatStream";
+import { getApiClient } from "../services/apiClient";
+import { isJudgeCorrectionEnabled, type ChatMode } from "../services/chatMode";
+import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../services/chats";
+import type { Shortcut, ShortcutInput } from "../services/shortcuts";
+import ChatBubble, { type MessageAction } from "../components/chat/ChatBubble";
+import ChatStreamingBubble from "../components/chat/ChatStreamingBubble";
+import ChatInput, { type CommandMenuGroup, type CommandMenuItem } from "../components/chat/ChatInput";
+import FiltersEditor from "../components/chat/FiltersEditor";
+import ScrollablePillRow from "../components/chat/ScrollablePillRow";
+import ShortcutModal from "../components/shortcuts/ShortcutModal";
+import AiWarningText from "../components/chat/AiWarningText";
+import mensabotLogo from "../assets/mensabot-logo-gradient-round.svg";
+import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "../components/chat/filterData";
+import { useOnboarding } from "../components/chat/useOnboarding";
 import {
   buildSlashInput,
   formatCanteenCommand,
@@ -23,11 +23,11 @@ import {
   toLocalDateToken,
   toLocalISODate,
   WEEKDAY_LABELS,
-} from "./chatCommands";
-import { buildMenuMarkdown } from "./chatFormatting";
-import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "./chatStreamState";
-import * as S from "./chat.styles";
-import { openGoogleMaps } from "../../services/maps";
+} from "../components/chat/chatCommands";
+import { buildMenuMarkdown } from "../components/chat/chatFormatting";
+import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "../components/chat/chatStreamState";
+import * as S from "../components/chat/chat.styles";
+import { openGoogleMaps } from "../services/maps";
 
 const NEAR_BOTTOM_PX = 120;
 const DEBOUNCE_DELAY_MS = 280;
