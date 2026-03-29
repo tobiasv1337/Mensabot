@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Shortcut } from "../../services/shortcuts";
+import type { Shortcut } from "@/services/shortcuts";
 import ScrollablePillRow from "./ScrollablePillRow";
-import * as S from "./chat.styles";
+import * as S from "./ChatView.styles";
 
 export type CommandMenuItem = {
   id: string;

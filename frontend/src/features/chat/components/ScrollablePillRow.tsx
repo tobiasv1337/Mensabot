@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useEffect } from "react";
-import * as S from "./chat.styles";
+import * as S from "./ChatView.styles";
 
 type ScrollablePillRowProps = React.HTMLAttributes<HTMLDivElement> & {
   component?: React.ElementType;

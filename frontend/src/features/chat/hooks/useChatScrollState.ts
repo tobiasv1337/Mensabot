@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
-import type { ActiveStreamState } from "../../../components/chat/chatStreamState";
+import type { ActiveStreamState } from "../model/chatStreamState";
 
 const NEAR_BOTTOM_PX = 120;
 

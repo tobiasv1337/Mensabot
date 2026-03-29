@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 import { getApiClient } from "@/shared/api/getApiClient";
 import type { Canteen, CanteenSearchResult } from "@/shared/api/MensaBotClient";
 import { openGoogleMaps } from "@/shared/services/maps";
-import type { ChatStreamEvent } from "../../../services/chatStream";
-import { isJudgeCorrectionEnabled, type ChatMode } from "../../../services/chatMode";
-import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../../services/chats";
-import type { Shortcut, ShortcutInput } from "../../../services/shortcuts";
-import type { CommandMenuGroup, CommandMenuItem } from "../../../components/chat/ChatInput";
-import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "../../../components/chat/filterData";
+import type { ChatStreamEvent } from "../model/chatStream";
+import { isJudgeCorrectionEnabled, type ChatMode } from "../model/chatMode";
+import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../model/chats";
+import type { Shortcut, ShortcutInput } from "@/services/shortcuts";
+import type { CommandMenuGroup, CommandMenuItem } from "../components/ChatInput";
+import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "../model/filterData";
 import {
   buildSlashInput,
   formatCanteenCommand,
@@ -16,9 +16,9 @@ import {
   toLocalDateToken,
   toLocalISODate,
   WEEKDAY_LABELS,
-} from "../../../components/chat/chatCommands";
-import { buildMenuMarkdown } from "../../../components/chat/chatFormatting";
-import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "../../../components/chat/chatStreamState";
+} from "../model/chatCommands";
+import { buildMenuMarkdown } from "../model/chatFormatting";
+import { applyStreamEvent, createInitialStreamState, type ActiveStreamState } from "../model/chatStreamState";
 
 const DEBOUNCE_DELAY_MS = 280;
 

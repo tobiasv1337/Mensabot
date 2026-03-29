@@ -1,12 +1,12 @@
 import React, { useCallback, useState, useEffect } from "react";
 import type { MensaBotClient } from "@/shared/api/MensaBotClient";
-import type { ChatFilters } from "../../services/chats";
-import type { ShortcutInput } from "../../services/shortcuts";
-import FiltersEditor from "../chat/FiltersEditor";
-import { normalizeAllergenList } from "../chat/filterData";
-import * as Actions from "../../shared/ui/modal/ModalAction.styles";
-import Modal from "../../shared/ui/modal/Modal";
-import * as S from "../../shared/ui/modal/Modal.styles";
+import type { ChatFilters } from "@/features/chat/model/chats";
+import type { ShortcutInput } from "@/services/shortcuts";
+import FiltersEditor from "@/features/chat/components/FiltersEditor";
+import { normalizeAllergenList } from "@/features/chat/model/filterData";
+import * as Actions from "@/shared/ui/modal/ModalAction.styles";
+import Modal from "@/shared/ui/modal/Modal";
+import * as S from "@/shared/ui/modal/Modal.styles";
 import { useTranslation } from "react-i18next";
 
 type ShortcutModalProps = {

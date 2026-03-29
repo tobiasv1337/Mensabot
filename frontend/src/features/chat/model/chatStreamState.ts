@@ -1,4 +1,4 @@
-import type { ChatStreamEvent, ChatStreamPhase, JudgeStatusState } from "../../services/chatStream";
+import type { ChatStreamEvent, ChatStreamPhase, JudgeStatusState } from "./chatStream";
 import type { ToolCallTrace } from "@/shared/api/MensaBotClient";
 
 type ActiveJudgeState = {
