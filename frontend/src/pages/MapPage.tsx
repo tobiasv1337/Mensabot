@@ -1,17 +1,11 @@
 import React, { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Canteen } from "../services/api";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import { useTheme } from "../theme/useTheme";
 import { Page, Content } from "./PageLayout.styles";
 import CanteenMap from "../components/map/CanteenMap";
 import * as S from "./MapPage.styles";
 import { useTranslation } from "react-i18next";
-
-type MapPageProps = {
-  onSelectCanteen: (canteen: Canteen) => void;
-  selectedCanteenIds?: number[];
-  isOffline?: boolean;
-};
 
 const getStyleUrl = (options: { darkMode: boolean }) => {
   const light = import.meta.env.VITE_MAPTILER_STYLE_URL_LIGHT ?? "";
@@ -19,9 +13,10 @@ const getStyleUrl = (options: { darkMode: boolean }) => {
   return options.darkMode ? dark : light;
 };
 
-const MapPage: React.FC<MapPageProps> = ({ onSelectCanteen, selectedCanteenIds = [], isOffline = false }) => {
+const MapPage: React.FC = () => {
   const { darkMode } = useTheme();
   const { t } = useTranslation();
+  const { onSelectCanteen, selectedCanteenIds, isOffline } = useAppShellContext();
   const [query, setQuery] = useState("");
 
   const styleUrl = useMemo(() => getStyleUrl({ darkMode }), [darkMode]);

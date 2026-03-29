@@ -1,17 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header/header";
 import Sidebar from "../components/sidebar/sidebar";
 import { NAV_ROUTES, navItemFromPath, type NavItem } from "../types/navigation";
 import * as S from "./AppShell.styles";
-import Chat from "../components/chat/Chat.tsx";
-import CanteensPage from "../pages/CanteensPage";
-import ShortcutsPage from "../pages/ShortcutsPage";
-import ProjectFactsPage from "../pages/ProjectFactsPage";
-import SettingsPage from "../pages/SettingsPage";
-import MapPage from "../pages/MapPage";
-import LegalNoticePage from "../pages/LegalNoticePage";
-import HomePage from "../pages/HomePage";
 import type { Canteen } from "../services/api";
 import { type ChatMode, loadChatMode, saveChatMode } from "../services/chatMode";
 import { useOnlineStatus } from "../services/networkStatus";
@@ -22,6 +14,7 @@ import { useInstallPromotion } from "../services/installPromotion";
 import InstallPromptCard from "../components/install/InstallPromptCard";
 import InstallInstructionsModal from "../components/install/InstallInstructionsModal";
 import { getInstallEntryCopy, getInstallPromptCopy } from "../components/install/installCopy";
+import type { AppShellContextValue } from "./useAppShellContext";
 
 const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "ProjectFacts", "LegalNotice"];
 const CHAT_PAGE_SIZE = 10;
@@ -41,17 +34,14 @@ const AppShell: React.FC = () => {
   const isOnline = useOnlineStatus();
   const isOffline = !isOnline;
 
-  const activeNavMatch = navItemFromPath(location.pathname);
-  const activeNav = activeNavMatch ?? "Home";
+  const activeNav = navItemFromPath(location.pathname) ?? "Home";
   const setActiveNav = useCallback((item: NavItem) => navigate(NAV_ROUTES[item]), [navigate]);
 
   useEffect(() => {
-    if (!activeNavMatch) {
-      navigate(NAV_ROUTES.Home, { replace: true });
-    } else if (location.pathname !== "/" && location.pathname.endsWith("/")) {
+    if (location.pathname !== "/" && location.pathname.endsWith("/")) {
       navigate(location.pathname.slice(0, -1), { replace: true });
     }
-  }, [activeNavMatch, location.pathname, navigate]);
+  }, [location.pathname, navigate]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
@@ -230,6 +220,12 @@ const AppShell: React.FC = () => {
     [startNewChat, setActiveNav]
   );
 
+  const handleResetOnboarding = useCallback(() => {
+    const fresh = Chats.create();
+    activateChat(fresh.id);
+    navigate(NAV_ROUTES.ChatBot);
+  }, [activateChat, navigate]);
+
   const proactiveInstallPrompt = installPromotionState.promptVisible && installPromptCopy ? (
     <InstallPromptCard
       placement={activeNav === "ChatBot" ? "chat" : "viewport"}
@@ -254,6 +250,29 @@ const AppShell: React.FC = () => {
         },
       }
     : null;
+  const selectedCanteenIds = filters.canteens.map((canteen) => canteen.id);
+  const shellContext: AppShellContextValue = {
+    isOffline,
+    selectedCanteenIds,
+    chat,
+    filters,
+    chatMode,
+    menuCanteen,
+    shortcuts,
+    installEntry: persistentInstallEntry,
+    onSelectCanteen: handleSelectCanteen,
+    onStartNewChat: startNewChat,
+    onCreateShortcut: addShortcut,
+    onUpdateShortcut: updateShortcut,
+    onDeleteShortcut: deleteShortcut,
+    onChatModeChange: setChatMode,
+    onFiltersChange: updateChatFilters,
+    onSuccessfulChat: markSuccessfulChat,
+    onOnboardingActiveChange: setIsOnboardingActive,
+    onChatComposerHeightChange: setChatComposerHeight,
+    onDeleteAllChats: handleDeleteAllChats,
+    onResetOnboarding: handleResetOnboarding,
+  };
 
   return (
     <S.PageRoot>
@@ -297,58 +316,7 @@ const AppShell: React.FC = () => {
               </S.StatusBanner>
             )}
             <S.ContentBody $chat={isChatView} $flush={activeNav === "Home"}>
-              {activeNav === "Canteens" ? (
-                <CanteensPage
-                  onSelectCanteen={handleSelectCanteen}
-                  selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
-                  isOffline={isOffline}
-                />
-              ) : activeNav === "ProjectFacts" ? (
-                <ProjectFactsPage isOffline={isOffline} />
-              ) : activeNav === "LegalNotice" ? (
-                <LegalNoticePage />
-              ) : activeNav === "Shortcuts" ? (
-                <ShortcutsPage
-                  shortcuts={shortcuts}
-                  onCreateShortcut={addShortcut}
-                  onUpdateShortcut={updateShortcut}
-                  onDeleteShortcut={deleteShortcut}
-                />
-              ) : activeNav === "Settings" ? (
-                <SettingsPage
-                  onDeleteAllChats={handleDeleteAllChats}
-                  onResetOnboarding={() => {
-                    const fresh = Chats.create();
-                    activateChat(fresh.id);
-                    navigate(NAV_ROUTES.ChatBot);
-                  }}
-                  installEntry={persistentInstallEntry}
-                />
-              ) : activeNav === "Map" ? (
-                <MapPage
-                  isOffline={isOffline}
-                  onSelectCanteen={handleSelectCanteen}
-                  selectedCanteenIds={filters.canteens.map((canteen) => canteen.id)}
-                />
-              ) : activeNav === "Home" ? (
-                <HomePage onStartChat={() => startNewChat()} />
-              ) : (
-                <Chat
-                  chat={chat}
-                  filters={filters}
-                  chatMode={chatMode}
-                  onChatModeChange={setChatMode}
-                  onFiltersChange={updateChatFilters}
-                  onStartNewChat={startNewChat}
-                  menuCanteen={menuCanteen}
-                  shortcuts={shortcuts}
-                  onCreateShortcut={addShortcut}
-                  isOffline={isOffline}
-                  onSuccessfulChat={markSuccessfulChat}
-                  onOnboardingActiveChange={setIsOnboardingActive}
-                  onComposerHeightChange={setChatComposerHeight}
-                />
-              )}
+              <Outlet context={shellContext} />
             </S.ContentBody>
             {proactiveInstallPrompt}
           </S.Content>

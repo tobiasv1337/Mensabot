@@ -1,10 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
-import AppShell from './layouts/AppShell'
+import AppRoutes from './app/AppRoutes'
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/*" element={<AppShell />} />
-    </Routes>
-  )
+  return <AppRoutes />
 }

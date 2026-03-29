@@ -1,15 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import mensaLogo from "../assets/mensabot-logo-gradient.svg";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import * as S from "./HomePage.styles";
 import { ChatIcon, MensenIcon, ShortcutsIcon } from "../components/icons";
 
-interface HomePageProps {
-  onStartChat: () => void;
-}
-
-const HomePage: React.FC<HomePageProps> = ({ onStartChat }) => {
+const HomePage: React.FC = () => {
   const { t } = useTranslation();
+  const { onStartNewChat } = useAppShellContext();
 
   const features = [
     {
@@ -47,7 +45,7 @@ const HomePage: React.FC<HomePageProps> = ({ onStartChat }) => {
 
           <S.HeroSubtitle>{t("landing.hero.subtitle")}</S.HeroSubtitle>
 
-          <S.CTAButton onClick={onStartChat}>
+          <S.CTAButton onClick={() => onStartNewChat()}>
             {t("landing.hero.cta")}
             <S.CTAArrow>→</S.CTAArrow>
           </S.CTAButton>

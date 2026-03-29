@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getApiClient } from "../services/apiClient";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
+import { useAppShellContext } from "../layouts/useAppShellContext";
 import { defaultChatFilters } from "../services/chats";
 import ShortcutModal from "../components/shortcuts/ShortcutModal";
 import ConfirmModal from "../components/modal/ConfirmModal";
@@ -8,20 +9,9 @@ import { DIET_OPTIONS, getAllergenLabel } from "../components/chat/filterData";
 import * as S from "./ShortcutsPage.styles";
 import { useTranslation } from "react-i18next";
 
-type ShortcutsPageProps = {
-  shortcuts: Shortcut[];
-  onCreateShortcut: (data: ShortcutInput) => void;
-  onUpdateShortcut: (id: string, data: ShortcutInput) => void;
-  onDeleteShortcut: (id: string) => void;
-};
-
-const ShortcutsPage: React.FC<ShortcutsPageProps> = ({
-  shortcuts,
-  onCreateShortcut,
-  onUpdateShortcut,
-  onDeleteShortcut,
-}) => {
+const ShortcutsPage: React.FC = () => {
   const { t } = useTranslation();
+  const { shortcuts, onCreateShortcut, onUpdateShortcut, onDeleteShortcut } = useAppShellContext();
   const client = useMemo(() => getApiClient(), []);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
