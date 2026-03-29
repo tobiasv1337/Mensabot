@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { Canteen } from "../../../services/api";
+import type { Canteen } from "@/shared/api/MensaBotClient";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters } from "../../../services/chats";
 import type { ChatMode } from "../../../services/chatMode";
 import type { Shortcut, ShortcutInput } from "../../../services/shortcuts";

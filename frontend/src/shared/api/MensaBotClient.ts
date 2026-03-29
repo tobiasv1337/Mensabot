@@ -15,9 +15,9 @@
  * storage and sessions yourself.
  */
 
-import type { ChatFilters, ChatMessage } from "./chats";
-import { streamChatResponse, type ChatStreamEvent } from "./chatStream";
-import i18n from "../i18n";
+import i18n from "@/i18n";
+import { streamChatResponse, type ChatStreamEvent } from "@/services/chatStream";
+import type { ChatFilters, ChatMessage } from "@/services/chats";
 
 export type ToolCallTrace = {
 	id?: string;

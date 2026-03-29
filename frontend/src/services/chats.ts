@@ -1,4 +1,4 @@
-import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "./api";
+import { MensaBotClient, type ChatApiResponse, type ToolCallTrace, type Canteen } from "@/shared/api/MensaBotClient";
 import type { ChatStreamEvent } from "./chatStream";
 
 type MessageKind = "normal" | "location_prompt" | "directions_prompt" | "clarification_prompt" | "onboarding";

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Canteen, CanteenSearchResult } from "../../../services/api";
+import { getApiClient } from "@/shared/api/getApiClient";
+import type { Canteen, CanteenSearchResult } from "@/shared/api/MensaBotClient";
+import { openGoogleMaps } from "@/shared/services/maps";
 import type { ChatStreamEvent } from "../../../services/chatStream";
-import { getApiClient } from "../../../services/apiClient";
 import { isJudgeCorrectionEnabled, type ChatMode } from "../../../services/chatMode";
 import { ChatMessage, type Chat as ChatModel, type ChatFilters, defaultChatFilters } from "../../../services/chats";
 import type { Shortcut, ShortcutInput } from "../../../services/shortcuts";
-import { openGoogleMaps } from "../../../services/maps";
 import type { CommandMenuGroup, CommandMenuItem } from "../../../components/chat/ChatInput";
 import { DIET_OPTIONS, PRICE_CATEGORY_OPTIONS, getAllergenLabel, normalizeAllergenList } from "../../../components/chat/filterData";
 import {

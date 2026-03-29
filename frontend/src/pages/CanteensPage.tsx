@@ -2,7 +2,7 @@ import React from "react";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "./PageLayout.styles";
-import { openGoogleMaps } from "../services/maps";
+import { openGoogleMaps } from "@/shared/services/maps";
 import { useTranslation } from "react-i18next";
 import { useCanteenSearch } from "../features/canteens/hooks/useCanteenSearch";
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { Canteen } from "../../services/api";
+import type { Canteen } from "@/shared/api/MensaBotClient";
 import { type ChatMode, loadChatMode, saveChatMode } from "../../services/chatMode";
 import { Chats, Chat as ChatModel, type Chat as ChatSession, type ChatFilters, defaultChatFilters } from "../../services/chats";
 import { ChatWorkspaceContext } from "./useChatWorkspace";

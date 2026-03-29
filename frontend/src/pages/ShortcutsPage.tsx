@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getApiClient } from "../services/apiClient";
+import { getApiClient } from "@/shared/api/getApiClient";
 import type { Shortcut, ShortcutInput } from "../services/shortcuts";
 import { useAppShellContext } from "../layouts/useAppShellContext";
 import { defaultChatFilters } from "../services/chats";

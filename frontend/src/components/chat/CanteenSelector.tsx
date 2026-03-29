@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Canteen, CanteenSearchResult } from "../../services/api";
-import { MensaBotClient } from "../../services/api";
+import { MensaBotClient, type Canteen, type CanteenSearchResult } from "@/shared/api/MensaBotClient";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./chat.styles";
 

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Canteen } from "../../services/api";
-import { MensaBotClient } from "../../services/api";
+import { MensaBotClient, type Canteen } from "@/shared/api/MensaBotClient";
 import type { ChatFilters } from "../../services/chats";
 import ScrollablePillRow from "./ScrollablePillRow";
 import CanteenSelector from "./CanteenSelector";
