@@ -19,23 +19,42 @@ jobs:
   detect-backend-changes:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
+      common: ${{ steps.filter.outputs.common }}
+      openmensa: ${{ steps.filter.outputs.openmensa }}
+      core: ${{ steps.filter.outputs.core }}
+      mcp: ${{ steps.filter.outputs.mcp }}
+      api: ${{ steps.filter.outputs.api }}
+      stt: ${{ steps.filter.outputs.stt }}
+      workflow: ${{ steps.filter.outputs.workflow }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Detect backend changes
+      - name: Detect backend package changes
         id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            backend:
-              - 'backend/**'
+            common:
+              - 'backend/libs/mensabot-common/**'
+            openmensa:
+              - 'backend/libs/openmensa/**'
+            core:
+              - 'backend/libs/mensabot-backend-core/**'
+            mcp:
+              - 'backend/apps/mcp-server/**'
+            api:
+              - 'backend/apps/api_backend/**'
+            stt:
+              - 'backend/apps/stt_server/**'
+            workflow:
               - '.github/workflows/backend-ci.yml'
 
-  openmensa-sdk:
+  mensabot-common:
     needs: detect-backend-changes
-    if: needs.detect-backend-changes.outputs.backend == 'true'
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.common == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -47,6 +66,50 @@ jobs:
 
       - name: Set up Python 3.11 via uv
         run: uv python install 3.11
+
+      - name: Build Mensabot common distributions
+        working-directory: backend/libs/mensabot-common
+        run: uv build --out-dir /tmp/dist/mensabot-common --wheel --sdist
+
+      - name: Sync Mensabot common dependencies
+        working-directory: backend/libs/mensabot-common
+        run: uv sync --all-extras --dev
+
+      - name: Compile Mensabot common sources
+        working-directory: backend/libs/mensabot-common
+        run: uv run python -m compileall src
+
+      - name: Run Mensabot common tests (pytest, optional)
+        working-directory: backend/libs/mensabot-common
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+  openmensa-sdk:
+    needs: detect-backend-changes
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.common == 'true' ||
+      needs.detect-backend-changes.outputs.openmensa == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Build OpenMensa SDK distributions
+        working-directory: backend/libs/openmensa
+        run: uv build --out-dir /tmp/dist/openmensa --wheel --sdist
 
       - name: Sync OpenMensa SDK dependencies
         working-directory: backend/libs/openmensa
@@ -66,9 +129,13 @@ jobs:
             echo "No tests directory, skipping pytest"
           fi
 
-  mcp-server:
-    needs: [detect-backend-changes, openmensa-sdk]
-    if: needs.detect-backend-changes.outputs.backend == 'true'
+  mensabot-backend-core:
+    needs: detect-backend-changes
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.common == 'true' ||
+      needs.detect-backend-changes.outputs.openmensa == 'true' ||
+      needs.detect-backend-changes.outputs.core == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -80,6 +147,52 @@ jobs:
 
       - name: Set up Python 3.11 via uv
         run: uv python install 3.11
+
+      - name: Build backend core distributions
+        working-directory: backend/libs/mensabot-backend-core
+        run: uv build --out-dir /tmp/dist/mensabot-backend-core --wheel --sdist
+
+      - name: Sync backend core dependencies
+        working-directory: backend/libs/mensabot-backend-core
+        run: uv sync --all-extras --dev
+
+      - name: Compile backend core sources
+        working-directory: backend/libs/mensabot-backend-core
+        run: uv run python -m compileall src
+
+      - name: Run backend core tests (pytest, optional)
+        working-directory: backend/libs/mensabot-backend-core
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+  mensa-mcp-server:
+    needs: detect-backend-changes
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.common == 'true' ||
+      needs.detect-backend-changes.outputs.openmensa == 'true' ||
+      needs.detect-backend-changes.outputs.core == 'true' ||
+      needs.detect-backend-changes.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Build MCP server distributions
+        working-directory: backend/apps/mcp-server
+        run: uv build --out-dir /tmp/dist/mcp-server --wheel --sdist
 
       - name: Sync MCP server dependencies
         working-directory: backend/apps/mcp-server
@@ -99,15 +212,19 @@ jobs:
             echo "No tests directory, skipping pytest"
           fi
 
-  api-backend:
-    needs: [detect-backend-changes, openmensa-sdk, mcp-server]
-    if: needs.detect-backend-changes.outputs.backend == 'true'
+  mensa-api-backend:
+    needs: detect-backend-changes
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.common == 'true' ||
+      needs.detect-backend-changes.outputs.openmensa == 'true' ||
+      needs.detect-backend-changes.outputs.core == 'true' ||
+      needs.detect-backend-changes.outputs.mcp == 'true' ||
+      needs.detect-backend-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
 
     env:
-      # secrets
       API_BACKEND_LLM_API_KEY: ${{ secrets.API_BACKEND_LLM_API_KEY }}
-      # variables
       API_BACKEND_LLM_BASE_URL: ${{ vars.API_BACKEND_LLM_BASE_URL }}
       API_BACKEND_LLM_MODEL: ${{ vars.API_BACKEND_LLM_MODEL }}
       API_BACKEND_MCP_URL: ${{ vars.API_BACKEND_MCP_URL }}
@@ -121,6 +238,10 @@ jobs:
 
       - name: Set up Python 3.11 via uv
         run: uv python install 3.11
+
+      - name: Build API backend distributions
+        working-directory: backend/apps/api_backend
+        run: uv build --out-dir /tmp/dist/api-backend --wheel --sdist
 
       - name: Sync API backend dependencies
         working-directory: backend/apps/api_backend
@@ -140,12 +261,112 @@ jobs:
             echo "No tests directory, skipping pytest"
           fi
 
-      - name: Start API backend for healthcheck
+  mensa-stt-server:
+    needs: detect-backend-changes
+    if: |
+      needs.detect-backend-changes.outputs.workflow == 'true' ||
+      needs.detect-backend-changes.outputs.stt == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Build STT server distributions
+        working-directory: backend/apps/stt_server
+        run: uv build --out-dir /tmp/dist/stt-server --wheel --sdist
+
+      - name: Sync STT server dependencies
+        working-directory: backend/apps/stt_server
+        run: uv sync --all-extras --dev
+
+      - name: Compile STT server sources
+        working-directory: backend/apps/stt_server
+        run: uv run python -m compileall src
+
+      - name: Run STT server tests (pytest, optional)
+        working-directory: backend/apps/stt_server
+        run: |
+          if [ -d "tests" ]; then
+            echo "Found tests directory, running pytest"
+            uv run pytest
+          else
+            echo "No tests directory, skipping pytest"
+          fi
+
+  api-health:
+    needs: mensa-api-backend
+    runs-on: ubuntu-latest
+
+    env:
+      API_BACKEND_LLM_API_KEY: ${{ secrets.API_BACKEND_LLM_API_KEY }}
+      API_BACKEND_LLM_BASE_URL: ${{ vars.API_BACKEND_LLM_BASE_URL }}
+      API_BACKEND_LLM_MODEL: ${{ vars.API_BACKEND_LLM_MODEL }}
+      API_BACKEND_MCP_URL: ${{ vars.API_BACKEND_MCP_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Sync API backend dependencies
+        working-directory: backend/apps/api_backend
+        run: uv sync --all-extras --dev
+
+      - name: Start API backend and healthcheck
         working-directory: backend/apps/api_backend
         run: |
-          uv run mensa-api-backend &
-          echo "Waiting for API to start..."
-          sleep 5
+          uv run mensa-api-backend >/tmp/mensa-api-backend.log 2>&1 &
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:8000/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/mensa-api-backend.log
+          exit 1
 
-      - name: Healthcheck /api/health
-        run: curl -f http://127.0.0.1:8000/api/health
+  stt-health:
+    needs: mensa-stt-server
+    runs-on: ubuntu-latest
+
+    env:
+      STT_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python 3.11 via uv
+        run: uv python install 3.11
+
+      - name: Sync STT server dependencies
+        working-directory: backend/apps/stt_server
+        run: uv sync --all-extras --dev
+
+      - name: Start STT server and healthcheck
+        working-directory: backend/apps/stt_server
+        run: |
+          uv run mensa-stt-server >/tmp/mensa-stt-server.log 2>&1 &
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:9100/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/mensa-stt-server.log
+          exit 1
