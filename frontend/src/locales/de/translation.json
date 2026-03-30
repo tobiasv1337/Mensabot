@@ -498,6 +498,13 @@
             "de": "Deutsch",
             "en": "English"
         },
+        "theme": {
+            "title": "Erscheinungsbild",
+            "label": "Wähle das Erscheinungsbild der Seite.",
+            "light": "Hell",
+            "dark": "Dunkel",
+            "system": "System"
+        },
         "modal": {
             "title": "Alle Chats löschen",
             "subtitle": "Dadurch werden sämtliche Chat-Verläufe dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",

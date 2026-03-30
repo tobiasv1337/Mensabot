@@ -498,6 +498,13 @@
             "de": "Deutsch",
             "en": "English"
         },
+        "theme": {
+            "title": "Appearance",
+            "label": "Choose the appearance of the site.",
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System"
+        },
         "modal": {
             "title": "Delete all chats",
             "subtitle": "This will permanently remove all chat histories. This action cannot be undone.",
