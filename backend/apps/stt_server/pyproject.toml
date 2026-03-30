@@ -1,6 +1,6 @@
 [project]
 name = "mensa-stt-server"
-version = "1.0.1"
+version = "1.1.0"
 description = "Local speech-to-text (STT) service for Mensabot using whisper.cpp"
 keywords = ["mensabot", "stt", "speech-to-text", "whisper", "whisper.cpp"]
 readme = "README.md"
@@ -21,5 +21,5 @@ dependencies = [
 mensa-stt-server = "mensa_stt_server.__main__:main"
 
 [build-system]
-requires = ["uv_build>=0.9.5,<0.10.0"]
+requires = ["uv_build>=0.9.5,<0.12"]
 build-backend = "uv_build"

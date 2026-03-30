@@ -1,6 +1,6 @@
 [project]
 name = "openmensa-sdk"
-version = "1.0.1"
+version = "1.1.0"
 description = "Typed OpenMensa API v2 wrapper (dataclasses, stable to_dict, pagination)."
 keywords = ["openmensa", "api", "sdk", "canteen", "mensa"]
 readme = "README.md"
@@ -21,7 +21,7 @@ dependencies = [
 openmensa = "openmensa_sdk.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.9.5,<0.10.0"]
+requires = ["uv_build>=0.9.5,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv.sources]

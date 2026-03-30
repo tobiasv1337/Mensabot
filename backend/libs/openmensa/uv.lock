@@ -94,16 +94,23 @@ wheels = [
 ]
 
 [[package]]
+name = "mensabot-common"
+version = "1.1.0"
+source = { editable = "../mensabot-common" }
+
+[[package]]
 name = "openmensa-sdk"
-version = "0.1.0"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "mensabot-common" },
     { name = "rapidfuzz" },
     { name = "requests" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "mensabot-common", editable = "../mensabot-common" },
     { name = "rapidfuzz", specifier = ">=3.14.3" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
