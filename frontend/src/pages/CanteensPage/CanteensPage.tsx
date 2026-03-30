@@ -3,6 +3,7 @@ import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import * as S from "./CanteensPage.styles";
 import { Page, Content } from "@/shared/ui/page/PageLayout.styles";
 import { openGoogleMaps } from "@/shared/services/maps";
+import { formatDistanceKm, hasFiniteCoordinates } from "@/shared/utils/canteens";
 import { useTranslation } from "react-i18next";
 import { useCanteenSearch } from "./useCanteenSearch";
 
@@ -135,7 +136,9 @@ const CanteensPage: React.FC = () => {
           <S.CanteenGrid>
             {items.map((result, index) => {
               const { canteen, distance_km } = result;
-              const showDistance = distance_km !== undefined;
+              const distanceLabel = formatDistanceKm(distance_km);
+              const showDistance = distanceLabel !== null;
+              const canOpenRoute = hasFiniteCoordinates(canteen);
               return (
                 <S.CanteenCard
                   key={canteen.id}
@@ -168,11 +171,14 @@ const CanteensPage: React.FC = () => {
                     <S.FooterRight>
                       {showDistance && (
                         <S.DistancePill
-                          onClick={(e) => canteen.lat && canteen.lng && openGoogleMaps(canteen.lat, canteen.lng, e)}
-                          $clickable={!!(canteen.lat && canteen.lng)}
+                          onClick={(e) => {
+                            if (!hasFiniteCoordinates(canteen)) return;
+                            openGoogleMaps(canteen.lat, canteen.lng, e);
+                          }}
+                          $clickable={canOpenRoute}
                           title={t('canteens.routeTitle')}
                         >
-                          <span>{distance_km?.toFixed(1)} km</span>
+                          <span>{distanceLabel}</span>
                           <span style={{ opacity: 0.3, fontSize: "1.2em", fontWeight: 300 }}>|</span>
                           <span>{t('canteens.route')} ↗</span>
                         </S.DistancePill>

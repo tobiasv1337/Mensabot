@@ -4,6 +4,7 @@ import { getApiClient } from "@/shared/api/getApiClient";
 import type { Canteen, CanteenOpeningHoursResponse, CanteenSearchResponse } from "@/shared/api/MensaBotClient";
 import { openGoogleMaps } from "@/shared/services/maps";
 import { useTheme } from "@/shared/theme/useTheme";
+import { hasFiniteCoordinates, isFiniteNumber } from "@/shared/utils/canteens";
 import * as S from "./CanteenMap.styles";
 
 type Props = {
@@ -26,6 +27,13 @@ const MAX_PINS = 2000;
 const SEARCH_MIN_SCORE = 60;
 
 const coordKey = (pos: LngLat) => `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+
+const readLngLatPair = (coordinates: unknown): [number, number] | null => {
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+
+  const [lng, lat] = coordinates;
+  return isFiniteNumber(lng) && isFiniteNumber(lat) ? [lng, lat] : null;
+};
 
 const haversineKm = (a: LngLat, b: LngLat) => {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -59,9 +67,7 @@ const computeViewportRadiusKm = (map: maplibregl.Map) => {
 };
 
 const fitMapToCanteens = (map: maplibregl.Map, items: Canteen[]) => {
-  const coords = items
-    .filter((c) => typeof c.lat === "number" && typeof c.lng === "number")
-    .map((c) => ({ lat: c.lat as number, lng: c.lng as number }));
+  const coords = items.filter(hasFiniteCoordinates).map((c) => ({ lat: c.lat, lng: c.lng }));
   if (coords.length === 0) return;
 
   if (coords.length === 1) {
@@ -105,9 +111,9 @@ const buildGeoJson = (canteens: Canteen[], selectedIds: Set<number>) => {
   type Entry = { canteen: Canteen; pos: LngLat; key: string; selected: boolean };
 
   const entries: Entry[] = canteens
-    .filter((c) => typeof c.lat === "number" && typeof c.lng === "number")
+    .filter(hasFiniteCoordinates)
     .map((c) => {
-      const pos = { lng: c.lng as number, lat: c.lat as number };
+      const pos = { lng: c.lng, lat: c.lat };
       return { canteen: c, pos, key: coordKey(pos), selected: selectedIds.has(c.id) };
     });
 
@@ -462,7 +468,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
   useEffect(() => {
     const next = new Map<string, Canteen[]>();
     for (const c of canteens) {
-      if (typeof c.lat !== "number" || typeof c.lng !== "number") continue;
+      if (!hasFiniteCoordinates(c)) continue;
       const key = coordKey({ lat: c.lat, lng: c.lng });
       const arr = next.get(key);
       if (arr) arr.push(c);
@@ -504,9 +510,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
 
   const openSpiderForCanteens = useCallback(
     (items: Canteen[], center: LngLat) => {
-      const nextItems = items
-        .filter((c) => typeof c.lat === "number" && typeof c.lng === "number")
-        .slice(0, 20);
+      const nextItems = items.filter(hasFiniteCoordinates).slice(0, 20);
 
       if (nextItems.length <= 1) {
         closeSpider();
@@ -589,7 +593,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
                 break;
               }
               const c = row.canteen;
-              if (typeof c.lat !== "number" || typeof c.lng !== "number") continue;
+              if (!hasFiniteCoordinates(c)) continue;
               results.set(c.id, c);
               if (results.size >= MAX_PINS) break;
             }
@@ -756,7 +760,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       void source
         .getClusterExpansionZoom(clusterId)
         .then((zoom) => {
-          const coords = (feature.geometry as { coordinates?: unknown })?.coordinates as [number, number] | undefined;
+          const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
           if (!coords) return;
           // Nudge a bit further than the expansion zoom so clusters feel like they "open up" more.
           const targetZoom = Math.min(Math.max(zoom, map.getZoom() + 1), MAX_ZOOM);
@@ -778,7 +782,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
 
       if (Number.isFinite(stackCount) && stackCount > 1 && typeof stackKey === "string") {
         const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
-        const coords = (feature.geometry as { coordinates?: unknown })?.coordinates as [number, number] | undefined;
+        const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
         if (!coords) return;
         openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
         return;
@@ -799,7 +803,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       );
       if (candidateIds.length > 1) {
         const candidates = candidateIds.map((cid) => canteensByIdRef.current.get(cid)).filter((c): c is Canteen => !!c);
-        const coords = (feature.geometry as { coordinates?: unknown })?.coordinates as [number, number] | undefined;
+        const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
         if (!coords) return;
         openSpiderForCanteens(candidates, { lng: coords[0], lat: coords[1] });
         return;
@@ -810,7 +814,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       closeSpider();
       setActiveCanteen(match);
 
-      if (typeof match.lat === "number" && typeof match.lng === "number") {
+      if (hasFiniteCoordinates(match)) {
         map.easeTo({
           center: [match.lng, match.lat],
           offset: [0, -120],
@@ -825,7 +829,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       const feature = e.features?.[0];
       const stackKey = feature?.properties?.stack_key;
       if (typeof stackKey !== "string") return;
-      const coords = (feature?.geometry as { coordinates?: unknown })?.coordinates as [number, number] | undefined;
+      const coords = readLngLatPair((feature?.geometry as { coordinates?: unknown })?.coordinates);
       if (!coords) return;
       const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
       openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
@@ -840,7 +844,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       if (!match) return;
       closeSpider();
       setActiveCanteen(match);
-      if (typeof match.lat === "number" && typeof match.lng === "number") {
+      if (hasFiniteCoordinates(match)) {
         map.easeTo({
           center: [match.lng, match.lat],
           offset: [0, -120],
@@ -944,8 +948,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
   }, [activeCanteen, client]);
 
   const distanceLabel = useMemo(() => {
-    if (!activeCanteen || !userLocation) return null;
-    if (typeof activeCanteen.lat !== "number" || typeof activeCanteen.lng !== "number") return null;
+    if (!activeCanteen || !userLocation || !hasFiniteCoordinates(activeCanteen)) return null;
     const km = haversineKm(userLocation, { lat: activeCanteen.lat, lng: activeCanteen.lng });
     if (!Number.isFinite(km)) return null;
     return `${km.toFixed(1)} km`;
@@ -1078,9 +1081,9 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
               </S.PrimaryAction>
               <S.SecondaryAction
                 type="button"
-                disabled={typeof activeCanteen.lat !== "number" || typeof activeCanteen.lng !== "number"}
+                disabled={!hasFiniteCoordinates(activeCanteen)}
                 onClick={() => {
-                  if (typeof activeCanteen.lat !== "number" || typeof activeCanteen.lng !== "number") return;
+                  if (!hasFiniteCoordinates(activeCanteen)) return;
                   openGoogleMaps(activeCanteen.lat, activeCanteen.lng);
                 }}
               >

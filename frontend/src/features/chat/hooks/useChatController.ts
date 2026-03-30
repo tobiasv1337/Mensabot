@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getApiClient } from "@/shared/api/getApiClient";
 import type { Canteen, CanteenSearchResult } from "@/shared/api/MensaBotClient";
 import { openGoogleMaps } from "@/shared/services/maps";
+import { formatDistanceKm } from "@/shared/utils/canteens";
 import type { Shortcut, ShortcutInput } from "@/features/shortcuts/model/shortcuts";
 import type { ChatStreamEvent } from "../model/chatStream";
 import { isJudgeCorrectionEnabled, type ChatMode } from "../model/chatMode";
@@ -674,9 +675,8 @@ export const useChatController = ({
     () =>
       commandCanteenResults.map((result) => {
         const metaParts = [result.canteen.city].filter(Boolean);
-        if (result.distance_km != null) {
-          metaParts.push(`${result.distance_km.toFixed(1)} km`);
-        }
+        const distanceLabel = formatDistanceKm(result.distance_km);
+        if (distanceLabel) metaParts.push(distanceLabel);
 
         return {
           id: `canteen-${result.canteen.id}`,
