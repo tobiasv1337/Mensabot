@@ -33,7 +33,7 @@ export type ToolCallTrace = {
 export type ChatApiResponse =
 	| { status: "ok"; reply: string; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_location"; prompt: string; tool_calls?: ToolCallTrace[] }
-	| { status: "needs_directions"; prompt: string; lat?: number; lng?: number; tool_calls?: ToolCallTrace[] }
+	| { status: "needs_directions"; prompt: string; lat?: number | null; lng?: number | null; tool_calls?: ToolCallTrace[] }
 	| { status: "needs_clarification"; prompt: string; options: string[]; allow_none?: boolean; tool_calls?: ToolCallTrace[] };
 
 export type Canteen = {
@@ -41,8 +41,8 @@ export type Canteen = {
 	name: string;
 	city?: string;
 	address?: string;
-	lat?: number;
-	lng?: number;
+	lat?: number | null;
+	lng?: number | null;
 };
 
 export type OSMResolveStatus = "ok" | "ambiguous" | "not_found" | "error";
@@ -117,7 +117,7 @@ export type CanteenListResponse = {
 export type CanteenSearchResult = {
 	canteen: Canteen;
 	score: number;
-	distance_km?: number;
+	distance_km?: number | null;
 };
 
 export type CanteenSearchResponse = {

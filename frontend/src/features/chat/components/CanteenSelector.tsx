@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MensaBotClient, type Canteen, type CanteenSearchResult } from "@/shared/api/MensaBotClient";
+import { formatDistanceKm } from "@/shared/utils/canteens";
 import ScrollablePillRow from "./ScrollablePillRow";
 import * as S from "./ChatView.styles";
 
@@ -175,20 +176,24 @@ const CanteenSelector: React.FC<CanteenSelectorProps> = ({
             )}
             {!canteenLoading &&
               !canteenError &&
-              filteredCanteenResults.map((result) => (
-                <S.SearchDropdownItem
-                  key={result.canteen.id}
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => handleAddCanteen(result.canteen)}
-                >
-                  <span>{result.canteen.name}</span>
-                  <S.SearchDropdownMeta>
-                    {result.canteen.city ? result.canteen.city : t("chat.canteenSearch.unknownCity")}
-                    {result.distance_km !== undefined ? ` · ${result.distance_km.toFixed(1)} km` : ""}
-                  </S.SearchDropdownMeta>
-                </S.SearchDropdownItem>
-              ))}
+              filteredCanteenResults.map((result) => {
+                const distanceLabel = formatDistanceKm(result.distance_km);
+
+                return (
+                  <S.SearchDropdownItem
+                    key={result.canteen.id}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleAddCanteen(result.canteen)}
+                  >
+                    <span>{result.canteen.name}</span>
+                    <S.SearchDropdownMeta>
+                      {result.canteen.city ? result.canteen.city : t("chat.canteenSearch.unknownCity")}
+                      {distanceLabel ? ` · ${distanceLabel}` : ""}
+                    </S.SearchDropdownMeta>
+                  </S.SearchDropdownItem>
+                );
+              })}
           </S.SearchDropdown>
         )}
       </S.CanteenSearchWrap>
