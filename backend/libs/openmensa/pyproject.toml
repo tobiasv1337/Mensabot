@@ -12,7 +12,6 @@ maintainers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "mensabot-common",
     "rapidfuzz>=3.14.3",
     "requests>=2.32.5",
 ]
@@ -23,6 +22,3 @@ openmensa = "openmensa_sdk.cli:main"
 [build-system]
 requires = ["uv_build>=0.9.5,<0.12"]
 build-backend = "uv_build"
-
-[tool.uv.sources]
-mensabot-common = { path = "../mensabot-common", editable = true }

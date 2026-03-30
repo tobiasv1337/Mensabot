@@ -107,9 +107,8 @@ The entry point starts FastMCP over stdio. Cache loading and flushing also happe
 | --- | --- |
 | `src/mensa_mcp_server/server.py` | Creates the FastMCP instance |
 | `src/mensa_mcp_server/tools_generic.py` | Generic interaction tools |
-| `src/mensa_mcp_server/tools_openmensa.py` | OpenMensa and OSM tools |
+| `src/mensa_mcp_server/tools_openmensa.py` | OpenMensa and OSM tools backed directly by `mensabot-backend-core` |
 | `src/mensa_mcp_server/schemas.py` | Typed DTOs for tool I/O |
-| `src/mensa_mcp_server/services/` | Thin adapters around shared backend implementations |
 | `src/mensa_mcp_server/__main__.py` | StdIO entry point plus cache load and flush |
 
 ## Useful Companion Scripts

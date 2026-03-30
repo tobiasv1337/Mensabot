@@ -8,7 +8,11 @@ import anyio
 from pydantic import Field
 from typing import Annotated, Optional
 
+from mensabot_backend_core.canteen_index_service import load_canteen_index as load_shared_canteen_index
 from mensabot_backend_core.canteen_service import CanteenNotFoundError, fetch_canteen_info
+from mensabot_backend_core.menu_service import fetch_single_menu, normalize_menu_date
+from mensabot_backend_core.opening_hours_service import fetch_opening_hours_osm_for_canteen
+from mensabot_backend_core.openmensa_client import make_openmensa_client
 
 from .concurrency import get_io_semaphore
 from .schemas import (
@@ -28,12 +32,13 @@ from .schemas import (
     OSMResolveForCanteenResponseDTO,
     PriceCategory,
 )
-from .server import mcp, make_openmensa_client
-from .services.canteen_index import load_canteen_index
-from .services.opening_hours import fetch_opening_hours_osm_for_canteen
-from .services.openmensa import fetch_single_menu, normalize_menu_date
+from .server import mcp
 
 # ------------------------------ internal helpers ------------------------------
+
+
+def _load_canteen_index():
+    return load_shared_canteen_index(caller="mcp")
 
 
 def _to_public_menu(menu: MenuResponseDTO) -> MenuResponsePublicDTO:
@@ -95,7 +100,7 @@ async def search_canteens(
         raise ValueError("near_lat and near_lng must be provided together.")
 
     async with get_io_semaphore():
-        index = await anyio.to_thread.run_sync(load_canteen_index)
+        index = await anyio.to_thread.run_sync(_load_canteen_index)
 
     # Can be a bit CPU-intensive, so run in thread to avoid blocking the event loop.
     def _search():

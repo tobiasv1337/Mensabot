@@ -116,8 +116,8 @@ uv run openmensa index-search --query "tu berlin" --limit 5
 
 - default base URL: `https://openmensa.org/api/v2`
 - default timeout: `10.0` seconds
-- default user agent: derived from the root `VERSION` file through `mensabot-common`
-- primary consumer inside this repo: [`mensabot-backend-core`](../mensabot-backend-core/README.md)
+- default user agent: `openmensa-sdk/<package-version>` unless the caller overrides it
+- primary consumer inside this repo: [`mensabot-backend-core`](../mensabot-backend-core/README.md), which overrides the default with a Mensabot-specific user agent
 
 ## Related README Files
 
