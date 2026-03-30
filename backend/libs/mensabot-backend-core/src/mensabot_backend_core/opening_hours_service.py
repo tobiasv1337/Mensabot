@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import anyio
-from openmensa_sdk import OpenMensaAPIError
 
+from .canteen_service import fetch_canteen_info
 from .cache import shared_cache
 from .cache_keys import osm_opening_hours_key
 from .concurrency import get_io_semaphore
 from .dto import OSMResolveForCanteenResponseDTO, OpenMensaCanteenRefDTO
-from .mappers import _canteen_to_dto
-from .openmensa_client import make_openmensa_client
 from .osm.resolver import resolve_opening_hours_osm
 from .settings import settings
 
@@ -31,19 +29,8 @@ async def fetch_opening_hours_osm_for_canteen(
     if cached is not None:
         return OSMResolveForCanteenResponseDTO.model_validate(cached)
 
-    def _fetch_canteen():
-        with make_openmensa_client() as client:
-            try:
-                return client.get_canteen(canteen_id)
-            except OpenMensaAPIError as e:
-                if e.status_code == 404:
-                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-                raise
-
     async with get_io_semaphore():
-        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-
-    dto = _canteen_to_dto(canteen)
+        dto = await anyio.to_thread.run_sync(fetch_canteen_info, canteen_id)
 
     # If OpenMensa has no coordinates, we can't do deterministic OSM matching.
     if dto.lat is None or dto.lng is None:
