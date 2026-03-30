@@ -1,12 +1,16 @@
 from .cache import TTLCache, shared_cache
 from .cache_keys import mcp_tools_key, openmensa_canteen_key, openmensa_menu_key, osm_opening_hours_key, overpass_query_key
+from .canteen_service import CanteenLookupError, CanteenNotFoundError, fetch_canteen_info
 from .metrics import metrics
 from .openmensa_client import make_openmensa_client
 from .settings import BackendCoreSettings, settings
 
 __all__ = [
     "BackendCoreSettings",
+    "CanteenLookupError",
+    "CanteenNotFoundError",
     "TTLCache",
+    "fetch_canteen_info",
     "make_openmensa_client",
     "mcp_tools_key",
     "metrics",

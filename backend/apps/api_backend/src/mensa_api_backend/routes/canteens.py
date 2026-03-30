@@ -1,14 +1,11 @@
 import anyio
 from fastapi import APIRouter, HTTPException, Query
 
-from mensa_mcp_server.cache import shared_cache
-from mensa_mcp_server.cache_keys import openmensa_canteen_key
-from mensa_mcp_server.schemas import MenuDietFilter, MenuResponseDTO, PriceCategory, OSMResolveForCanteenResponseDTO
-from mensa_mcp_server.services.opening_hours import fetch_opening_hours_osm_for_canteen
-from mensa_mcp_server.services.openmensa import fetch_single_menu, normalize_menu_date
-from mensa_mcp_server.server import make_openmensa_client
-from mensa_mcp_server.settings import settings as mcp_settings
-from openmensa_sdk import OpenMensaAPIError
+from mensabot_backend_core.canteen_service import CanteenLookupError, CanteenNotFoundError, fetch_canteen_info
+from mensabot_backend_core.dto import MenuDietFilter, MenuResponseDTO, OSMResolveForCanteenResponseDTO, PriceCategory
+from mensabot_backend_core.menu_service import fetch_single_menu, normalize_menu_date
+from mensabot_backend_core.opening_hours_service import fetch_opening_hours_osm_for_canteen
+from mensabot_backend_core.openmensa_client import make_openmensa_client
 
 from ..concurrency import get_io_semaphore
 from ..models import (
@@ -117,39 +114,25 @@ async def search_canteens(
 
 @router.get("/api/canteens/{canteen_id}", response_model=CanteenOut)
 async def get_canteen_info_api(canteen_id: int):
-    cache_key = openmensa_canteen_key(canteen_id)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return CanteenOut.model_validate(cached)
-
-    def _fetch_canteen():
-        with make_openmensa_client() as client:
-            return client.get_canteen(canteen_id)
-
     try:
         async with get_io_semaphore():
-            canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-    except OpenMensaAPIError as exc:
-        if getattr(exc, "status_code", None) == 404:
-            raise HTTPException(status_code=404, detail="Canteen not found") from exc
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+            dto = await anyio.to_thread.run_sync(fetch_canteen_info, canteen_id)
+    except CanteenNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Canteen not found") from exc
+    except CanteenLookupError as exc:
+        raise HTTPException(status_code=exc.status_code or 502, detail=str(exc)) from exc
 
-    response = canteen_to_out(canteen)
-    shared_cache.set(cache_key, response.model_dump(exclude_none=True), ttl_s=mcp_settings.openmensa_canteen_info_cache_ttl_s)
-    return response
+    return CanteenOut.model_validate(dto.model_dump(exclude_none=True))
 
 
 @router.get("/api/canteens/{canteen_id}/opening-hours", response_model=OSMResolveForCanteenResponseDTO)
 async def get_canteen_opening_hours_api(canteen_id: int):
     try:
         return await fetch_opening_hours_osm_for_canteen(canteen_id=canteen_id)
-    except ValueError as exc:
-        # Tool uses ValueError for "not found" (404-ish) conditions.
+    except CanteenNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except OpenMensaAPIError as exc:
-        if getattr(exc, "status_code", None) == 404:
-            raise HTTPException(status_code=404, detail="Canteen not found") from exc
-        raise HTTPException(status_code=getattr(exc, "status_code", 500), detail=str(exc)) from exc
+    except CanteenLookupError as exc:
+        raise HTTPException(status_code=exc.status_code or 502, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Unable to resolve opening hours.") from exc
 

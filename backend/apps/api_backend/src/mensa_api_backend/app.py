@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from mensa_mcp_server.cache import shared_cache
+from mensabot_backend_core.cache import shared_cache
 
 from .routes.canteens import router as canteens_router
 from .routes.chat import router as chat_router

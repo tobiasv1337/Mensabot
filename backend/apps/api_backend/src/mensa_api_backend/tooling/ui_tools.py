@@ -1,12 +1,7 @@
 from typing import Any, Dict, List
 
 import anyio
-from openmensa_sdk import OpenMensaAPIError
-
-from mensa_mcp_server.cache import shared_cache
-from mensa_mcp_server.cache_keys import openmensa_canteen_key
-from mensa_mcp_server.server import make_openmensa_client
-from mensa_mcp_server.settings import settings as mcp_settings
+from mensabot_backend_core.canteen_service import CanteenLookupError, CanteenNotFoundError, fetch_canteen_info
 
 from ..concurrency import get_io_semaphore
 from ..i18n import DEFAULT_LANGUAGE, get_string
@@ -59,24 +54,14 @@ async def handle_directions_tool(*, args: Any, tool_trace: ToolCallTrace, tool_t
         record_tool_error(tool_trace=tool_trace, tool_traces=tool_traces, messages=messages, call_id=call_id, tool_name=tool_name, error="Provide canteen_id or lat/lng")
         return None
     if canteen_id is not None and lat is None and lng is None:
-        cache_key = openmensa_canteen_key(canteen_id)
-        cached = shared_cache.get(cache_key)
-        if cached is not None:
-            lat = cached.get("lat")
-            lng = cached.get("lng")
-        if lat is None or lng is None:
-            def _fetch_canteen():
-                with make_openmensa_client() as om_client:
-                    return om_client.get_canteen(canteen_id)
-            try:
-                async with get_io_semaphore():
-                    canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-                lat = getattr(canteen, "latitude", None)
-                lng = getattr(canteen, "longitude", None)
-                shared_cache.set(cache_key, {"id": canteen_id, "name": getattr(canteen, "name", None), "city": getattr(canteen, "city", None), "address": getattr(canteen, "address", None), "lat": lat, "lng": lng}, ttl_s=mcp_settings.openmensa_canteen_info_cache_ttl_s)
-            except OpenMensaAPIError as exc:
-                record_tool_error(tool_trace=tool_trace, tool_traces=tool_traces, messages=messages, call_id=call_id, tool_name=tool_name, error=f"Failed to resolve canteen {canteen_id}: {exc}")
-                return None
+        try:
+            async with get_io_semaphore():
+                canteen = await anyio.to_thread.run_sync(fetch_canteen_info, canteen_id)
+            lat = canteen.lat
+            lng = canteen.lng
+        except (CanteenLookupError, CanteenNotFoundError) as exc:
+            record_tool_error(tool_trace=tool_trace, tool_traces=tool_traces, messages=messages, call_id=call_id, tool_name=tool_name, error=f"Failed to resolve canteen {canteen_id}: {exc}")
+            return None
     if lat is None or lng is None:
         record_tool_error(tool_trace=tool_trace, tool_traces=tool_traces, messages=messages, call_id=call_id, tool_name=tool_name, error="Canteen coordinates unavailable")
         return None
