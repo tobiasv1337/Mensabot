@@ -6,11 +6,13 @@ import { Button } from "@/shared/ui/button/Button";
 import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { resetOnboarding } from "@/features/chat/model/onboarding";
+import { useTheme } from "@/shared/theme/useTheme";
 
 const SettingsPage: React.FC = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const { onDeleteAllChats, onResetOnboarding, installEntry } = useAppShellContext();
+  const { mode: themeMode, toggleMode } = useTheme();
 
   const handleConfirmDelete = () => {
     setDeleteOpen(false);
@@ -68,6 +70,42 @@ const SettingsPage: React.FC = () => {
                   onClick={() => i18n.changeLanguage('en')}
                 >
                   {t('settings.language.en')}
+                </Button>
+              </S.SettingActions>
+            </S.SettingRow>
+          </S.SectionBody>
+        </S.SectionCard>
+
+        <S.SectionCard>
+          <S.SectionHeader>
+            <S.SectionTitle>{t('settings.theme.title')}</S.SectionTitle>
+          </S.SectionHeader>
+          <S.SectionBody>
+            <S.SettingRow $default>
+              <S.SettingInfo>
+                <S.SettingLabel>{t('settings.theme.label')}</S.SettingLabel>
+              </S.SettingInfo>
+              <S.SettingActions>
+                <Button
+                  type="button"
+                  variant={themeMode === 'light' ? "surfaceAccent" : "surfaceInsetBorder"}
+                  onClick={() => toggleMode('light')}
+                >
+                  {t('settings.theme.light')}
+                </Button>
+                <Button
+                  type="button"
+                  variant={themeMode === 'system' ? "surfaceAccent" : "surfaceInsetBorder"}
+                  onClick={() => toggleMode('system')}
+                >
+                  {t('settings.theme.system')}
+                </Button>
+                <Button
+                  type="button"
+                  variant={themeMode === 'dark' ? "surfaceAccent" : "surfaceInsetBorder"}
+                  onClick={() => toggleMode('dark')}
+                >
+                  {t('settings.theme.dark')}
                 </Button>
               </S.SettingActions>
             </S.SettingRow>
