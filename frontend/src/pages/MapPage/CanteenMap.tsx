@@ -25,8 +25,73 @@ const CLUSTER_MAX_ZOOM = 14;
 const PER_PAGE = 100;
 const MAX_PINS = 2000;
 const SEARCH_MIN_SCORE = 60;
+const MAP_STYLE_ERROR = "Kartenstil konnte nicht geladen werden.";
+const NUMERIC_COMPARISON_OPS = new Set(["<", "<=", ">", ">="]);
 
 const coordKey = (pos: LngLat) => `${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+
+const isDirectGetExpression = (value: unknown): value is ["get", string] =>
+  Array.isArray(value) && value[0] === "get" && typeof value[1] === "string";
+
+const sanitizeStyleValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    const [op] = value;
+
+    if (typeof op === "string" && NUMERIC_COMPARISON_OPS.has(op) && value.length >= 3) {
+      const left = value[1];
+      const right = value[2];
+      const rest = value.slice(3).map(sanitizeStyleValue);
+
+      const directGets = [left, right].filter(isDirectGetExpression);
+      if (directGets.length === 0) {
+        return [op, sanitizeStyleValue(left), sanitizeStyleValue(right), ...rest];
+      }
+
+      const guard =
+        directGets.length === 1
+          ? ["!=", directGets[0], null]
+          : ["all", ...directGets.map((expr) => ["!=", expr, null])];
+
+      return [
+        "case",
+        guard,
+        [
+          op,
+          isDirectGetExpression(left) ? ["to-number", left] : sanitizeStyleValue(left),
+          isDirectGetExpression(right) ? ["to-number", right] : sanitizeStyleValue(right),
+          ...rest,
+        ],
+        false,
+      ];
+    }
+
+    if (op === "step" && value.length >= 3 && isDirectGetExpression(value[1])) {
+      const input = value[1];
+      const defaultOutput = sanitizeStyleValue(value[2]);
+      const rest = value.slice(3).map(sanitizeStyleValue);
+
+      return [
+        "case",
+        ["!=", input, null],
+        ["step", ["to-number", input], defaultOutput, ...rest],
+        defaultOutput,
+      ];
+    }
+
+    return value.map(sanitizeStyleValue);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, sanitizeStyleValue(entry)])
+    );
+  }
+
+  return value;
+};
+
+const sanitizeStyleSpecification = (style: unknown): maplibregl.StyleSpecification =>
+  sanitizeStyleValue(style) as maplibregl.StyleSpecification;
 
 const readLngLatPair = (coordinates: unknown): [number, number] | null => {
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -160,6 +225,9 @@ type ThemeSlice = {
 
 const upsertCanteenLayers = (map: maplibregl.Map, theme: ThemeSlice) => {
   const sourceId = "canteens";
+  const pointCountExpr: maplibregl.ExpressionSpecification = ["coalesce", ["get", "point_count"], 0];
+  const stackCountExpr: maplibregl.ExpressionSpecification = ["coalesce", ["get", "stack_count"], 0];
+  const stackIndexExpr: maplibregl.ExpressionSpecification = ["coalesce", ["get", "stack_index"], -1];
 
   const hasSource = !!map.getSource(sourceId);
   if (!hasSource) {
@@ -185,7 +253,7 @@ const upsertCanteenLayers = (map: maplibregl.Map, theme: ThemeSlice) => {
       paint: {
         // Orange accent for grouped canteens
         "circle-color": theme.accent2,
-        "circle-radius": ["step", ["get", "point_count"], 16, 25, 20, 100, 26],
+        "circle-radius": ["step", pointCountExpr, 16, 25, 20, 100, 26],
         "circle-stroke-width": 2,
         "circle-stroke-color": theme.surfacePage,
         "circle-opacity": 0.92,
@@ -218,12 +286,12 @@ const upsertCanteenLayers = (map: maplibregl.Map, theme: ThemeSlice) => {
       filter: [
         "all",
         ["!", ["has", "point_count"]],
-        [">", ["get", "stack_count"], 1],
-        ["==", ["get", "stack_index"], 0],
+        [">", stackCountExpr, 1],
+        ["==", stackIndexExpr, 0],
       ],
       paint: {
         "circle-color": theme.accent2,
-        "circle-radius": ["step", ["get", "stack_count"], 10, 3, 12, 10, 15],
+        "circle-radius": ["step", stackCountExpr, 10, 3, 12, 10, 15],
         "circle-stroke-width": 2,
         "circle-stroke-color": theme.surfacePage,
         "circle-opacity": 0.95,
@@ -239,8 +307,8 @@ const upsertCanteenLayers = (map: maplibregl.Map, theme: ThemeSlice) => {
       filter: [
         "all",
         ["!", ["has", "point_count"]],
-        [">", ["get", "stack_count"], 1],
-        ["==", ["get", "stack_index"], 0],
+        [">", stackCountExpr, 1],
+        ["==", stackIndexExpr, 0],
       ],
       layout: {
         "text-field": "{stack_count}",
@@ -261,7 +329,7 @@ const upsertCanteenLayers = (map: maplibregl.Map, theme: ThemeSlice) => {
       filter: [
         "all",
         ["!", ["has", "point_count"]],
-        ["==", ["get", "stack_count"], 1],
+        ["==", stackCountExpr, 1],
         ["==", ["boolean", ["get", "selected"], false], false],
       ],
       paint: {
@@ -422,6 +490,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
 
   const requestId = useRef(0);
   const refreshTimer = useRef<number | null>(null);
+  const styleRequestId = useRef(0);
 
   const [canteens, setCanteens] = useState<Canteen[]>([]);
   const [totalResults, setTotalResults] = useState<number | null>(null);
@@ -483,6 +552,16 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
     status: "idle" | "loading" | "ready" | "error";
     data: CanteenOpeningHoursResponse | null;
   }>({ status: "idle", data: null });
+
+  const loadSanitizedStyle = useCallback(async (targetStyleUrl: string) => {
+    const response = await fetch(targetStyleUrl);
+    if (!response.ok) {
+      throw new Error(`Style fetch failed: ${response.status} ${response.statusText}`);
+    }
+
+    const style = (await response.json()) as unknown;
+    return sanitizeStyleSpecification(style);
+  }, []);
 
   const setSourceData = useCallback((items: Canteen[]) => {
     const map = mapRef.current;
@@ -695,190 +774,200 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
     if (mapRef.current) return;
 
     destroyedRef.current = false;
-
-    const map = new maplibregl.Map({
-      container,
-      style: styleUrl,
-      center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
-      zoom: DEFAULT_ZOOM,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-    appliedStyleUrlRef.current = styleUrl;
-
-    // MapTiler requires attribution. We place it bottom-left so our overlay UI doesn't fight it.
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
-
-    map.dragRotate.disable();
-    map.touchZoomRotate.disableRotation();
-    map.touchPitch.disable();
-
-    const onStyleLoad = () => {
-      const t = themeRef.current;
-      upsertCanteenLayers(map, {
-        accent1: t.accent1,
-        accent2: t.accent2,
-        accent3: t.accent3,
-        textOnAccent2: t.textOnAccent2,
-        surfacePage: t.surfacePage,
-        textPrimary: t.textPrimary,
-        textMuted: t.textMuted,
-      });
-      upsertSpiderLayers(map, {
-        accent1: t.accent1,
-        accent2: t.accent2,
-        accent3: t.accent3,
-        textOnAccent2: t.textOnAccent2,
-        surfacePage: t.surfacePage,
-        textPrimary: t.textPrimary,
-        textMuted: t.textMuted,
-      });
-      setSourceData(canteensRef.current);
-      setSpiderData(spiderRef.current);
-    };
-
-    map.on("style.load", onStyleLoad);
-    map.on("load", () => {
-      scheduleRefresh();
-    });
-
-    map.on("movestart", closeSpider);
-    map.on("moveend", () => {
-      if (queryRef.current.trim().length > 0) return;
-      scheduleRefresh();
-    });
-
-    map.on("click", "clusters", (e) => {
-      const feature = e.features?.[0] ?? map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
-      const clusterIdRaw = feature?.properties?.cluster_id;
-      const clusterId = typeof clusterIdRaw === "number" ? clusterIdRaw : Number(clusterIdRaw);
-      if (!Number.isFinite(clusterId)) return;
-      const source = map.getSource("canteens") as maplibregl.GeoJSONSource | undefined;
-      if (!source) return;
-
-      void source
-        .getClusterExpansionZoom(clusterId)
-        .then((zoom) => {
-          const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
-          if (!coords) return;
-          // Nudge a bit further than the expansion zoom so clusters feel like they "open up" more.
-          const targetZoom = Math.min(Math.max(zoom, map.getZoom() + 1), MAX_ZOOM);
-          map.easeTo({ center: coords, zoom: targetZoom, duration: 420 });
-        })
-        .catch(() => { });
-    });
-
-    const handleCanteenClick = (e: maplibregl.MapLayerMouseEvent) => {
-      const feature = e.features?.[0];
-      if (!feature) return;
-      const idRaw = feature?.properties?.id;
-      const id = typeof idRaw === "number" ? idRaw : Number(idRaw);
-      if (!Number.isFinite(id)) return;
-
-      const stackCountRaw = feature?.properties?.stack_count;
-      const stackCount = typeof stackCountRaw === "number" ? stackCountRaw : Number(stackCountRaw);
-      const stackKey = feature?.properties?.stack_key;
-
-      if (Number.isFinite(stackCount) && stackCount > 1 && typeof stackKey === "string") {
-        const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
-        const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
-        if (!coords) return;
-        openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
-        return;
-      }
-
-      // Handle "close but not identical" overlaps by spiderifying all rendered points at the click.
-      const rendered = map.queryRenderedFeatures(e.point, { layers: ["single-point", "selected-point"] });
-      const candidateIds = Array.from(
-        new Set(
-          rendered
-            .map((f) => {
-              const raw = f.properties?.id;
-              const num = typeof raw === "number" ? raw : Number(raw);
-              return Number.isFinite(num) ? num : null;
-            })
-            .filter((v): v is number => typeof v === "number")
-        )
-      );
-      if (candidateIds.length > 1) {
-        const candidates = candidateIds.map((cid) => canteensByIdRef.current.get(cid)).filter((c): c is Canteen => !!c);
-        const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
-        if (!coords) return;
-        openSpiderForCanteens(candidates, { lng: coords[0], lat: coords[1] });
-        return;
-      }
-
-      const match = canteensByIdRef.current.get(id);
-      if (!match) return;
-      closeSpider();
-      setActiveCanteen(match);
-
-      if (hasFiniteCoordinates(match)) {
-        map.easeTo({
-          center: [match.lng, match.lat],
-          offset: [0, -120],
-          duration: 450,
-        });
-      }
-    };
-
-    map.on("click", "single-point", handleCanteenClick);
-    map.on("click", "selected-point", handleCanteenClick);
-    map.on("click", "stack-bubble", (e) => {
-      const feature = e.features?.[0];
-      const stackKey = feature?.properties?.stack_key;
-      if (typeof stackKey !== "string") return;
-      const coords = readLngLatPair((feature?.geometry as { coordinates?: unknown })?.coordinates);
-      if (!coords) return;
-      const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
-      openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
-    });
-
-    map.on("click", "spider-points", (e) => {
-      const feature = e.features?.[0];
-      const idRaw = feature?.properties?.id;
-      const id = typeof idRaw === "number" ? idRaw : Number(idRaw);
-      if (!Number.isFinite(id)) return;
-      const match = canteensByIdRef.current.get(id);
-      if (!match) return;
-      closeSpider();
-      setActiveCanteen(match);
-      if (hasFiniteCoordinates(match)) {
-        map.easeTo({
-          center: [match.lng, match.lat],
-          offset: [0, -120],
-          duration: 450,
-        });
-      }
-    });
-
-    const setCursor = (cursor: string) => {
-      map.getCanvas().style.cursor = cursor;
-    };
-    map.on("mouseenter", "clusters", () => setCursor("pointer"));
-    map.on("mouseleave", "clusters", () => setCursor(""));
-    map.on("mouseenter", "single-point", () => setCursor("pointer"));
-    map.on("mouseleave", "single-point", () => setCursor(""));
-    map.on("mouseenter", "selected-point", () => setCursor("pointer"));
-    map.on("mouseleave", "selected-point", () => setCursor(""));
-    map.on("mouseenter", "stack-bubble", () => setCursor("pointer"));
-    map.on("mouseleave", "stack-bubble", () => setCursor(""));
-    map.on("mouseenter", "spider-points", () => setCursor("pointer"));
-    map.on("mouseleave", "spider-points", () => setCursor(""));
-
-    // Only auto-locate if permission already granted (avoid prompting on page load).
-    (async () => {
+    void (async () => {
       try {
-        // TS: "geolocation" is valid in modern browsers; keep a narrow cast for older lib defs.
-        const perms = (navigator as Navigator & { permissions?: Permissions }).permissions;
-        if (!perms?.query) return;
-        const status = await perms.query({ name: "geolocation" as PermissionName });
-        if (status.state === "granted") {
-          locateUser({ recenter: true });
-        }
+        const initialStyle = await loadSanitizedStyle(styleUrl);
+        if (destroyedRef.current) return;
+
+        const map = new maplibregl.Map({
+          container,
+          style: initialStyle,
+          center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
+          zoom: DEFAULT_ZOOM,
+          attributionControl: false,
+        });
+
+        mapRef.current = map;
+        appliedStyleUrlRef.current = styleUrl;
+
+        // MapTiler requires attribution. We place it bottom-left so our overlay UI doesn't fight it.
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
+
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
+        map.touchPitch.disable();
+
+        const onStyleLoad = () => {
+          const t = themeRef.current;
+          upsertCanteenLayers(map, {
+            accent1: t.accent1,
+            accent2: t.accent2,
+            accent3: t.accent3,
+            textOnAccent2: t.textOnAccent2,
+            surfacePage: t.surfacePage,
+            textPrimary: t.textPrimary,
+            textMuted: t.textMuted,
+          });
+          upsertSpiderLayers(map, {
+            accent1: t.accent1,
+            accent2: t.accent2,
+            accent3: t.accent3,
+            textOnAccent2: t.textOnAccent2,
+            surfacePage: t.surfacePage,
+            textPrimary: t.textPrimary,
+            textMuted: t.textMuted,
+          });
+          setSourceData(canteensRef.current);
+          setSpiderData(spiderRef.current);
+        };
+
+        map.on("style.load", onStyleLoad);
+        map.on("load", () => {
+          scheduleRefresh();
+        });
+
+        map.on("movestart", closeSpider);
+        map.on("moveend", () => {
+          if (queryRef.current.trim().length > 0) return;
+          scheduleRefresh();
+        });
+
+        map.on("click", "clusters", (e) => {
+          const feature = e.features?.[0] ?? map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
+          const clusterIdRaw = feature?.properties?.cluster_id;
+          const clusterId = typeof clusterIdRaw === "number" ? clusterIdRaw : Number(clusterIdRaw);
+          if (!Number.isFinite(clusterId)) return;
+          const source = map.getSource("canteens") as maplibregl.GeoJSONSource | undefined;
+          if (!source) return;
+
+          void source
+            .getClusterExpansionZoom(clusterId)
+            .then((zoom) => {
+              const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
+              if (!coords) return;
+              // Nudge a bit further than the expansion zoom so clusters feel like they "open up" more.
+              const targetZoom = Math.min(Math.max(zoom, map.getZoom() + 1), MAX_ZOOM);
+              map.easeTo({ center: coords, zoom: targetZoom, duration: 420 });
+            })
+            .catch(() => { });
+        });
+
+        const handleCanteenClick = (e: maplibregl.MapLayerMouseEvent) => {
+          const feature = e.features?.[0];
+          if (!feature) return;
+          const idRaw = feature?.properties?.id;
+          const id = typeof idRaw === "number" ? idRaw : Number(idRaw);
+          if (!Number.isFinite(id)) return;
+
+          const stackCountRaw = feature?.properties?.stack_count;
+          const stackCount = typeof stackCountRaw === "number" ? stackCountRaw : Number(stackCountRaw);
+          const stackKey = feature?.properties?.stack_key;
+
+          if (Number.isFinite(stackCount) && stackCount > 1 && typeof stackKey === "string") {
+            const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
+            const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
+            if (!coords) return;
+            openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
+            return;
+          }
+
+          // Handle "close but not identical" overlaps by spiderifying all rendered points at the click.
+          const rendered = map.queryRenderedFeatures(e.point, { layers: ["single-point", "selected-point"] });
+          const candidateIds = Array.from(
+            new Set(
+              rendered
+                .map((f) => {
+                  const raw = f.properties?.id;
+                  const num = typeof raw === "number" ? raw : Number(raw);
+                  return Number.isFinite(num) ? num : null;
+                })
+                .filter((v): v is number => typeof v === "number")
+            )
+          );
+          if (candidateIds.length > 1) {
+            const candidates = candidateIds.map((cid) => canteensByIdRef.current.get(cid)).filter((c): c is Canteen => !!c);
+            const coords = readLngLatPair((feature.geometry as { coordinates?: unknown })?.coordinates);
+            if (!coords) return;
+            openSpiderForCanteens(candidates, { lng: coords[0], lat: coords[1] });
+            return;
+          }
+
+          const match = canteensByIdRef.current.get(id);
+          if (!match) return;
+          closeSpider();
+          setActiveCanteen(match);
+
+          if (hasFiniteCoordinates(match)) {
+            map.easeTo({
+              center: [match.lng, match.lat],
+              offset: [0, -120],
+              duration: 450,
+            });
+          }
+        };
+
+        map.on("click", "single-point", handleCanteenClick);
+        map.on("click", "selected-point", handleCanteenClick);
+        map.on("click", "stack-bubble", (e) => {
+          const feature = e.features?.[0];
+          const stackKey = feature?.properties?.stack_key;
+          if (typeof stackKey !== "string") return;
+          const coords = readLngLatPair((feature?.geometry as { coordinates?: unknown })?.coordinates);
+          if (!coords) return;
+          const items = canteensByCoordKeyRef.current.get(stackKey) ?? [];
+          openSpiderForCanteens(items, { lng: coords[0], lat: coords[1] });
+        });
+
+        map.on("click", "spider-points", (e) => {
+          const feature = e.features?.[0];
+          const idRaw = feature?.properties?.id;
+          const id = typeof idRaw === "number" ? idRaw : Number(idRaw);
+          if (!Number.isFinite(id)) return;
+          const match = canteensByIdRef.current.get(id);
+          if (!match) return;
+          closeSpider();
+          setActiveCanteen(match);
+          if (hasFiniteCoordinates(match)) {
+            map.easeTo({
+              center: [match.lng, match.lat],
+              offset: [0, -120],
+              duration: 450,
+            });
+          }
+        });
+
+        const setCursor = (cursor: string) => {
+          map.getCanvas().style.cursor = cursor;
+        };
+        map.on("mouseenter", "clusters", () => setCursor("pointer"));
+        map.on("mouseleave", "clusters", () => setCursor(""));
+        map.on("mouseenter", "single-point", () => setCursor("pointer"));
+        map.on("mouseleave", "single-point", () => setCursor(""));
+        map.on("mouseenter", "selected-point", () => setCursor("pointer"));
+        map.on("mouseleave", "selected-point", () => setCursor(""));
+        map.on("mouseenter", "stack-bubble", () => setCursor("pointer"));
+        map.on("mouseleave", "stack-bubble", () => setCursor(""));
+        map.on("mouseenter", "spider-points", () => setCursor("pointer"));
+        map.on("mouseleave", "spider-points", () => setCursor(""));
+
+        // Only auto-locate if permission already granted (avoid prompting on page load).
+        (async () => {
+          try {
+            // TS: "geolocation" is valid in modern browsers; keep a narrow cast for older lib defs.
+            const perms = (navigator as Navigator & { permissions?: Permissions }).permissions;
+            if (!perms?.query) return;
+            const status = await perms.query({ name: "geolocation" as PermissionName });
+            if (status.state === "granted") {
+              locateUser({ recenter: true });
+            }
+          } catch {
+            // ignore
+          }
+        })();
       } catch {
-        // ignore
+        if (!destroyedRef.current) {
+          setError(MAP_STYLE_ERROR);
+        }
       }
     })();
 
@@ -887,7 +976,7 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       if (refreshTimer.current) {
         window.clearTimeout(refreshTimer.current);
       }
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -899,9 +988,22 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
     if (!map) return;
     if (!styleUrl) return;
     if (appliedStyleUrlRef.current === styleUrl) return;
-    appliedStyleUrlRef.current = styleUrl;
-    map.setStyle(styleUrl);
-  }, [styleUrl]);
+    const rid = ++styleRequestId.current;
+
+    void loadSanitizedStyle(styleUrl)
+      .then((nextStyle) => {
+        if (destroyedRef.current) return;
+        if (rid !== styleRequestId.current) return;
+        if (mapRef.current !== map) return;
+        appliedStyleUrlRef.current = styleUrl;
+        map.setStyle(nextStyle);
+      })
+      .catch(() => {
+        if (destroyedRef.current) return;
+        if (rid !== styleRequestId.current) return;
+        setError(MAP_STYLE_ERROR);
+      });
+  }, [loadSanitizedStyle, styleUrl]);
 
   // Refresh on query changes
   useEffect(() => {
