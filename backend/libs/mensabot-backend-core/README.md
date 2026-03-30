@@ -82,9 +82,10 @@ flowchart TD
     Refresh --> Persist["write versioned index file"]
     Persist --> UseIndex
 
-    Version["root VERSION change"] --> Invalidate["cached payload or index version mismatch"]
-    Invalidate --> CacheLookup
-    Invalidate --> IndexLoad
+    Version["root VERSION change"] --> CacheInvalidate["cached payload version mismatch"]
+    CacheInvalidate --> CacheLookup
+    SDKVersion["openmensa-sdk package version change"] --> IndexInvalidate["persisted index version mismatch"]
+    IndexInvalidate --> IndexLoad
 
     Refresh -->|failure| RefreshFail["upstream refresh fails"]
     RefreshFail --> StaleFallback["fallback to older persisted index if available"]

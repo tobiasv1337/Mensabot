@@ -1,3 +1,0 @@
-from mensabot_backend_core.opening_hours_service import fetch_opening_hours_osm_for_canteen
-
-__all__ = ["fetch_opening_hours_osm_for_canteen"]

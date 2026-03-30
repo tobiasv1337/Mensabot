@@ -24,6 +24,18 @@ flowchart LR
     Core -->|Overpass QL| OSM["OpenStreetMap / Overpass"]
 ```
 
+## Python Package Graph
+
+```mermaid
+flowchart LR
+    API["apps/api_backend"] -->|embedded tool registry + execution| MCP["apps/mcp-server"]
+    API -->|shared HTTP canteen and debug logic| Core["libs/mensabot-backend-core"]
+    API -->|HTTP proxy /transcribe| STT["apps/stt_server"]
+    MCP -->|shared domain services| Core
+    Core -->|typed OpenMensa client + canteen index| SDK["libs/openmensa"]
+    Core -->|project version + user-agent helpers| Common["libs/mensabot-common"]
+```
+
 ## What Lives Here
 
 | Path | Type | Purpose |

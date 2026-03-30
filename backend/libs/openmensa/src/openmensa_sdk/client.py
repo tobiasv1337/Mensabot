@@ -10,11 +10,9 @@ import requests
 import datetime as dt
 
 from .errors import OpenMensaAPIError
+from .meta import build_user_agent
 from .models import Canteen, Day, Meal
 from .utils import _parse_date_str, _parse_next_page_from_link, _clean_params
-from mensabot_common.version import build_user_agent
-
-
 
 DEFAULT_API_URL = "https://openmensa.org/api/v2"
 
