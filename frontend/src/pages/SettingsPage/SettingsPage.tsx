@@ -59,14 +59,14 @@ const SettingsPage: React.FC = () => {
               <S.SettingActions>
                 <Button
                   type="button"
-                  variant={i18n.language?.startsWith('de') ? "surfaceAccent" : "surfaceInsetBorder"}
+                  variant={i18n.language?.toLowerCase().startsWith('de') ? "surfaceAccent" : "surfaceInsetBorder"}
                   onClick={() => i18n.changeLanguage('de')}
                 >
                   {t('settings.language.de')}
                 </Button>
                 <Button
                   type="button"
-                  variant={i18n.language?.startsWith('en') ? "surfaceAccent" : "surfaceInsetBorder"}
+                  variant={i18n.language?.toLowerCase().startsWith('en') ? "surfaceAccent" : "surfaceInsetBorder"}
                   onClick={() => i18n.changeLanguage('en')}
                 >
                   {t('settings.language.en')}
