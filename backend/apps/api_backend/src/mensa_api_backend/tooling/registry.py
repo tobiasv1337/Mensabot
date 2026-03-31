@@ -1,11 +1,11 @@
 from typing import Any, Dict, List
 
 from fastmcp import Client as MCPClient
+from mensabot_backend_core.cache import shared_cache
+from mensabot_backend_core.cache_keys import mcp_tools_key
+from mensabot_backend_core.settings import settings as core_settings
 
 from mensa_mcp_server import mcp
-from mensa_mcp_server.cache import shared_cache
-from mensa_mcp_server.cache_keys import mcp_tools_key
-from mensa_mcp_server.settings import settings as mcp_settings
 
 from ..logging import logger
 
@@ -51,5 +51,5 @@ async def get_openai_tools_from_mcp() -> List[Dict[str, Any]]:
                     },
                 }
             )
-        shared_cache.set(cache_key, openai_tools, ttl_s=mcp_settings.mcp_tools_cache_ttl_s)
+        shared_cache.set(cache_key, openai_tools, ttl_s=core_settings.mcp_tools_cache_ttl_s)
         return openai_tools

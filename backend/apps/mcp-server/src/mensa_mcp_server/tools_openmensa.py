@@ -8,10 +8,12 @@ import anyio
 from pydantic import Field
 from typing import Annotated, Optional
 
-from openmensa_sdk import OpenMensaAPIError
+from mensabot_backend_core.canteen_index_service import load_canteen_index as load_shared_canteen_index
+from mensabot_backend_core.canteen_service import CanteenNotFoundError, fetch_canteen_info
+from mensabot_backend_core.menu_service import fetch_single_menu, normalize_menu_date
+from mensabot_backend_core.opening_hours_service import fetch_opening_hours_osm_for_canteen
+from mensabot_backend_core.openmensa_client import make_openmensa_client
 
-from .cache import shared_cache
-from .cache_keys import openmensa_canteen_key
 from .concurrency import get_io_semaphore
 from .schemas import (
     # OpenMensa DTOs
@@ -30,13 +32,13 @@ from .schemas import (
     OSMResolveForCanteenResponseDTO,
     PriceCategory,
 )
-from .server import mcp, make_openmensa_client
-from .services.canteen_index import load_canteen_index
-from .services.opening_hours import fetch_opening_hours_osm_for_canteen
-from .services.openmensa import fetch_single_menu, normalize_menu_date
-from .settings import settings
+from .server import mcp
 
 # ------------------------------ internal helpers ------------------------------
+
+
+def _load_canteen_index():
+    return load_shared_canteen_index(caller="mcp")
 
 
 def _to_public_menu(menu: MenuResponseDTO) -> MenuResponsePublicDTO:
@@ -98,7 +100,7 @@ async def search_canteens(
         raise ValueError("near_lat and near_lng must be provided together.")
 
     async with get_io_semaphore():
-        index = await anyio.to_thread.run_sync(load_canteen_index)
+        index = await anyio.to_thread.run_sync(_load_canteen_index)
 
     # Can be a bit CPU-intensive, so run in thread to avoid blocking the event loop.
     def _search():
@@ -144,26 +146,11 @@ async def get_canteen_info(
     
     Use after discovering a canteen ID from search_canteens to get full details.
     """
-    cache_key = openmensa_canteen_key(canteen_id)
-    cached = shared_cache.get(cache_key)
-    if cached is not None:
-        return CanteenDTO.model_validate(cached)
-
-    def _fetch_canteen():
-        with make_openmensa_client() as client:
-            try:
-                return client.get_canteen(canteen_id)
-            except OpenMensaAPIError as e:
-                if e.status_code == 404:
-                    raise ValueError(f"Canteen with ID {canteen_id} not found.") from e
-                raise
-
-    async with get_io_semaphore():
-        canteen = await anyio.to_thread.run_sync(_fetch_canteen)
-
-    dto = _canteen_to_dto(canteen)
-    shared_cache.set(cache_key, dto.model_dump(exclude_none=True), ttl_s=settings.openmensa_canteen_info_cache_ttl_s)
-    return dto
+    try:
+        async with get_io_semaphore():
+            return await anyio.to_thread.run_sync(fetch_canteen_info, canteen_id)
+    except CanteenNotFoundError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 @mcp.tool()

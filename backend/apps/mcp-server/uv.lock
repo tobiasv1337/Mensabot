@@ -740,12 +740,14 @@ wheels = [
 
 [[package]]
 name = "mensa-mcp-server"
-version = "0.1.0"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "fastmcp" },
     { name = "httpx" },
+    { name = "mensabot-backend-core" },
+    { name = "mensabot-common" },
     { name = "openmensa-sdk" },
     { name = "pydantic" },
 ]
@@ -755,9 +757,39 @@ requires-dist = [
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "fastmcp", specifier = ">=2.14.4" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mensabot-backend-core", editable = "../../libs/mensabot-backend-core" },
+    { name = "mensabot-common", editable = "../../libs/mensabot-common" },
     { name = "openmensa-sdk", editable = "../../libs/openmensa" },
     { name = "pydantic", specifier = ">=2.12.5" },
 ]
+
+[[package]]
+name = "mensabot-backend-core"
+version = "1.1.0"
+source = { editable = "../../libs/mensabot-backend-core" }
+dependencies = [
+    { name = "anyio" },
+    { name = "httpx" },
+    { name = "mensabot-common" },
+    { name = "openmensa-sdk" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anyio", specifier = ">=4.12.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mensabot-common", editable = "../../libs/mensabot-common" },
+    { name = "openmensa-sdk", editable = "../../libs/openmensa" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pydantic-settings", specifier = ">=2.10.1" },
+]
+
+[[package]]
+name = "mensabot-common"
+version = "1.1.0"
+source = { editable = "../../libs/mensabot-common" }
 
 [[package]]
 name = "more-itertools"
@@ -782,7 +814,7 @@ wheels = [
 
 [[package]]
 name = "openmensa-sdk"
-version = "0.1.0"
+version = "1.1.0"
 source = { editable = "../../libs/openmensa" }
 dependencies = [
     { name = "rapidfuzz" },

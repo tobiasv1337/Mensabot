@@ -7,9 +7,15 @@ set -e
 
 REPO_URL="https://github.com/tobiasv1337/Mensabot.git"
 CLONE_DIR="Mensabot"
-BRANCH="main"
+DEFAULT_REF="main"
+SELECTED_REF="${MENSABOT_REF:-$DEFAULT_REF}"
+SELECTED_REF_TYPE="branch"
 PRIMARY_USER="${SUDO_USER:-$(id -un)}"
 CURRENT_USER="$(id -un)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR=""
+TARGET_REPO_DIR=""
+TARGET_REPO_URL="$REPO_URL"
 
 # Function to print informational messages
 info() {
@@ -23,6 +29,24 @@ success() {
 error() {
     echo -e "\033[1;31m[x]\033[0m $1"
     exit 1
+}
+
+prompt_tty() {
+    if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+        printf "%b" "$1" > /dev/tty
+        return 0
+    fi
+    return 1
+}
+
+read_from_tty() {
+    local __resultvar="$1"
+    local input
+    if ! [ -r /dev/tty ]; then
+        return 1
+    fi
+    IFS= read -r input < /dev/tty || return 1
+    printf -v "$__resultvar" '%s' "$input"
 }
 
 run_privileged() {
@@ -49,30 +73,216 @@ run_as_primary_user() {
     fi
 }
 
+resolve_script_dir() {
+    if [ -f "$SCRIPT_SOURCE" ]; then
+        SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd -P)"
+    fi
+}
+
+is_mensabot_repo_dir() {
+    local candidate="$1"
+
+    [ -n "$candidate" ] || return 1
+    git -C "$candidate" rev-parse --show-toplevel &> /dev/null || return 1
+    [ -f "$candidate/install.sh" ] || return 1
+    [ -f "$candidate/setup/setup.py" ] || return 1
+    [ -f "$candidate/.env.example" ] || return 1
+}
+
+set_target_repo_dir() {
+    local candidate="$1"
+    local origin_url
+
+    TARGET_REPO_DIR="$(cd "$candidate" && pwd -P)"
+    if origin_url="$(git -C "$TARGET_REPO_DIR" remote get-url origin 2>/dev/null)"; then
+        TARGET_REPO_URL="$origin_url"
+    else
+        TARGET_REPO_URL="$REPO_URL"
+    fi
+}
+
+resolve_repository_context() {
+    local current_git_root
+    local clone_candidate
+
+    resolve_script_dir
+
+    if current_git_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" && is_mensabot_repo_dir "$current_git_root"; then
+        set_target_repo_dir "$current_git_root"
+        return
+    fi
+
+    if [ -n "$SCRIPT_DIR" ] && is_mensabot_repo_dir "$SCRIPT_DIR"; then
+        set_target_repo_dir "$SCRIPT_DIR"
+        return
+    fi
+
+    clone_candidate="$PWD/$CLONE_DIR"
+    if is_mensabot_repo_dir "$clone_candidate"; then
+        set_target_repo_dir "$clone_candidate"
+    fi
+}
+
+validate_selected_ref() {
+    if git ls-remote --exit-code --heads "$TARGET_REPO_URL" "refs/heads/$SELECTED_REF" &> /dev/null; then
+        SELECTED_REF_TYPE="branch"
+        return 0
+    fi
+
+    if git ls-remote --exit-code --tags --refs "$TARGET_REPO_URL" "refs/tags/$SELECTED_REF" &> /dev/null; then
+        SELECTED_REF_TYPE="tag"
+        return 0
+    fi
+
+    return 1
+}
+
+select_repository_ref() {
+    local remote_refs tags_output branches_output selection selection_index ref_name
+    local -a tags branches option_refs option_types
+
+    if [ -n "${MENSABOT_REF:-}" ]; then
+        validate_selected_ref || error "Requested ref '$SELECTED_REF' from MENSABOT_REF was not found on the selected repository remote."
+        info "Using requested Mensabot ref from MENSABOT_REF: $SELECTED_REF"
+        return
+    fi
+
+    if ! [ -r /dev/tty ] || ! [ -w /dev/tty ]; then
+        info "No interactive terminal available for version selection. Using default ref '$SELECTED_REF'."
+        validate_selected_ref || error "Default ref '$SELECTED_REF' could not be validated on the selected repository remote '$TARGET_REPO_URL'. Set MENSABOT_REF to a valid branch or tag and rerun this script."
+        return
+    fi
+
+    info "Fetching available Mensabot versions..."
+    if ! remote_refs="$(git ls-remote --heads --tags --refs "$TARGET_REPO_URL" 2>/dev/null)"; then
+        info "Could not retrieve versions from the repository remote. Continuing with default ref '$SELECTED_REF'."
+        return
+    fi
+
+    while read -r _ ref_name; do
+        [ -n "$ref_name" ] || continue
+        case "$ref_name" in
+            refs/tags/*)
+                tags+=("${ref_name#refs/tags/}")
+                ;;
+            refs/heads/*)
+                branches+=("${ref_name#refs/heads/}")
+                ;;
+        esac
+    done <<< "$remote_refs"
+
+    if [ ${#tags[@]} -gt 0 ]; then
+        tags_output="$(printf '%s\n' "${tags[@]}" | sort -rV)"
+        mapfile -t tags <<< "$tags_output"
+    fi
+
+    if [ ${#branches[@]} -gt 0 ]; then
+        branches_output="$(printf '%s\n' "${branches[@]}" | sort)"
+        mapfile -t branches <<< "$branches_output"
+    fi
+
+    prompt_tty "\nSelect the Mensabot version before configuration and deployment.\n"
+    prompt_tty "Press Enter to keep the default (${SELECTED_REF}), choose a number, or type a ref name manually.\n\n"
+
+    local i=1
+    if [ ${#tags[@]} -gt 0 ]; then
+        prompt_tty "Stable releases:\n"
+        for ref_name in "${tags[@]}"; do
+            prompt_tty "  $i) $ref_name [tag]\n"
+            option_refs+=("$ref_name")
+            option_types+=("tag")
+            i=$((i + 1))
+        done
+        prompt_tty "\n"
+    fi
+
+    if [ ${#branches[@]} -gt 0 ]; then
+        prompt_tty "Development branches:\n"
+        for ref_name in "${branches[@]}"; do
+            prompt_tty "  $i) $ref_name [branch]\n"
+            option_refs+=("$ref_name")
+            option_types+=("branch")
+            i=$((i + 1))
+        done
+        prompt_tty "\n"
+    fi
+
+    while true; do
+        prompt_tty "Install ref [${SELECTED_REF}]: "
+        read_from_tty selection || break
+
+        if [ -z "$selection" ]; then
+            validate_selected_ref || error "Default ref '$SELECTED_REF' was not found on the selected repository remote."
+            break
+        fi
+
+        if [[ "$selection" =~ ^[0-9]+$ ]]; then
+            selection_index=$((selection - 1))
+            if [ "$selection_index" -ge 0 ] && [ "$selection_index" -lt "${#option_refs[@]}" ]; then
+                SELECTED_REF="${option_refs[$selection_index]}"
+                SELECTED_REF_TYPE="${option_types[$selection_index]}"
+                break
+            fi
+        else
+            SELECTED_REF="$selection"
+            if validate_selected_ref; then
+                break
+            fi
+        fi
+
+        SELECTED_REF="$DEFAULT_REF"
+        prompt_tty "Invalid selection. Enter a listed number, a branch name, a tag, or press Enter for '${DEFAULT_REF}'.\n"
+    done
+
+    info "Selected Mensabot ref: $SELECTED_REF"
+}
+
+checkout_selected_ref() {
+    if [ "$SELECTED_REF_TYPE" = "branch" ]; then
+        if git show-ref --verify --quiet "refs/heads/$SELECTED_REF"; then
+            git checkout "$SELECTED_REF"
+        else
+            git checkout -b "$SELECTED_REF" --track "origin/$SELECTED_REF"
+        fi
+        git pull --ff-only origin "$SELECTED_REF"
+    else
+        git checkout "$SELECTED_REF"
+    fi
+}
+
 # Verify base dependencies exist or attempt to install them via apt
 info "Checking system requirements..."
 
 if ! command -v apt-get &> /dev/null; then
     info "Warning: This automated script is optimized for Debian/Ubuntu (apt)."
     info "It appears you are running a different operating system."
-    read -p "Do you want to continue anyway? Ensure git, python3, python3-venv, and docker are installed manually. (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    prompt_tty "Do you want to continue anyway? Ensure git, python3, python3-venv, and docker are installed manually. (y/N) "
+    read_from_tty continue_anyway || error "Setup aborted because no interactive terminal was available."
+    prompt_tty "\n"
+    if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
         error "Setup aborted by user."
     fi
 else
-    # Check if we need to install on debian systems
-    deps_to_install=""
-    for cmd in curl git python3 python3-venv; do
-        if ! command -v $cmd &> /dev/null; then
-            deps_to_install="$deps_to_install $cmd"
+    # Check if we need to install packages on Debian/Ubuntu systems.
+    declare -a deps_to_install=()
+    for cmd in curl git python3; do
+        if ! command -v "$cmd" &> /dev/null; then
+            deps_to_install+=("$cmd")
         fi
     done
-    
-    if [ -n "$deps_to_install" ]; then
-        info "Installing missing dependencies:$deps_to_install"
+
+    if command -v python3 &> /dev/null; then
+        if ! python3 -c 'import ensurepip, venv' &> /dev/null; then
+            deps_to_install+=("python3-venv")
+        fi
+    else
+        deps_to_install+=("python3-venv")
+    fi
+
+    if [ ${#deps_to_install[@]} -gt 0 ]; then
+        info "Installing missing dependencies: ${deps_to_install[*]}"
         run_privileged apt-get update
-        run_privileged apt-get install -y $deps_to_install
+        run_privileged apt-get install -y "${deps_to_install[@]}"
     fi
 fi
 
@@ -87,19 +297,21 @@ else
     success "Docker is already installed."
 fi
 
+resolve_repository_context
+select_repository_ref
+
 # Clone the Mensabot repository or update it if it already exists
 info "Preparing Mensabot repository..."
-if [ -d "$CLONE_DIR/.git" ]; then
-    info "Directory $CLONE_DIR already exists. Updating branch $BRANCH..."
-    cd "$CLONE_DIR"
-    git fetch origin
-    git checkout "$BRANCH"
-    git pull origin "$BRANCH"
+if [ -n "$TARGET_REPO_DIR" ]; then
+    info "Using existing Mensabot repository at $TARGET_REPO_DIR. Updating ref $SELECTED_REF..."
+    cd "$TARGET_REPO_DIR"
+    git fetch origin "+refs/heads/*:refs/remotes/origin/*" --tags --prune
+    checkout_selected_ref
 elif [ -d "$CLONE_DIR" ]; then
     error "Directory $CLONE_DIR exists but is not a git repository. Please remove it or rename it."
 else
-    info "Cloning Mensabot repository..."
-    git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$CLONE_DIR"
+    info "Cloning Mensabot repository at ref $SELECTED_REF..."
+    git clone --branch "$SELECTED_REF" --single-branch "$REPO_URL" "$CLONE_DIR"
     cd "$CLONE_DIR"
 fi
 
@@ -112,6 +324,7 @@ fi
 [ -f setup/setup.py ] || error "Expected file setup/setup.py not found."
 
 success "Repository ready."
+info "Re-run ./install.sh in this repository any time to reopen the setup manager for configuration, start/stop, restart, or updates."
 
 # Create a dedicated python virtual environment for the setup tools
 info "Setting up Python environment for the Setup Wizard..."

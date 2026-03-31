@@ -18,6 +18,10 @@
         "loadMore": "Mehr Chats laden",
         "theme": "Theme"
     },
+    "appStatus": {
+        "offlineTitle": "Du bist offline.",
+        "offlineBody": "Gespeicherte Chats und Shortcuts bleiben auf diesem Gerät verfügbar. Live-Chat, Mensasuche, Karte und Transkription brauchen eine Verbindung."
+    },
     "contact": {
         "eyebrow": "Impressum",
         "title": "Sag Hallo!",
@@ -110,6 +114,9 @@
         "found": "gefunden",
         "emptyTitle": "Keine Mensen gefunden",
         "emptyBody": "Passe deine Suche an oder prüfe, ob der Name korrekt ist.",
+        "offlineTitle": "Mensasuche ist offline nicht verfügbar",
+        "offlineBody": "Verbinde dich erneut, um Mensen zu suchen und aktuelle Mensadaten zu laden.",
+        "offline": "Mensasuche ist nicht verfügbar, solange du offline bist.",
         "selected": "Ausgewählt",
         "startChat": "Chat starten",
         "routeTitle": "Route in Google Maps öffnen",
@@ -124,6 +131,8 @@
         "searchAriaLabel": "Suche nach Mensen auf der Karte",
         "searchFor": "Suche: \"{{query}}\"",
         "defaultHint": "Zeigt Mensen im aktuellen Kartenausschnitt.",
+        "offlineTitle": "Karte ist offline nicht verfügbar",
+        "offlineBody": "Verbinde dich erneut, um Kartendaten, Mensastandorte und die Suche in der Nähe zu laden.",
         "errorTitle": "MapTiler Konfiguration fehlt",
         "errorBody": "Bitte setze die Umgebungsvariablen VITE_MAPTILER_STYLE_URL_LIGHT und VITE_MAPTILER_STYLE_URL_DARK (jeweils die komplette Style-JSON URL inkl. ?key=...).",
         "errorMissing": "Fehlend"
@@ -239,9 +248,13 @@
         "manualLocation": "Manuell eingeben",
         "openRoute": "Route öffnen",
         "clarificationNone": "Keine dieser Optionen",
+        "clarificationSubmit": "Auswahl senden",
+        "clarificationMultiHint": "Wähle eine oder mehrere Optionen aus und sende sie dann ab.",
+        "clarificationSelectedPrefix": "Ausgewählte Optionen:",
         "myLocation": "Mein Standort: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Nachricht schreiben oder mit / Schnellzugriffe nutzen",
+            "offlineDisabled": "Du bist offline. Gespeicherte Chats bleiben verfügbar, aber zum Senden brauchst du eine Verbindung.",
             "recording": "Aufnahme läuft... {{seconds}}s / {{max}}s",
             "transcribing": "Transkription läuft...",
             "sending": "Senden...",
@@ -368,8 +381,6 @@
             "dataAccept": "Verstanden & Akzeptieren",
             "priceCategorySelect": "Bist du **Student**, **Mitarbeiter**, **Schüler** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
             "priceCategoryNo": "Überspringen",
-            "priceCategorySelected": "Preiskategorie: **{{category}}**",
-            "noPriceCategorySelected": "Keine Preiskategorie ausgewählt.",
             "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
             "dietYes": "Ja",
             "dietNo": "Nein, keine Präferenz",
@@ -380,15 +391,80 @@
             "allergySelect": "Wähle deine **Allergene** aus:",
             "allergyConfirm": "Auswahl bestätigen",
             "hints": "💡 **Tipp:** Du kannst deine Filter jederzeit oben mit dem **\"Filter\"**-Button anpassen. Außerdem kannst du **Shortcuts** für deine typischen Anfragen anlegen.",
+            "quickAccessHint": "⚡ **Schneller im Alltag:** Speichere **Shortcuts** mit Prompt + Filtern für deine typischen Anfragen. Lege eins mit dem **Plus unten** an. Mit **Slash Commands** wie `/tu_hardenbergstraße today` siehst du einen Speiseplan direkt ohne Verzögerung für einen schnellen Überblick.",
             "hintsOk": "OK",
             "inputDisabled": "Bitte schließe zuerst das Onboarding ab",
             "filterDisclaimer": "⚠️ **Wichtig:** Das Filtern nach Ernährungsweise und **Allergenen** wird von den meisten Mensen **nicht vollständig** über die Datenquelle unterstützt. Wir können daher **keine Garantie** für die Korrektheit der Filterung übernehmen. Bitte betrachte die Ergebnisse nur als **Vorfilterung** und verlasse dich niemals zu 100% auf die generierten Antworten.",
             "filterDisclaimerAccept": "Verstanden",
-            "complete": "Super, du bist startklar! 🎉 Frag mich nach Speiseplänen, Öffnungszeiten oder Preisen.",
-            "dietSelected": "Essenspräferenz: **{{diet}}**",
-            "allergensSelected": "Allergene: **{{allergens}}**",
-            "noDietSelected": "Keine Essenspräferenz ausgewählt.",
-            "noAllergensSelected": "Keine Allergene ausgewählt."
+            "complete": "Super, du bist startklar! 🎉 Frag mich nach Speiseplänen, Öffnungszeiten oder Preisen."
+        }
+    },
+    "installPromotion": {
+        "card": {
+            "title": "Mensabot installieren",
+            "body": {
+                "native": "Halte Mensabot direkt griffbereit und starte ihn auf diesem Gerät wie eine App.",
+                "ios": "Füge Mensabot in Safari zu deinem Home-Bildschirm hinzu, damit er schneller und im Vollbild startet.",
+                "mac": "Füge Mensabot in Safari zu deinem Dock hinzu, damit er wie eine normale Desktop-App startet."
+            }
+        },
+        "entry": {
+            "label": "Mensabot installieren",
+            "description": {
+                "native": "Installiere Mensabot auf diesem Gerät für schnelleren Zugriff und einen App-ähnlichen Start.",
+                "ios": "Öffne in Safari das Teilen-Menü, um Mensabot als Web-App zum Home-Bildschirm hinzuzufügen.",
+                "mac": "Nutze in Safari das Teilen-Menü, um Mensabot zum Dock hinzuzufügen."
+            }
+        },
+        "actions": {
+            "install": "Installieren",
+            "howToInstall": "So installierst du es",
+            "maybeLater": "Später",
+            "dismiss": "Nein danke",
+            "close": "Schließen"
+        },
+        "instructions": {
+            "sharedNote": "Die Installation dauert nur einen Moment. Danach startet Mensabot schneller und fühlt sich mehr wie eine native App an.",
+            "ios": {
+                "title": "Auf iPhone oder iPad installieren",
+                "subtitle": "Nutze Safari, um Mensabot zu deinem Home-Bildschirm hinzuzufügen.",
+                "steps": {
+                    "share": {
+                        "title": "Teilen öffnen",
+                        "body": "Tippe in Safari auf den Teilen-Button."
+                    },
+                    "home": {
+                        "title": "Zum Home-Bildschirm",
+                        "body": "Wähle Zum Home-Bildschirm."
+                    },
+                    "webapp": {
+                        "title": "Als Web-App geöffnet lassen",
+                        "body": "Falls Safari Als Web-App öffnen anzeigt, lass die Option aktiviert."
+                    },
+                    "add": {
+                        "title": "Mensabot hinzufügen",
+                        "body": "Tippe auf Hinzufügen, um die Installation abzuschließen."
+                    }
+                }
+            },
+            "mac": {
+                "title": "Auf dem Mac installieren",
+                "subtitle": "Nutze Safari, um Mensabot zu deinem Dock hinzuzufügen.",
+                "steps": {
+                    "browser": {
+                        "title": "Mensabot in Safari öffnen",
+                        "body": "Stelle sicher, dass du Safari und keinen anderen Browser verwendest."
+                    },
+                    "share": {
+                        "title": "Teilen öffnen",
+                        "body": "Klicke in Safari auf den Teilen-Button."
+                    },
+                    "dock": {
+                        "title": "Zum Dock hinzufügen",
+                        "body": "Wähle Zum Dock hinzufügen, um Mensabot zu installieren."
+                    }
+                }
+            }
         }
     },
     "settings": {
@@ -421,6 +497,13 @@
             "label": "Wähle die Sprache der Seite.",
             "de": "Deutsch",
             "en": "English"
+        },
+        "theme": {
+            "title": "Erscheinungsbild",
+            "label": "Wähle das Erscheinungsbild der Seite.",
+            "light": "Hell",
+            "dark": "Dunkel",
+            "system": "System"
         },
         "modal": {
             "title": "Alle Chats löschen",

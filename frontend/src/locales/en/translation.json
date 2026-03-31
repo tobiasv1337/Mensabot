@@ -18,6 +18,10 @@
         "loadMore": "Load more chats",
         "theme": "Theme"
     },
+    "appStatus": {
+        "offlineTitle": "You are offline.",
+        "offlineBody": "Saved chats and shortcuts stay available on this device. Live chat, canteen search, maps and transcription need a connection."
+    },
     "contact": {
         "eyebrow": "Legal Notice",
         "title": "Say Hello!",
@@ -110,6 +114,9 @@
         "found": "found",
         "emptyTitle": "No canteens found",
         "emptyBody": "Adjust your search or check if the name is correct.",
+        "offlineTitle": "Canteen search is unavailable offline",
+        "offlineBody": "Reconnect to search for canteens and load current canteen data.",
+        "offline": "Canteen search is unavailable while you are offline.",
         "selected": "Selected",
         "startChat": "Start chat",
         "routeTitle": "Open route in Google Maps",
@@ -124,6 +131,8 @@
         "searchAriaLabel": "Search for canteens on the map",
         "searchFor": "Search: \"{{query}}\"",
         "defaultHint": "Shows canteens in the current map view.",
+        "offlineTitle": "Map is unavailable offline",
+        "offlineBody": "Reconnect to load map tiles, canteen locations and nearby search.",
         "errorTitle": "MapTiler Configuration Missing",
         "errorBody": "Please set the environment variables VITE_MAPTILER_STYLE_URL_LIGHT and VITE_MAPTILER_STYLE_URL_DARK (each the complete Style-JSON URL incl. ?key=...).",
         "errorMissing": "Missing"
@@ -239,9 +248,13 @@
         "manualLocation": "Enter manually",
         "openRoute": "Open route",
         "clarificationNone": "None of these options",
+        "clarificationSubmit": "Send selection",
+        "clarificationMultiHint": "Select one or more options, then send them.",
+        "clarificationSelectedPrefix": "Selected options:",
         "myLocation": "My Location: {{lat}}, {{lon}}",
         "input": {
             "placeholder": "Write a message or use / for quick actions",
+            "offlineDisabled": "You are offline. Saved chats stay available, but sending messages needs a connection.",
             "recording": "Recording... {{seconds}}s / {{max}}s",
             "transcribing": "Transcribing...",
             "sending": "Sending...",
@@ -368,8 +381,6 @@
             "dataAccept": "Understood & Accept",
             "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
             "priceCategoryNo": "Skip",
-            "priceCategorySelected": "Price category: **{{category}}**",
-            "noPriceCategorySelected": "No price category selected.",
             "dietQuestion": "Do you have a **dietary preference** I should consider?",
             "dietYes": "Yes",
             "dietNo": "No preference",
@@ -380,15 +391,80 @@
             "allergySelect": "Select your **allergens**:",
             "allergyConfirm": "Confirm selection",
             "hints": "💡 **Tip:** You can adjust your filters anytime using the **\"Filter\"** button at the top. You can also create **Shortcuts** for your typical queries.",
+            "quickAccessHint": "⚡ **Faster every day:** Save **Shortcuts** with prompt + filters for your usual requests. Create one with the **plus button at the bottom**. You can also use **slash commands** like `/tu_hardenbergstraße today` to see a canteen menu directly without delay for a quick overview.",
             "hintsOk": "OK",
             "inputDisabled": "Please complete the onboarding first",
             "filterDisclaimer": "⚠️ **Important:** Filtering by diet type and **allergens** is **not fully supported** by most canteen data sources. We **cannot guarantee** the correctness of the filtering. Please treat the results only as **pre-filtering** and never rely 100% on the generated responses.",
             "filterDisclaimerAccept": "Understood",
-            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices.",
-            "dietSelected": "Dietary preference: **{{diet}}**",
-            "allergensSelected": "Allergens: **{{allergens}}**",
-            "noDietSelected": "No dietary preference selected.",
-            "noAllergensSelected": "No allergens selected."
+            "complete": "Great, you're all set! 🎉 Ask me about menus, opening hours, or prices."
+        }
+    },
+    "installPromotion": {
+        "card": {
+            "title": "Install Mensabot",
+            "body": {
+                "native": "Keep Mensabot one tap away and launch it like an app on this device.",
+                "ios": "Add Mensabot to your Home Screen in Safari for faster access and a cleaner full-screen app.",
+                "mac": "Add Mensabot to your Dock in Safari so it opens like a regular desktop app."
+            }
+        },
+        "entry": {
+            "label": "Install Mensabot",
+            "description": {
+                "native": "Install Mensabot on this device for faster access and a cleaner app-style launch.",
+                "ios": "Open Safari's Share menu to add Mensabot to your Home Screen as a web app.",
+                "mac": "Use Safari's Share menu to add Mensabot to your Dock."
+            }
+        },
+        "actions": {
+            "install": "Install",
+            "howToInstall": "How to install",
+            "maybeLater": "Maybe later",
+            "dismiss": "No thanks",
+            "close": "Close"
+        },
+        "instructions": {
+            "sharedNote": "Installation only takes a moment. Once added, Mensabot opens faster and feels more like a native app.",
+            "ios": {
+                "title": "Install on iPhone or iPad",
+                "subtitle": "Use Safari to add Mensabot to your Home Screen.",
+                "steps": {
+                    "share": {
+                        "title": "Open Share",
+                        "body": "Tap the Share button in Safari."
+                    },
+                    "home": {
+                        "title": "Add to Home Screen",
+                        "body": "Choose Add to Home Screen."
+                    },
+                    "webapp": {
+                        "title": "Keep Open as Web App enabled",
+                        "body": "If Safari shows Open as Web App, leave it enabled."
+                    },
+                    "add": {
+                        "title": "Add Mensabot",
+                        "body": "Tap Add to finish the installation."
+                    }
+                }
+            },
+            "mac": {
+                "title": "Install on Mac",
+                "subtitle": "Use Safari to add Mensabot to your Dock.",
+                "steps": {
+                    "browser": {
+                        "title": "Open Mensabot in Safari",
+                        "body": "Make sure you are using Safari, not another browser."
+                    },
+                    "share": {
+                        "title": "Open Share",
+                        "body": "Click the Share button in Safari."
+                    },
+                    "dock": {
+                        "title": "Add to Dock",
+                        "body": "Choose Add to Dock to install Mensabot."
+                    }
+                }
+            }
         }
     },
     "settings": {
@@ -421,6 +497,13 @@
             "label": "Choose the language of the site.",
             "de": "Deutsch",
             "en": "English"
+        },
+        "theme": {
+            "title": "Appearance",
+            "label": "Choose the appearance of the site.",
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System"
         },
         "modal": {
             "title": "Delete all chats",

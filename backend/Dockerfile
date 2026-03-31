@@ -8,6 +8,8 @@ ENV PYTHONUNBUFFERED=1
 COPY backend/ backend/
 RUN pip install --no-cache-dir --upgrade pip \
   && pip install --no-cache-dir \
+     ./backend/libs/mensabot-common \
+     ./backend/libs/mensabot-backend-core \
      ./backend/libs/openmensa \
      ./backend/apps/mcp-server \
      ./backend/apps/api_backend

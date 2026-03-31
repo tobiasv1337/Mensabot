@@ -1,6 +1,6 @@
 [project]
 name = "mensa-mcp-server"
-version = "1.0.1"
+version = "1.1.0"
 description = "MCP server exposing OpenMensa / MensaBot tools."
 keywords = ["mensabot", "tu-berlin", "mensa", "mcp", "mcp-server"]
 readme = "README.md"
@@ -15,6 +15,7 @@ dependencies = [
     "fastmcp>=2.14.4",
     "anyio>=4.12.1",
     "httpx>=0.28.1",
+    "mensabot-backend-core",
     "mensabot-common",
     "openmensa-sdk",
     "pydantic>=2.12.5",
@@ -24,9 +25,10 @@ dependencies = [
 mensa-mcp-server = "mensa_mcp_server.__main__:main"
 
 [build-system]
-requires = ["uv_build>=0.9.5,<0.10.0"]
+requires = ["uv_build>=0.9.5,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
+mensabot-backend-core = { path = "../../libs/mensabot-backend-core", editable = true }
 mensabot-common = { path = "../../libs/mensabot-common", editable = true }
 openmensa-sdk = { path = "../../libs/openmensa", editable = true }

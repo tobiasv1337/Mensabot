@@ -1,6 +1,6 @@
 [project]
 name = "mensa-api-backend"
-version = "1.0.1"
+version = "1.1.0"
 description = "Mensa API backend with FastMCP server for OpenMensa and LLM calling with tool support"
 keywords = ["mensabot", "tu-berlin", "mensa", "api", "backend", "fastmcp", "openmensa", "llm", "tools"]
 readme = "README.md"
@@ -16,6 +16,7 @@ dependencies = [
     "fastapi>=0.128.0",
     "fastmcp>=2.14.4",
     "httpx>=0.28.1",
+    "mensabot-backend-core",
     "mensa-mcp-server",
     "openai>=2.16.0",
     "uvicorn>=0.40.0",
@@ -25,9 +26,10 @@ dependencies = [
 mensa-api-backend = "mensa_api_backend.__main__:main"
 
 [build-system]
-requires = ["uv_build>=0.9.5,<0.10.0"]
+requires = ["uv_build>=0.9.5,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
+mensabot-backend-core = { path = "../../libs/mensabot-backend-core", editable = true }
 mensabot-common = { path = "../../libs/mensabot-common", editable = true }
 mensa-mcp-server = { path = "../mcp-server", editable = true }

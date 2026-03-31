@@ -5,251 +5,216 @@
 </p>
 
 <p align="center">
-  A bilingual canteen assistant for OpenMensa university cafeterias.<br>
-  Mensabot combines live canteen data, map search, voice input, and an LLM-powered chat UI in one deployable stack.
+  Bilingual canteen assistant for OpenMensa-backed university cafeterias.
+  <br>
+  Mensabot combines live menu data, map search, voice input, and an LLM-powered chat UI in one deployable stack.
 </p>
 
-## What Mensabot Is
+## What is Mensabot
 
-Mensabot is a student project from the TU Berlin Quality and Usability Lab. It helps users find canteens, inspect menus, ask natural-language questions about food and opening hours, and navigate to nearby locations.
+Mensabot is a student project from the TU Berlin Quality and Usability Lab.
 
-Its main product focus is German university canteens, but the technical design is intentionally broader: Mensabot works against OpenMensa-supported canteens in general. That means if a local canteen is not yet covered, adding a scraper or data pipeline that publishes its menu data to OpenMensa makes it automatically usable in Mensabot as well.
+It helps users:
 
-The project is built as a full stack application:
+- find university canteens
+- inspect current menus and prices
+- ask natural-language questions about food, dates, and opening hours
+- compare canteens and menus
+- navigate to nearby locations
 
-- A React frontend for chat, canteen browsing, maps, shortcuts, onboarding, and settings
-- A FastAPI backend that talks to an OpenAI-compatible LLM
-- An in-process MCP tool layer for OpenMensa, date context, disambiguation, and directions
-- A local speech-to-text service based on `whisper.cpp`
-- An Nginx reverse proxy with HTTPS, optional basic auth, and Portainer access
+The main product focus is German university canteens, but the technical design is broader: Mensabot works against OpenMensa-supported canteens in general. If a local canteen is not yet covered, adding a scraper or data pipeline that publishes its menu data to OpenMensa makes it available to Mensabot as well.
 
-## Features
+## Documentation Map
 
-- Natural-language chat for menus, prices, opening hours, and canteen discovery
-- Live canteen data based on OpenMensa and OpenStreetMap/Overpass
-- Designed for 1,000+ OpenMensa-supported canteens
-- Interactive disambiguation with location requests and clarification buttons
-- Voice input with local speech-to-text transcription
-- Map view with MapLibre and custom MapTiler styles
-- Saved chat sessions and reusable prompt shortcuts in the browser
-- Current language support in German and English
-- PWA-style frontend with service worker caching and offline fallback page
-- Docker-based deployment with HTTPS and optional basic authentication
+| Goal | README |
+| --- | --- |
+| Deploy Mensabot on a server or VM | [Setup README](setup/README.md) |
+| Work on the React client | [Frontend README](frontend/README.md) |
+| Understand the Python services and shared libraries | [Backend README](backend/README.md) |
+| Inspect the FastAPI service | [API backend README](backend/apps/api_backend/README.md) |
+| Inspect the MCP tool package | [MCP server README](backend/apps/mcp-server/README.md) |
+| Inspect the speech-to-text service | [STT server README](backend/apps/stt_server/README.md) |
 
-## Architecture
+## Component Interfaces
 
 ```mermaid
-flowchart TB
-    U["User"]
+flowchart LR
+    Browser["Browser"] -->|HTTPS| Nginx["nginx"]
+    Nginx -->|/, assets, service worker| Frontend["frontend"]
+    Nginx -->|/api/*| API["api_backend"]
+    API -->|tool registry + local dispatch| MCP["mcp-server package"]
+    API -->|HTTP /transcribe| STT["stt_server"]
+    API -->|direct canteen routes + shared services| Core["mensabot-backend-core"]
+    API -->|OpenAI chat completions| LLM["OpenAI-compatible LLM"]
+    MCP -->|shared services| Core["mensabot-backend-core"]
+    Core -->|REST v2| OpenMensa["OpenMensa API"]
+    Core -->|Overpass queries| OSM["OpenStreetMap / Overpass"]
+```
 
-    subgraph C["Client"]
-        App["React app in browser"]
-        Views["Chat, Canteens, Map, Settings"]
-        Local["localStorage<br/>Chats, Shortcuts, Onboarding"]
-        SW["Service Worker<br/>Offline Cache"]
-        Device["Microphone + Geolocation"]
+## What Mensabot Does
+
+- Natural-language chat for menus, prices, opening hours, and canteen discovery
+- Live canteen data from OpenMensa plus opening-hours resolution from OpenStreetMap / Overpass
+- Interactive map browsing with MapLibre and theme-specific MapTiler styles
+- Browser-local chats, reusable shortcuts, onboarding, and install prompts
+- Local speech-to-text via `whisper.cpp`
+- Docker-based deployment with HTTPS, optional basic auth, and Portainer behind Nginx
+- German and English UI and backend prompt support
+
+## Runtime Architecture
+
+```mermaid
+flowchart TD
+    Client["Public client"] -->|"80 / 443"| Nginx["nginx"]
+    Nginx -->|"internal :8080"| Frontend["frontend container"]
+    Nginx -->|"internal :8000"| Backend["backend container"]
+    Nginx -->|"/portainer -> :9000"| Portainer["portainer"]
+    Backend -->|"internal :9100"| STT["stt container"]
+    Backend --> CacheVol["backend_cache_data volume"]
+    STT --> ModelsVol["stt_models volume"]
+    Portainer --> PortainerVol["portainer_data volume"]
+```
+
+## Chat Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Nginx
+    participant API as api_backend
+    participant LLM
+    participant MCP
+    participant Core as backend_core
+    participant OpenMensa
+    participant OSM
+    participant STT
+
+    Browser->>Nginx: POST /api/chat or WS /api/chat/ws
+    Nginx->>API: forward request
+    API->>LLM: chat completion with tool schemas
+    LLM-->>API: tool call request
+    API->>MCP: execute tool locally
+    MCP->>Core: shared domain service
+    alt menu or canteen data
+        Core->>OpenMensa: REST requests
+        OpenMensa-->>Core: canteens and meals
+    else opening hours
+        Core->>OSM: Overpass query
+        OSM-->>Core: opening-hours data
     end
+    Core-->>MCP: typed result
+    MCP-->>API: tool result
+    API->>LLM: continue tool loop or finalize
+    LLM-->>API: final response
+    API-->>Browser: reply or structured UI action
 
-    subgraph D["Mensabot Deployment"]
-        N["Nginx<br/>HTTPS, Basic Auth, Reverse Proxy"]
-        F["Frontend container<br/>built Vite app"]
-        subgraph A["API Backend"]
-            Chat["/api/chat"]
-            Canteens["/api/canteens*"]
-            Transcribe["/api/transcribe"]
-            Debug["/api/debug/metrics"]
-            Loop["LLM tool loop"]
-            MCP["Embedded MCP tools"]
-            Index["Canteen index + cache"]
-        end
-        S["STT service<br/>whisper.cpp"]
-        R["Portainer"]
+    opt voice input
+        Browser->>Nginx: POST /api/transcribe
+        Nginx->>API: forward audio
+        API->>STT: POST /transcribe
+        STT-->>API: transcript JSON
+        API-->>Browser: transcript
     end
-
-    subgraph E["External Services"]
-        L["OpenAI-compatible LLM"]
-        O["OpenMensa API"]
-        P["OpenStreetMap / Overpass"]
-        T["MapTiler styles / tiles"]
-        G["Google Maps"]
-    end
-
-    subgraph V["Persistent Storage"]
-        Models["stt_models volume"]
-        Data["backend_cache_data volume"]
-    end
-
-    U --> App
-    App --> Views
-    App --> Local
-    App --> SW
-    Views --> Device
-
-    App -->|"GET /, /assets, /api"| N
-    Views -->|"map rendering"| T
-    Views -->|"open directions"| G
-
-    N --> F
-    N --> Chat
-    N --> Canteens
-    N --> Transcribe
-    N --> Debug
-    N --> R
-
-    Chat --> Loop
-    Loop --> L
-    Loop --> MCP
-
-    Canteens --> Index
-    Canteens --> MCP
-    Transcribe --> S
-
-    MCP --> O
-    MCP --> P
-    MCP --> Index
-
-    S --> Models
-    Index --> Data
 ```
 
 ## Repository Layout
 
 ```text
 .
-|-- frontend/                    React + TypeScript + Vite app
+|-- README.md
+|-- install.sh
+|-- docker-compose.yml
+|-- .env.example
+|-- assets/                         Logos and shared artwork
+|-- setup/                          Interactive setup wizard and TLS helper
+|-- frontend/                       React + TypeScript + Vite web client
 |-- backend/
-|   |-- apps/api_backend/        FastAPI app + LLM tool-calling loop
-|   |-- apps/stt_server/         Local whisper.cpp transcription service
-|   |-- apps/mcp-server/         FastMCP tool server package
-|   `-- libs/openmensa/          Typed Python SDK for OpenMensa
-|-- nginx/                       Reverse proxy, TLS, basic auth bootstrap
-|-- setup/                       Interactive setup wizard and certificate helper
-|-- docker-compose.yml           Full deployment stack
-|-- install.sh                   One-command bootstrap for servers
-`-- .env.example                 Complete configuration reference
+|   |-- README.md
+|   |-- Dockerfile
+|   |-- apps/
+|   |   |-- api_backend/           FastAPI app and LLM tool loop
+|   |   |-- mcp-server/            FastMCP tool package
+|   |   `-- stt_server/            whisper.cpp transcription service
+|   |-- libs/
+|   |   |-- mensabot-backend-core/ Shared domain services
+|   |   |-- mensabot-common/       Version and user-agent helpers
+|   |   `-- openmensa/             Typed OpenMensa SDK + canteen index
+|   `-- scripts/                   Backend helper scripts
+|-- nginx/                          HTTPS reverse proxy and auth bootstrap
+`-- .github/workflows/              Frontend and backend CI
 ```
-
-## Tech Stack
-
-- Frontend: React 19, TypeScript, Vite, styled-components, i18next, MapLibre
-- Backend: Python 3.11, FastAPI, FastMCP, OpenAI Python SDK, httpx
-- Speech-to-text: `whisper.cpp` + FastAPI wrapper
-- Data sources: OpenMensa API v2, OpenStreetMap Overpass API
-- Deployment: Docker Compose, Nginx, Portainer
 
 ## Quick Start
 
-### Option A: Setup Wizard
+### Option A: Interactive Setup and Operations
 
-For a fresh Linux VM or server, especially Debian/Ubuntu-based hosts, the simplest path is the interactive setup wizard:
+For a fresh Linux VM or server, the supported happy path is the interactive installer:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/tobiasv1337/Mensabot/main/install.sh | bash
 ```
 
-What it does:
+What this path does:
 
-- Installs missing system dependencies on Debian/Ubuntu-based systems
-- Installs Docker if needed
-- Clones or updates the repository
-- Creates a dedicated Python environment for the setup UI
-- Launches the interactive configuration and deployment wizard
+- bootstraps missing system packages on Debian/Ubuntu-style hosts
+- installs Docker if it is missing
+- lets you choose a tag or branch before cloning or updating
+- creates `.setup-venv` for the setup UI
+- launches the setup wizard for `.env`, TLS, and Docker Compose actions
 
-This path is the best choice for first-time deployments. More details are in [SETUP_README.md](SETUP_README.md).
+If the repository already exists, rerunning the same command reopens the management flow instead of starting from scratch.
+
+Details: [Setup README](setup/README.md)
 
 ### Option B: Manual Docker Compose
 
-If you want to run the stack yourself without the wizard:
+Use this when you want to manage the deployment yourself.
 
-1. Copy the environment template:
+1. Create the environment file.
 
 ```bash
 cp .env.example .env
 ```
 
-2. Edit `.env` and set at least:
+2. Set the required LLM settings in `.env`.
 
-- `API_BACKEND_LLM_BASE_URL`
-- `API_BACKEND_LLM_MODEL`
-- `API_BACKEND_LLM_API_KEY`
+```dotenv
+API_BACKEND_LLM_BASE_URL=...
+API_BACKEND_LLM_MODEL=...
+API_BACKEND_LLM_API_KEY=...
+```
 
-3. If you do not already have TLS files at `nginx/certs/selfsigned.crt` and `nginx/certs/selfsigned.key`, generate development certificates:
+3. Create development TLS files if you do not already have certificate files at `nginx/certs/selfsigned.crt` and `nginx/certs/selfsigned.key`.
 
 ```bash
 bash setup/create-dev-cert.sh
 ```
 
-4. Build and start the stack:
+4. Build and start the stack.
 
 ```bash
 docker compose up --build -d
 ```
 
-5. Open the app:
+5. Open the deployment.
 
 - App: `https://localhost/`
-- Healthcheck: `https://localhost/api/health`
-- Portainer (localhost/private network only): `https://localhost/portainer/`
+- API healthcheck: `https://localhost/api/health`
+- Portainer: `https://localhost/portainer/`
 
-If you are using the generated self-signed certificate, your browser will show a warning until you trust or replace it.
+The generated certificate is self-signed, so browsers will show a warning until you trust or replace it.
 
-## Configuration Overview
+## Local Development
 
-All configuration lives in `.env`. The complete reference is documented inline in [.env.example](.env.example).
+### Frontend + API backend
 
-### Core Variables
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `API_BACKEND_LLM_BASE_URL` | Yes | OpenAI-compatible base URL, for example OpenRouter or another compatible provider |
-| `API_BACKEND_LLM_MODEL` | Yes | Exact model identifier used for chat completions |
-| `API_BACKEND_LLM_API_KEY` | Yes | API key for the configured LLM provider |
-| `VITE_API_BASE_URL` | Recommended | Frontend API base path, default is `/api` |
-| `VITE_MAPTILER_STYLE_URL_LIGHT` | Recommended | Light map style URL for the map page |
-| `VITE_MAPTILER_STYLE_URL_DARK` | Recommended | Dark map style URL for the map page |
-| `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` | Optional | Enables Nginx basic authentication for the whole deployment |
-| `STT_MODEL` | Optional | Whisper model size such as `tiny`, `base`, `small`, or `medium` |
-| `MENSA_MCP_TIMEZONE` | Optional | Timezone used for date resolution and prompts |
-
-### Notes
-
-- The chat experience depends on the LLM settings being valid.
-- The map page needs both MapTiler style URLs. If they are empty, the rest of the app still works, but the map page shows a configuration error.
-- In Docker, the canteen index and shared backend cache are persisted automatically to the `backend_cache_data` volume.
-- The OpenMensa and Overpass user-agent settings in `.env.example` are optional overrides. If they are left unset, Mensabot derives them from the root `VERSION` file automatically.
-- The frontend consumes environment values at build time. If you change frontend-facing variables, rebuild the image.
-
-### Versioning
-
-- The root [`VERSION`](VERSION) file is the single source of truth for the current Mensabot version.
-- The shared backend cache and persisted canteen index both embed that version and are invalidated automatically when it changes.
-- Default OpenMensa and Overpass user agents are also derived from `VERSION` unless you override them explicitly in `.env`.
-- After changing `VERSION`, run:
-
-```bash
-python3 backend/scripts/sync_versions.py
-```
-
-- The sync script updates Python package versions and frontend package metadata. It does not rewrite your real `.env`.
-
-## Running Locally for Development
-
-### Prerequisites
-
-- Node.js 20
-- Python 3.11
-- [`uv`](https://docs.astral.sh/uv/)
-- Docker, if you want to test the STT service or the full stack
-
-### Frontend + Backend
-
-1. Copy the environment file and add your LLM credentials:
+1. Copy the shared environment file.
 
 ```bash
 cp .env.example .env
 ```
 
-2. Start the API backend:
+2. Start the API backend.
 
 ```bash
 cd backend/apps/api_backend
@@ -257,7 +222,7 @@ uv sync
 uv run mensa-api-backend
 ```
 
-3. In a second terminal, start the frontend:
+3. Start the frontend in a second terminal.
 
 ```bash
 cd frontend
@@ -265,138 +230,80 @@ npm ci
 npm run dev
 ```
 
-4. Open:
+4. Open `http://localhost:5173`.
 
-```text
-http://localhost:5173
-```
+The Vite dev server proxies `/api` to `http://localhost:8000`, so the default `VITE_API_BASE_URL=/api` works in both development and the default Nginx deployment.
 
-The Vite dev server proxies `/api` requests to `http://localhost:8000`, and the backend already allows local CORS origins for common dev ports.
+### Voice input in local development
 
-### Voice Input in Local Dev
+Text chat does not need the STT service. Voice input does.
 
-Text chat works without the STT service. Voice input only needs STT when the browser sends audio to `/api/transcribe`.
-
-The easiest path is to run the full Docker stack. If you only want STT while the frontend and API run locally, note that the compose file does not publish port `9100` to the host by default. Add a temporary mapping such as:
-
-```yaml
-ports:
-  - "127.0.0.1:9100:9100"
-```
-
-to the `stt` service, then point the backend at it:
+The compose file keeps the STT service internal by default, so if you want host-run frontend and API plus containerized STT you need to temporarily publish `9100` and point the API backend at it:
 
 ```bash
 export API_BACKEND_STT_BASE_URL=http://127.0.0.1:9100
 ```
 
-See [backend/apps/stt_server/README.md](backend/apps/stt_server/README.md) for service-specific notes.
+Service details: [STT server README](backend/apps/stt_server/README.md)
 
-## Docker Services
+## Configuration Overview
 
-The default `docker-compose.yml` starts these services:
+All runtime settings live in `.env`. The authoritative reference is [.env.example](.env.example).
 
-- `frontend`: serves the production React build on port `8080` inside the Compose network
-- `backend`: FastAPI API on port `8000` inside the Compose network
-- `stt`: whisper.cpp-based transcription service on port `9100` inside the Compose network
-- `nginx`: public reverse proxy exposing ports `80` and `443`
-- `portainer`: Docker management UI available under `/portainer`
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `API_BACKEND_LLM_BASE_URL` | Yes | OpenAI-compatible provider base URL |
+| `API_BACKEND_LLM_MODEL` | Yes | Chat completion model identifier |
+| `API_BACKEND_LLM_API_KEY` | Yes | Provider API key |
+| `VITE_API_BASE_URL` | Recommended | Frontend API base path, normally `/api` |
+| `VITE_MAPTILER_STYLE_URL_LIGHT` | Required for map page | Light-mode style JSON URL |
+| `VITE_MAPTILER_STYLE_URL_DARK` | Required for map page | Dark-mode style JSON URL |
+| `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` | Optional | Enables HTTP basic auth in Nginx |
+| `MENSABOT_TLS_CN` / `MENSABOT_TLS_SANS` | Optional | Public hostnames or IPs for generated self-signed certs |
+| `STT_MODEL` | Optional | Whisper model size such as `small` or `medium` |
+| `MENSA_MCP_TIMEZONE` | Optional | Timezone used for date normalization and prompts |
+
+Notes:
+
+- Frontend variables are baked in at build time. Rebuild the frontend image after changing `VITE_*` values.
+- `docker-compose.yml` overrides the canteen index and shared cache paths to `/data/...` so they survive container restarts.
+- The default OpenMensa and Overpass user agents are derived from the root [`VERSION`](VERSION) file unless you override them.
+- The map page needs both MapTiler URLs. The rest of the app still works without them.
+
+## Compose Services
+
+| Service | Role | Exposure |
+| --- | --- | --- |
+| `frontend` | Serves the compiled Vite app on port `8080` inside the Compose network | internal only |
+| `backend` | Runs the FastAPI API on port `8000` inside the Compose network | internal only |
+| `stt` | Runs the `whisper.cpp` transcription service on port `9100` inside the Compose network | internal only |
+| `nginx` | Terminates TLS and reverse-proxies frontend, backend, and Portainer | public `80` and `443` |
+| `portainer` | Docker management UI mounted under `/portainer/` | behind Nginx, private-network restricted |
 
 Persistent volumes:
 
-- `stt_models`: caches downloaded whisper models
-- `backend_cache_data`: stores the generated canteen index and the shared backend cache
-- `portainer_data`: stores Portainer state
+- `backend_cache_data` for the shared cache and canteen index
+- `stt_models` for downloaded whisper models
+- `portainer_data` for Portainer state
 
-## API Overview
+## Operational Caveats
 
-The backend exposes the following HTTP endpoints:
+- Menu quality depends on upstream OpenMensa data.
+- Opening hours are resolved from OpenStreetMap and can be missing or ambiguous.
+- Diet and allergen filtering is inferred from menu text and should not be treated as medical advice.
+- Browser-side chats and shortcuts live in `localStorage`, not on the server.
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/health` | Basic healthcheck |
-| `POST` | `/api/chat` | LLM chat endpoint with MCP-backed tool calling |
-| `POST` | `/api/transcribe` | Speech-to-text transcription for voice input |
-| `GET` | `/api/canteens` | Paginated canteen list |
-| `GET` | `/api/canteens/search` | Search canteens by text and optional proximity |
-| `GET` | `/api/canteens/{canteen_id}` | Canteen metadata |
-| `GET` | `/api/canteens/{canteen_id}/menu` | Menu for a specific canteen and date |
-| `GET` | `/api/canteens/{canteen_id}/opening-hours` | Opening hours resolved from OSM data |
-| `GET` | `/api/debug/metrics` | Debug metrics endpoint, only when enabled |
+## Versioning and CI
 
-The chat endpoint can return normal replies, location requests, clarification prompts, or directions prompts depending on what the backend tool loop needs to answer the user.
+- [`VERSION`](VERSION) is the single source of truth for the project version.
+- `backend/scripts/sync_versions.py` propagates that version into selected package manifests and frontend metadata.
+- GitHub Actions currently cover frontend builds, backend package sync and compile checks, optional `pytest` runs when a package has tests, and an API healthcheck.
 
-## How the Chat Layer Works
+## Related README Files
 
-At a high level:
-
-1. The frontend sends the message history and active user filters to `/api/chat`.
-2. The API backend builds a localized system prompt and resolves current time context.
-3. It fetches MCP tool schemas and calls an OpenAI-compatible chat completion API.
-4. The model can invoke tools such as:
-   - `search_canteens`
-   - `get_menu_for_date`
-   - `get_menus_batch`
-   - `get_opening_hours_osm_for_canteen`
-   - `get_date_context`
-   - `request_user_location`
-   - `request_user_clarification`
-   - `request_canteen_directions`
-5. The backend either continues the tool loop or returns a structured frontend action.
-
-This design keeps the LLM focused on orchestration while live data comes from tools instead of the model's static knowledge.
-
-## Operations and Deployment Notes
-
-### HTTPS
-
-- Nginx always redirects HTTP to HTTPS.
-- The current implementation expects certificate files at these fixed paths:
-  - `nginx/certs/selfsigned.crt`
-  - `nginx/certs/selfsigned.key`
-- The setup wizard auto-generates development certificates if they are missing.
-- For a real deployment, replace those files with your trusted certificate and key contents.
-- In practice that means copying:
-  - `fullchain.pem` -> `nginx/certs/selfsigned.crt`
-  - `privkey.pem` -> `nginx/certs/selfsigned.key`
-
-### Basic Authentication
-
-If both `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` are set, the Nginx container generates an `.htpasswd` file automatically and protects the deployment with HTTP basic auth.
-
-### Portainer
-
-Portainer is included behind the same Nginx entrypoint and is reachable under `/portainer/`, but the reverse proxy now restricts it to localhost plus common private-network ranges by default. That keeps the container management UI off the public internet while still allowing access from the host machine, LAN clients, and typical VPN/CGNAT networks such as Tailscale. If your admin network uses different client IP ranges, adjust the `allow` rules in `nginx/nginx.conf`.
-
-## Quality and CI
-
-GitHub Actions currently cover:
-
-- Frontend dependency install and production build
-- Python dependency sync and source compilation for:
-  - `backend/libs/openmensa`
-  - `backend/apps/mcp-server`
-  - `backend/apps/api_backend`
-- Optional `pytest` runs if a package contains a `tests/` directory
-- API backend healthcheck against `/api/health`
-
-There is no dedicated frontend test suite checked in at the moment.
-
-## Limitations and Caveats
-
-- Menu quality depends on the upstream OpenMensa data for each institution.
-- Opening hours are resolved from OpenStreetMap data and may be missing or ambiguous.
-- Diet and allergen filtering is inferred and should not be treated as medically reliable.
-- Voice transcription quality depends on the selected whisper model and available CPU resources.
-- Browser-side chat history and shortcuts are stored locally in `localStorage`.
-- The onboarding flow explicitly notes that Mensabot is a university research project and that usage data may be collected for evaluation. If you deploy Mensabot publicly, make sure your legal and privacy notices match how you operate it.
-
-## Related Documentation
-
-- [SETUP_README.md](SETUP_README.md): interactive setup wizard and deployment notes
-- [backend/apps/stt_server/README.md](backend/apps/stt_server/README.md): STT service details
-- [backend/libs/openmensa/README.md](backend/libs/openmensa/README.md): reusable OpenMensa SDK
-
-## Project Status
-
-Mensabot is an active student project and research prototype. The repository already contains a deployable full stack application, but it should still be treated like an evolving system rather than a finalized product.
+- [Setup README](setup/README.md)
+- [Frontend README](frontend/README.md)
+- [Backend README](backend/README.md)
+- [API backend README](backend/apps/api_backend/README.md)
+- [MCP server README](backend/apps/mcp-server/README.md)
+- [STT server README](backend/apps/stt_server/README.md)

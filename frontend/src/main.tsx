@@ -1,10 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
-import App from './App.tsx'
-import { ThemeProvider } from './theme/themeProvider.tsx'
-import './i18n';
+import 'maplibre-gl/dist/maplibre-gl.css'
+import App from './app/App.tsx'
+import { ThemeProvider } from './shared/theme/themeProvider.tsx'
+import './app/i18n';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,9 +19,10 @@ createRoot(document.getElementById('root')!).render(
 )
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+  registerSW({
+    immediate: true,
+    onRegisterError(error) {
       console.warn('Service worker registration failed:', error)
-    })
+    },
   })
 }

@@ -1,6 +1,6 @@
 import datetime as dt
 from zoneinfo import ZoneInfo
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
@@ -127,26 +127,33 @@ async def request_canteen_directions(
 @mcp.tool()
 async def request_user_clarification(
     prompt: Annotated[str, Field(description="A short, user-facing question explaining what needs clarification. Write this in the same language you are responding in.")],
-    options: Annotated[list[str], Field(description="A list of 2-10 option labels for the user to choose from. Each label should be very concise and user-friendly. Write this in the same language you are responding in.")],
-    allow_none: Annotated[bool, Field(description="If true, an extra 'None of these' option will be shown to the user.")] = True,
+    options: Annotated[list[str], Field(description="A list of concise option labels for the user to choose from. 2-10 options are recommended. Each label should be very short, concrete, and user-friendly. Write them in the same language you are responding in.")],
+    selection_mode: Annotated[Literal["single", "multi"], Field(description="Use `single` when the user should pick exactly one option. Use `multi` when the user should be able to select multiple options. For canteen, city, campus, or university clarifications, prefer `multi` whenever several selected options can reasonably be used together, for example for menu retrieval or comparison.")] = "multi",
+    allow_no_match: Annotated[bool, Field(description="If true, automatically includes a dedicated 'None of these options' choice. Use this when it is valid that none of the listed options match the user's intent.")] = True,
 ) -> dict:
     """
-    Present the user with a multiple-choice question in the chat UI.
-    The backend will interrupt the tool loop and show clickable buttons to the user.
-    After the user selects an option, that selection is provided in the next user message.
+    Present the user with a clarification question with predefined options.
+    After the user answers, their selection is provided in the next user message.
     Use that next user message as input and continue.
+
+    Selection behavior:
+    - `selection_mode="single"`: use this when the user should pick exactly one option.
+    - `selection_mode="multi"`: use this when the user should be able to select multiple options.
+    - Choose the mode that best fits the question. For canteen, city, campus, or university clarifications, prefer `multi` whenever several selected options can reasonably be used together to continue the request.
+    - If `allow_no_match=true`, automatically include a dedicated "None of these options" choice to allow the user to indicate that none of the provided options are correct. If you set `allow_no_match=true`, make sure to not send an additional "None" or "Other" option in the `options` list, as that would lead to duplicate choices.
 
     You MUST call this tool (instead of writing a text response) whenever:
     - search_canteens returns multiple plausible results and you are uncertain which one the user means
     - The user's request is ambiguous and could refer to different canteens, cities, or options (e.g. "TU", "Uni", "Hauptmensa")
     - You need the user to choose between specific alternatives
-    - You want to ask the user a simple yes/no question with clear button options
-    - You can provide a concise predefined option list (2-10 options)
+    - You want to ask the user a simple yes/no question with clear predefined options
+    - You can provide a concise predefined option list (usually 2-10 options)
 
     NEVER list options as plain text in your response when this tool can be used instead.
     NEVER output a numbered or bulleted list of canteens/cities and ask the user to reply with a number or name.
-    Always call this tool — it shows clickable buttons which are far better UX than plain text choices.
+    Always call this tool - it shows clickable buttons which are far better UX than plain text choices.
+    Clarification can be iterative: for example first clarify the city, then in a later tool call clarify the exact canteen.
 
     If the ambiguity is primarily geographic across many cities/areas and you have no short list yet, prefer request_user_location first.
     """
-    return {"prompt": prompt, "options": options, "allow_none": allow_none}
+    return {"prompt": prompt, "options": options, "selection_mode": selection_mode, "allow_no_match": allow_no_match}

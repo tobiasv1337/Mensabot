@@ -22,8 +22,8 @@ from rapidfuzz import fuzz
 
 from .client import OpenMensaClient
 from .errors import OpenMensaAPIError
+from .meta import get_package_version
 from .models import Canteen
-from mensabot_common.version import PROJECT_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -302,9 +302,10 @@ class CanteenIndex:
     def from_dict(cls, payload: dict) -> CanteenIndex:
         if not isinstance(payload, dict):
             raise ValueError("Index payload must be a dict.")
-        if payload.get("version") != PROJECT_VERSION:
+        expected_version = get_package_version()
+        if payload.get("version") != expected_version:
             raise IncompatibleCanteenIndexVersionError(
-                f"Index payload version {payload.get('version')!r} does not match expected version {PROJECT_VERSION}."
+                f"Index payload version {payload.get('version')!r} does not match expected package version {expected_version}."
             )
 
         updated_at = _parse_dt(payload.get("updated_at"))
@@ -342,7 +343,7 @@ class CanteenIndex:
         else:
             updated_at = updated_at.astimezone(dt.timezone.utc)
         return {
-            "version": PROJECT_VERSION,
+            "version": get_package_version(),
             "updated_at": updated_at.isoformat(),
             "total_canteens": len(self.canteens),
             "canteens": [c.to_dict() for c in self.canteens],
