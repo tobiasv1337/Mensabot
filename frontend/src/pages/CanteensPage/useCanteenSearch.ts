@@ -88,10 +88,6 @@ export const useCanteenSearch = (isOffline: boolean) => {
     if (isOffline) {
       requestId.current += 1;
       setLoadingState(null);
-      if (items.length === 0) {
-        setPageInfo(null);
-        setTotalResults(null);
-      }
       setError(t("canteens.offline"));
       return;
     }
@@ -101,7 +97,7 @@ export const useCanteenSearch = (isOffline: boolean) => {
     }, 350);
 
     return () => window.clearTimeout(timer);
-  }, [fetchData, isOffline, items.length, query, sortBy, t, userLocation]);
+  }, [fetchData, isOffline, query, sortBy, t, userLocation]);
 
   const handleLoadMore = useCallback(() => {
     if (isOffline || !pageInfo?.next_page || loadingState) return;
