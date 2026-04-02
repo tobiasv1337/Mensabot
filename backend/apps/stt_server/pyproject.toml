@@ -1,6 +1,6 @@
 [project]
 name = "mensa-stt-server"
-version = "1.1.0"
+version = "1.1.1"
 description = "Local speech-to-text (STT) service for Mensabot using whisper.cpp"
 keywords = ["mensabot", "stt", "speech-to-text", "whisper", "whisper.cpp"]
 readme = "README.md"
