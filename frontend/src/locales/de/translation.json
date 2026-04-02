@@ -315,9 +315,9 @@
             "meat": "Nur mit Fleisch"
         },
         "priceCategoryOptions": {
-            "students": "Student",
-            "employees": "Mitarbeiter",
-            "pupils": "Schüler",
+            "students": "Student:in",
+            "employees": "Mitarbeiter:in",
+            "pupils": "Schüler:in",
             "others": "Gast"
         },
         "allergenLabels": {
@@ -379,7 +379,7 @@
             "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
             "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
             "dataAccept": "Verstanden & Akzeptieren",
-            "priceCategorySelect": "Bist du **Student**, **Mitarbeiter**, **Schüler** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
+            "priceCategorySelect": "Bist du **Student:in**, **Mitarbeiter:in**, **Schüler:in** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
             "priceCategoryNo": "Überspringen",
             "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
             "dietYes": "Ja",
