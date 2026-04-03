@@ -41,76 +41,10 @@ export const PageContainer = styled.div`
   @media (max-width: 640px) {
     gap: 1.5rem;
   }
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    inset: auto;
-    z-index: -1;
-    filter: blur(80px);
-    opacity: 0.22;
-    pointer-events: none;
-  }
-
-  &::before {
-    top: 2rem;
-    right: 6%;
-    width: 16rem;
-    height: 16rem;
-    background: ${({ theme }) => theme.accent3};
-  }
-
-  &::after {
-    top: 18rem;
-    left: -2rem;
-    width: 18rem;
-    height: 18rem;
-    background: ${({ theme }) => theme.accent1};
-  }
 `;
 
 export const HeroGrid = styled.section`
   display: block;
-`;
-
-export const HeroContentCard = styled.div`
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2rem;
-  border-radius: 28px;
-  background: linear-gradient(135deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}26`};
-  box-shadow: 0 24px 45px ${({ theme }) => `${theme.textDark}1F`};
-  animation: ${fadeUp} 0.5s ease both;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: -60%;
-    right: -20%;
-    width: 60%;
-    height: 140%;
-    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}40`}, transparent);
-    transform: rotate(12deg);
-    pointer-events: none;
-  }
-
-  @media (max-width: 640px) {
-    padding: 1.35rem;
-    border-radius: 24px;
-  }
-`;
-
-export const HeroSubtitle = styled.p`
-  margin: 0;
-  max-width: 42rem;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: ${({ theme }) => theme.textSecondary};
 `;
 
 export const HeroBadgeRow = styled.div`
@@ -167,10 +101,14 @@ export const DashboardGrid = styled.section`
 
 export const KPIGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1rem;
 
-  @media (max-width: 1120px) {
+  @media (max-width: 1320px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: 880px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -257,6 +195,7 @@ export const ControlRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
+  margin-top: 1.35rem;
 `;
 
 export const SegmentedButton = styled.button<{ $active?: boolean; $tone?: "red" | "orange" | "yellow" | "neutral" }>`
@@ -475,22 +414,16 @@ export const LegendValue = styled.span`
 
 export const HeatmapLayout = styled.div`
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 1rem;
-
-  @media (max-width: 800px) {
-    grid-template-columns: 1fr;
-  }
+  gap: 0.95rem;
 `;
 
 export const HeatmapMeta = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
-  min-width: 13rem;
 
-  @media (max-width: 800px) {
-    min-width: 0;
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
   }
 `;
 
@@ -508,40 +441,40 @@ export const HeatmapTooltip = styled.div`
 export const HeatmapGridWrap = styled.div`
   width: 100%;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.35rem;
 `;
 
 export const HeatmapMatrix = styled.div`
   display: grid;
-  gap: 0.7rem;
-  width: max(100%, 42rem);
+  gap: 0.45rem;
+  width: max(100%, 34rem);
 
   @media (max-width: 640px) {
-    width: max(100%, 36rem);
+    width: max(100%, 30rem);
   }
 `;
 
 export const HeatmapHours = styled.div`
   display: grid;
   grid-template-columns: repeat(24, minmax(0, 1fr));
-  gap: 0.3rem;
-  padding-left: 4rem;
+  gap: 0.2rem;
+  padding-left: 3.2rem;
   color: ${({ theme }) => theme.textMuted};
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 `;
 
 export const HeatmapRow = styled.div`
   display: grid;
-  grid-template-columns: 3.3rem repeat(24, minmax(0, 1fr));
-  gap: 0.3rem;
+  grid-template-columns: 2.7rem repeat(24, minmax(0, 1fr));
+  gap: 0.2rem;
   align-items: center;
 `;
 
 export const HeatmapDayLabel = styled.div`
   color: ${({ theme }) => theme.textMuted};
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -549,15 +482,22 @@ export const HeatmapDayLabel = styled.div`
 
 export const HeatmapCell = styled.button<{ $active?: boolean }>`
   border: 0;
-  min-height: 1.4rem;
-  border-radius: 0.45rem;
+  min-height: 1.12rem;
+  border-radius: 0.38rem;
   cursor: pointer;
   transition: transform 0.16s ease, box-shadow 0.16s ease;
   box-shadow: ${({ theme, $active }) => ($active ? `0 0 0 1px ${theme.textOnCard} inset, 0 10px 18px ${theme.textDark}18` : "none")};
+  -webkit-tap-highlight-color: transparent;
 
   &:hover {
     transform: translateY(-1px);
   }
+`;
+
+export const ShareGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 `;
 
 export const LeaderboardGrid = styled.div`
@@ -638,7 +578,7 @@ export const LeaderboardFill = styled.div<{ $width: number }>`
 
 export const InsightGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 
   @media (max-width: 1120px) {

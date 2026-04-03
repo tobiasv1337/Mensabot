@@ -135,21 +135,22 @@ export type TranscribeResponse = {
 	duration_s?: number;
 };
 
-export type ProjectStatsHeadline = {
-	messages_total: number;
-	users_total: number;
-	active_users_30d: number;
-	sessions_total: number;
-	chats_total: number;
-	tool_calls_total: number;
-	transcribe_requests_total: number;
-	shortcut_triggered_messages_total: number;
-	distinct_canteens_total: number;
-	distinct_cities_total: number;
-	average_canteens_per_user: number;
-	average_messages_per_session: number;
+export type ProjectStatsPeriodKey = "today" | "7d" | "30d" | "ytd" | "total";
+export type ProjectStatsTrendGranularity = "hour" | "day";
+
+export type ProjectStatsSummary = {
+	active_users: number;
+	messages: number;
+	sessions: number;
+	tool_calls: number;
+	active_chats: number;
+	distinct_canteens: number;
+	distinct_cities: number;
+	transcribe_requests: number;
+	shortcut_messages: number;
 	tool_success_rate: number;
-	average_tools_per_llm_turn: number;
+	average_messages_per_session: number;
+	average_tool_calls_per_llm_turn: number;
 };
 
 export type ProjectStatsShare = {
@@ -159,7 +160,7 @@ export type ProjectStatsShare = {
 };
 
 export type ProjectStatsTrendPoint = {
-	date: string;
+	bucket_start: string;
 	active_users: number;
 	messages: number;
 	llm_messages: number;
@@ -185,19 +186,15 @@ export type ProjectStatsLeaderboardEntry = {
 	id?: number;
 };
 
-export type ProjectStatsResponse = {
-	updated_at: string;
-	headline: ProjectStatsHeadline;
-	availability: {
-		total_canteens: number;
-		total_cities: number;
-	};
+export type ProjectStatsPeriod = {
+	summary: ProjectStatsSummary;
 	shares: {
 		interaction_types: ProjectStatsShare[];
 		message_origins: ProjectStatsShare[];
 		diet_filters: ProjectStatsShare[];
 	};
 	trend: {
+		granularity: ProjectStatsTrendGranularity;
 		points: ProjectStatsTrendPoint[];
 	};
 	heatmap: ProjectStatsHeatmapCell[];
@@ -207,6 +204,16 @@ export type ProjectStatsResponse = {
 		tools: ProjectStatsLeaderboardEntry[];
 		filters: ProjectStatsLeaderboardEntry[];
 	};
+};
+
+export type ProjectStatsResponse = {
+	updated_at: string;
+	timezone: string;
+	availability: {
+		total_canteens: number;
+		total_cities: number;
+	};
+	periods: Record<ProjectStatsPeriodKey, ProjectStatsPeriod>;
 };
 
 type SendMessagesOptions = {

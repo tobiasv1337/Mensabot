@@ -144,72 +144,59 @@
     "analytics": {
         "eyebrow": "Analytics",
         "title": "MensaBot Analytics",
-        "subtitle": "Live metrics for usage, interactions, filters, tools and explored canteens.",
-        "githubButton": "View on GitHub",
-        "heroMeta": "Aggregated metrics will appear here once the first live data arrives.",
-        "updatedAt": "Updated {{value}}",
-        "heroSignals": {
-            "totalMessages": "Total messages",
-            "totalUsers": "Total users",
-            "peakTime": "Peak time",
-            "totalChats": "Total chats",
-            "totalToolCalls": "Total tool calls"
-        },
-        "facts": {
-            "studentProject": {
-                "title": "Student Project",
-                "description": "Developed by students for students, aiming to improve the campus dining experience."
-            },
-            "mcp": {
-                "title": "Smart Data Retrieval via MCP",
-                "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
-            },
-            "openSource": {
-                "title": "Open Source",
-                "description": "Built with modern technologies and completely open source for community contributions."
-            },
-            "fastReliable": {
-                "title": "Fast & Reliable",
-                "description": "Optimized for speed so menus, opening hours and chat answers land in seconds."
-            }
+        "subtitle": "Period-based usage analytics for messages, sessions, filters, tools, and explored canteens.",
+        "heroMeta": "The dashboard will appear once the first tracked events have been stored.",
+        "context": "Showing {{period}} · Updated {{updated}} · {{timezone}}",
+        "periods": {
+            "today": "Today",
+            "7d": "7d",
+            "30d": "30d",
+            "ytd": "This year",
+            "total": "Total"
         },
         "status": {
-            "eyebrow": "Project Stats",
-            "loadingTitle": "Building the dashboard",
-            "loadingBody": "The stats endpoint is responding and the page is assembling the visuals.",
+            "eyebrow": "Project stats",
+            "loadingTitle": "Building the analytics view",
+            "loadingBody": "The project stats endpoint is responding and the dashboard is assembling the latest aggregates.",
             "offlineTitle": "Analytics are unavailable offline",
             "offlineBody": "Reconnect to load the live project statistics.",
             "errorTitle": "Analytics could not be loaded",
-            "errorBody": "The stats endpoint did not return usable data.",
+            "errorBody": "The project stats endpoint did not return usable analytics data.",
             "waiting": "Analytics are waiting for the first tracked events."
         },
         "kpis": {
+            "activeUsers": "Active users",
             "messages": "Messages",
-            "users": "Users",
-            "activeUsers30d": "Active 30d",
             "sessions": "Sessions",
-            "chats": "Chats",
-            "toolCalls": "Tool Calls",
-            "transcribe": "STT Requests",
-            "shortcuts": "Shortcut Messages"
+            "toolCalls": "Tool calls",
+            "activeChats": "Active chats",
+            "canteensExplored": "Canteens explored",
+            "citiesExplored": "Cities explored",
+            "transcribe": "Voice requests",
+            "shortcuts": "Shortcut starts",
+            "toolSuccessRate": "Tool success rate",
+            "avgToolCallsPerLlmTurn": "Avg tool calls / LLM turn",
+            "avgMessagesPerSession": "Avg messages / session",
+            "canteenCoverage": "Canteen coverage"
         },
         "kpiMeta": {
+            "activeUsers": "Unique users in {{period}}",
             "messages": "{{llm}} LLM / {{quick}} quick lookup messages",
-            "users": "Total anonymous user IDs tracked",
-            "activeUsers30d": "Users with activity in the last 30 days",
-            "sessions": "{{value}} messages per session on average",
-            "chats": "{{value}} explored canteens per user",
-            "tools": "{{value}} tools per LLM turn on average",
-            "voice": "Confirmed voice usage from STT requests",
-            "shortcuts": "Messages started through saved shortcuts"
+            "sessions": "New sessions in {{period}}",
+            "toolCalls": "{{value}} success rate",
+            "activeChats": "Unique chats with activity in {{period}}",
+            "canteensExplored": "Unique canteens touched in {{period}}",
+            "citiesExplored": "Unique cities reached in {{period}}",
+            "voiceRequests": "Speech-to-text requests in {{period}}",
+            "shortcuts": "Messages started from shortcuts in {{period}}",
+            "toolSuccessRate": "Successful tool executions divided by all tool calls",
+            "toolSuccessRateInline": "Success rate: {{value}}",
+            "avgToolCallsPerLlmTurn": "Average number of tool calls for each LLM interaction in the selected period",
+            "avgMessagesPerSession": "Average messages per session in the selected period",
+            "canteenCoverage": "Share of {{total}} indexed canteens reached in this period"
         },
         "trend": {
-            "eyebrow": "Live Activity",
-            "title": "Usage over time",
-            "subtitle": "Switch between messages, quick lookups, tools and voice to inspect how traffic evolves.",
-            "ariaLabel": "Activity trend chart",
             "empty": "No activity recorded yet.",
-            "footer": "Peak {{max}} · Total {{total}}",
             "controls": {
                 "activeUsers": "Active users",
                 "messages": "Messages",
@@ -224,44 +211,41 @@
             "reach": {
                 "eyebrow": "Reach",
                 "title": "Reach trend",
-                "subtitle": "Shows daily active users, sessions, messages, and interactions in one view.",
+                "subtitle": "Unique users, sessions, messages, and interactions for {{period}}.",
                 "ariaLabel": "Reach chart"
             },
             "behavior": {
                 "eyebrow": "Behavior",
                 "title": "Behavior trend",
-                "subtitle": "Shows how strongly LLM, quick lookup, shortcuts, and STT are used over time.",
+                "subtitle": "LLM, quick lookup, shortcuts, and voice usage for {{period}}.",
                 "ariaLabel": "Behavior chart"
-            },
-            "ranges": {
-                "7": "7d",
-                "30": "30d",
-                "all": "All time"
             }
         },
         "share": {
             "interactions": {
                 "title": "LLM vs quick lookup",
-                "subtitle": "Shows whether people lean on full chat turns or direct menu and opening-hours lookups.",
+                "subtitle": "Interaction split for {{period}} between full chat turns and direct lookups.",
                 "total": "Interaction mix"
             },
             "origins": {
                 "title": "Voice vs typed vs shortcut",
-                "subtitle": "Counts how real messages start, not just raw transcription attempts.",
+                "subtitle": "How real messages started in {{period}}, not just raw transcription attempts.",
                 "total": "Message origin"
             },
             "diets": {
-                "title": "Diet filter mix",
-                "subtitle": "Shows requests with vegetarian, vegan, meat, or no diet filter selected.",
-                "total": "Diet filters"
+                "title": "Effective diet filter mix",
+                "subtitle": "Applied diet filters in {{period}}, including requests without a diet filter.",
+                "total": "Effective diet filters"
             }
         },
         "heatmap": {
             "eyebrow": "Rhythm",
-            "title": "Weekly activity heatmap",
-            "subtitle": "Hover any cell to inspect when the bot gets busy across the week.",
+            "title": "Weekly activity by local time",
+            "subtitle": "Interaction density from {{period}}, aggregated in {{timezone}}.",
+            "selectedSlot": "Selected slot",
             "tooltip": "{{value}} tracked interactions in this slot",
             "peakSlot": "Peak slot",
+            "cellAriaLabel": "{{weekday}} {{hour}}, {{value}} interactions in {{period}} ({{timezone}}).",
             "weekdays": {
                 "mon": "Mon",
                 "tue": "Tue",
@@ -276,29 +260,20 @@
             "empty": "No leaderboard data yet.",
             "cities": {
                 "eyebrow": "Cities",
-                "title": "Most popular cities"
+                "title": "Top cities in {{period}}"
             },
             "canteens": {
                 "eyebrow": "Canteens",
-                "title": "Most explored canteens"
+                "title": "Top canteens in {{period}}"
             },
             "tools": {
                 "eyebrow": "Tools",
-                "title": "Most used tools"
+                "title": "Top tools in {{period}}"
             },
             "filters": {
                 "eyebrow": "Filters",
-                "title": "Most used filters"
+                "title": "Top filters in {{period}}"
             }
-        },
-        "insights": {
-            "distinctCanteens": "Distinct canteens explored",
-            "distinctCities": "Distinct cities explored",
-            "activeUsers30d": "Active users in the last 30 days",
-            "averageCanteensPerUser": "Average canteens explored per user",
-            "averageToolsPerTurn": "Average tools per LLM turn",
-            "canteenCoverage": "Coverage of canteens in the index",
-            "shortcutMessages": "Messages started via shortcuts"
         },
         "labels": {
             "llmChat": "LLM Chat",
