@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import mensaLogo from "@/assets/mensabot-logo-gradient.svg";
 import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
+import FeatureCard from "@/shared/ui/cards/FeatureCard";
 import * as S from "./HomePage.styles";
 import { ChatIcon, MensenIcon, ShortcutsIcon } from "@/shared/ui/icons";
 
@@ -56,11 +57,13 @@ const HomePage: React.FC = () => {
         <S.FeaturesTitle>{t("landing.features.title")}</S.FeaturesTitle>
         <S.FeaturesGrid>
           {features.map((feature, index) => (
-            <S.FeatureCard key={feature.id} $delay={index}>
-              <S.FeatureIcon>{feature.icon}</S.FeatureIcon>
-              <S.FeatureTitle>{feature.title}</S.FeatureTitle>
-              <S.FeatureDescription>{feature.description}</S.FeatureDescription>
-            </S.FeatureCard>
+            <FeatureCard
+              key={feature.id}
+              delay={index}
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+            />
           ))}
         </S.FeaturesGrid>
       </S.FeaturesSection>

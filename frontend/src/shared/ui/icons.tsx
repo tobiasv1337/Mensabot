@@ -151,7 +151,40 @@ export const AnalyticsIcon = () => (
         fill="currentColor"
         aria-hidden
     >
-        <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm80-80h80v-160h-80v160Zm160 0h80v-320h-80v320Zm160 0h80v-240h-80v240Zm160 0h80v-400h-80v400ZM160-720v480-480Z" />
+        <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm80-80h80v-160h-80v160Zm140 0h80v-280h-80v280Zm140 0h80v-220h-80v220Zm140 0h80v-340h-80v340ZM160-720v480-480Z" />
+    </svg>
+);
+
+export const MicrophoneIcon = ({ width = "20", height = "20" }: { width?: number | string; height?: number | string }) => (
+    <svg width={width} height={height} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+            d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M19 11a7 7 0 0 1-14 0"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M12 19v3"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M8 22h8"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
     </svg>
 );
 

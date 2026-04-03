@@ -3,16 +3,20 @@ import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 import type { ProjectStatsLeaderboardEntry, ProjectStatsShare, ProjectStatsTrendPoint } from "@/shared/api/MensaBotClient";
-import { Button } from "@/shared/ui/button/Button";
-import { AboutUsIcon, CitiesIcon, GitHubIcon, GraduationCapIcon, MCPIcon, MensenIcon, OpenSourceIcon, ShortcutsIcon, StarIcon } from "@/shared/ui/icons";
+import FeatureCard from "@/shared/ui/cards/FeatureCard";
+import { AboutUsIcon, AnalyticsIcon, ChatIcon, CitiesIcon, MCPIcon, MensenIcon, MicrophoneIcon, ShortcutsIcon } from "@/shared/ui/icons";
 import * as P from "@/shared/ui/page/PageHero.styles";
 import * as S from "./AnalyticsPage.styles";
 import { useAnalyticsStats } from "./useAnalyticsStats";
 
-
-type TrendMetricKey = "messages" | "llm_messages" | "quick_lookup_messages" | "tool_calls" | "transcribe_requests";
+type TrendMetricKey = "active_users" | "messages" | "interactions" | "sessions" | "llm_messages" | "quick_lookup_messages" | "shortcut_messages" | "tool_calls" | "transcribe_requests";
 type TrendRangeKey = "7" | "30" | "all";
-type SegmentTone = "red" | "orange" | "yellow" | "neutral";
+
+type TrendSeriesConfig = {
+  key: TrendMetricKey;
+  label: string;
+  color: string;
+};
 
 type ShareCardProps = {
   title: string;
@@ -31,16 +35,23 @@ type LeaderboardCardProps = {
   formatHint?: (entry: ProjectStatsLeaderboardEntry) => string | null;
 };
 
+type TrendPanelProps = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  ariaLabel: string;
+  emptyLabel: string;
+  points: ProjectStatsTrendPoint[];
+  series: TrendSeriesConfig[];
+  range: TrendRangeKey;
+  rangeLabels: Record<TrendRangeKey, string>;
+  onRangeChange: (range: TrendRangeKey) => void;
+};
+
 const numberFormatter = new Intl.NumberFormat();
 const compactFormatter = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
 const percentFormatter = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 0 });
 const decimalFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
-
-const MicIcon = () => (
-  <svg width="24" height="24" viewBox="0 -960 960 960" fill="currentColor" aria-hidden>
-    <path d="M480-480q33 0 56.5-23.5T560-560v-240q0-33-23.5-56.5T480-880q-33 0-56.5 23.5T400-800v240q0 33 23.5 56.5T480-480Zm-40 320v-84q-93-12-156.5-80.5T216-480h80q0 77 53.5 130.5T480-296q77 0 130.5-53.5T664-480h80q0 87-59.5 155.5T520-244v84h-80Z" />
-  </svg>
-);
 
 const formatCount = (value: number) => numberFormatter.format(Math.round(value));
 const formatCompact = (value: number) => compactFormatter.format(Math.round(value));
@@ -70,7 +81,10 @@ const getShareGradient = (items: ProjectStatsShare[], colors: string[], fallback
   return `conic-gradient(${segments.join(", ")})`;
 };
 
-const getTrendValue = (point: ProjectStatsTrendPoint, key: TrendMetricKey) => point[key];
+const getTrendValue = (point: ProjectStatsTrendPoint, key: TrendMetricKey) => {
+  const value = point[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+};
 
 const getShareLabel = (id: string, fallback: string, t: ReturnType<typeof useTranslation>["t"]) => {
   if (id === "llm_chat") return t("analytics.labels.llmChat");
@@ -78,6 +92,10 @@ const getShareLabel = (id: string, fallback: string, t: ReturnType<typeof useTra
   if (id === "typed") return t("analytics.labels.typed");
   if (id === "voice") return t("analytics.labels.voice");
   if (id === "shortcut") return t("analytics.labels.shortcut");
+  if (id === "none") return t("analytics.labels.noDietFilter");
+  if (id === "vegetarian") return t("analytics.labels.vegetarian");
+  if (id === "vegan") return t("analytics.labels.vegan");
+  if (id === "meat") return t("analytics.labels.meat");
   return fallback;
 };
 
@@ -150,20 +168,24 @@ const LeaderboardCard = ({ title, subtitle, entries, emptyLabel, formatLabel, fo
       </S.PanelHeader>
       {entries.length > 0 ? (
         <S.LeaderboardList>
-          {entries.map((entry) => (
-            <S.LeaderboardRow key={entry.key}>
-              <S.LeaderboardTop>
-                <S.LeaderboardLabelWrap>
-                  <S.LeaderboardLabel>{formatLabel ? formatLabel(entry) : entry.label}</S.LeaderboardLabel>
-                  {formatHint?.(entry) ? <S.LeaderboardHint>{formatHint(entry)}</S.LeaderboardHint> : null}
-                </S.LeaderboardLabelWrap>
-                <S.LeaderboardValue>{formatCount(entry.count)}</S.LeaderboardValue>
-              </S.LeaderboardTop>
-              <S.LeaderboardTrack>
-                <S.LeaderboardFill $width={(entry.count / maxCount) * 100} />
-              </S.LeaderboardTrack>
-            </S.LeaderboardRow>
-          ))}
+          {entries.map((entry) => {
+            const hint = formatHint?.(entry) ?? null;
+
+            return (
+              <S.LeaderboardRow key={entry.key}>
+                <S.LeaderboardTop>
+                  <S.LeaderboardLabelWrap>
+                    <S.LeaderboardLabel>{formatLabel ? formatLabel(entry) : entry.label}</S.LeaderboardLabel>
+                    {hint ? <S.LeaderboardHint>{hint}</S.LeaderboardHint> : null}
+                  </S.LeaderboardLabelWrap>
+                  <S.LeaderboardValue>{formatCount(entry.count)}</S.LeaderboardValue>
+                </S.LeaderboardTop>
+                <S.LeaderboardTrack>
+                  <S.LeaderboardFill $width={(entry.count / maxCount) * 100} />
+                </S.LeaderboardTrack>
+              </S.LeaderboardRow>
+            );
+          })}
         </S.LeaderboardList>
       ) : (
         <S.EmptyState>{emptyLabel}</S.EmptyState>
@@ -172,78 +194,197 @@ const LeaderboardCard = ({ title, subtitle, entries, emptyLabel, formatLabel, fo
   );
 };
 
+const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, points, series, range, rangeLabels, onRangeChange }) => {
+  const theme = useTheme();
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const visiblePoints = range === "all" ? points : points.slice(-Number(range));
+  const hasData = visiblePoints.some((point) => series.some((item) => getTrendValue(point, item.key) > 0));
+  const maxValue = hasData
+    ? Math.max(...visiblePoints.flatMap((point) => series.map((item) => getTrendValue(point, item.key))))
+    : 0;
+  const scaleMax = maxValue > 0 ? Math.ceil(maxValue * 1.08) : 1;
+  const chartWidth = 760;
+  const chartHeight = 280;
+  const chartPadding = { top: 24, right: 14, bottom: 44, left: 48 };
+  const chartInnerWidth = chartWidth - chartPadding.left - chartPadding.right;
+  const chartInnerHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+  const gradientId = `trend-fill-${title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}`;
+  const xPositions = visiblePoints.map((_, index) => (
+    chartPadding.left + (visiblePoints.length <= 1 ? chartInnerWidth / 2 : (index / (visiblePoints.length - 1)) * chartInnerWidth)
+  ));
+  const seriesPaths = series.map((item) => {
+    const coordinates = visiblePoints.map((point, index) => ({
+      x: xPositions[index],
+      y: chartPadding.top + chartInnerHeight - (getTrendValue(point, item.key) / scaleMax) * chartInnerHeight,
+    }));
+
+    return {
+      ...item,
+      coordinates,
+      linePath: coordinates.length > 1 ? `M ${coordinates.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "",
+    };
+  });
+  const areaCoordinates = visiblePoints.map((_, index) => ({
+    x: xPositions[index],
+    y: Math.min(...seriesPaths.map((item) => item.coordinates[index]?.y ?? chartPadding.top + chartInnerHeight)),
+  }));
+  const areaPath = areaCoordinates.length > 1
+    ? `M ${areaCoordinates[0].x} ${chartPadding.top + chartInnerHeight} L ${areaCoordinates.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${areaCoordinates[areaCoordinates.length - 1].x} ${chartPadding.top + chartInnerHeight} Z`
+    : "";
+  const activeIndex = hoveredIndex ?? visiblePoints.length - 1;
+  const activePoint = activeIndex >= 0 ? (visiblePoints[activeIndex] ?? null) : null;
+  const activeX = activeIndex >= 0 ? (xPositions[activeIndex] ?? null) : null;
+  const yAxisValues = Array.from(new Set([scaleMax, Math.round(scaleMax / 2), 0])).sort((a, b) => b - a);
+  const xAxisIndices = Array.from(new Set([0, Math.max(0, Math.floor((xPositions.length - 1) / 2)), Math.max(0, xPositions.length - 1)]));
+  const hoverZones = xPositions.map((x, index) => {
+    const left = index === 0 ? chartPadding.left : (xPositions[index - 1] + x) / 2;
+    const right = index === xPositions.length - 1 ? chartWidth - chartPadding.right : (x + xPositions[index + 1]) / 2;
+    return { index, x: left, width: right - left };
+  });
+
+  return (
+    <S.Panel>
+      <S.PanelHeader>
+        <S.PanelHeaderText>
+          <S.PanelEyebrow>{eyebrow}</S.PanelEyebrow>
+          <S.PanelTitle>{title}</S.PanelTitle>
+          <S.PanelSubtitle>{subtitle}</S.PanelSubtitle>
+        </S.PanelHeaderText>
+        <S.ControlRow>
+          {(["7", "30", "all"] as TrendRangeKey[]).map((nextRange) => (
+            <S.SegmentedButton key={nextRange} $active={range === nextRange} $tone="red" onClick={() => onRangeChange(nextRange)}>
+              {rangeLabels[nextRange]}
+            </S.SegmentedButton>
+          ))}
+        </S.ControlRow>
+      </S.PanelHeader>
+
+      <S.TrendLegend>
+        {series.map((item) => (
+          <S.TrendLegendItem key={item.key}>
+            <S.TrendLegendDot $color={item.color} />
+            <span>{item.label}</span>
+          </S.TrendLegendItem>
+        ))}
+      </S.TrendLegend>
+
+      {hasData ? (
+        <S.TrendCanvas>
+          <S.TrendCanvasInner>
+            <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={ariaLabel}>
+              <defs>
+                <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+                  <stop offset="0%" stopColor={`${theme.accent1}30`} />
+                  <stop offset="55%" stopColor={`${theme.accent2}18`} />
+                  <stop offset="100%" stopColor={`${theme.accent3}04`} />
+                </linearGradient>
+              </defs>
+              {yAxisValues.map((value) => {
+                const y = chartPadding.top + chartInnerHeight - (value / scaleMax) * chartInnerHeight;
+
+                return (
+                  <g key={`y-${value}`}>
+                    <line x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={y} y2={y} stroke={`${theme.textMuted}22`} strokeDasharray="5 7" />
+                    <text x={chartPadding.left - 8} y={y + 4} fill={theme.textMuted} fontSize="12" fontWeight="700" textAnchor="end">
+                      {formatCompact(value)}
+                    </text>
+                  </g>
+                );
+              })}
+              {[0.25, 0.75].map((step) => {
+                const y = chartPadding.top + chartInnerHeight * step;
+                return <line key={`mid-${step}`} x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={y} y2={y} stroke={`${theme.textMuted}16`} strokeDasharray="5 7" />;
+              })}
+              {areaPath ? <path d={areaPath} fill={`url(#${gradientId})`} /> : null}
+              {activeX !== null ? (
+                <line x1={activeX} x2={activeX} y1={chartPadding.top} y2={chartPadding.top + chartInnerHeight} stroke={`${theme.textMuted}2C`} strokeDasharray="4 6" />
+              ) : null}
+              {seriesPaths.map((item) => (
+                item.linePath ? <path key={item.key} d={item.linePath} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /> : null
+              ))}
+              {seriesPaths.map((item) => {
+                const coordinate = activeIndex >= 0 ? (item.coordinates[activeIndex] ?? null) : null;
+                if (!coordinate) return null;
+
+                return (
+                  <circle
+                    key={`${item.key}-active`}
+                    cx={coordinate.x}
+                    cy={coordinate.y}
+                    r={6}
+                    fill={theme.surfaceCard}
+                    stroke={item.color}
+                    strokeWidth="3"
+                  />
+                );
+              })}
+              {hoverZones.map((zone) => (
+                <rect
+                  key={`hover-${zone.index}`}
+                  x={zone.x}
+                  y={chartPadding.top}
+                  width={zone.width}
+                  height={chartInnerHeight}
+                  fill="transparent"
+                  onMouseEnter={() => setHoveredIndex(zone.index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                />
+              ))}
+              {xAxisIndices.map((index) => {
+                const label = visiblePoints[index];
+                const x = xPositions[index];
+
+                if (!label || x === undefined) return null;
+
+                return (
+                  <text key={`${label.date}-${index}`} x={x} y={chartHeight - 10} fill={theme.textMuted} fontSize="12" fontWeight="700" textAnchor="middle">
+                    {formatDate(label.date)}
+                  </text>
+                );
+              })}
+            </svg>
+          </S.TrendCanvasInner>
+        </S.TrendCanvas>
+      ) : (
+        <S.TrendEmptyState>{emptyLabel}</S.TrendEmptyState>
+      )}
+
+      <S.TrendFooter>
+        <span>{activePoint ? formatDate(activePoint.date) : emptyLabel}</span>
+        {activePoint ? (
+          <S.TrendFooterValues>
+            {series.map((item) => (
+              <S.TrendFooterValue key={`${item.key}-footer`}>
+                <S.TrendLegendDot $color={item.color} />
+                <span>{item.label}</span>
+                <strong>{formatCount(getTrendValue(activePoint, item.key))}</strong>
+              </S.TrendFooterValue>
+            ))}
+          </S.TrendFooterValues>
+        ) : null}
+      </S.TrendFooter>
+    </S.Panel>
+  );
+};
+
 const AnalyticsPage: React.FC = () => {
   const { t } = useTranslation();
   const { isOffline } = useAppShellContext();
   const theme = useTheme();
   const { stats, isLoading, error } = useAnalyticsStats(isOffline);
-  const [trendMetric, setTrendMetric] = useState<TrendMetricKey>("messages");
   const [trendRange, setTrendRange] = useState<TrendRangeKey>("30");
-  const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null);
   const [activeHeatmapKey, setActiveHeatmapKey] = useState<string | null>(null);
-
-  const facts = [
-    {
-      id: "student",
-      icon: <GraduationCapIcon />,
-      title: t("analytics.facts.studentProject.title"),
-      description: t("analytics.facts.studentProject.description"),
-    },
-    {
-      id: "mcp",
-      icon: <MCPIcon />,
-      title: t("analytics.facts.mcp.title"),
-      description: t("analytics.facts.mcp.description"),
-    },
-    {
-      id: "oss",
-      icon: <OpenSourceIcon />,
-      title: t("analytics.facts.openSource.title"),
-      description: t("analytics.facts.openSource.description"),
-      action: {
-        icon: <GitHubIcon />,
-        label: t("analytics.githubButton"),
-        href: "https://github.com/tobiasv1337/Mensabot",
-      },
-    },
-    {
-      id: "speed",
-      icon: <ShortcutsIcon />,
-      title: t("analytics.facts.fastReliable.title"),
-      description: t("analytics.facts.fastReliable.description"),
-    },
-  ];
 
   const interactionShare = (stats?.shares.interaction_types ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
   const originShare = (stats?.shares.message_origins ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
-  const trendMetricOptions = [
-    { key: "messages" as const, label: t("analytics.trend.controls.messages"), color: theme.accent1, tone: "red" as SegmentTone },
-    { key: "llm_messages" as const, label: t("analytics.trend.controls.llm"), color: theme.accent2, tone: "orange" as SegmentTone },
-    { key: "quick_lookup_messages" as const, label: t("analytics.trend.controls.quickLookup"), color: theme.accent3, tone: "yellow" as SegmentTone },
-    { key: "tool_calls" as const, label: t("analytics.trend.controls.tools"), color: theme.accent1, tone: "red" as SegmentTone },
-    { key: "transcribe_requests" as const, label: t("analytics.trend.controls.voice"), color: theme.accent2, tone: "orange" as SegmentTone },
-  ];
+  const dietShare = (stats?.shares.diet_filters ?? [])
+    .map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }))
+    .sort((left, right) => {
+      const order: Record<string, number> = { vegetarian: 0, vegan: 1, meat: 2, none: 3 };
+      return (order[left.id] ?? 99) - (order[right.id] ?? 99);
+    });
   const trendPoints = stats?.trend.points ?? [];
-  const visibleTrendPoints = trendRange === "all" ? trendPoints : trendPoints.slice(-Number(trendRange));
-  const activeTrendOption = trendMetricOptions.find((option) => option.key === trendMetric) ?? trendMetricOptions[0];
-  const trendTotal = sumTrendMetric(visibleTrendPoints, trendMetric);
-  const trendHasData = visibleTrendPoints.some((point) => getTrendValue(point, trendMetric) > 0);
-  const activeTrendPoint = visibleTrendPoints[hoveredTrendIndex ?? visibleTrendPoints.length - 1] ?? null;
-  const trendMax = trendHasData ? Math.max(...visibleTrendPoints.map((point) => getTrendValue(point, trendMetric))) : 0;
-  const trendScaleMax = trendMax > 0 ? trendMax : 1;
-  const chartWidth = 760;
-  const chartHeight = 280;
-  const chartPadding = { top: 18, right: 14, bottom: 34, left: 10 };
-  const chartInnerWidth = chartWidth - chartPadding.left - chartPadding.right;
-  const chartInnerHeight = chartHeight - chartPadding.top - chartPadding.bottom;
-  const chartPoints = visibleTrendPoints.map((point, index) => {
-    const x = chartPadding.left + (visibleTrendPoints.length <= 1 ? chartInnerWidth / 2 : (index / (visibleTrendPoints.length - 1)) * chartInnerWidth);
-    const y = chartPadding.top + chartInnerHeight - (getTrendValue(point, trendMetric) / trendScaleMax) * chartInnerHeight;
-    return { point, x, y };
-  });
-  const linePath = chartPoints.length > 1 ? `M ${chartPoints.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "";
-  const areaPath = chartPoints.length > 1 ? `M ${chartPoints[0].x} ${chartPadding.top + chartInnerHeight} L ${chartPoints.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${chartPoints[chartPoints.length - 1].x} ${chartPadding.top + chartInnerHeight} Z` : "";
-  const singleTrendPoint = chartPoints.length === 1 ? chartPoints[0] : null;
   const heatmap = stats?.heatmap ?? [];
   const heatmapLookup = new Map(heatmap.map((cell) => [`${cell.weekday}-${cell.hour}`, cell]));
   const peakHeatmapCell = heatmap.reduce((best, cell) => (cell.count > best.count ? cell : best), { weekday: 0, hour: 0, count: 0 });
@@ -260,63 +401,117 @@ const AnalyticsPage: React.FC = () => {
   ];
   const totalLlmMessages = sumTrendMetric(trendPoints, "llm_messages");
   const totalQuickLookupMessages = sumTrendMetric(trendPoints, "quick_lookup_messages");
+  const peakSlotValue = peakHeatmapCell.count > 0 ? `${weekdayLabels[peakHeatmapCell.weekday]} · ${formatHourRange(peakHeatmapCell.hour)}` : "—";
+  const rangeLabels: Record<TrendRangeKey, string> = {
+    "7": t("analytics.trend.ranges.7"),
+    "30": t("analytics.trend.ranges.30"),
+    all: t("analytics.trend.ranges.all"),
+  };
+  const reachSeries: TrendSeriesConfig[] = [
+    { key: "active_users", label: t("analytics.trend.controls.activeUsers"), color: theme.accent1 },
+    { key: "sessions", label: t("analytics.trend.controls.sessions"), color: theme.accent2 },
+    { key: "messages", label: t("analytics.trend.controls.messages"), color: theme.accent3 },
+    { key: "interactions", label: t("analytics.trend.controls.interactions"), color: theme.textPrimary },
+  ];
+  const behaviorSeries: TrendSeriesConfig[] = [
+    { key: "llm_messages", label: t("analytics.trend.controls.llm"), color: theme.accent1 },
+    { key: "quick_lookup_messages", label: t("analytics.trend.controls.quickLookup"), color: theme.accent2 },
+    { key: "shortcut_messages", label: t("analytics.trend.controls.shortcuts"), color: theme.accent3 },
+    { key: "transcribe_requests", label: t("analytics.trend.controls.voice"), color: theme.textPrimary },
+  ];
 
   const kpis = stats ? [
     {
       id: "messages",
+      icon: <ChatIcon />,
       label: t("analytics.kpis.messages"),
       value: formatCompact(stats.headline.messages_total),
       meta: t("analytics.kpiMeta.messages", { llm: formatCompact(totalLlmMessages), quick: formatCompact(totalQuickLookupMessages) }),
     },
     {
       id: "users",
+      icon: <AboutUsIcon />,
       label: t("analytics.kpis.users"),
       value: formatCompact(stats.headline.users_total),
-      meta: t("analytics.kpiMeta.users", { value: formatCompact(stats.headline.active_users_30d) }),
+      meta: t("analytics.kpiMeta.users"),
+    },
+    {
+      id: "active-users-30d",
+      icon: <AnalyticsIcon />,
+      label: t("analytics.kpis.activeUsers30d"),
+      value: formatCompact(stats.headline.active_users_30d),
+      meta: t("analytics.kpiMeta.activeUsers30d"),
     },
     {
       id: "sessions",
+      icon: <ChatIcon />,
       label: t("analytics.kpis.sessions"),
       value: formatCompact(stats.headline.sessions_total),
       meta: t("analytics.kpiMeta.sessions", { value: formatDecimal(stats.headline.average_messages_per_session) }),
     },
     {
       id: "chats",
+      icon: <MensenIcon />,
       label: t("analytics.kpis.chats"),
       value: formatCompact(stats.headline.chats_total),
       meta: t("analytics.kpiMeta.chats", { value: formatDecimal(stats.headline.average_canteens_per_user) }),
     },
     {
       id: "tools",
+      icon: <MCPIcon />,
       label: t("analytics.kpis.toolCalls"),
       value: formatCompact(stats.headline.tool_calls_total),
-      meta: t("analytics.kpiMeta.tools", { rate: formatPercent(stats.headline.tool_success_rate) }),
-    },
-    {
-      id: "voice",
-      label: t("analytics.kpis.transcribe"),
-      value: formatCompact(stats.headline.transcribe_requests_total),
-      meta: t("analytics.kpiMeta.voice"),
+      meta: t("analytics.kpiMeta.tools", { value: formatDecimal(stats.headline.average_tools_per_llm_turn) }),
     },
     {
       id: "shortcut",
+      icon: <ShortcutsIcon />,
       label: t("analytics.kpis.shortcuts"),
       value: formatCompact(stats.headline.shortcut_triggered_messages_total),
       meta: t("analytics.kpiMeta.shortcuts"),
     },
+    {
+      id: "voice",
+      icon: <MicrophoneIcon width="24" height="24" />,
+      label: t("analytics.kpis.transcribe"),
+      value: formatCompact(stats.headline.transcribe_requests_total),
+      meta: t("analytics.kpiMeta.voice"),
+    },
   ] : [];
 
-  const heroSignals = stats ? [
-    { id: "messages", label: t("analytics.heroSignals.totalMessages"), value: formatCompact(stats.headline.messages_total) },
-    { id: "users", label: t("analytics.heroSignals.totalUsers"), value: formatCompact(stats.headline.users_total) },
-    { id: "chats", label: t("analytics.heroSignals.totalChats"), value: formatCompact(stats.headline.chats_total) },
-    { id: "tools", label: t("analytics.heroSignals.totalToolCalls"), value: formatCompact(stats.headline.tool_calls_total) },
+  const insights = stats ? [
+    {
+      id: "distinct-canteens",
+      icon: <MensenIcon />,
+      value: getInsightValue(stats.headline.distinct_canteens_total),
+      title: t("analytics.insights.distinctCanteens"),
+    },
+    {
+      id: "distinct-cities",
+      icon: <CitiesIcon />,
+      value: getInsightValue(stats.headline.distinct_cities_total),
+      title: t("analytics.insights.distinctCities"),
+    },
+    {
+      id: "canteen-coverage",
+      icon: <AboutUsIcon />,
+      value: formatPercent(stats.availability.total_canteens > 0 ? stats.headline.distinct_canteens_total / stats.availability.total_canteens : 0),
+      title: t("analytics.insights.canteenCoverage"),
+    },
+    {
+      id: "peak-slot",
+      icon: <AnalyticsIcon />,
+      value: peakSlotValue,
+      title: t("analytics.heatmap.peakSlot"),
+      meta: peakHeatmapCell.count > 0 ? t("analytics.heatmap.tooltip", { value: formatCount(peakHeatmapCell.count) }) : t("analytics.trend.empty"),
+    },
   ] : [];
 
   const heroBadges = stats ? [
-    t("analytics.badges.totalCanteens", { value: formatCount(stats.availability.total_canteens) }),
-    peakHeatmapCell.count > 0 ? t("analytics.badges.peakTime", { day: weekdayLabels[peakHeatmapCell.weekday], time: formatHourRange(peakHeatmapCell.hour) }) : null,
-  ].filter(Boolean) : [];
+    { label: t("analytics.heroSignals.totalMessages"), value: formatCompact(stats.headline.messages_total) },
+    { label: t("analytics.heroSignals.totalUsers"), value: formatCompact(stats.headline.users_total) },
+    { label: t("analytics.heroSignals.peakTime"), value: peakSlotValue },
+  ] : [];
 
   const statusCard = !stats ? (
     <S.StatusCard>
@@ -353,7 +548,10 @@ const AnalyticsPage: React.FC = () => {
           {heroBadges.length > 0 ? (
             <S.HeroBadgeRow>
               {heroBadges.map((badge) => (
-                <S.HeroBadge key={badge}>{badge}</S.HeroBadge>
+                <S.HeroBadge key={badge.label}>
+                  <S.HeroBadgeLabel>{badge.label}</S.HeroBadgeLabel>
+                  <S.HeroBadgeValue title={badge.value}>{badge.value}</S.HeroBadgeValue>
+                </S.HeroBadge>
               ))}
             </S.HeroBadgeRow>
           ) : null}
@@ -361,133 +559,54 @@ const AnalyticsPage: React.FC = () => {
             {stats ? t("analytics.updatedAt", { value: formatDateTime(stats.updated_at) }) : t("analytics.heroMeta")}
           </S.HeroMeta>
         </S.HeroContentCard>
-        <S.HeroSignalGrid>
-          {heroSignals.length > 0 ? heroSignals.map((signal) => (
-            <S.HeroSignalCard key={signal.id}>
-              <S.HeroSignalValue>{signal.value}</S.HeroSignalValue>
-              <S.HeroSignalLabel>{signal.label}</S.HeroSignalLabel>
-            </S.HeroSignalCard>
-          )) : (
-            <>
-              <S.HeroSignalCard><S.HeroSignalValue>...</S.HeroSignalValue><S.HeroSignalLabel>{t("analytics.heroSignals.totalMessages")}</S.HeroSignalLabel></S.HeroSignalCard>
-              <S.HeroSignalCard><S.HeroSignalValue>...</S.HeroSignalValue><S.HeroSignalLabel>{t("analytics.heroSignals.totalUsers")}</S.HeroSignalLabel></S.HeroSignalCard>
-              <S.HeroSignalCard><S.HeroSignalValue>...</S.HeroSignalValue><S.HeroSignalLabel>{t("analytics.heroSignals.totalChats")}</S.HeroSignalLabel></S.HeroSignalCard>
-              <S.HeroSignalCard><S.HeroSignalValue>...</S.HeroSignalValue><S.HeroSignalLabel>{t("analytics.heroSignals.totalToolCalls")}</S.HeroSignalLabel></S.HeroSignalCard>
-            </>
-          )}
-        </S.HeroSignalGrid>
       </S.HeroGrid>
-
-      <S.FactGrid>
-        {facts.map((fact) => (
-          <S.FactCard key={fact.id}>
-            <S.FactHeader>
-              {fact.icon}
-              <S.FactTitle>{fact.title}</S.FactTitle>
-            </S.FactHeader>
-            <S.FactText>{fact.description}</S.FactText>
-            {"action" in fact && fact.action ? (
-              <div style={{ marginTop: "1rem" }}>
-                <Button variant="default" iconLeft={fact.action.icon} text={fact.action.label} onClick={() => window.open(fact.action.href, "_blank")} />
-              </div>
-            ) : null}
-          </S.FactCard>
-        ))}
-      </S.FactGrid>
 
       {statusCard}
 
       {stats ? (
         <S.DashboardGrid>
           <S.KPIGrid>
-            {kpis.map((kpi) => (
-              <S.KpiCard key={kpi.id}>
-                <S.KpiLabel>{kpi.label}</S.KpiLabel>
-                <S.KpiValue>{kpi.value}</S.KpiValue>
-                <S.KpiMeta>{kpi.meta}</S.KpiMeta>
-              </S.KpiCard>
+            {kpis.map((kpi, index) => (
+              <FeatureCard
+                key={kpi.id}
+                delay={index}
+                density="compact"
+                valueMode="compact"
+                icon={kpi.icon}
+                eyebrow={kpi.label}
+                value={kpi.value}
+                meta={kpi.meta}
+              />
             ))}
           </S.KPIGrid>
 
           <S.AnalyticsRow>
-            <S.Panel>
-              <S.PanelHeader>
-                <S.PanelHeaderText>
-                  <S.PanelEyebrow>{t("analytics.trend.eyebrow")}</S.PanelEyebrow>
-                  <S.PanelTitle>{t("analytics.trend.title")}</S.PanelTitle>
-                  <S.PanelSubtitle>{t("analytics.trend.subtitle")}</S.PanelSubtitle>
-                </S.PanelHeaderText>
-                <S.ControlRow>
-                  {trendMetricOptions.map((option) => (
-                    <S.SegmentedButton key={option.key} $active={trendMetric === option.key} $tone={option.tone} onClick={() => setTrendMetric(option.key)}>
-                      {option.label}
-                    </S.SegmentedButton>
-                  ))}
-                </S.ControlRow>
-              </S.PanelHeader>
-              <S.ControlRow style={{ marginBottom: "1rem" }}>
-                {(["7", "30", "all"] as TrendRangeKey[]).map((range) => (
-                  <S.SegmentedButton key={range} $active={trendRange === range} $tone="red" onClick={() => setTrendRange(range)}>
-                    {t(`analytics.trend.ranges.${range}`)}
-                  </S.SegmentedButton>
-                ))}
-              </S.ControlRow>
-              {trendHasData ? (
-                <S.TrendCanvas>
-                  <S.TrendCanvasInner>
-                    <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={t("analytics.trend.ariaLabel")}>
-                      <defs>
-                        <linearGradient id="trendStroke" x1="0%" x2="100%" y1="0%" y2="0%">
-                          <stop offset="0%" stopColor={theme.accent1} />
-                          <stop offset="60%" stopColor={theme.accent2} />
-                          <stop offset="100%" stopColor={theme.accent3} />
-                        </linearGradient>
-                        <linearGradient id="trendFill" x1="0%" x2="0%" y1="0%" y2="100%">
-                          <stop offset="0%" stopColor={`${activeTrendOption.color}55`} />
-                          <stop offset="100%" stopColor={`${activeTrendOption.color}04`} />
-                        </linearGradient>
-                      </defs>
-                      {[0, 0.25, 0.5, 0.75, 1].map((step) => {
-                        const y = chartPadding.top + chartInnerHeight * step;
-                        return <line key={step} x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={y} y2={y} stroke={`${theme.textMuted}22`} strokeDasharray="5 7" />;
-                      })}
-                      {areaPath ? <path d={areaPath} fill="url(#trendFill)" /> : null}
-                      {linePath ? <path d={linePath} fill="none" stroke="url(#trendStroke)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /> : null}
-                      {singleTrendPoint ? (
-                        <rect
-                          x={singleTrendPoint.x - 24}
-                          y={singleTrendPoint.y}
-                          width={48}
-                          height={chartPadding.top + chartInnerHeight - singleTrendPoint.y}
-                          rx={14}
-                          fill={`${activeTrendOption.color}88`}
-                        />
-                      ) : null}
-                      {chartPoints.map((point, index) => (
-                        <g key={point.point.date}>
-                          <circle
-                            cx={point.x}
-                            cy={point.y}
-                            r={hoveredTrendIndex === index || (hoveredTrendIndex === null && index === chartPoints.length - 1) ? 7 : 5}
-                            fill={theme.surfaceCard}
-                            stroke={activeTrendOption.color}
-                            strokeWidth="3"
-                            onMouseEnter={() => setHoveredTrendIndex(index)}
-                            onMouseLeave={() => setHoveredTrendIndex(null)}
-                          />
-                        </g>
-                      ))}
-                    </svg>
-                  </S.TrendCanvasInner>
-                </S.TrendCanvas>
-              ) : (
-                <S.TrendEmptyState>{t("analytics.trend.empty")}</S.TrendEmptyState>
-              )}
-              <S.TrendFooter>
-                <span>{trendHasData && activeTrendPoint ? `${formatDate(activeTrendPoint.date)} · ${formatCount(getTrendValue(activeTrendPoint, trendMetric))} ${activeTrendOption.label}` : t("analytics.trend.empty")}</span>
-                <span>{t("analytics.trend.footer", { max: formatCount(trendMax), total: formatCount(trendTotal) })}</span>
-              </S.TrendFooter>
-            </S.Panel>
+            <S.TrendColumn>
+              <TrendPanel
+                eyebrow={t("analytics.trend.reach.eyebrow")}
+                title={t("analytics.trend.reach.title")}
+                subtitle={t("analytics.trend.reach.subtitle")}
+                ariaLabel={t("analytics.trend.reach.ariaLabel")}
+                emptyLabel={t("analytics.trend.empty")}
+                points={trendPoints}
+                series={reachSeries}
+                range={trendRange}
+                rangeLabels={rangeLabels}
+                onRangeChange={setTrendRange}
+              />
+              <TrendPanel
+                eyebrow={t("analytics.trend.behavior.eyebrow")}
+                title={t("analytics.trend.behavior.title")}
+                subtitle={t("analytics.trend.behavior.subtitle")}
+                ariaLabel={t("analytics.trend.behavior.ariaLabel")}
+                emptyLabel={t("analytics.trend.empty")}
+                points={trendPoints}
+                series={behaviorSeries}
+                range={trendRange}
+                rangeLabels={rangeLabels}
+                onRangeChange={setTrendRange}
+              />
+            </S.TrendColumn>
 
             <S.ShareColumn>
               <ShareCard
@@ -503,6 +622,13 @@ const AnalyticsPage: React.FC = () => {
                 items={originShare}
                 colors={[theme.accent1, theme.accent2, theme.accent3]}
                 totalLabel={t("analytics.share.origins.total")}
+              />
+              <ShareCard
+                title={t("analytics.share.diets.title")}
+                subtitle={t("analytics.share.diets.subtitle")}
+                items={dietShare}
+                colors={[theme.accent1, theme.accent2, theme.accent3, theme.textMuted]}
+                totalLabel={t("analytics.share.diets.total")}
               />
             </S.ShareColumn>
           </S.AnalyticsRow>
@@ -570,36 +696,19 @@ const AnalyticsPage: React.FC = () => {
           </S.LeaderboardGrid>
 
           <S.InsightGrid>
-            <S.InsightCard>
-              <div style={{ color: theme.accent1 }}><MensenIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.distinct_canteens_total)}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.distinctCanteens")}</S.InsightLabel>
-            </S.InsightCard>
-            <S.InsightCard>
-              <div style={{ color: theme.accent2 }}><CitiesIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.distinct_cities_total)}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.distinctCities")}</S.InsightLabel>
-            </S.InsightCard>
-            <S.InsightCard>
-              <div style={{ color: theme.accent3 }}><AboutUsIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.average_canteens_per_user, "decimal")}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.averageCanteensPerUser")}</S.InsightLabel>
-            </S.InsightCard>
-            <S.InsightCard>
-              <div style={{ color: theme.accent1 }}><MCPIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.average_tools_per_llm_turn, "decimal")}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.averageToolsPerTurn")}</S.InsightLabel>
-            </S.InsightCard>
-            <S.InsightCard>
-              <div style={{ color: theme.accent2 }}><MicIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.transcribe_requests_total)}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.transcribeRequests")}</S.InsightLabel>
-            </S.InsightCard>
-            <S.InsightCard>
-              <div style={{ color: theme.accent3 }}><StarIcon /></div>
-              <S.InsightValue>{getInsightValue(stats.headline.tool_success_rate, "percent")}</S.InsightValue>
-              <S.InsightLabel>{t("analytics.insights.toolSuccessRate")}</S.InsightLabel>
-            </S.InsightCard>
+            {insights.map((insight, index) => (
+              <FeatureCard
+                key={insight.id}
+                delay={index}
+                density="compact"
+                valueMode={insight.id === "peak-slot" ? "label" : "compact"}
+                valueNoWrap={insight.id === "peak-slot"}
+                icon={insight.icon}
+                value={insight.value}
+                title={insight.title}
+                meta={insight.meta}
+              />
+            ))}
           </S.InsightGrid>
         </S.DashboardGrid>
       ) : null}

@@ -71,26 +71,33 @@ export const PageContainer = styled.div`
 `;
 
 export const HeroGrid = styled.section`
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
-  gap: 1.5rem;
-
-  @media (max-width: 1080px) {
-    grid-template-columns: 1fr;
-  }
+  display: block;
 `;
 
 export const HeroContentCard = styled.div`
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 2rem;
-  border-radius: 32px;
-  background:
-    radial-gradient(circle at top right, ${({ theme }) => `${theme.accent3}22`}, transparent 34%),
-    linear-gradient(145deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}24`};
-  box-shadow: 0 28px 55px ${({ theme }) => `${theme.textDark}18`};
+  border-radius: 28px;
+  background: linear-gradient(135deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => theme.surfaceInset});
+  border: 1px solid ${({ theme }) => `${theme.textMuted}26`};
+  box-shadow: 0 24px 45px ${({ theme }) => `${theme.textDark}1F`};
   animation: ${fadeUp} 0.5s ease both;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -60%;
+    right: -20%;
+    width: 60%;
+    height: 140%;
+    background: linear-gradient(120deg, ${({ theme }) => `${theme.accent3}40`}, transparent);
+    transform: rotate(12deg);
+    pointer-events: none;
+  }
 
   @media (max-width: 640px) {
     padding: 1.35rem;
@@ -114,15 +121,34 @@ export const HeroBadgeRow = styled.div`
 `;
 
 export const HeroBadge = styled.div`
+  min-width: 0;
   padding: 0.7rem 1rem;
-  border-radius: 999px;
+  border-radius: 18px;
   background: ${({ theme }) => `${theme.surfacePage}CC`};
   border: 1px solid ${({ theme }) => `${theme.textMuted}24`};
-  color: ${({ theme }) => theme.textSecondary};
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
   backdrop-filter: blur(10px);
+`;
+
+export const HeroBadgeLabel = styled.div`
+  color: ${({ theme }) => theme.textMuted};
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+`;
+
+export const HeroBadgeValue = styled.div`
+  min-width: 0;
+  color: ${({ theme }) => theme.textPrimary};
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export const HeroMeta = styled.div`
@@ -133,102 +159,6 @@ export const HeroMeta = styled.div`
   text-transform: uppercase;
 `;
 
-export const HeroSignalGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-export const HeroSignalCard = styled.div`
-  padding: 1.25rem;
-  border-radius: 24px;
-  background:
-    linear-gradient(160deg, ${({ theme }) => `${theme.surfaceCard}F5`}, ${({ theme }) => `${theme.surfaceInset}F0`});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}20`};
-  box-shadow: 0 16px 30px ${({ theme }) => `${theme.textDark}10`};
-  animation: ${fadeUp} 0.55s ease both;
-  ${cardHover}
-
-  @media (max-width: 640px) {
-    padding: 1rem;
-    border-radius: 20px;
-  }
-`;
-
-export const HeroSignalValue = styled.div`
-  font-size: clamp(1.9rem, 4vw, 2.6rem);
-  font-weight: 800;
-  line-height: 1;
-  color: ${({ theme }) => theme.textPrimary};
-`;
-
-export const HeroSignalLabel = styled.div`
-  margin-top: 0.65rem;
-  color: ${({ theme }) => theme.textSecondary};
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-`;
-
-export const FactGrid = styled.section`
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-
-  @media (max-width: 1180px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 680px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-export const FactCard = styled.div`
-  padding: 1.35rem;
-  border-radius: 24px;
-  background: ${({ theme }) => theme.surfaceCard};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}1E`};
-  box-shadow: 0 18px 30px ${({ theme }) => `${theme.textDark}10`};
-  animation: ${fadeUp} 0.6s ease both;
-  ${cardHover}
-
-  @media (max-width: 640px) {
-    padding: 1.1rem;
-    border-radius: 20px;
-  }
-`;
-
-export const FactHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  color: ${({ theme }) => theme.accent1};
-  margin-bottom: 1rem;
-
-  svg {
-    width: 1.55rem;
-    height: 1.55rem;
-  }
-`;
-
-export const FactTitle = styled.h3`
-  margin: 0;
-  color: ${({ theme }) => theme.textPrimary};
-  font-size: 1rem;
-`;
-
-export const FactText = styled.p`
-  margin: 0;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
-  font-size: 0.95rem;
-`;
-
 export const DashboardGrid = styled.section`
   display: flex;
   flex-direction: column;
@@ -237,71 +167,31 @@ export const DashboardGrid = styled.section`
 
 export const KPIGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 
-  @media (max-width: 1280px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  @media (max-width: 720px) {
+  @media (max-width: 1120px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @media (max-width: 520px) {
+  @media (max-width: 560px) {
     grid-template-columns: 1fr;
   }
 `;
 
-export const KpiCard = styled.div`
-  padding: 1.3rem;
-  border-radius: 24px;
-  background:
-    linear-gradient(150deg, ${({ theme }) => theme.surfaceCard}, ${({ theme }) => `${theme.surfaceInset}E8`});
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  box-shadow: 0 18px 34px ${({ theme }) => `${theme.textDark}12`};
-  animation: ${fadeUp} 0.65s ease both;
-  ${cardHover}
-
-  @media (max-width: 640px) {
-    padding: 1.05rem;
-    border-radius: 20px;
-  }
-`;
-
-export const KpiValue = styled.div`
-  margin-top: 0.9rem;
-  font-size: clamp(2rem, 4vw, 2.9rem);
-  font-weight: 900;
-  line-height: 1;
-  background: linear-gradient(135deg, ${({ theme }) => theme.accent1}, ${({ theme }) => theme.accent2}, ${({ theme }) => theme.accent3});
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-export const KpiLabel = styled.div`
-  color: ${({ theme }) => theme.textSecondary};
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78rem;
-  font-weight: 800;
-`;
-
-export const KpiMeta = styled.div`
-  margin-top: 0.7rem;
-  color: ${({ theme }) => theme.textMuted};
-  font-size: 0.86rem;
-  line-height: 1.5;
-`;
-
 export const AnalyticsRow = styled.div`
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.95fr);
   gap: 1.5rem;
 
   @media (max-width: 1120px) {
     grid-template-columns: 1fr;
   }
+`;
+
+export const TrendColumn = styled.div`
+  display: grid;
+  gap: 1.5rem;
 `;
 
 export const ShareColumn = styled.div`
@@ -311,9 +201,8 @@ export const ShareColumn = styled.div`
 
 export const Panel = styled.section`
   padding: 1.45rem;
-  border-radius: 30px;
-  background:
-    linear-gradient(155deg, ${({ theme }) => `${theme.surfaceCard}FC`}, ${({ theme }) => `${theme.surfaceInset}F0`});
+  border-radius: 24px;
+  background: linear-gradient(155deg, ${({ theme }) => `${theme.surfaceCard}FC`}, ${({ theme }) => `${theme.surfaceInset}F0`});
   border: 1px solid ${({ theme }) => `${theme.textMuted}24`};
   box-shadow: 0 22px 42px ${({ theme }) => `${theme.textDark}14`};
   animation: ${fadeUp} 0.7s ease both;
@@ -416,19 +305,41 @@ export const SegmentedButton = styled.button<{ $active?: boolean; $tone?: "red" 
 
 export const TrendCanvas = styled.div`
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 0.2rem;
+  overflow: hidden;
 `;
 
 export const TrendCanvasInner = styled.div`
-  width: max(100%, 42rem);
+  width: 100%;
   height: 20rem;
 
   @media (max-width: 640px) {
-    width: max(100%, 34rem);
     height: 16rem;
   }
+`;
+
+export const TrendLegend = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem 1rem;
+  margin-bottom: 1rem;
+`;
+
+export const TrendLegendItem = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 0.84rem;
+  font-weight: 700;
+`;
+
+export const TrendLegendDot = styled.span<{ $color: string }>`
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: ${({ $color }) => $color};
+  box-shadow: 0 0 0 5px ${({ $color }) => `${$color}1E`};
+  flex: 0 0 auto;
 `;
 
 export const TrendFooter = styled.div`
@@ -441,6 +352,35 @@ export const TrendFooter = styled.div`
 
   @media (max-width: 640px) {
     flex-direction: column;
+  }
+`;
+
+export const TrendFooterValues = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+
+  @media (max-width: 640px) {
+    justify-content: flex-start;
+  }
+`;
+
+export const TrendFooterValue = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: ${({ theme }) => `${theme.surfacePage}CC`};
+  border: 1px solid ${({ theme }) => `${theme.textMuted}1E`};
+  color: ${({ theme }) => theme.textSecondary};
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  strong {
+    color: ${({ theme }) => theme.textPrimary};
+    font-weight: 800;
   }
 `;
 
@@ -622,16 +562,8 @@ export const HeatmapCell = styled.button<{ $active?: boolean }>`
 
 export const LeaderboardGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
-
-  @media (max-width: 1320px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 760px) {
-    grid-template-columns: 1fr;
-  }
 `;
 
 export const LeaderboardCard = styled(Panel)`
@@ -706,50 +638,16 @@ export const LeaderboardFill = styled.div<{ $width: number }>`
 
 export const InsightGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 
-  @media (max-width: 1280px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  @media (max-width: 720px) {
+  @media (max-width: 1120px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @media (max-width: 520px) {
+  @media (max-width: 560px) {
     grid-template-columns: 1fr;
   }
-`;
-
-export const InsightCard = styled.div`
-  padding: 1.15rem;
-  border-radius: 22px;
-  background: ${({ theme }) => `${theme.surfaceCard}F7`};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}20`};
-  box-shadow: 0 16px 28px ${({ theme }) => `${theme.textDark}0F`};
-  animation: ${fadeUp} 0.8s ease both;
-  ${cardHover}
-
-  @media (max-width: 640px) {
-    padding: 1rem;
-    border-radius: 20px;
-  }
-`;
-
-export const InsightValue = styled.div`
-  color: ${({ theme }) => theme.textPrimary};
-  font-size: 1.55rem;
-  font-weight: 900;
-  line-height: 1;
-`;
-
-export const InsightLabel = styled.div`
-  margin-top: 0.55rem;
-  color: ${({ theme }) => theme.textSecondary};
-  font-size: 0.87rem;
-  line-height: 1.45;
-  font-weight: 700;
 `;
 
 export const EmptyState = styled.div`

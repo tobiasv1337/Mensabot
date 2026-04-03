@@ -143,18 +143,15 @@
     },
     "analytics": {
         "eyebrow": "Analytics",
-        "title": "Der Live-Puls von MensaBot",
-        "subtitle": "Ein warmes Analytics-Observatorium dafür, wie Menschen Mensen, Speisepläne, Filter und Tools im Projekt erkunden.",
+        "title": "MensaBot Analytics",
+        "subtitle": "Live-Kennzahlen zu Nutzung, Interaktionen, Filtern, Tools und erkundeten Mensen.",
         "githubButton": "Auf GitHub ansehen",
-        "heroMeta": "Sobald Live-Traffic da ist, erscheinen hier die Analytics.",
+        "heroMeta": "Sobald erste Live-Daten eingehen, erscheinen hier die aggregierten Kennzahlen.",
         "updatedAt": "Aktualisiert {{value}}",
-        "badges": {
-            "totalCanteens": "Gesamtzahl Mensen: {{value}}",
-            "peakTime": "Peak-Zeit: {{day}} {{time}}"
-        },
         "heroSignals": {
-            "totalMessages": "Gesamte Nachrichten",
-            "totalUsers": "Gesamte Nutzer",
+            "totalMessages": "Nachrichten gesamt",
+            "totalUsers": "Nutzer gesamt",
+            "peakTime": "Peak-Zeit",
             "totalChats": "Gesamtzahl Chats",
             "totalToolCalls": "Gesamtzahl Tool-Aufrufe"
         },
@@ -189,6 +186,7 @@
         "kpis": {
             "messages": "Nachrichten",
             "users": "Nutzer",
+            "activeUsers30d": "Aktiv 30T",
             "sessions": "Sessions",
             "chats": "Chats",
             "toolCalls": "Tool-Aufrufe",
@@ -197,10 +195,11 @@
         },
         "kpiMeta": {
             "messages": "{{llm}} LLM / {{quick}} Quick-Lookup-Nachrichten",
-            "users": "{{value}} aktiv in den letzten 30 Tagen",
+            "users": "Anonyme Nutzer-IDs insgesamt",
+            "activeUsers30d": "Nutzer mit Aktivität in den letzten 30 Tagen",
             "sessions": "{{value}} Nachrichten pro Session im Schnitt",
             "chats": "{{value}} erkundete Mensen pro Nutzer",
-            "tools": "{{rate}} erfolgreiche Tool-Aufrufe",
+            "tools": "{{value}} Tools pro LLM-Turn im Schnitt",
             "voice": "Bestätigte Voice-Nutzung aus STT-Anfragen",
             "shortcuts": "Nachrichten, die über gespeicherte Shortcuts gestartet wurden"
         },
@@ -212,11 +211,27 @@
             "empty": "Noch keine Aktivität erfasst.",
             "footer": "Peak {{max}} · Gesamt {{total}}",
             "controls": {
+                "activeUsers": "Aktive Nutzer",
                 "messages": "Nachrichten",
+                "interactions": "Interaktionen",
+                "sessions": "Sessions",
                 "llm": "LLM",
                 "quickLookup": "Quick",
+                "shortcuts": "Shortcuts",
                 "tools": "Tools",
                 "voice": "Voice"
+            },
+            "reach": {
+                "eyebrow": "Reichweite",
+                "title": "Reichweiten-Trend",
+                "subtitle": "Zeigt tägliche aktive Nutzer, Sessions, Nachrichten und Interaktionen im gleichen Verlauf.",
+                "ariaLabel": "Reichweiten-Chart"
+            },
+            "behavior": {
+                "eyebrow": "Verhalten",
+                "title": "Verhaltens-Trend",
+                "subtitle": "Zeigt, wie stark LLM, Quick Lookup, Shortcuts und STT über die Zeit genutzt werden.",
+                "ariaLabel": "Verhaltens-Chart"
             },
             "ranges": {
                 "7": "7T",
@@ -234,6 +249,11 @@
                 "title": "Voice vs Typed vs Shortcut",
                 "subtitle": "Zählt, wie echte Nachrichten starten, nicht nur rohe Transkriptionsversuche.",
                 "total": "Nachrichtenursprung"
+            },
+            "diets": {
+                "title": "Diet-Filter-Mix",
+                "subtitle": "Zeigt Anfragen mit vegetarischem, veganem, Fleisch- oder keinem Diet-Filter.",
+                "total": "Diet-Filter"
             }
         },
         "heatmap": {
@@ -274,10 +294,11 @@
         "insights": {
             "distinctCanteens": "Unterschiedliche erkundete Mensen",
             "distinctCities": "Unterschiedliche erkundete Städte",
+            "activeUsers30d": "Aktive Nutzer in den letzten 30 Tagen",
             "averageCanteensPerUser": "Durchschnittlich erkundete Mensen pro Nutzer",
             "averageToolsPerTurn": "Durchschnittliche Tools pro LLM-Turn",
-            "transcribeRequests": "STT-Anfragen gesamt",
-            "toolSuccessRate": "Tool-Erfolgsquote"
+            "canteenCoverage": "Abdeckung der Mensen im Index",
+            "shortcutMessages": "Über Shortcuts gestartete Nachrichten"
         },
         "labels": {
             "llmChat": "LLM Chat",
@@ -286,6 +307,7 @@
             "voice": "Voice",
             "shortcut": "Shortcut",
             "noFilter": "Kein Filter",
+            "noDietFilter": "Kein Diet-Filter",
             "vegetarian": "Vegetarisch",
             "vegan": "Vegan",
             "meat": "Fleisch"
