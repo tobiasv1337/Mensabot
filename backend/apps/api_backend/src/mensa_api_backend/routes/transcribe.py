@@ -3,6 +3,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 
+from ..analytics import analytics_store
 from ..concurrency import get_stt_semaphore
 from ..config import settings
 from ..logging import logger
@@ -39,6 +40,7 @@ def _extract_error_detail(resp: httpx.Response) -> str:
 @router.post("/api/transcribe", response_model=TranscribeResponse)
 async def transcribe(request: Request) -> TranscribeResponse:
     content_type = request.headers.get("content-type") or "application/octet-stream"
+    analytics_store.record_transcribe_request()
 
     async with get_stt_semaphore():
         audio_bytes = await _read_body_limited(request, max_bytes=settings.stt_max_upload_bytes)

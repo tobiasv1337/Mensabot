@@ -1,4 +1,5 @@
 import { MensaBotClient, type ChatApiResponse } from "@/shared/api/MensaBotClient";
+import type { ChatAnalyticsPayload } from "@/shared/analytics/requestMeta";
 import type { ChatStreamEvent } from "./chatStream";
 import type { ChatFilters, ChatMessageData, ChatSummary } from "./chatTypes";
 import { defaultChatFilters } from "./chatTypes";
@@ -197,6 +198,7 @@ export class Chat {
 			judgeCorrection?: boolean;
 			onStreamEvent?: (event: ChatStreamEvent) => void;
 			onStreamFallback?: () => void;
+			analytics?: ChatAnalyticsPayload;
 		} = {},
 	): Promise<ChatApiResponse> {
 		if (!(client instanceof MensaBotClient)) {

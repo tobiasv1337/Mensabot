@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,6 +30,14 @@ class ChatRequest(BaseModel):
     filters: UserFilters | None = None
     language: str | None = None
     judge_correction: bool = Field(default=True, alias="judgeCorrection")
+    analytics: ChatAnalytics | None = None
+
+
+class ChatAnalytics(BaseModel):
+    user_id: str | None = None
+    chat_id: str | None = None
+    request_id: str | None = None
+    message_origin: Literal["typed", "voice", "shortcut"] | None = None
 
 
 class ChatStreamRequestEnvelope(BaseModel):

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { buildQuickLookupHeaders, createChatAnalyticsPayload, type MessageOrigin } from "@/shared/analytics/requestMeta";
 import { getApiClient } from "@/shared/api/getApiClient";
 import type { Canteen, CanteenSearchResult } from "@/shared/api/MensaBotClient";
 import { openGoogleMaps } from "@/shared/services/maps";
@@ -114,6 +115,7 @@ export const useChatController = ({
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const initialMenuFetched = useRef(false);
   const resolvedCanteenRef = useRef<{ command: string; canteen: Canteen } | null>(null);
+  const pendingMessageOriginRef = useRef<MessageOrigin>("typed");
   const streamAcceptedRef = useRef<ChatMap<true>>({});
   const modeMenuPopoverId = useId();
 
@@ -160,7 +162,7 @@ export const useChatController = ({
   );
 
   const fetchAndAppendMenu = useCallback(
-    async (canteen: Canteen, targetChat: ChatModel, dateOverride?: string, dateLabel?: string) => {
+    async (canteen: Canteen, targetChat: ChatModel, dateOverride?: string, dateLabel?: string, messageOrigin: MessageOrigin = "typed") => {
       const dateText = dateLabel ? t("chat.dateFor", { date: dateLabel }) : t("chat.dateForToday");
       requestAutoScroll();
       targetChat.addMessage(
@@ -170,7 +172,11 @@ export const useChatController = ({
       const requestId = ++menuRequestId.current;
 
       try {
-        const menu = await client.getCanteenMenu(canteen.id, dateOverride ? { date: dateOverride } : {});
+        const menu = await client.getCanteenMenu(
+          canteen.id,
+          dateOverride ? { date: dateOverride } : {},
+          { analyticsHeaders: buildQuickLookupHeaders(targetChat.id, messageOrigin) },
+        );
         if (requestId !== menuRequestId.current) return;
 
         requestAutoScroll();
@@ -227,6 +233,7 @@ export const useChatController = ({
     setClarificationSelections([]);
     setClarificationNoMatchSelected(false);
     resolvedCanteenRef.current = null;
+    pendingMessageOriginRef.current = "typed";
   }, [chat.id]);
 
   useEffect(() => {
@@ -273,10 +280,16 @@ export const useChatController = ({
       if (!trimmed) return;
 
       const requestChatId = chat.id;
+      const consumeMessageOrigin = () => {
+        const origin = pendingMessageOriginRef.current;
+        pendingMessageOriginRef.current = "typed";
+        return origin;
+      };
 
       if (trimmed.startsWith("/")) {
         const parsed = parseSlashCommand(trimmed.slice(1));
         if (!parsed.query) return;
+        const messageOrigin = consumeMessageOrigin();
 
         setChatSending(requestChatId, true);
 
@@ -286,7 +299,7 @@ export const useChatController = ({
 
           if (resolved && normalizedCommand === resolved.command) {
             updateFiltersPartial({ canteens: [resolved.canteen] });
-            await fetchAndAppendMenu(resolved.canteen, chat, parsed.dateISO, parsed.dateToken);
+            await fetchAndAppendMenu(resolved.canteen, chat, parsed.dateISO, parsed.dateToken, messageOrigin);
             resolvedCanteenRef.current = null;
             return;
           }
@@ -312,7 +325,7 @@ export const useChatController = ({
           }
 
           updateFiltersPartial({ canteens: [selected] });
-          await fetchAndAppendMenu(selected, chat, parsed.dateISO, parsed.dateToken);
+          await fetchAndAppendMenu(selected, chat, parsed.dateISO, parsed.dateToken, messageOrigin);
         } catch {
           requestAutoScroll();
           chat.addMessage(new ChatMessage("assistant", t("chat.canteenLoadError")));
@@ -323,6 +336,7 @@ export const useChatController = ({
 
         return;
       }
+      const messageOrigin = consumeMessageOrigin();
 
       setChatSending(requestChatId, true);
 
@@ -332,6 +346,7 @@ export const useChatController = ({
         setChatStream(requestChatId, createInitialStreamState());
 
         await chat.send(client, trimmed, {
+          analytics: createChatAnalyticsPayload(requestChatId, messageOrigin),
           includeToolCalls: true,
           judgeCorrection: isJudgeCorrectionEnabled(chatMode),
           onStreamEvent: (event: ChatStreamEvent) => {
@@ -397,6 +412,7 @@ export const useChatController = ({
   const handleTranscribeAudio = useCallback(
     async (audio: Blob) => {
       const response = await client.transcribeAudio(audio);
+      pendingMessageOriginRef.current = "voice";
       return response.text;
     },
     [client],
@@ -511,6 +527,7 @@ export const useChatController = ({
   const handleStartNewChat = useCallback(() => {
     if (isSending) return;
 
+    pendingMessageOriginRef.current = "typed";
     onStartNewChat();
     setFiltersOpen(false);
     setInputValue("");
@@ -547,6 +564,7 @@ export const useChatController = ({
     (shortcut: Shortcut) => {
       updateFilters(cloneFilters(shortcut.filters));
       setFiltersOpen(false);
+      pendingMessageOriginRef.current = "shortcut";
       setInputValue(shortcut.prompt);
       setFocusSignal((current) => current + 1);
     },
@@ -886,6 +904,7 @@ export const useChatController = ({
   );
 
   const handleCommandClose = useCallback(() => {
+    pendingMessageOriginRef.current = "typed";
     setInputValue("");
     setFocusSignal((current) => current + 1);
     resolvedCanteenRef.current = null;
