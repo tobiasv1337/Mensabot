@@ -242,8 +242,8 @@ export const CreatorCard = styled.div`
 `;
 
 export const CreatorAvatar = styled.div`
-  width: 80px;
-  height: 80px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid ${({ theme }) => `${theme.accent1}44`};
