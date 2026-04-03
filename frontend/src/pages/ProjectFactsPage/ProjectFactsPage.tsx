@@ -21,7 +21,7 @@ import {
     ChevronRight
 } from "@/shared/ui/icons";
 import {
-    GitHubLogo,
+    GitHubLogoBlack, GitHubLogoWhite
 } from "@/shared/ui/iconsLogos";
 
 import LinkedInLogoBlack from "@/assets/LinkedInBug-Black.png";
@@ -58,6 +58,7 @@ const ProjectFactsPage: React.FC = () => {
     const theme = useTheme();
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
     const LinkedInLogo = theme.mode === 'dark' ? LinkedInLogoWhite : LinkedInLogoBlack;
+    const GitHubLogo = theme.mode === 'dark' ? GitHubLogoWhite : GitHubLogoBlack;
     const { wrapperRef, lowerRef, isFullScreen, totalCanteens, totalCities } = useProjectStats(isOffline);
 
     // Data for the upper section cards

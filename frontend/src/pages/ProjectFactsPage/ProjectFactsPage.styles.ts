@@ -264,7 +264,7 @@ export const AvatarFallback = styled.div`
   justify-content: center;
   background: linear-gradient(135deg, ${({ theme }) => theme.accent1}, ${({ theme }) => theme.accent2});
   color: ${({ theme }) => theme.textLight};
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: 0.05em;
 `;
