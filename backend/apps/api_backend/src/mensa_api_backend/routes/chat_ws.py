@@ -6,6 +6,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 from starlette.websockets import WebSocketState
 
+from ..analytics import analytics_store, reset_current_analytics_context, set_current_analytics_context
 from ..i18n import resolve_language
 from ..logging import logger
 from ..models import ChatStreamRequestEnvelope, ChatResponse, ToolCallTrace
@@ -104,10 +105,29 @@ async def chat_ws(websocket: WebSocket) -> None:
     request = request_envelope.payload
     request_id = str(uuid4())
     lang = resolve_language(request.language)
+    context = analytics_store.prepare_request_context(
+        user_id=request.analytics.user_id if request.analytics else None,
+        chat_id=request.analytics.chat_id if request.analytics else None,
+        request_id=request.analytics.request_id if request.analytics else None,
+        message_origin=request.analytics.message_origin if request.analytics else None,
+        interaction_kind="llm_chat",
+    )
+    token = set_current_analytics_context(context)
 
     try:
         await sink.emit_request_accepted(request_id)
-        await run_tool_calling_loop(request.messages, include_tool_calls=request.include_tool_calls, user_filters=request.filters, judge_correction=request.judge_correction, language=lang, progress_sink=sink)
+        await run_tool_calling_loop(
+            request.messages,
+            include_tool_calls=request.include_tool_calls,
+            user_filters=request.filters,
+            judge_correction=request.judge_correction,
+            language=lang,
+            progress_sink=sink,
+        )
+        analytics_store.record_chat_response(
+            context,
+            filters=request.filters.model_dump(mode="python") if request.filters is not None else None,
+        )
     except ClientDisconnectedError:
         logger.info("Client disconnected from chat websocket stream.")
         return
@@ -115,5 +135,7 @@ async def chat_ws(websocket: WebSocket) -> None:
         logger.exception("Chat websocket stream failed unexpectedly.")
         await _close_socket(websocket, 1011)
         return
+    finally:
+        reset_current_analytics_context(token)
 
     await _wait_for_client_close(websocket)

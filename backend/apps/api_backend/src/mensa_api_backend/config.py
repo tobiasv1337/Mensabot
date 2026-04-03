@@ -43,6 +43,9 @@ class APIBackendSettings(BaseSettings):
     stt_max_upload_bytes: int = 25 * 1024 * 1024
     stt_max_concurrency: int = 1
 
+    # File-backed analytics snapshot directory.
+    analytics_dir: str = "/tmp/mensabot-analytics"
+
     # Expose debugging endpoints (cache + external API metrics). Keep disabled in production.
     enable_debug_endpoints: bool = False
 
