@@ -23,7 +23,8 @@ INTERACTION_KIND_HEADER = "x-mensabot-interaction-kind"
 
 _REQUEST_ID_RETENTION_DAYS = 3
 _SESSION_IDLE_TIMEOUT = timedelta(minutes=30)
-_TOP_LIMIT = 8
+_TOP_LIMIT = 10
+_STATE_VERSION = 2
 _current_context: ContextVar["AnalyticsRequestContext | None"] = ContextVar("mensabot_analytics_context", default=None)
 
 
@@ -107,6 +108,7 @@ def reset_current_analytics_context(token: Token) -> None:
 
 def _empty_day_bucket() -> dict[str, int]:
     return {
+        "active_users_total": 0,
         "interactions_total": 0,
         "messages_total": 0,
         "llm_messages_total": 0,
@@ -114,6 +116,7 @@ def _empty_day_bucket() -> dict[str, int]:
         "llm_interactions_total": 0,
         "quick_lookup_interactions_total": 0,
         "sessions_total": 0,
+        "shortcut_triggered_messages_total": 0,
         "tool_calls_total": 0,
         "transcribe_requests_total": 0,
     }
@@ -121,7 +124,7 @@ def _empty_day_bucket() -> dict[str, int]:
 
 def _empty_state() -> dict[str, Any]:
     return {
-        "version": 1,
+        "version": _STATE_VERSION,
         "updated_at": _iso_now(),
         "totals": {
             "messages_total": 0,
@@ -149,6 +152,14 @@ def _empty_state() -> dict[str, Any]:
             "tools": {},
             "filters": {},
         },
+        "diet_filters": {
+            "none": 0,
+            "vegetarian": 0,
+            "vegan": 0,
+            "meat": 0,
+        },
+        "request_diet_filters": {},
+        "daily_active_users": {},
         "users": {},
         "known_chats": {},
         "known_canteens": {},
@@ -206,6 +217,7 @@ class AnalyticsStore:
                     self._state["dedupe"]["requests"][request_key] = now.isoformat()
             if track_events:
                 self._touch_user_locked(user_key, now)
+                self._mark_user_active_for_day_locked(user_key, now)
                 self._touch_chat_locked(chat_key, now)
                 self._write_locked()
 
@@ -230,6 +242,7 @@ class AnalyticsStore:
                 messages_added=2,
                 now=now,
             )
+            self._record_chat_diet_share_locked(context=context, filters=filters)
             self._record_filters_locked(filters)
             self._write_locked()
 
@@ -252,6 +265,7 @@ class AnalyticsStore:
                     "price_category": price_category,
                     "diet_filter": diet_filter,
                 },
+                record_diet_share=True,
             )
             if canteen_id is not None:
                 self._record_canteen_locked(context, canteen_id)
@@ -283,7 +297,7 @@ class AnalyticsStore:
             _increment_counter(day_bucket, "tool_calls_total")
 
             self._increment_leaderboard_locked("tools", tool_name, _normalize_label(tool_name, fallback="Tool"))
-            self._record_filters_from_tool_locked(tool_name=tool_name, args=args or {})
+            self._record_filters_from_tool_locked(context=context, tool_name=tool_name, args=args or {})
             self._record_entities_from_tool_locked(context=context, tool_name=tool_name, args=args or {}, result=result)
             self._write_locked()
 
@@ -320,6 +334,7 @@ class AnalyticsStore:
             llm_interactions_total = max(int(totals.get("llm_interactions_total", 0)), 0)
             average_tools_per_llm_turn = tool_calls_total / llm_interactions_total if llm_interactions_total > 0 else 0.0
             average_messages_per_session = int(totals.get("messages_total", 0)) / sessions_total if sessions_total > 0 else 0.0
+            diet_filter_share = self._build_diet_filter_share_locked()
 
             trend_points = []
             for date_key in sorted(self._state["daily"].keys()):
@@ -327,11 +342,13 @@ class AnalyticsStore:
                 trend_points.append(
                     {
                         "date": date_key,
+                        "active_users": int(bucket.get("active_users_total", 0)),
                         "messages": int(bucket.get("messages_total", 0)),
                         "llm_messages": int(bucket.get("llm_messages_total", 0)),
                         "quick_lookup_messages": int(bucket.get("quick_lookup_messages_total", 0)),
                         "interactions": int(bucket.get("interactions_total", 0)),
                         "sessions": int(bucket.get("sessions_total", 0)),
+                        "shortcut_messages": int(bucket.get("shortcut_triggered_messages_total", 0)),
                         "tool_calls": int(bucket.get("tool_calls_total", 0)),
                         "transcribe_requests": int(bucket.get("transcribe_requests_total", 0)),
                     }
@@ -401,6 +418,7 @@ class AnalyticsStore:
                             "value": int(totals.get("shortcut_message_turns_total", 0)),
                         },
                     ],
+                    "diet_filters": diet_filter_share,
                 },
                 "trend": {
                     "points": trend_points,
@@ -448,9 +466,20 @@ class AnalyticsStore:
             existing = self._state["leaderboards"].get(board)
             self._state["leaderboards"][board] = existing if isinstance(existing, dict) else {}
 
-        for key in ("users", "known_chats", "known_canteens", "known_cities"):
+        existing_diet_filters = self._state.get("diet_filters")
+        self._state["diet_filters"] = existing_diet_filters if isinstance(existing_diet_filters, dict) else {}
+        for key, value in default_state["diet_filters"].items():
+            self._state["diet_filters"].setdefault(key, value)
+
+        for key in ("users", "known_chats", "known_canteens", "known_cities", "daily_active_users", "request_diet_filters"):
             existing = self._state.get(key)
             self._state[key] = existing if isinstance(existing, dict) else {}
+
+        state_version = int(self._state.get("version", 0) or 0)
+        if state_version < _STATE_VERSION:
+            self._state["diet_filters"] = default_state["diet_filters"].copy()
+            self._state["request_diet_filters"] = {}
+            self._state["version"] = _STATE_VERSION
 
         dedupe = self._state.get("dedupe")
         self._state["dedupe"] = dedupe if isinstance(dedupe, dict) else {}
@@ -558,9 +587,24 @@ class AnalyticsStore:
             return
         payload["last_seen"] = now.isoformat()
 
+    def _mark_user_active_for_day_locked(self, user_key: str | None, now: datetime) -> None:
+        if user_key is None:
+            return
+        day_key = _day_key(now)
+        active_users = self._state["daily_active_users"].setdefault(day_key, [])
+        if not isinstance(active_users, list):
+            active_users = []
+            self._state["daily_active_users"][day_key] = active_users
+        if user_key in active_users:
+            return
+        active_users.append(user_key)
+        day_bucket = self._state["daily"].setdefault(day_key, _empty_day_bucket())
+        _increment_counter(day_bucket, "active_users_total")
+
     def _record_message_batch_locked(self, *, context: AnalyticsRequestContext, interaction_kind: InteractionKind, messages_added: int, now: datetime) -> None:
         metric_prefix = _interaction_metric_prefix(interaction_kind)
         totals = self._state["totals"]
+        day_bucket = self._state["daily"].setdefault(_day_key(now), _empty_day_bucket())
         _increment_counter(totals, "messages_total", messages_added)
         _increment_counter(totals, "user_messages_total")
         _increment_counter(totals, "assistant_messages_total")
@@ -571,8 +615,8 @@ class AnalyticsStore:
             _increment_counter(totals, f"{context.message_origin}_message_turns_total")
             if context.message_origin == "shortcut":
                 _increment_counter(totals, "shortcut_triggered_messages_total", messages_added)
+                _increment_counter(day_bucket, "shortcut_triggered_messages_total", messages_added)
 
-        day_bucket = self._state["daily"].setdefault(_day_key(now), _empty_day_bucket())
         _increment_counter(day_bucket, "messages_total", messages_added)
         _increment_counter(day_bucket, f"{metric_prefix}_messages_total", messages_added)
         _increment_counter(day_bucket, "interactions_total")
@@ -588,12 +632,21 @@ class AnalyticsStore:
                 if context.chat_key not in chat_ids:
                     chat_ids.append(context.chat_key)
 
-    def _record_filters_locked(self, filters: dict[str, Any] | None) -> None:
+    def _record_filters_locked(self, filters: dict[str, Any] | None, *, record_diet_share: bool = False) -> None:
         filters = filters or {}
         diet = filters.get("diet")
         diet_filter = filters.get("diet_filter")
         allergens = filters.get("allergens") or filters.get("exclude_allergens") or []
         price_category = filters.get("price_category")
+        normalized_diet_filter = "meat" if diet_filter == "meat_only" else diet_filter
+
+        if record_diet_share:
+            if diet in {"vegetarian", "vegan", "meat"}:
+                _increment_counter(self._state["diet_filters"], diet)
+            elif normalized_diet_filter in {"vegetarian", "vegan", "meat"}:
+                _increment_counter(self._state["diet_filters"], normalized_diet_filter)
+            else:
+                _increment_counter(self._state["diet_filters"], "none")
 
         used_filter = False
         if diet in {"vegetarian", "vegan", "meat"}:
@@ -614,15 +667,62 @@ class AnalyticsStore:
         if not used_filter:
             self._increment_leaderboard_locked("filters", "none", "No Filter")
 
-    def _record_filters_from_tool_locked(self, *, tool_name: str, args: dict[str, Any]) -> None:
+    def _record_filters_from_tool_locked(self, *, context: AnalyticsRequestContext | None, tool_name: str, args: dict[str, Any]) -> None:
         if tool_name == "get_menus_batch":
             requests = args.get("requests")
             if isinstance(requests, list):
                 for item in requests:
                     if isinstance(item, dict):
+                        self._record_request_diet_hint_locked(context, item)
                         self._record_filters_locked(item)
             return
+        self._record_request_diet_hint_locked(context, args)
         self._record_filters_locked(args)
+
+    def _record_chat_diet_share_locked(self, *, context: AnalyticsRequestContext, filters: dict[str, Any] | None) -> None:
+        resolved = self._resolve_diet_filter(filters)
+        if resolved is None and context.request_key is not None:
+            payload = self._state["request_diet_filters"].get(context.request_key)
+            if isinstance(payload, dict):
+                diets = payload.get("diets") if isinstance(payload.get("diets"), list) else []
+                unique_diets = [diet for diet in diets if diet in {"vegetarian", "vegan", "meat"}]
+                if len(unique_diets) == 1:
+                    resolved = unique_diets[0]
+
+        _increment_counter(self._state["diet_filters"], resolved or "none")
+
+        if context.request_key is not None:
+            self._state["request_diet_filters"].pop(context.request_key, None)
+
+    def _record_request_diet_hint_locked(self, context: AnalyticsRequestContext | None, filters: dict[str, Any] | None) -> None:
+        if context is None or context.request_key is None:
+            return
+        resolved = self._resolve_diet_filter(filters)
+        if resolved is None:
+            return
+
+        payload = self._state["request_diet_filters"].get(context.request_key)
+        if not isinstance(payload, dict):
+            payload = {"seen_at": _iso_now(), "diets": []}
+            self._state["request_diet_filters"][context.request_key] = payload
+
+        payload["seen_at"] = _iso_now()
+        diets = payload.get("diets") if isinstance(payload.get("diets"), list) else []
+        if resolved not in diets:
+            diets.append(resolved)
+        payload["diets"] = diets
+
+    def _resolve_diet_filter(self, filters: dict[str, Any] | None) -> str | None:
+        filters = filters or {}
+        diet = filters.get("diet")
+        diet_filter = filters.get("diet_filter")
+        normalized_diet_filter = "meat" if diet_filter == "meat_only" else diet_filter
+
+        if diet in {"vegetarian", "vegan", "meat"}:
+            return str(diet)
+        if normalized_diet_filter in {"vegetarian", "vegan", "meat"}:
+            return str(normalized_diet_filter)
+        return None
 
     def _record_entities_from_tool_locked(self, *, context: AnalyticsRequestContext, tool_name: str, args: dict[str, Any], result: Any) -> None:
         if tool_name in {"get_canteen_info", "get_menu_for_date", "get_opening_hours_osm_for_canteen"}:
@@ -718,6 +818,16 @@ class AnalyticsStore:
         )
         return sorted_items[:_TOP_LIMIT]
 
+    def _build_diet_filter_share_locked(self) -> list[dict[str, Any]]:
+        diet_filters = self._state["diet_filters"]
+
+        return [
+            {"id": "none", "label": "No Diet Filter", "value": int(diet_filters.get("none", 0))},
+            {"id": "vegetarian", "label": "Vegetarian", "value": int(diet_filters.get("vegetarian", 0))},
+            {"id": "vegan", "label": "Vegan", "value": int(diet_filters.get("vegan", 0))},
+            {"id": "meat", "label": "Meat", "value": int(diet_filters.get("meat", 0))},
+        ]
+
     def _prune_dedupe_locked(self, now: datetime) -> None:
         cutoff = now - timedelta(days=_REQUEST_ID_RETENTION_DAYS)
         requests = self._state["dedupe"]["requests"]
@@ -728,6 +838,15 @@ class AnalyticsStore:
                 stale_keys.append(key)
         for key in stale_keys:
             requests.pop(key, None)
+
+        request_diet_filters = self._state["request_diet_filters"]
+        stale_diet_keys = []
+        for key, payload in request_diet_filters.items():
+            seen_at = _parse_iso(payload.get("seen_at")) if isinstance(payload, dict) else None
+            if seen_at is None or seen_at < cutoff:
+                stale_diet_keys.append(key)
+        for key in stale_diet_keys:
+            request_diet_filters.pop(key, None)
 
 
 analytics_store = AnalyticsStore()

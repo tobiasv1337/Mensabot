@@ -160,11 +160,13 @@ export type ProjectStatsShare = {
 
 export type ProjectStatsTrendPoint = {
 	date: string;
+	active_users: number;
 	messages: number;
 	llm_messages: number;
 	quick_lookup_messages: number;
 	interactions: number;
 	sessions: number;
+	shortcut_messages: number;
 	tool_calls: number;
 	transcribe_requests: number;
 };
@@ -193,6 +195,7 @@ export type ProjectStatsResponse = {
 	shares: {
 		interaction_types: ProjectStatsShare[];
 		message_origins: ProjectStatsShare[];
+		diet_filters: ProjectStatsShare[];
 	};
 	trend: {
 		points: ProjectStatsTrendPoint[];
