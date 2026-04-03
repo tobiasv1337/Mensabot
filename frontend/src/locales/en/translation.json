@@ -87,6 +87,58 @@
             "cities": "Cities",
             "mensen": "Canteens",
             "stars": "Stars"
+        },
+        "creatorTitle": "About Us",
+        "creators": {
+            "0": {
+                "name": "Tobias Veselsky",
+                "role": "Full-Stack Developer, AI Systems Architect & Technical Lead",
+                "description": "Full-Stack & Architecture, agentic LLM workflows, MCP tooling, backend services, API and tooling interfaces, CI/CD pipelines, and major frontend features including the final chat interface, streamed tool data and product integration.",
+                "github": "https://github.com/tobiasv1337",
+                "linkedin": ""
+            },
+            "1": {
+                "name": "Judith Bucher",
+                "role": "Frontend Developer & Design Systems Engineer",
+                "description": "Developed key frontend features across routing, full multilingual UX, settings, reusable design components, and visual consistency throughout the application, while also contributing to external-facing pages, product polish, and project coordination.",
+                "github": "https://github.com/jbucher99",
+                "linkedin": ""
+            },
+            "2": {
+                "name": "Maximilian Krupper",
+                "role": "Frontend Developer & Layout Engineer",
+                "description": "Built core UI foundations including the header, sidebar, theming, and early chat page layout that established the application’s structural interface.",
+                "github": "https://github.com/m-krupper",
+                "linkedin": ""
+            },
+            "3": {
+                "name": "Nils Herbig",
+                "role": "Design, User Research, Evaluation & Scientific Communication",
+                "description": "Planned and evaluated multiple user studies, contributed significantly to the project paper, and helped communicate the project clearly through presentations and research documentation.",
+                "github": "",
+                "linkedin": ""
+            },
+            "4": {
+                "name": "Christos Labroussis",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Co-developed data acquisition for STW Berlin and additional canteens, and designed an exploratory chat interface concept during early product iteration.",
+                "github": "",
+                "linkedin": ""
+            },
+            "5": {
+                "name": "Tamim Ayach",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Co-developed data acquisition for STW Berlin and additional canteens, and designed an exploratory chat interface concept during early product iteration.",
+                "github": "",
+                "linkedin": ""
+            },
+            "6": {
+                "name": "Dr. Ing. Stefan Hillmann",
+                "role": "Academic Supervisor",
+                "description": "Supported the project as academic supervisor at TU Berlin, providing methodological guidance, feedback, and oversight throughout development, evaluation, and documentation.",
+                "github": "https://github.com/stefanhillmann",
+                "linkedin": ""
+            }
         }
     },
     "canteens": {
