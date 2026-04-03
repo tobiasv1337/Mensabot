@@ -5,6 +5,7 @@
         "canteens": "Canteens",
         "map": "Map",
         "about": "About",
+        "analytics": "Analytics",
         "legalNotice": "Legal Notice",
         "shortcuts": "Shortcuts",
         "settings": "Settings"
@@ -138,6 +139,156 @@
                 "github": "https://github.com/stefanhillmann",
                 "linkedin": ""
             }
+        }
+    },
+    "analytics": {
+        "eyebrow": "Analytics",
+        "title": "The Live Pulse of MensaBot",
+        "subtitle": "A warm analytics observatory for how people explore canteens, menus, filters and tools across the project.",
+        "githubButton": "View on GitHub",
+        "heroMeta": "Analytics will appear here once live traffic starts flowing.",
+        "updatedAt": "Updated {{value}}",
+        "badges": {
+            "totalCanteens": "Total Number of Canteens: {{value}}",
+            "peakTime": "Peak time: {{day}} {{time}}"
+        },
+        "heroSignals": {
+            "totalMessages": "Total messages",
+            "totalUsers": "Total users",
+            "totalChats": "Total chats",
+            "totalToolCalls": "Total tool calls"
+        },
+        "facts": {
+            "studentProject": {
+                "title": "Student Project",
+                "description": "Developed by students for students, aiming to improve the campus dining experience."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Built with modern technologies and completely open source for community contributions."
+            },
+            "fastReliable": {
+                "title": "Fast & Reliable",
+                "description": "Optimized for speed so menus, opening hours and chat answers land in seconds."
+            }
+        },
+        "status": {
+            "eyebrow": "Project Stats",
+            "loadingTitle": "Building the dashboard",
+            "loadingBody": "The stats endpoint is responding and the page is assembling the visuals.",
+            "offlineTitle": "Analytics are unavailable offline",
+            "offlineBody": "Reconnect to load the live project statistics.",
+            "errorTitle": "Analytics could not be loaded",
+            "errorBody": "The stats endpoint did not return usable data.",
+            "waiting": "Analytics are waiting for the first tracked events."
+        },
+        "kpis": {
+            "messages": "Messages",
+            "users": "Users",
+            "sessions": "Sessions",
+            "chats": "Chats",
+            "toolCalls": "Tool Calls",
+            "transcribe": "STT Requests",
+            "shortcuts": "Shortcut Messages"
+        },
+        "kpiMeta": {
+            "messages": "{{llm}} LLM / {{quick}} quick lookup messages",
+            "users": "{{value}} active in the last 30 days",
+            "sessions": "{{value}} messages per session on average",
+            "chats": "{{value}} explored canteens per user",
+            "tools": "{{rate}} successful tool calls",
+            "voice": "Confirmed voice usage from STT requests",
+            "shortcuts": "Messages started through saved shortcuts"
+        },
+        "trend": {
+            "eyebrow": "Live Activity",
+            "title": "Usage over time",
+            "subtitle": "Switch between messages, quick lookups, tools and voice to inspect how traffic evolves.",
+            "ariaLabel": "Activity trend chart",
+            "empty": "No activity recorded yet.",
+            "footer": "Peak {{max}} · Total {{total}}",
+            "controls": {
+                "messages": "Messages",
+                "llm": "LLM",
+                "quickLookup": "Quick",
+                "tools": "Tools",
+                "voice": "Voice"
+            },
+            "ranges": {
+                "7": "7d",
+                "30": "30d",
+                "all": "All time"
+            }
+        },
+        "share": {
+            "interactions": {
+                "title": "LLM vs quick lookup",
+                "subtitle": "Shows whether people lean on full chat turns or direct menu and opening-hours lookups.",
+                "total": "Interaction mix"
+            },
+            "origins": {
+                "title": "Voice vs typed vs shortcut",
+                "subtitle": "Counts how real messages start, not just raw transcription attempts.",
+                "total": "Message origin"
+            }
+        },
+        "heatmap": {
+            "eyebrow": "Rhythm",
+            "title": "Weekly activity heatmap",
+            "subtitle": "Hover any cell to inspect when the bot gets busy across the week.",
+            "tooltip": "{{value}} tracked interactions in this slot",
+            "peakSlot": "Peak slot",
+            "weekdays": {
+                "mon": "Mon",
+                "tue": "Tue",
+                "wed": "Wed",
+                "thu": "Thu",
+                "fri": "Fri",
+                "sat": "Sat",
+                "sun": "Sun"
+            }
+        },
+        "leaderboards": {
+            "empty": "No leaderboard data yet.",
+            "cities": {
+                "eyebrow": "Cities",
+                "title": "Most popular cities"
+            },
+            "canteens": {
+                "eyebrow": "Canteens",
+                "title": "Most explored canteens"
+            },
+            "tools": {
+                "eyebrow": "Tools",
+                "title": "Most used tools"
+            },
+            "filters": {
+                "eyebrow": "Filters",
+                "title": "Most used filters"
+            }
+        },
+        "insights": {
+            "distinctCanteens": "Distinct canteens explored",
+            "distinctCities": "Distinct cities explored",
+            "averageCanteensPerUser": "Average canteens explored per user",
+            "averageToolsPerTurn": "Average tools per LLM turn",
+            "transcribeRequests": "Total STT requests",
+            "toolSuccessRate": "Tool success rate"
+        },
+        "labels": {
+            "llmChat": "LLM Chat",
+            "quickLookup": "Quick Lookup",
+            "typed": "Typed",
+            "voice": "Voice",
+            "shortcut": "Shortcut",
+            "noFilter": "No Filter",
+            "vegetarian": "Vegetarian",
+            "vegan": "Vegan",
+            "meat": "Meat"
         }
     },
     "canteens": {
@@ -428,7 +579,7 @@
         },
         "onboarding": {
             "welcome": "Hi! 👋 I'm **MensaBot** - your smart canteen assistant.",
-            "dataNotice": "MensaBot is a **university research project**. User data may be collected and logged for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
+            "dataNotice": "MensaBot is a **university research project**. User data, including **anonymized analytics data**, may be collected, logged and published for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
             "dataAccept": "Understood & Accept",
             "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
             "priceCategoryNo": "Skip",

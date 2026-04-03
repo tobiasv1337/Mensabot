@@ -16,7 +16,7 @@ import type { AppShellContextValue } from "./useAppShellContext";
 import { ChatWorkspaceProvider } from "@/features/chat/ChatWorkspaceProvider";
 import { useChatWorkspace } from "@/features/chat/chatWorkspace";
 
-const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "LegalNotice"];
+const NAV_ITEMS: NavItem[] = ["Home", "ChatBot", "Canteens", "Map", "About", "Analytics", "LegalNotice"];
 const AppShellContent: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -72,7 +72,8 @@ const AppShellContent: React.FC = () => {
     activeNav === "ChatBot" ||
     activeNav === "Canteens" ||
     activeNav === "Map" ||
-    activeNav === "About";
+    activeNav === "About" ||
+    activeNav === "Analytics";
 
   useEffect(() => {
     const className = "chat-lock-scroll";

@@ -18,6 +18,7 @@ import {
   NewChatIcon,
   InstallIcon,
   AboutIcon,
+  AnalyticsIcon,
   SettingsIcon,
   ShortcutsIcon,
   SideBarIcon,
@@ -63,6 +64,8 @@ const getIcon = (item: string) => {
       return <LegalNoticeIcon />;
     case "About":
       return <AboutIcon />;
+    case "Analytics":
+      return <AnalyticsIcon />;
     default:
       return "•";
   }
