@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import * as S from './LegalNoticePage.styles';
 import * as P from '@/shared/ui/page/PageHero.styles';
 import { Button } from '@/shared/ui/button/Button';
-import { MailIcon, GitHubIcon } from "@/shared/ui/icons";
+import { MailIcon } from "@/shared/ui/icons";
+import { GitHubLogo } from "@/shared/ui/iconsLogos";
+
 import { TuLogo, QualityAndUsabilityLogo } from "@/shared/ui/iconsLogos";
 
 const LegalNoticePage: React.FC = () => {
@@ -28,7 +30,7 @@ const LegalNoticePage: React.FC = () => {
                     <S.ButtonContainer>
                         <Button
                             variant="accent1"
-                            iconLeft={<GitHubIcon />}
+                            iconLeft={<GitHubLogo />}
                             text={t('contact.issueButton')}
                             onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank'); }}
                         />
