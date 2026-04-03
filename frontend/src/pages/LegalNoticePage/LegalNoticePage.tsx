@@ -1,15 +1,18 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from "styled-components";
 import * as S from './LegalNoticePage.styles';
 import * as P from '@/shared/ui/page/PageHero.styles';
 import { Button } from '@/shared/ui/button/Button';
 import { MailIcon } from "@/shared/ui/icons";
-import { GitHubLogo } from "@/shared/ui/iconsLogos";
+import { GitHubLogoBlack, GitHubLogoWhite } from "@/shared/ui/iconsLogos";
 
 import { TuLogo, QualityAndUsabilityLogo } from "@/shared/ui/iconsLogos";
 
 const LegalNoticePage: React.FC = () => {
     const { t } = useTranslation();
+    const theme = useTheme();
+    const GitHubLogo = theme.mode === 'dark' ? GitHubLogoBlack : GitHubLogoWhite;
 
     return (
         <S.PageContainer>
