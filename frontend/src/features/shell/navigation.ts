@@ -6,6 +6,7 @@ export type NavItem =
     | "Canteens"
     | "Map"
     | "About"
+    | "Analytics"
     | "LegalNotice"
     | "Shortcuts"
     | "Settings";
@@ -19,6 +20,7 @@ const NAV_LABEL_KEYS: Record<NavItem, string> = {
     Settings: "nav.settings",
     Map: "nav.map",
     About: "nav.about",
+    Analytics: "nav.analytics",
 };
 
 export const getNavLabel = (item: NavItem, t: TFunction): string =>
@@ -30,6 +32,7 @@ export const NAV_ROUTES: Record<NavItem, string> = {
     Canteens: "/canteens",
     Map: "/map",
     About: "/about",
+    Analytics: "/analytics",
     LegalNotice: "/legal",
     Shortcuts: "/shortcuts",
     Settings: "/settings",

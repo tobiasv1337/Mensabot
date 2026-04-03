@@ -5,6 +5,7 @@
         "canteens": "Mensen",
         "map": "Karte",
         "about": "Über",
+        "analytics": "Analytics",
         "legalNotice": "Impressum",
         "shortcuts": "Shortcuts",
         "settings": "Einstellungen"
@@ -138,6 +139,156 @@
                 "github": "https://github.com/stefanhillmann",
                 "linkedin": ""
             }
+        }
+    },
+    "analytics": {
+        "eyebrow": "Analytics",
+        "title": "Der Live-Puls von MensaBot",
+        "subtitle": "Ein warmes Analytics-Observatorium dafür, wie Menschen Mensen, Speisepläne, Filter und Tools im Projekt erkunden.",
+        "githubButton": "Auf GitHub ansehen",
+        "heroMeta": "Sobald Live-Traffic da ist, erscheinen hier die Analytics.",
+        "updatedAt": "Aktualisiert {{value}}",
+        "badges": {
+            "totalCanteens": "Gesamtzahl Mensen: {{value}}",
+            "peakTime": "Peak-Zeit: {{day}} {{time}}"
+        },
+        "heroSignals": {
+            "totalMessages": "Gesamte Nachrichten",
+            "totalUsers": "Gesamte Nutzer",
+            "totalChats": "Gesamtzahl Chats",
+            "totalToolCalls": "Gesamtzahl Tool-Aufrufe"
+        },
+        "facts": {
+            "studentProject": {
+                "title": "Studentenprojekt",
+                "description": "Von Studenten für Studenten entwickelt, um das Mensa-Erlebnis zu verbessern."
+            },
+            "mcp": {
+                "title": "Smart Data Retrieval via MCP",
+                "description": "Nutzt den MCP Standard, um präzise und hilfreiche Antworten zu Mensa-Menüs zu geben."
+            },
+            "openSource": {
+                "title": "Open Source",
+                "description": "Mit modernen Technologien erstellt und komplett Open Source für Community-Beiträge."
+            },
+            "fastReliable": {
+                "title": "Schnell & Zuverlässig",
+                "description": "Optimiert für Geschwindigkeit, damit Speisepläne, Öffnungszeiten und Chat-Antworten in Sekunden ankommen."
+            }
+        },
+        "status": {
+            "eyebrow": "Projekt Statistiken",
+            "loadingTitle": "Dashboard wird aufgebaut",
+            "loadingBody": "Der Stats-Endpunkt antwortet und die Visualisierungen werden gerade zusammengesetzt.",
+            "offlineTitle": "Analytics sind offline nicht verfügbar",
+            "offlineBody": "Verbinde dich erneut, um die Live-Projektstatistiken zu laden.",
+            "errorTitle": "Analytics konnten nicht geladen werden",
+            "errorBody": "Der Stats-Endpunkt hat keine nutzbaren Daten geliefert.",
+            "waiting": "Die Analytics warten noch auf die ersten getrackten Events."
+        },
+        "kpis": {
+            "messages": "Nachrichten",
+            "users": "Nutzer",
+            "sessions": "Sessions",
+            "chats": "Chats",
+            "toolCalls": "Tool-Aufrufe",
+            "transcribe": "STT-Anfragen",
+            "shortcuts": "Shortcut-Nachrichten"
+        },
+        "kpiMeta": {
+            "messages": "{{llm}} LLM / {{quick}} Quick-Lookup-Nachrichten",
+            "users": "{{value}} aktiv in den letzten 30 Tagen",
+            "sessions": "{{value}} Nachrichten pro Session im Schnitt",
+            "chats": "{{value}} erkundete Mensen pro Nutzer",
+            "tools": "{{rate}} erfolgreiche Tool-Aufrufe",
+            "voice": "Bestätigte Voice-Nutzung aus STT-Anfragen",
+            "shortcuts": "Nachrichten, die über gespeicherte Shortcuts gestartet wurden"
+        },
+        "trend": {
+            "eyebrow": "Live-Aktivität",
+            "title": "Nutzung im Zeitverlauf",
+            "subtitle": "Wechsle zwischen Nachrichten, Quick Lookups, Tools und Voice, um zu sehen, wie sich der Traffic entwickelt.",
+            "ariaLabel": "Aktivitäts-Trenddiagramm",
+            "empty": "Noch keine Aktivität erfasst.",
+            "footer": "Peak {{max}} · Gesamt {{total}}",
+            "controls": {
+                "messages": "Nachrichten",
+                "llm": "LLM",
+                "quickLookup": "Quick",
+                "tools": "Tools",
+                "voice": "Voice"
+            },
+            "ranges": {
+                "7": "7T",
+                "30": "30T",
+                "all": "Gesamt"
+            }
+        },
+        "share": {
+            "interactions": {
+                "title": "LLM vs Quick Lookup",
+                "subtitle": "Zeigt, ob Menschen eher vollständige Chat-Turns oder direkte Menü- und Öffnungszeiten-Lookups nutzen.",
+                "total": "Interaktionsmix"
+            },
+            "origins": {
+                "title": "Voice vs Typed vs Shortcut",
+                "subtitle": "Zählt, wie echte Nachrichten starten, nicht nur rohe Transkriptionsversuche.",
+                "total": "Nachrichtenursprung"
+            }
+        },
+        "heatmap": {
+            "eyebrow": "Rhythmus",
+            "title": "Wöchentliche Aktivitäts-Heatmap",
+            "subtitle": "Fahre über eine Zelle, um zu sehen, wann der Bot über die Woche hinweg besonders stark genutzt wird.",
+            "tooltip": "{{value}} getrackte Interaktionen in diesem Zeitfenster",
+            "peakSlot": "Peak-Slot",
+            "weekdays": {
+                "mon": "Mo",
+                "tue": "Di",
+                "wed": "Mi",
+                "thu": "Do",
+                "fri": "Fr",
+                "sat": "Sa",
+                "sun": "So"
+            }
+        },
+        "leaderboards": {
+            "empty": "Noch keine Leaderboard-Daten vorhanden.",
+            "cities": {
+                "eyebrow": "Städte",
+                "title": "Beliebteste Städte"
+            },
+            "canteens": {
+                "eyebrow": "Mensen",
+                "title": "Am meisten erkundete Mensen"
+            },
+            "tools": {
+                "eyebrow": "Tools",
+                "title": "Am häufigsten genutzte Tools"
+            },
+            "filters": {
+                "eyebrow": "Filter",
+                "title": "Am häufigsten genutzte Filter"
+            }
+        },
+        "insights": {
+            "distinctCanteens": "Unterschiedliche erkundete Mensen",
+            "distinctCities": "Unterschiedliche erkundete Städte",
+            "averageCanteensPerUser": "Durchschnittlich erkundete Mensen pro Nutzer",
+            "averageToolsPerTurn": "Durchschnittliche Tools pro LLM-Turn",
+            "transcribeRequests": "STT-Anfragen gesamt",
+            "toolSuccessRate": "Tool-Erfolgsquote"
+        },
+        "labels": {
+            "llmChat": "LLM Chat",
+            "quickLookup": "Quick Lookup",
+            "typed": "Getippt",
+            "voice": "Voice",
+            "shortcut": "Shortcut",
+            "noFilter": "Kein Filter",
+            "vegetarian": "Vegetarisch",
+            "vegan": "Vegan",
+            "meat": "Fleisch"
         }
     },
     "canteens": {
@@ -428,7 +579,7 @@
         },
         "onboarding": {
             "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
-            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
+            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten, einschließlich **anonymisierter Analytics-Daten**, können zu Auswertungszwecken erfasst, geloggt und veröffentlichtwerden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
             "dataAccept": "Verstanden & Akzeptieren",
             "priceCategorySelect": "Bist du **Student:in**, **Mitarbeiter:in**, **Schüler:in** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
             "priceCategoryNo": "Überspringen",

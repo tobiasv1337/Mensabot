@@ -7,6 +7,7 @@ const ChatPage = lazy(() => import("../pages/ChatPage/ChatPage"));
 const CanteensPage = lazy(() => import("../pages/CanteensPage/CanteensPage"));
 const MapPage = lazy(() => import("../pages/MapPage/MapPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage/AboutPage"));
+const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage/AnalyticsPage"));
 const LegalNoticePage = lazy(() => import("../pages/LegalNoticePage/LegalNoticePage"));
 const ShortcutsPage = lazy(() => import("../pages/ShortcutsPage/ShortcutsPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage/SettingsPage"));
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="canteens" element={withSuspense(<CanteensPage />)} />
         <Route path="map" element={withSuspense(<MapPage />)} />
         <Route path="about" element={withSuspense(<AboutPage />)} />
+        <Route path="analytics" element={withSuspense(<AnalyticsPage />)} />
         <Route path="legal" element={withSuspense(<LegalNoticePage />)} />
         <Route path="shortcuts" element={withSuspense(<ShortcutsPage />)} />
         <Route path="settings" element={withSuspense(<SettingsPage />)} />

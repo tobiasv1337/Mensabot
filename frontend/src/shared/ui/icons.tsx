@@ -143,6 +143,18 @@ export const AboutIcon = () => (
     </svg>
 );
 
+export const AnalyticsIcon = () => (
+    <svg
+        width="20"
+        height="20"
+        viewBox="0 -960 960 960"
+        fill="currentColor"
+        aria-hidden
+    >
+        <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm80-80h80v-160h-80v160Zm160 0h80v-320h-80v320Zm160 0h80v-240h-80v240Zm160 0h80v-400h-80v400ZM160-720v480-480Z" />
+    </svg>
+);
+
 export const LightModeIcon = () => (
     <svg
         width="20"
