@@ -28,14 +28,14 @@ import LinkedInLogoBlack from "@/assets/LinkedInBug-Black.png";
 import LinkedInLogoWhite from "@/assets/LinkedInBug-White.png";
 
 /* ── Profile pictures (static imports for Vite) ── */
-import profileStefan from "@/assets/profilePictures/Stefan.jpg";
 import profileJudith from "@/assets/profilePictures/Judith.png";
+import profileTobias from "@/assets/profilePictures/Tobias_Orange.png";
 
 
 // Map creator index → imported image. Add entries here as pictures become available.
 const creatorImages: Record<number, string> = {
+    0: profileTobias,
     1: profileJudith,
-    6: profileStefan,
 };
 
 
