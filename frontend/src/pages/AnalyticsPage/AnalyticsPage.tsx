@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
-import type { ProjectStatsLeaderboardEntry, ProjectStatsShare, ProjectStatsTrendPoint } from "@/shared/api/MensaBotClient";
+import type {
+  ProjectStatsLeaderboardEntry,
+  ProjectStatsPeriodKey,
+  ProjectStatsShare,
+  ProjectStatsTrendGranularity,
+  ProjectStatsTrendPoint,
+} from "@/shared/api/MensaBotClient";
 import FeatureCard from "@/shared/ui/cards/FeatureCard";
 import { AboutUsIcon, AnalyticsIcon, ChatIcon, CitiesIcon, MCPIcon, MensenIcon, MicrophoneIcon, ShortcutsIcon } from "@/shared/ui/icons";
 import * as P from "@/shared/ui/page/PageHero.styles";
@@ -10,7 +16,6 @@ import * as S from "./AnalyticsPage.styles";
 import { useAnalyticsStats } from "./useAnalyticsStats";
 
 type TrendMetricKey = "active_users" | "messages" | "interactions" | "sessions" | "llm_messages" | "quick_lookup_messages" | "shortcut_messages" | "tool_calls" | "transcribe_requests";
-type TrendRangeKey = "7" | "30" | "all";
 
 type TrendSeriesConfig = {
   key: TrendMetricKey;
@@ -42,12 +47,20 @@ type TrendPanelProps = {
   ariaLabel: string;
   emptyLabel: string;
   points: ProjectStatsTrendPoint[];
+  granularity: ProjectStatsTrendGranularity;
   series: TrendSeriesConfig[];
-  range: TrendRangeKey;
-  rangeLabels: Record<TrendRangeKey, string>;
-  onRangeChange: (range: TrendRangeKey) => void;
 };
 
+type InsightCard = {
+  id: string;
+  icon: React.ReactNode;
+  value: string;
+  title: string;
+  meta: string;
+  description?: string;
+};
+
+const PERIOD_KEYS: ProjectStatsPeriodKey[] = ["today", "7d", "30d", "ytd", "total"];
 const numberFormatter = new Intl.NumberFormat();
 const compactFormatter = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
 const percentFormatter = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 0 });
@@ -58,12 +71,27 @@ const formatCompact = (value: number) => compactFormatter.format(Math.round(valu
 const formatPercent = (value: number) => percentFormatter.format(Number.isFinite(value) ? value : 0);
 const formatDecimal = (value: number) => decimalFormatter.format(Number.isFinite(value) ? value : 0);
 const formatHourRange = (hour: number) => `${hour.toString().padStart(2, "0")}:00-${((hour + 1) % 24).toString().padStart(2, "0")}:00`;
-const formatDate = (date: string) => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(date));
 const formatDateTime = (date: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(date));
 const sumTrendMetric = (points: ProjectStatsTrendPoint[], key: TrendMetricKey) => points.reduce((sum, point) => sum + point[key], 0);
 const getTotalShare = (items: ProjectStatsShare[]) => items.reduce((sum, item) => sum + item.value, 0);
 const titleCase = (value: string) => value.split(/[_\s-]+/).filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const formatBucketAxisLabel = (bucketStart: string, granularity: ProjectStatsTrendGranularity) => {
+  const date = new Date(bucketStart);
+  if (granularity === "hour") {
+    return new Intl.DateTimeFormat(undefined, { hour: "2-digit" }).format(date);
+  }
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+};
+
+const formatBucketDetailLabel = (bucketStart: string, granularity: ProjectStatsTrendGranularity) => {
+  const date = new Date(bucketStart);
+  if (granularity === "hour") {
+    return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+  }
+  return new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(date);
+};
 
 const getShareGradient = (items: ProjectStatsShare[], colors: string[], fallback: string) => {
   const total = getTotalShare(items);
@@ -110,12 +138,6 @@ const getFilterLabel = (entry: ProjectStatsLeaderboardEntry, t: ReturnType<typeo
 };
 
 const getToolLabel = (entry: ProjectStatsLeaderboardEntry) => titleCase(entry.label || entry.key);
-
-const getInsightValue = (value: number, mode: "count" | "percent" | "decimal" = "count") => {
-  if (mode === "percent") return formatPercent(value);
-  if (mode === "decimal") return formatDecimal(value);
-  return formatCount(value);
-};
 
 const ShareCard = ({ title, subtitle, items, colors, totalLabel }: ShareCardProps) => {
   const total = getTotalShare(items);
@@ -194,14 +216,13 @@ const LeaderboardCard = ({ title, subtitle, entries, emptyLabel, formatLabel, fo
   );
 };
 
-const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, points, series, range, rangeLabels, onRangeChange }) => {
+const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, points, granularity, series }) => {
   const theme = useTheme();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const visiblePoints = range === "all" ? points : points.slice(-Number(range));
-  const hasData = visiblePoints.some((point) => series.some((item) => getTrendValue(point, item.key) > 0));
+  const hasData = points.some((point) => series.some((item) => getTrendValue(point, item.key) > 0));
   const maxValue = hasData
-    ? Math.max(...visiblePoints.flatMap((point) => series.map((item) => getTrendValue(point, item.key))))
+    ? Math.max(...points.flatMap((point) => series.map((item) => getTrendValue(point, item.key))))
     : 0;
   const scaleMax = maxValue > 0 ? Math.ceil(maxValue * 1.08) : 1;
   const chartWidth = 760;
@@ -210,11 +231,11 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
   const chartInnerWidth = chartWidth - chartPadding.left - chartPadding.right;
   const chartInnerHeight = chartHeight - chartPadding.top - chartPadding.bottom;
   const gradientId = `trend-fill-${title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}`;
-  const xPositions = visiblePoints.map((_, index) => (
-    chartPadding.left + (visiblePoints.length <= 1 ? chartInnerWidth / 2 : (index / (visiblePoints.length - 1)) * chartInnerWidth)
+  const xPositions = points.map((_, index) => (
+    chartPadding.left + (points.length <= 1 ? chartInnerWidth / 2 : (index / (points.length - 1)) * chartInnerWidth)
   ));
   const seriesPaths = series.map((item) => {
-    const coordinates = visiblePoints.map((point, index) => ({
+    const coordinates = points.map((point, index) => ({
       x: xPositions[index],
       y: chartPadding.top + chartInnerHeight - (getTrendValue(point, item.key) / scaleMax) * chartInnerHeight,
     }));
@@ -225,15 +246,15 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
       linePath: coordinates.length > 1 ? `M ${coordinates.map((point) => `${point.x} ${point.y}`).join(" L ")}` : "",
     };
   });
-  const areaCoordinates = visiblePoints.map((_, index) => ({
+  const areaCoordinates = points.map((_, index) => ({
     x: xPositions[index],
     y: Math.min(...seriesPaths.map((item) => item.coordinates[index]?.y ?? chartPadding.top + chartInnerHeight)),
   }));
   const areaPath = areaCoordinates.length > 1
     ? `M ${areaCoordinates[0].x} ${chartPadding.top + chartInnerHeight} L ${areaCoordinates.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${areaCoordinates[areaCoordinates.length - 1].x} ${chartPadding.top + chartInnerHeight} Z`
     : "";
-  const activeIndex = hoveredIndex ?? visiblePoints.length - 1;
-  const activePoint = activeIndex >= 0 ? (visiblePoints[activeIndex] ?? null) : null;
+  const activeIndex = hoveredIndex ?? points.length - 1;
+  const activePoint = activeIndex >= 0 ? (points[activeIndex] ?? null) : null;
   const activeX = activeIndex >= 0 ? (xPositions[activeIndex] ?? null) : null;
   const yAxisValues = Array.from(new Set([scaleMax, Math.round(scaleMax / 2), 0])).sort((a, b) => b - a);
   const xAxisIndices = Array.from(new Set([0, Math.max(0, Math.floor((xPositions.length - 1) / 2)), Math.max(0, xPositions.length - 1)]));
@@ -251,13 +272,6 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
           <S.PanelTitle>{title}</S.PanelTitle>
           <S.PanelSubtitle>{subtitle}</S.PanelSubtitle>
         </S.PanelHeaderText>
-        <S.ControlRow>
-          {(["7", "30", "all"] as TrendRangeKey[]).map((nextRange) => (
-            <S.SegmentedButton key={nextRange} $active={range === nextRange} $tone="red" onClick={() => onRangeChange(nextRange)}>
-              {rangeLabels[nextRange]}
-            </S.SegmentedButton>
-          ))}
-        </S.ControlRow>
       </S.PanelHeader>
 
       <S.TrendLegend>
@@ -332,14 +346,14 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
                 />
               ))}
               {xAxisIndices.map((index) => {
-                const label = visiblePoints[index];
+                const point = points[index];
                 const x = xPositions[index];
 
-                if (!label || x === undefined) return null;
+                if (!point || x === undefined) return null;
 
                 return (
-                  <text key={`${label.date}-${index}`} x={x} y={chartHeight - 10} fill={theme.textMuted} fontSize="12" fontWeight="700" textAnchor="middle">
-                    {formatDate(label.date)}
+                  <text key={`${point.bucket_start}-${index}`} x={x} y={chartHeight - 10} fill={theme.textMuted} fontSize="12" fontWeight="700" textAnchor="middle">
+                    {formatBucketAxisLabel(point.bucket_start, granularity)}
                   </text>
                 );
               })}
@@ -351,7 +365,7 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
       )}
 
       <S.TrendFooter>
-        <span>{activePoint ? formatDate(activePoint.date) : emptyLabel}</span>
+        <span>{activePoint ? formatBucketDetailLabel(activePoint.bucket_start, granularity) : emptyLabel}</span>
         {activePoint ? (
           <S.TrendFooterValues>
             {series.map((item) => (
@@ -373,19 +387,22 @@ const AnalyticsPage: React.FC = () => {
   const { isOffline } = useAppShellContext();
   const theme = useTheme();
   const { stats, isLoading, error } = useAnalyticsStats(isOffline);
-  const [trendRange, setTrendRange] = useState<TrendRangeKey>("30");
+  const [selectedPeriod, setSelectedPeriod] = useState<ProjectStatsPeriodKey>("total");
   const [activeHeatmapKey, setActiveHeatmapKey] = useState<string | null>(null);
 
-  const interactionShare = (stats?.shares.interaction_types ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
-  const originShare = (stats?.shares.message_origins ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
-  const dietShare = (stats?.shares.diet_filters ?? [])
+  const periodStats = stats?.periods[selectedPeriod] ?? null;
+  const periodLabel = t(`analytics.periods.${selectedPeriod}`);
+  const interactionShare = (periodStats?.shares.interaction_types ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
+  const originShare = (periodStats?.shares.message_origins ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
+  const dietShare = (periodStats?.shares.diet_filters ?? [])
     .map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }))
     .sort((left, right) => {
       const order: Record<string, number> = { vegetarian: 0, vegan: 1, meat: 2, none: 3 };
       return (order[left.id] ?? 99) - (order[right.id] ?? 99);
     });
-  const trendPoints = stats?.trend.points ?? [];
-  const heatmap = stats?.heatmap ?? [];
+  const trendPoints = periodStats?.trend.points ?? [];
+  const trendGranularity = periodStats?.trend.granularity ?? "day";
+  const heatmap = periodStats?.heatmap ?? [];
   const heatmapLookup = new Map(heatmap.map((cell) => [`${cell.weekday}-${cell.hour}`, cell]));
   const peakHeatmapCell = heatmap.reduce((best, cell) => (cell.count > best.count ? cell : best), { weekday: 0, hour: 0, count: 0 });
   const selectedHeatmapCell = heatmapLookup.get(activeHeatmapKey ?? "") ?? peakHeatmapCell;
@@ -402,11 +419,7 @@ const AnalyticsPage: React.FC = () => {
   const totalLlmMessages = sumTrendMetric(trendPoints, "llm_messages");
   const totalQuickLookupMessages = sumTrendMetric(trendPoints, "quick_lookup_messages");
   const peakSlotValue = peakHeatmapCell.count > 0 ? `${weekdayLabels[peakHeatmapCell.weekday]} · ${formatHourRange(peakHeatmapCell.hour)}` : "—";
-  const rangeLabels: Record<TrendRangeKey, string> = {
-    "7": t("analytics.trend.ranges.7"),
-    "30": t("analytics.trend.ranges.30"),
-    all: t("analytics.trend.ranges.all"),
-  };
+
   const reachSeries: TrendSeriesConfig[] = [
     { key: "active_users", label: t("analytics.trend.controls.activeUsers"), color: theme.accent1 },
     { key: "sessions", label: t("analytics.trend.controls.sessions"), color: theme.accent2 },
@@ -420,97 +433,96 @@ const AnalyticsPage: React.FC = () => {
     { key: "transcribe_requests", label: t("analytics.trend.controls.voice"), color: theme.textPrimary },
   ];
 
-  const kpis = stats ? [
+  const primaryCards = periodStats ? [
+    {
+      id: "active-users",
+      icon: <AboutUsIcon />,
+      label: t("analytics.kpis.activeUsers"),
+      value: formatCompact(periodStats.summary.active_users),
+      meta: t("analytics.kpiMeta.activeUsers", { period: periodLabel }),
+    },
     {
       id: "messages",
       icon: <ChatIcon />,
       label: t("analytics.kpis.messages"),
-      value: formatCompact(stats.headline.messages_total),
+      value: formatCompact(periodStats.summary.messages),
       meta: t("analytics.kpiMeta.messages", { llm: formatCompact(totalLlmMessages), quick: formatCompact(totalQuickLookupMessages) }),
     },
     {
-      id: "users",
-      icon: <AboutUsIcon />,
-      label: t("analytics.kpis.users"),
-      value: formatCompact(stats.headline.users_total),
-      meta: t("analytics.kpiMeta.users"),
-    },
-    {
-      id: "active-users-30d",
-      icon: <AnalyticsIcon />,
-      label: t("analytics.kpis.activeUsers30d"),
-      value: formatCompact(stats.headline.active_users_30d),
-      meta: t("analytics.kpiMeta.activeUsers30d"),
-    },
-    {
       id: "sessions",
-      icon: <ChatIcon />,
+      icon: <AnalyticsIcon />,
       label: t("analytics.kpis.sessions"),
-      value: formatCompact(stats.headline.sessions_total),
-      meta: t("analytics.kpiMeta.sessions", { value: formatDecimal(stats.headline.average_messages_per_session) }),
+      value: formatCompact(periodStats.summary.sessions),
+      meta: t("analytics.kpiMeta.sessions", { period: periodLabel }),
     },
     {
-      id: "chats",
-      icon: <MensenIcon />,
-      label: t("analytics.kpis.chats"),
-      value: formatCompact(stats.headline.chats_total),
-      meta: t("analytics.kpiMeta.chats", { value: formatDecimal(stats.headline.average_canteens_per_user) }),
-    },
-    {
-      id: "tools",
+      id: "tool-calls",
       icon: <MCPIcon />,
       label: t("analytics.kpis.toolCalls"),
-      value: formatCompact(stats.headline.tool_calls_total),
-      meta: t("analytics.kpiMeta.tools", { value: formatDecimal(stats.headline.average_tools_per_llm_turn) }),
+      value: formatCompact(periodStats.summary.tool_calls),
+      meta: t("analytics.kpiMeta.toolCalls", { value: formatPercent(periodStats.summary.tool_success_rate) }),
     },
     {
-      id: "shortcut",
-      icon: <ShortcutsIcon />,
-      label: t("analytics.kpis.shortcuts"),
-      value: formatCompact(stats.headline.shortcut_triggered_messages_total),
-      meta: t("analytics.kpiMeta.shortcuts"),
+      id: "active-chats",
+      icon: <ChatIcon />,
+      label: t("analytics.kpis.activeChats"),
+      value: formatCompact(periodStats.summary.active_chats),
+      meta: t("analytics.kpiMeta.activeChats", { period: periodLabel }),
     },
     {
-      id: "voice",
-      icon: <MicrophoneIcon width="24" height="24" />,
-      label: t("analytics.kpis.transcribe"),
-      value: formatCompact(stats.headline.transcribe_requests_total),
-      meta: t("analytics.kpiMeta.voice"),
+      id: "canteens-explored",
+      icon: <MensenIcon />,
+      label: t("analytics.kpis.canteensExplored"),
+      value: formatCompact(periodStats.summary.distinct_canteens),
+      meta: t("analytics.kpiMeta.canteensExplored", { period: periodLabel }),
     },
   ] : [];
 
-  const insights = stats ? [
+  const secondaryCards: InsightCard[] = periodStats ? [
     {
-      id: "distinct-canteens",
-      icon: <MensenIcon />,
-      value: getInsightValue(stats.headline.distinct_canteens_total),
-      title: t("analytics.insights.distinctCanteens"),
+      id: "cities-explored",
+      icon: <CitiesIcon />,
+      value: formatCompact(periodStats.summary.distinct_cities),
+      title: t("analytics.kpis.citiesExplored"),
+      meta: t("analytics.kpiMeta.citiesExplored", { period: periodLabel }),
     },
     {
-      id: "distinct-cities",
-      icon: <CitiesIcon />,
-      value: getInsightValue(stats.headline.distinct_cities_total),
-      title: t("analytics.insights.distinctCities"),
+      id: "voice-requests",
+      icon: <MicrophoneIcon width="24" height="24" />,
+      value: formatCompact(periodStats.summary.transcribe_requests),
+      title: t("analytics.kpis.transcribe"),
+      meta: t("analytics.kpiMeta.voiceRequests", { period: periodLabel }),
+    },
+    {
+      id: "shortcut-starts",
+      icon: <ShortcutsIcon />,
+      value: formatCompact(periodStats.summary.shortcut_messages),
+      title: t("analytics.kpis.shortcuts"),
+      meta: t("analytics.kpiMeta.shortcuts", { period: periodLabel }),
+    },
+    {
+      id: "avg-tool-calls-per-llm-turn",
+      icon: <MCPIcon />,
+      value: formatDecimal(periodStats.summary.average_tool_calls_per_llm_turn),
+      title: t("analytics.kpis.avgToolCallsPerLlmTurn"),
+      meta: t("analytics.kpiMeta.toolSuccessRateInline", {
+        value: formatPercent(periodStats.summary.tool_success_rate),
+      }),
+    },
+    {
+      id: "avg-messages-per-session",
+      icon: <AnalyticsIcon />,
+      value: formatDecimal(periodStats.summary.average_messages_per_session),
+      title: t("analytics.kpis.avgMessagesPerSession"),
+      meta: t("analytics.kpiMeta.avgMessagesPerSession"),
     },
     {
       id: "canteen-coverage",
       icon: <AboutUsIcon />,
-      value: formatPercent(stats.availability.total_canteens > 0 ? stats.headline.distinct_canteens_total / stats.availability.total_canteens : 0),
-      title: t("analytics.insights.canteenCoverage"),
+      value: formatPercent(stats && stats.availability.total_canteens > 0 ? periodStats.summary.distinct_canteens / stats.availability.total_canteens : 0),
+      title: t("analytics.kpis.canteenCoverage"),
+      meta: t("analytics.kpiMeta.canteenCoverage", { total: formatCount(stats?.availability.total_canteens ?? 0) }),
     },
-    {
-      id: "peak-slot",
-      icon: <AnalyticsIcon />,
-      value: peakSlotValue,
-      title: t("analytics.heatmap.peakSlot"),
-      meta: peakHeatmapCell.count > 0 ? t("analytics.heatmap.tooltip", { value: formatCount(peakHeatmapCell.count) }) : t("analytics.trend.empty"),
-    },
-  ] : [];
-
-  const heroBadges = stats ? [
-    { label: t("analytics.heroSignals.totalMessages"), value: formatCompact(stats.headline.messages_total) },
-    { label: t("analytics.heroSignals.totalUsers"), value: formatCompact(stats.headline.users_total) },
-    { label: t("analytics.heroSignals.peakTime"), value: peakSlotValue },
   ] : [];
 
   const statusCard = !stats ? (
@@ -541,117 +553,92 @@ const AnalyticsPage: React.FC = () => {
   return (
     <S.PageContainer>
       <S.HeroGrid>
-        <S.HeroContentCard>
+        <P.HeroCard>
           <P.HeroEyebrow>{t("analytics.eyebrow")}</P.HeroEyebrow>
           <P.HeroTitle>{t("analytics.title")}</P.HeroTitle>
-          <S.HeroSubtitle>{t("analytics.subtitle")}</S.HeroSubtitle>
-          {heroBadges.length > 0 ? (
-            <S.HeroBadgeRow>
-              {heroBadges.map((badge) => (
-                <S.HeroBadge key={badge.label}>
-                  <S.HeroBadgeLabel>{badge.label}</S.HeroBadgeLabel>
-                  <S.HeroBadgeValue title={badge.value}>{badge.value}</S.HeroBadgeValue>
-                </S.HeroBadge>
+          <P.HeroSubtitle>{t("analytics.subtitle")}</P.HeroSubtitle>
+          {stats ? (
+            <S.ControlRow>
+              {PERIOD_KEYS.map((periodKey) => (
+                <S.SegmentedButton key={periodKey} type="button" $active={selectedPeriod === periodKey} $tone="red" onClick={() => setSelectedPeriod(periodKey)}>
+                  {t(`analytics.periods.${periodKey}`)}
+                </S.SegmentedButton>
               ))}
-            </S.HeroBadgeRow>
+            </S.ControlRow>
           ) : null}
           <S.HeroMeta>
-            {stats ? t("analytics.updatedAt", { value: formatDateTime(stats.updated_at) }) : t("analytics.heroMeta")}
+            {stats
+              ? t("analytics.context", { period: periodLabel, updated: formatDateTime(stats.updated_at), timezone: stats.timezone })
+              : t("analytics.heroMeta")}
           </S.HeroMeta>
-        </S.HeroContentCard>
+        </P.HeroCard>
       </S.HeroGrid>
 
       {statusCard}
 
-      {stats ? (
+      {stats && periodStats ? (
         <S.DashboardGrid>
           <S.KPIGrid>
-            {kpis.map((kpi, index) => (
+            {primaryCards.map((card, index) => (
               <FeatureCard
-                key={kpi.id}
+                key={card.id}
                 delay={index}
                 density="compact"
                 valueMode="compact"
-                icon={kpi.icon}
-                eyebrow={kpi.label}
-                value={kpi.value}
-                meta={kpi.meta}
+                icon={card.icon}
+                eyebrow={card.label}
+                value={card.value}
+                meta={card.meta}
               />
             ))}
           </S.KPIGrid>
 
-          <S.AnalyticsRow>
-            <S.TrendColumn>
-              <TrendPanel
-                eyebrow={t("analytics.trend.reach.eyebrow")}
-                title={t("analytics.trend.reach.title")}
-                subtitle={t("analytics.trend.reach.subtitle")}
-                ariaLabel={t("analytics.trend.reach.ariaLabel")}
-                emptyLabel={t("analytics.trend.empty")}
-                points={trendPoints}
-                series={reachSeries}
-                range={trendRange}
-                rangeLabels={rangeLabels}
-                onRangeChange={setTrendRange}
-              />
-              <TrendPanel
-                eyebrow={t("analytics.trend.behavior.eyebrow")}
-                title={t("analytics.trend.behavior.title")}
-                subtitle={t("analytics.trend.behavior.subtitle")}
-                ariaLabel={t("analytics.trend.behavior.ariaLabel")}
-                emptyLabel={t("analytics.trend.empty")}
-                points={trendPoints}
-                series={behaviorSeries}
-                range={trendRange}
-                rangeLabels={rangeLabels}
-                onRangeChange={setTrendRange}
-              />
-            </S.TrendColumn>
-
-            <S.ShareColumn>
-              <ShareCard
-                title={t("analytics.share.interactions.title")}
-                subtitle={t("analytics.share.interactions.subtitle")}
-                items={interactionShare}
-                colors={[theme.accent1, theme.accent3]}
-                totalLabel={t("analytics.share.interactions.total")}
-              />
-              <ShareCard
-                title={t("analytics.share.origins.title")}
-                subtitle={t("analytics.share.origins.subtitle")}
-                items={originShare}
-                colors={[theme.accent1, theme.accent2, theme.accent3]}
-                totalLabel={t("analytics.share.origins.total")}
-              />
-              <ShareCard
-                title={t("analytics.share.diets.title")}
-                subtitle={t("analytics.share.diets.subtitle")}
-                items={dietShare}
-                colors={[theme.accent1, theme.accent2, theme.accent3, theme.textMuted]}
-                totalLabel={t("analytics.share.diets.total")}
-              />
-            </S.ShareColumn>
-          </S.AnalyticsRow>
+          <S.TrendColumn>
+            <TrendPanel
+              eyebrow={t("analytics.trend.reach.eyebrow")}
+              title={t("analytics.trend.reach.title")}
+              subtitle={t("analytics.trend.reach.subtitle", { period: periodLabel })}
+              ariaLabel={t("analytics.trend.reach.ariaLabel")}
+              emptyLabel={t("analytics.trend.empty")}
+              points={trendPoints}
+              granularity={trendGranularity}
+              series={reachSeries}
+            />
+            <TrendPanel
+              eyebrow={t("analytics.trend.behavior.eyebrow")}
+              title={t("analytics.trend.behavior.title")}
+              subtitle={t("analytics.trend.behavior.subtitle", { period: periodLabel })}
+              ariaLabel={t("analytics.trend.behavior.ariaLabel")}
+              emptyLabel={t("analytics.trend.empty")}
+              points={trendPoints}
+              granularity={trendGranularity}
+              series={behaviorSeries}
+            />
+          </S.TrendColumn>
 
           <S.Panel>
             <S.PanelHeader>
               <S.PanelHeaderText>
                 <S.PanelEyebrow>{t("analytics.heatmap.eyebrow")}</S.PanelEyebrow>
                 <S.PanelTitle>{t("analytics.heatmap.title")}</S.PanelTitle>
-                <S.PanelSubtitle>{t("analytics.heatmap.subtitle")}</S.PanelSubtitle>
+                <S.PanelSubtitle>{t("analytics.heatmap.subtitle", { period: periodLabel, timezone: stats.timezone })}</S.PanelSubtitle>
               </S.PanelHeaderText>
             </S.PanelHeader>
             <S.HeatmapLayout>
               <S.HeatmapMeta>
                 <S.HeatmapTooltip>
-                  <strong>{weekdayLabels[selectedHeatmapCell.weekday]} · {formatHourRange(selectedHeatmapCell.hour)}</strong>
+                  <strong>{t("analytics.heatmap.selectedSlot")}</strong>
+                  <br />
+                  {weekdayLabels[selectedHeatmapCell.weekday]} · {formatHourRange(selectedHeatmapCell.hour)}
                   <br />
                   {t("analytics.heatmap.tooltip", { value: formatCount(selectedHeatmapCell.count) })}
                 </S.HeatmapTooltip>
                 <S.HeatmapTooltip>
                   <strong>{t("analytics.heatmap.peakSlot")}</strong>
                   <br />
-                  {weekdayLabels[peakHeatmapCell.weekday]} · {formatHourRange(peakHeatmapCell.hour)}
+                  {peakSlotValue}
+                  <br />
+                  {peakHeatmapCell.count > 0 ? t("analytics.heatmap.tooltip", { value: formatCount(peakHeatmapCell.count) }) : t("analytics.trend.empty")}
                 </S.HeatmapTooltip>
               </S.HeatmapMeta>
               <S.HeatmapGridWrap>
@@ -674,10 +661,20 @@ const AnalyticsPage: React.FC = () => {
                         return (
                           <S.HeatmapCell
                             key={`${weekday}-${hour}`}
+                            type="button"
                             $active={isActive}
                             style={{ background }}
+                            aria-label={t("analytics.heatmap.cellAriaLabel", {
+                              weekday: label,
+                              hour: formatHourRange(hour),
+                              value: formatCount(cell.count),
+                              timezone: stats.timezone,
+                              period: periodLabel,
+                            })}
+                            aria-pressed={isActive}
                             onMouseEnter={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
                             onFocus={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
+                            onClick={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
                           />
                         );
                       })}
@@ -688,25 +685,49 @@ const AnalyticsPage: React.FC = () => {
             </S.HeatmapLayout>
           </S.Panel>
 
+          <S.ShareGrid>
+            <ShareCard
+              title={t("analytics.share.interactions.title")}
+              subtitle={t("analytics.share.interactions.subtitle", { period: periodLabel })}
+              items={interactionShare}
+              colors={[theme.accent1, theme.accent3]}
+              totalLabel={t("analytics.share.interactions.total")}
+            />
+            <ShareCard
+              title={t("analytics.share.origins.title")}
+              subtitle={t("analytics.share.origins.subtitle", { period: periodLabel })}
+              items={originShare}
+              colors={[theme.accent1, theme.accent2, theme.accent3]}
+              totalLabel={t("analytics.share.origins.total")}
+            />
+            <ShareCard
+              title={t("analytics.share.diets.title")}
+              subtitle={t("analytics.share.diets.subtitle", { period: periodLabel })}
+              items={dietShare}
+              colors={[theme.accent1, theme.accent2, theme.accent3, theme.textMuted]}
+              totalLabel={t("analytics.share.diets.total")}
+            />
+          </S.ShareGrid>
+
           <S.LeaderboardGrid>
-            <LeaderboardCard title={t("analytics.leaderboards.cities.eyebrow")} subtitle={t("analytics.leaderboards.cities.title")} entries={stats.leaderboards.cities} emptyLabel={t("analytics.leaderboards.empty")} />
-            <LeaderboardCard title={t("analytics.leaderboards.canteens.eyebrow")} subtitle={t("analytics.leaderboards.canteens.title")} entries={stats.leaderboards.canteens} emptyLabel={t("analytics.leaderboards.empty")} formatHint={(entry) => entry.city ?? null} />
-            <LeaderboardCard title={t("analytics.leaderboards.tools.eyebrow")} subtitle={t("analytics.leaderboards.tools.title")} entries={stats.leaderboards.tools} emptyLabel={t("analytics.leaderboards.empty")} formatLabel={getToolLabel} />
-            <LeaderboardCard title={t("analytics.leaderboards.filters.eyebrow")} subtitle={t("analytics.leaderboards.filters.title")} entries={stats.leaderboards.filters} emptyLabel={t("analytics.leaderboards.empty")} formatLabel={(entry) => getFilterLabel(entry, t)} />
+            <LeaderboardCard title={t("analytics.leaderboards.cities.eyebrow")} subtitle={t("analytics.leaderboards.cities.title", { period: periodLabel })} entries={periodStats.leaderboards.cities} emptyLabel={t("analytics.leaderboards.empty")} />
+            <LeaderboardCard title={t("analytics.leaderboards.canteens.eyebrow")} subtitle={t("analytics.leaderboards.canteens.title", { period: periodLabel })} entries={periodStats.leaderboards.canteens} emptyLabel={t("analytics.leaderboards.empty")} formatHint={(entry) => entry.city ?? null} />
+            <LeaderboardCard title={t("analytics.leaderboards.tools.eyebrow")} subtitle={t("analytics.leaderboards.tools.title", { period: periodLabel })} entries={periodStats.leaderboards.tools} emptyLabel={t("analytics.leaderboards.empty")} formatLabel={getToolLabel} />
+            <LeaderboardCard title={t("analytics.leaderboards.filters.eyebrow")} subtitle={t("analytics.leaderboards.filters.title", { period: periodLabel })} entries={periodStats.leaderboards.filters} emptyLabel={t("analytics.leaderboards.empty")} formatLabel={(entry) => getFilterLabel(entry, t)} />
           </S.LeaderboardGrid>
 
           <S.InsightGrid>
-            {insights.map((insight, index) => (
+            {secondaryCards.map((card, index) => (
               <FeatureCard
-                key={insight.id}
+                key={card.id}
                 delay={index}
                 density="compact"
-                valueMode={insight.id === "peak-slot" ? "label" : "compact"}
-                valueNoWrap={insight.id === "peak-slot"}
-                icon={insight.icon}
-                value={insight.value}
-                title={insight.title}
-                meta={insight.meta}
+                valueMode="compact"
+                icon={card.icon}
+                value={card.value}
+                title={card.title}
+                meta={card.meta}
+                description={card.description}
               />
             ))}
           </S.InsightGrid>
