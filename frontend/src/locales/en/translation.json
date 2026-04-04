@@ -88,28 +88,28 @@
             "mensen": "Canteens",
             "stars": "Stars"
         },
-        "creatorTitle": "About Us",
+        "creatorTitle": "Meet the Team",
         "creators": {
             "0": {
                 "name": "Tobias Veselsky",
                 "role": "Full-Stack Developer, AI Systems Architect & Technical Lead",
                 "description": "Full-Stack & Architecture, agentic LLM workflows, MCP tooling, backend services, API and tooling interfaces, CI/CD pipelines, and major frontend features including the final chat interface, streamed tool data and product integration.",
                 "github": "https://github.com/tobiasv1337",
-                "linkedin": ""
+                "linkedin": "https://de.linkedin.com/in/tobias-veselsky"
             },
             "1": {
                 "name": "Judith Bucher",
                 "role": "Frontend Developer & Design Systems Engineer",
-                "description": "Developed key frontend features across routing, full multilingual UX, settings, reusable design components, and visual consistency throughout the application, while also contributing to external-facing pages, product polish, and project coordination.",
+                "description": "Led the design and key frontend features of the application, including routing, multilingual support, central reusable design components, theming, and visual consistency across the entire product, while also contributing to product polish and project coordination.",
                 "github": "https://github.com/jbucher99",
-                "linkedin": ""
+                "linkedin": "https://de.linkedin.com/in/judith-bucher"
             },
             "2": {
                 "name": "Maximilian Krupper",
                 "role": "Frontend Developer & Layout Engineer",
-                "description": "Built core UI foundations including the header, sidebar, theming, and early chat page layout that established the application’s structural interface.",
-                "github": "https://github.com/m-krupper",
-                "linkedin": ""
+                "description": "Built core UI foundations including the header, sidebar, reusable design components, and early chat page layout that established the application’s structural interface.",
+                "github": "https://github.com/maximiliankrupper",
+                "linkedin": "https://www.linkedin.com/in/maximilian-krupper-0a4a3339b"
             },
             "3": {
                 "name": "Nils Herbig",
@@ -133,7 +133,7 @@
                 "linkedin": ""
             },
             "6": {
-                "name": "Dr. Ing. Stefan Hillmann",
+                "name": "Dr.-Ing. Stefan Hillmann",
                 "role": "Academic Supervisor",
                 "description": "Supported the project as academic supervisor at TU Berlin, providing methodological guidance, feedback, and oversight throughout development, evaluation, and documentation.",
                 "github": "https://github.com/stefanhillmann",

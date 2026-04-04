@@ -88,28 +88,28 @@
             "mensen": "Mensen",
             "stars": "Sterne"
         },
-        "creatorTitle": "Über uns",
+        "creatorTitle": "Das Team hinter Mensabot",
         "creators": {
             "0": {
                 "name": "Tobias Veselsky",
-                "role": "Full-Stack-Entwickler, KI-Systemarchitekt & Technischer Leiter",
+                "role": "Full-Stack Developer, AI Systems Architect & Technical Lead",
                 "description": "Full-Stack-Entwicklung und Systemarchitektur, agentische LLM-Workflows, MCP-Tooling, Backend-Services, API- und Tooling-Schnittstellen, CI/CD-Pipelines sowie zentrale Frontend-Features einschließlich der finalen Chat-Oberfläche, gestreamter Tool-Daten und Produktintegration.",
                 "github": "https://github.com/tobiasv1337",
                 "linkedin": "https://de.linkedin.com/in/tobias-veselsky"
             },
             "1": {
                 "name": "Judith Bucher",
-                "role": "Frontend-Entwicklerin & Design-System-Ingenieurin",
-                "description": "Entwicklung zentraler Frontend-Funktionen in den Bereichen Routing, vollständig mehrsprachige UX, Einstellungen, wiederverwendbare Designkomponenten und visuelle Konsistenz der gesamten Anwendung sowie Beiträge zu extern sichtbaren Seiten, Produkt-Feinschliff und Projektkoordination.",
+                "role": "Frontend Developer & Design Systems Engineer",
+                "description": "Entwicklung von Design und zentraler Frontend-Funktionen, wie Routing, Mehrsprachigkeit, zentraler wiederverwendbarer Designkomponenten, Theming und visuelle Konsistenz der gesamten Anwendung sowie Produkt-Feinschliff und Projektkoordination.",
                 "github": "https://github.com/jbucher99",
                 "linkedin": "https://de.linkedin.com/in/judith-bucher"
             },
             "2": {
                 "name": "Maximilian Krupper",
-                "role": "Frontend-Entwickler & Layout-Ingenieur",
-                "description": "Aufbau grundlegender UI-Strukturen einschließlich Header, Sidebar, Theming und des initialen Chat-Seitenlayouts, das die strukturelle Oberfläche der Anwendung definiert hat.",
+                "role": "Frontend Developer & Layout Engineer",
+                "description": "Aufbau grundlegender UI-Strukturen einschließlich Header, Sidebar, wiederverwendbarer Designkomponenten und des initialen Chat-Seitenlayouts, das die strukturelle Oberfläche der Anwendung definiert hat.",
                 "github": "https://github.com/maximiliankrupper",
-                "linkedin": "https://www.linkedin.com/in/maximilian-krupper-0a4a3339b/"
+                "linkedin": "https://www.linkedin.com/in/maximilian-krupper-0a4a3339b"
             },
             "3": {
                 "name": "Nils Herbig",
@@ -120,21 +120,21 @@
             },
             "4": {
                 "name": "Christos Labroussis",
-                "role": "Datenakquise & UX-Prototyping",
-                "description": "Mitentwicklung der Datenerfassung für das STW Berlin und weitere Mensen sowie Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Verantwortlich für die Datenerfassung für das STW Berlin und weitere Mensen sowie den Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
                 "github": "",
                 "linkedin": ""
             },
             "5": {
                 "name": "Tamim Ayach",
-                "role": "Datenakquise & UX-Prototyping",
-                "description": "Mitentwicklung der Datenerfassung für das STW Berlin und weitere Mensen sowie Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Verantwortlich für die Datenerfassung für das STW Berlin und weitere Mensen sowie den Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
                 "github": "",
                 "linkedin": ""
             },
             "6": {
-                "name": "Dr. Ing. Stefan Hillmann",
-                "role": "Akademischer Betreuer",
+                "name": "Dr.-Ing. Stefan Hillmann",
+                "role": "Academic Supervisor",
                 "description": "Begleitung des Projekts als akademischer Betreuer an der TU Berlin mit methodischer Unterstützung, Feedback und fachlicher Aufsicht während Entwicklung, Evaluation und Dokumentation.",
                 "github": "https://github.com/stefanhillmann",
                 "linkedin": ""
