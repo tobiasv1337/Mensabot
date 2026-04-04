@@ -31,6 +31,10 @@ import LinkedInLogoWhite from "@/assets/LinkedInBug-White.png";
 import profileJudith from "@/assets/profilePictures/Judith.png";
 import profileTobias from "@/assets/profilePictures/Tobias_Orange.png";
 import profileStefan from "@/assets/profilePictures/Stefan.jpg";
+//import profileChristos from "@/assets/profilePictures/Christos.";
+//import profileMaximilian from "@/assets/profilePictures/Maximilian.";
+//import profileNils from "@/assets/profilePictures/Nils.";
+//import profileTamim from "@/assets/profilePictures/Tamim.";
 
 
 // Map creator index → imported image. Add entries here as pictures become available.
