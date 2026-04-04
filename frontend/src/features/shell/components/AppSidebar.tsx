@@ -17,7 +17,7 @@ import {
   MensenIcon,
   NewChatIcon,
   InstallIcon,
-  ProjectFactsIcon,
+  AboutIcon,
   SettingsIcon,
   ShortcutsIcon,
   SideBarIcon,
@@ -61,8 +61,8 @@ const getIcon = (item: string) => {
       return <MapIcon />;
     case "LegalNotice":
       return <LegalNoticeIcon />;
-    case "ProjectFacts":
-      return <ProjectFactsIcon />;
+    case "About":
+      return <AboutIcon />;
     default:
       return "•";
   }

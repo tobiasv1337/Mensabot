@@ -4,7 +4,7 @@
         "chatbot": "Chatbot",
         "canteens": "Canteens",
         "map": "Map",
-        "projectFacts": "About",
+        "about": "About",
         "legalNotice": "Legal Notice",
         "shortcuts": "Shortcuts",
         "settings": "Settings"
@@ -59,7 +59,7 @@
             }
         }
     },
-    "projectFacts": {
+    "about": {
         "eyebrow": "Project Insights",
         "title": "Behind the Bot",
         "githubButton": "View on GitHub",

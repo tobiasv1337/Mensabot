@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTheme } from "styled-components";
-import * as S from "./ProjectFactsPage.styles";
+import * as S from "./AboutPage.styles";
 import heroImageLight from "@/assets/ChatPageImageLight.jpeg";
 import heroImageDark from "@/assets/ChatPageImageDark.jpeg";
 import * as P from "@/shared/ui/page/PageHero.styles";
@@ -62,7 +62,7 @@ const getInitials = (name: string) => {
     return parts[0][0].toUpperCase();
 };
 
-const ProjectFactsPage: React.FC = () => {
+const AboutPage: React.FC = () => {
     const { t } = useTranslation();
     const { isOffline } = useAppShellContext();
     const theme = useTheme();
@@ -98,14 +98,14 @@ const ProjectFactsPage: React.FC = () => {
         const fact: FactItem = {
             id: i + 1,
             icon: factsicon[i],
-            title: t(`projectFacts.facts.${i}.title`),
-            description: t(`projectFacts.facts.${i}.description`)
+            title: t(`about.facts.${i}.title`),
+            description: t(`about.facts.${i}.description`)
         };
 
         if (i === 2) {
             fact.action = {
                 icon: <GitHubLogo />,
-                label: t('projectFacts.githubButton'),
+                label: t('about.githubButton'),
                 href: 'https://github.com/tobiasv1337/Mensabot'
             };
         }
@@ -115,11 +115,11 @@ const ProjectFactsPage: React.FC = () => {
 
     const creators = Array.from({ length: 7 }, (_, i) => ({
         id: i + 1,
-        name: t(`projectFacts.creators.${i}.name`),
-        role: t(`projectFacts.creators.${i}.role`),
-        description: t(`projectFacts.creators.${i}.description`),
-        github: t(`projectFacts.creators.${i}.github`),
-        linkedin: t(`projectFacts.creators.${i}.linkedin`),
+        name: t(`about.creators.${i}.name`),
+        role: t(`about.creators.${i}.role`),
+        description: t(`about.creators.${i}.description`),
+        github: t(`about.creators.${i}.github`),
+        linkedin: t(`about.creators.${i}.linkedin`),
         image: creatorImages[i],  // undefined when no picture available
     }));
 
@@ -132,9 +132,9 @@ const ProjectFactsPage: React.FC = () => {
     }
 
     const stats: StatItem[] = [
-        { id: 1, label: t('projectFacts.stats.cities'), value: totalCities ?? "500+", icon: <CitiesIcon /> },
-        { id: 2, label: t('projectFacts.stats.mensen'), value: totalCanteens ?? "1000+", icon: <MensenIcon /> },
-        { id: 3, label: t('projectFacts.stats.stars'), value: "3,41", icon: <StarIcon /> },
+        { id: 1, label: t('about.stats.cities'), value: totalCities ?? "500+", icon: <CitiesIcon /> },
+        { id: 2, label: t('about.stats.mensen'), value: totalCanteens ?? "1000+", icon: <MensenIcon /> },
+        { id: 3, label: t('about.stats.stars'), value: "3,41", icon: <StarIcon /> },
     ];
 
     /* ── Carousel logic ── */
@@ -247,12 +247,12 @@ const ProjectFactsPage: React.FC = () => {
         <S.PageContainer>
             <S.ScreenWrapper ref={wrapperRef} $fullScreen={isFullScreen}>
                 <P.HeroCard>
-                    <P.HeroEyebrow>{t('projectFacts.eyebrow')}</P.HeroEyebrow>
-                    <P.HeroTitle>{t('projectFacts.title')}</P.HeroTitle>
+                    <P.HeroEyebrow>{t('about.eyebrow')}</P.HeroEyebrow>
+                    <P.HeroTitle>{t('about.title')}</P.HeroTitle>
                 </P.HeroCard>
                 <S.UpperSection>
                     <S.ImageContainer>
-                        <img src={heroImage} alt={t('projectFacts.imageAlt')} />
+                        <img src={heroImage} alt={t('about.imageAlt')} />
                     </S.ImageContainer>
                     <S.ContentColumn>
                         <S.InteractiveCardsGrid>
@@ -291,8 +291,8 @@ const ProjectFactsPage: React.FC = () => {
 
             <S.ScreenWrapper ref={wrapperRef} $fullScreen={isFullScreen}>
                 <P.HeroCard>
-                    <P.HeroEyebrow>{t('projectFacts.eyebrow')}</P.HeroEyebrow>
-                    <P.HeroTitle>{t('projectFacts.creatorTitle')}</P.HeroTitle>
+                    <P.HeroEyebrow>{t('about.eyebrow')}</P.HeroEyebrow>
+                    <P.HeroTitle>{t('about.creatorTitle')}</P.HeroTitle>
                 </P.HeroCard>
 
                 <S.CarouselSection>
@@ -386,4 +386,4 @@ const ProjectFactsPage: React.FC = () => {
     );
 };
 
-export default ProjectFactsPage;
+export default AboutPage;
