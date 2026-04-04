@@ -170,7 +170,7 @@ wheels = [
 
 [[package]]
 name = "mensabot-backend-core"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -193,12 +193,12 @@ requires-dist = [
 
 [[package]]
 name = "mensabot-common"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../mensabot-common" }
 
 [[package]]
 name = "openmensa-sdk"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../openmensa" }
 dependencies = [
     { name = "rapidfuzz" },
