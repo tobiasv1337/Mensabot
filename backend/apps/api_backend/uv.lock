@@ -858,7 +858,7 @@ wheels = [
 
 [[package]]
 name = "mensa-api-backend"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -885,7 +885,7 @@ requires-dist = [
 
 [[package]]
 name = "mensa-mcp-server"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../mcp-server" }
 dependencies = [
     { name = "anyio" },
@@ -910,7 +910,7 @@ requires-dist = [
 
 [[package]]
 name = "mensabot-backend-core"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../../libs/mensabot-backend-core" }
 dependencies = [
     { name = "anyio" },
@@ -933,7 +933,7 @@ requires-dist = [
 
 [[package]]
 name = "mensabot-common"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../../libs/mensabot-common" }
 
 [[package]]
@@ -978,7 +978,7 @@ wheels = [
 
 [[package]]
 name = "openmensa-sdk"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../../libs/openmensa" }
 dependencies = [
     { name = "rapidfuzz" },
