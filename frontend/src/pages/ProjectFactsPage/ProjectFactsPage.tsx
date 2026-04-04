@@ -163,22 +163,29 @@ const ProjectFactsPage: React.FC = () => {
     }, []);
 
     const goLeft = useCallback(() => {
-        setCarouselIndex(prev => prev - 1);
+        setCarouselIndex(prev => {
+            if (prev <= 0) return prev;
+            return prev - 1;
+        });
     }, []);
 
     const goRight = useCallback(() => {
-        setCarouselIndex(prev => prev + 1);
-    }, []);
+        setCarouselIndex(prev => {
+            if (prev >= creatorsCount * 5 - visibleCount) return prev;
+            return prev + 1;
+        });
+    }, [creatorsCount, visibleCount]);
 
     const handleTransitionEnd = () => {
-        if (carouselIndex <= creatorsCount) {
-            // Snap forward into the middle zone
+        if (carouselIndex <= creatorsCount || carouselIndex >= creatorsCount * 3) {
+            // Instantly snap to the equivalent slide in the exact middle zone 
+            // (using modulo ensures robustness against extreme rapid clicking where index exceeds block bounds)
             setIsTransitioning(false);
-            setCarouselIndex(prev => prev + creatorsCount);
-        } else if (carouselIndex >= creatorsCount * 3) {
-            // Snap backward into the middle zone
-            setIsTransitioning(false);
-            setCarouselIndex(prev => prev - creatorsCount);
+            setCarouselIndex(prev => {
+                const offsetInBlock = prev % creatorsCount;
+                const positiveOffset = offsetInBlock < 0 ? offsetInBlock + creatorsCount : offsetInBlock;
+                return creatorsCount * 2 + positiveOffset;
+            });
         }
     };
 
