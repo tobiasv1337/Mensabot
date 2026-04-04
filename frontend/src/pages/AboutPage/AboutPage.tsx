@@ -69,7 +69,7 @@ const AboutPage: React.FC = () => {
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
     const LinkedInLogo = theme.mode === 'dark' ? LinkedInLogoWhite : LinkedInLogoBlack;
     const GitHubLogo = theme.mode === 'dark' ? GitHubLogoWhite : GitHubLogoBlack;
-    const { wrapperRef, isFullScreen, totalCanteens, totalCities } = useProjectStats(isOffline);
+    const { totalCanteens, totalCities } = useProjectStats(isOffline);
 
     // Data for the upper section cards
 
@@ -245,7 +245,7 @@ const AboutPage: React.FC = () => {
 
     return (
         <S.PageContainer>
-            <S.ScreenWrapper ref={wrapperRef} $fullScreen={isFullScreen}>
+            <S.ScreenWrapper>
                 <P.HeroCard>
                     <P.HeroEyebrow>{t('about.eyebrow')}</P.HeroEyebrow>
                     <P.HeroTitle>{t('about.title')}</P.HeroTitle>
@@ -266,7 +266,7 @@ const AboutPage: React.FC = () => {
                                             variant="default"
                                             iconLeft={fact.action.icon}
                                             text={fact.action.label}
-                                            onClick={() => { window.open(fact.action?.href, '_blank'); }}
+                                            onClick={() => { window.open(fact.action?.href, '_blank', 'noopener,noreferrer'); }}
                                         />
                                     )}
                                 </S.StatCard>
@@ -289,7 +289,7 @@ const AboutPage: React.FC = () => {
                 </S.StatsGrid>
             </S.ScreenWrapper>
 
-            <S.ScreenWrapper ref={wrapperRef} $fullScreen={isFullScreen}>
+            <S.ScreenWrapper>
                 <P.HeroCard>
                     <P.HeroEyebrow>{t('about.eyebrow')}</P.HeroEyebrow>
                     <P.HeroTitle>{t('about.creatorTitle')}</P.HeroTitle>
@@ -338,7 +338,7 @@ const AboutPage: React.FC = () => {
                                     <S.SocialRow>
                                         {creator.github && (
                                             <Button
-                                                onClick={() => window.open(creator.github, '_blank')}
+                                                onClick={() => window.open(creator.github, '_blank', 'noopener,noreferrer')}
                                                 aria-label={`${creator.name} GitHub`}
                                                 variant="surfaceInset"
                                                 title="GitHub"
@@ -348,7 +348,7 @@ const AboutPage: React.FC = () => {
                                         )}
                                         {creator.linkedin && (
                                             <Button
-                                                onClick={() => window.open(creator.linkedin, '_blank')}
+                                                onClick={() => window.open(creator.linkedin, '_blank', 'noopener,noreferrer')}
                                                 aria-label={`${creator.name} LinkedIn`}
                                                 variant="surfaceInset"
                                                 title="LinkedIn"

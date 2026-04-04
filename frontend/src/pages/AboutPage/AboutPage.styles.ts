@@ -18,7 +18,7 @@ export const PageContainer = styled.div`
   gap: 3rem;
 `;
 
-export const ScreenWrapper = styled.div<{ $fullScreen?: boolean }>`  
+export const ScreenWrapper = styled.div`  
   display: flex;
   flex-direction: column;
   width: 100%;
