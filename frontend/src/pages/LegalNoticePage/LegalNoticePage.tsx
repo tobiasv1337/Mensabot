@@ -33,7 +33,7 @@ const LegalNoticePage: React.FC = () => {
                             variant="accent1"
                             iconLeft={<GitHubLogo />}
                             text={t('contact.issueButton')}
-                            onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank'); }}
+                            onClick={() => { window.open('https://github.com/tobiasv1337/Mensabot/issues', '_blank', 'noopener,noreferrer'); }}
                         />
                         <Button
                             variant="accent1"
