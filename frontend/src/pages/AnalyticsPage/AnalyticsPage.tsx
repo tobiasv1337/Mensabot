@@ -279,6 +279,7 @@ const LeaderboardCard = ({ title, subtitle, entries, emptyLabel, formatLabel, fo
 const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, overallLabel, points, granularity, series }) => {
   const theme = useTheme();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const hasData = points.some((point) => series.some((item) => getTrendValue(point, item.key) > 0));
   const maxValue = hasData
@@ -313,7 +314,7 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
   const areaPath = areaCoordinates.length > 1
     ? `M ${areaCoordinates[0].x} ${chartPadding.top + chartInnerHeight} L ${areaCoordinates.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${areaCoordinates[areaCoordinates.length - 1].x} ${chartPadding.top + chartInnerHeight} Z`
     : "";
-  const activeIndex = hoveredIndex;
+  const activeIndex = hoveredIndex ?? selectedIndex;
   const activePoint = activeIndex !== null ? (points[activeIndex] ?? null) : null;
   const activeX = activeIndex !== null ? (xPositions[activeIndex] ?? null) : null;
   const yAxisValues = Array.from(new Set([scaleMax, Math.round(scaleMax / 2), 0])).sort((a, b) => b - a);
@@ -397,18 +398,37 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
                   />
                 );
               })}
-              {hoverZones.map((zone) => (
-                <rect
-                  key={`hover-${zone.index}`}
-                  x={zone.x}
-                  y={chartPadding.top}
-                  width={zone.width}
-                  height={chartInnerHeight}
-                  fill="transparent"
-                  onMouseEnter={() => setHoveredIndex(zone.index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                />
-              ))}
+              {hoverZones.map((zone) => {
+                const point = points[zone.index];
+                const bucketLabel = point ? formatBucketAxisLabel(point.bucket_start, granularity) : `${zone.index + 1}`;
+
+                return (
+                  <rect
+                    key={`hover-${zone.index}`}
+                    x={zone.x}
+                    y={chartPadding.top}
+                    width={zone.width}
+                    height={chartInnerHeight}
+                    fill="transparent"
+                    pointerEvents="all"
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Show details for ${bucketLabel}`}
+                    aria-pressed={selectedIndex === zone.index}
+                    onMouseEnter={() => setHoveredIndex(zone.index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    onFocus={() => setHoveredIndex(zone.index)}
+                    onBlur={() => setHoveredIndex(null)}
+                    onClick={() => setSelectedIndex((current) => (current === zone.index ? null : zone.index))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedIndex((current) => (current === zone.index ? null : zone.index));
+                      }
+                    }}
+                  />
+                );
+              })}
               {xAxisIndices.map((index) => {
                 const point = points[index];
                 const x = xPositions[index];
