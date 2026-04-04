@@ -4,7 +4,7 @@
         "chatbot": "Chatbot",
         "canteens": "Mensen",
         "map": "Karte",
-        "projectFacts": "Über uns/Fakten",
+        "projectFacts": "Über",
         "legalNotice": "Impressum",
         "shortcuts": "Shortcuts",
         "settings": "Einstellungen"
@@ -61,28 +61,27 @@
     },
     "projectFacts": {
         "eyebrow": "Projekt Einblicke",
-        "title": "Hinter dem Bot",
+        "title": "Projektstatistiken",
         "githubButton": "Auf GitHub ansehen",
         "facts": {
-            "studentProject": {
+            "0": {
                 "title": "Studentenprojekt",
-                "description": "Von Studenten für Studenten entwickelt, um das Mensa-Erlebnis zu verbessern."
+                "description": "Von Studierenden für Studierende und Mitarbeiter entwickelt, um das Mensa-Erlebnis zu verbessern."
             },
-            "mcp": {
+            "1": {
                 "title": "Smart Data Retrieval via MCP",
                 "description": "Nutzt den MCP Standard, um präzise und hilfreiche Antworten zu Mensa-Menüs zu geben."
             },
-            "openSource": {
+            "2": {
                 "title": "Open Source",
                 "description": "Mit modernen Technologien erstellt und komplett Open Source für Community-Beiträge."
             },
-            "fastReliable": {
+            "3": {
                 "title": "Schnell & Zuverlässig",
                 "description": "Optimiert für Geschwindigkeit, damit du die Informationen in Sekunden erhältst."
             }
         },
         "imageAlt": "MensaBot Projekt Visualisierung",
-        "statsTitle": "Projekt Statistiken",
         "stats": {
             "cities": "Städte",
             "mensen": "Mensen",
