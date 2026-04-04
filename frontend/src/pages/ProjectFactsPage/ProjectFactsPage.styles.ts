@@ -197,10 +197,13 @@ export const CarouselSection = styled.div`
   margin: 0 auto;
 `;
 
-export const CarouselViewport = styled.div`
+export const CarouselViewport = styled.div<{ $isDragging?: boolean }>`
   overflow: hidden;
   border-radius: 20px;
   padding: 8px 0;
+  cursor: ${({ $isDragging }) => ($isDragging ? 'grabbing' : 'grab')};
+  user-select: ${({ $isDragging }) => ($isDragging ? 'none' : 'auto')};
+  touch-action: pan-y;
 `;
 
 export const CarouselTrack = styled.div<{ $offset: number; $isTransitioning?: boolean }>`
@@ -225,6 +228,8 @@ export const CreatorCard = styled.div`
   gap: 10px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   animation: ${fadeUp} 0.5s ease both;
+  user-select: none;
+
 
   &:hover {
     transform: translateY(-4px);
