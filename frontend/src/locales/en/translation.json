@@ -64,24 +64,23 @@
         "title": "Behind the Bot",
         "githubButton": "View on GitHub",
         "facts": {
-            "studentProject": {
+            "0": {
                 "title": "Student Project",
-                "description": "Developed by students for students, aiming to improve the campus dining experience."
+                "description": "Developed by students for students and staff, aiming to improve the campus dining experience."
             },
-            "mcp": {
+            "1": {
                 "title": "Smart Data Retrieval via MCP",
                 "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
             },
-            "openSource": {
+            "2": {
                 "title": "Open Source",
                 "description": "Built with modern technologies and completely open source for community contributions."
             },
-            "fastReliable": {
+            "3": {
                 "title": "Fast & Reliable",
                 "description": "Optimized for speed to give you the information you need in seconds."
             }
         },
-        "statsTitle": "Project Statistics",
         "imageAlt": "MensaBot Project Visualization",
         "stats": {
             "cities": "Cities",

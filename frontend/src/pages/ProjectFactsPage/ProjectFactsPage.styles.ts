@@ -15,22 +15,15 @@ export const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-   
-  @media (max-width: 768px) {
-    min-height: auto;
-  }
+  gap: 3rem;
 `;
 
-export const ScreenWrapper = styled.div<{ $fullScreen?: boolean }>`
+export const ScreenWrapper = styled.div<{ $fullScreen?: boolean }>`  
   display: flex;
   flex-direction: column;
   width: 100%;
   box-sizing: border-box;
   gap: 3rem;
-  /* If content fits, let it be natural height. If not, force it to be at least 100vh */
-  min-height: ${({ $fullScreen }) => ($fullScreen ? '100vh' : 'auto')};
-  /* UpperSection inside should fill remaining space */
-  flex: ${({ $fullScreen }) => ($fullScreen ? '1' : '0 0 auto')};
 `;
 
 export const Section = styled.section`
@@ -39,7 +32,7 @@ export const Section = styled.section`
   width: 100%;
   min-height: auto;
   box-sizing: border-box;
-  gap: 1rem;
+  
 
   @media (max-width: 768px) {
     min-height: auto;
@@ -107,12 +100,6 @@ export const InteractiveCardsGrid = styled.div`
   width: 100%;
 `;
 
-export const LowerSection = styled(Section)`
-  gap: 3rem;
-  justify-content: center;
-  border-radius: 32px 32px 0 0;
-`;
-
 export const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -173,7 +160,6 @@ export const FlexContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
 `;
 
 export const IconWrapper = styled.span`

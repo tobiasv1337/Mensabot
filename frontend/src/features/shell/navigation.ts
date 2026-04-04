@@ -44,7 +44,7 @@ const BASE_ROUTES = Object.keys(PATH_TO_NAV)
 
 export const navItemFromPath = (pathname: string): NavItem | undefined => {
     if (Object.hasOwn(PATH_TO_NAV, pathname)) return PATH_TO_NAV[pathname];
-    
+
     let normalized = pathname;
     if (normalized !== "/" && normalized.endsWith("/")) {
         normalized = normalized.slice(0, -1);

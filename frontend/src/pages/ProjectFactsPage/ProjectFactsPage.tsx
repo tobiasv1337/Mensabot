@@ -37,6 +37,10 @@ import profileStefan from "@/assets/profilePictures/Stefan.jpg";
 const creatorImages: Record<number, string> = {
     0: profileTobias,
     1: profileJudith,
+    //2: profileMaximilian,
+    //3: profileNils,
+    //4: profileChristos,
+    //5: profileTamim,
     6: profileStefan,
 };
 
@@ -61,40 +65,49 @@ const ProjectFactsPage: React.FC = () => {
     const heroImage = theme.mode === 'dark' ? heroImageDark : heroImageLight;
     const LinkedInLogo = theme.mode === 'dark' ? LinkedInLogoWhite : LinkedInLogoBlack;
     const GitHubLogo = theme.mode === 'dark' ? GitHubLogoWhite : GitHubLogoBlack;
-    const { wrapperRef, lowerRef, isFullScreen, totalCanteens, totalCities } = useProjectStats(isOffline);
+    const { wrapperRef, isFullScreen, totalCanteens, totalCities } = useProjectStats(isOffline);
 
     // Data for the upper section cards
-    const facts = [
-        {
-            id: 1,
-            icon: <GraduationCapIcon />,
-            title: t('projectFacts.facts.studentProject.title'),
-            description: t('projectFacts.facts.studentProject.description')
-        },
-        {
-            id: 2,
-            icon: <MCPIcon />,
-            title: t('projectFacts.facts.mcp.title'),
-            description: t('projectFacts.facts.mcp.description')
-        },
-        {
-            id: 3,
-            icon: <OpenSourceIcon />,
-            title: t('projectFacts.facts.openSource.title'),
-            description: t('projectFacts.facts.openSource.description'),
-            action: {
+
+    const factsicon: Record<number, React.ReactNode> = {
+        0: <GraduationCapIcon />,
+        1: <MCPIcon />,
+        2: <OpenSourceIcon />,
+        3: <ShortcutsIcon />
+    };
+
+    interface FactAction {
+        icon: React.ReactNode;
+        label: string;
+        href: string;
+    }
+
+    interface FactItem {
+        id: number;
+        icon: React.ReactNode;
+        title: string;
+        description: string;
+        action?: FactAction;
+    }
+
+    const facts: FactItem[] = Array.from({ length: 4 }, (_, i) => {
+        const fact: FactItem = {
+            id: i + 1,
+            icon: factsicon[i],
+            title: t(`projectFacts.facts.${i}.title`),
+            description: t(`projectFacts.facts.${i}.description`)
+        };
+
+        if (i === 2) {
+            fact.action = {
                 icon: <GitHubLogo />,
                 label: t('projectFacts.githubButton'),
-                href: 'https://github.com/tobiasv1337/Mensabot',
-            },
-        },
-        {
-            id: 4,
-            icon: <ShortcutsIcon />,
-            title: t('projectFacts.facts.fastReliable.title'),
-            description: t('projectFacts.facts.fastReliable.description')
+                href: 'https://github.com/tobiasv1337/Mensabot'
+            };
         }
-    ];
+
+        return fact;
+    });
 
     const creators = Array.from({ length: 7 }, (_, i) => ({
         id: i + 1,
@@ -237,12 +250,12 @@ const ProjectFactsPage: React.FC = () => {
                                     <PS.CardIcon>{fact.icon}</PS.CardIcon>
                                     <PS.CardTitle>{fact.title}</PS.CardTitle>
                                     <PS.CardText>{fact.description}</PS.CardText>
-                                    {'action' in fact && fact.action && (
+                                    {fact.action && (
                                         <Button
                                             variant="default"
                                             iconLeft={fact.action.icon}
                                             text={fact.action.label}
-                                            onClick={() => { window.open(fact.action.href, '_blank'); }}
+                                            onClick={() => { window.open(fact.action?.href, '_blank'); }}
                                         />
                                     )}
                                 </S.StatCard>
@@ -250,6 +263,19 @@ const ProjectFactsPage: React.FC = () => {
                         </S.InteractiveCardsGrid>
                     </S.ContentColumn>
                 </S.UpperSection>
+                <S.StatsGrid>
+                    {stats.map((stat, index) => (
+                        <S.StatCard key={stat.id} style={{ animationDelay: `${0.2 + (index * 0.1)}s` }}>
+                            <S.FlexContainer>
+                                <S.IconWrapper>
+                                    {stat.icon}
+                                </S.IconWrapper>
+                                <S.Value>{stat.value}</S.Value>
+                            </S.FlexContainer>
+                            <S.StatLabel>{stat.label}</S.StatLabel>
+                        </S.StatCard>
+                    ))}
+                </S.StatsGrid>
             </S.ScreenWrapper>
 
             <S.ScreenWrapper ref={wrapperRef} $fullScreen={isFullScreen}>
@@ -345,26 +371,6 @@ const ProjectFactsPage: React.FC = () => {
                     </S.CarouselDots>
                 </S.CarouselSection>
             </S.ScreenWrapper>
-
-            <S.LowerSection ref={lowerRef}>
-                <P.HeroCard>
-                    <P.HeroEyebrow>{t('projectFacts.eyebrow')}</P.HeroEyebrow>
-                    <P.HeroTitle>{t('projectFacts.statsTitle')}</P.HeroTitle>
-                </P.HeroCard>
-                <S.StatsGrid>
-                    {stats.map((stat, index) => (
-                        <S.StatCard key={stat.id} style={{ animationDelay: `${0.2 + (index * 0.1)}s` }}>
-                            <S.FlexContainer>
-                                <S.IconWrapper>
-                                    {stat.icon}
-                                </S.IconWrapper>
-                                <S.Value>{stat.value}</S.Value>
-                            </S.FlexContainer>
-                            <S.StatLabel>{stat.label}</S.StatLabel>
-                        </S.StatCard>
-                    ))}
-                </S.StatsGrid>
-            </S.LowerSection>
         </S.PageContainer>
     );
 };
