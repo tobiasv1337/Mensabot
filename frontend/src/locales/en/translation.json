@@ -154,6 +154,13 @@
             "ytd": "This year",
             "total": "Total"
         },
+        "periodScopes": {
+            "today": "today",
+            "7d": "7d",
+            "30d": "30d",
+            "ytd": "this year",
+            "total": "all time"
+        },
         "status": {
             "eyebrow": "Project stats",
             "loadingTitle": "Building the analytics view",
@@ -181,22 +188,24 @@
         },
         "kpiMeta": {
             "activeUsers": "Unique users in {{period}}",
-            "messages": "{{llm}} LLM / {{quick}} quick lookup messages",
+            "messages": "{{llm}} LLM · {{quick}} quick · {{period}}",
             "sessions": "New sessions in {{period}}",
-            "toolCalls": "{{value}} success rate",
+            "toolCalls": "{{value}} success rate · {{period}}",
             "activeChats": "Unique chats with activity in {{period}}",
             "canteensExplored": "Unique canteens touched in {{period}}",
             "citiesExplored": "Unique cities reached in {{period}}",
             "voiceRequests": "Speech-to-text requests in {{period}}",
             "shortcuts": "Messages started from shortcuts in {{period}}",
             "toolSuccessRate": "Successful tool executions divided by all tool calls",
-            "toolSuccessRateInline": "Success rate: {{value}}",
+            "toolSuccessRateInline": "Success rate {{value}} · {{period}}",
             "avgToolCallsPerLlmTurn": "Average number of tool calls for each LLM interaction in the selected period",
-            "avgMessagesPerSession": "Average messages per session in the selected period",
+            "avgMessagesPerSession": "Per session · {{period}}",
             "canteenCoverage": "Share of {{total}} indexed canteens reached in this period"
         },
         "trend": {
             "empty": "No activity recorded yet.",
+            "overall": "Overall",
+            "overallInPeriod": "Overall in {{period}}",
             "controls": {
                 "activeUsers": "Active users",
                 "messages": "Messages",

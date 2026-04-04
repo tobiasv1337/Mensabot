@@ -154,6 +154,13 @@
             "ytd": "Dieses Jahr",
             "total": "Gesamt"
         },
+        "periodScopes": {
+            "today": "heute",
+            "7d": "7T",
+            "30d": "30T",
+            "ytd": "dieses Jahr",
+            "total": "gesamt"
+        },
         "status": {
             "eyebrow": "Projektstatistiken",
             "loadingTitle": "Analytics-Ansicht wird aufgebaut",
@@ -181,22 +188,24 @@
         },
         "kpiMeta": {
             "activeUsers": "Eindeutige Nutzer in {{period}}",
-            "messages": "{{llm}} LLM / {{quick}} Quick-Lookup-Nachrichten",
+            "messages": "LLM {{llm}} · Quick {{quick}} · {{period}}",
             "sessions": "Neue Sessions in {{period}}",
-            "toolCalls": "{{value}} Erfolgsquote",
+            "toolCalls": "{{value}} Erfolgsquote · {{period}}",
             "activeChats": "Eindeutige Chats mit Aktivität in {{period}}",
             "canteensExplored": "Eindeutige Mensen mit Aktivität in {{period}}",
             "citiesExplored": "Eindeutige Städte mit Aktivität in {{period}}",
             "voiceRequests": "Speech-to-Text-Anfragen in {{period}}",
             "shortcuts": "Über Shortcuts gestartete Nachrichten in {{period}}",
             "toolSuccessRate": "Erfolgreiche Tool-Ausführungen geteilt durch alle Tool-Aufrufe",
-            "toolSuccessRateInline": "Erfolgsquote: {{value}}",
+            "toolSuccessRateInline": "Erfolgsquote {{value}} · {{period}}",
             "avgToolCallsPerLlmTurn": "Durchschnittliche Anzahl an Tool-Aufrufen pro LLM-Interaktion im gewählten Zeitraum",
-            "avgMessagesPerSession": "Durchschnittliche Nachrichten pro Session im gewählten Zeitraum",
+            "avgMessagesPerSession": "Je Session · {{period}}",
             "canteenCoverage": "Anteil von {{total}} indexierten Mensen, die in diesem Zeitraum erreicht wurden"
         },
         "trend": {
             "empty": "Noch keine Aktivität erfasst.",
+            "overall": "Gesamt",
+            "overallInPeriod": "Gesamt für {{period}}",
             "controls": {
                 "activeUsers": "Aktive Nutzer",
                 "messages": "Nachrichten",

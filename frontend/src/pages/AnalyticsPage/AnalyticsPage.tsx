@@ -46,6 +46,7 @@ type TrendPanelProps = {
   subtitle: string;
   ariaLabel: string;
   emptyLabel: string;
+  overallLabel: string;
   points: ProjectStatsTrendPoint[];
   granularity: ProjectStatsTrendGranularity;
   series: TrendSeriesConfig[];
@@ -216,7 +217,7 @@ const LeaderboardCard = ({ title, subtitle, entries, emptyLabel, formatLabel, fo
   );
 };
 
-const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, points, granularity, series }) => {
+const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaLabel, emptyLabel, overallLabel, points, granularity, series }) => {
   const theme = useTheme();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -253,9 +254,9 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
   const areaPath = areaCoordinates.length > 1
     ? `M ${areaCoordinates[0].x} ${chartPadding.top + chartInnerHeight} L ${areaCoordinates.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${areaCoordinates[areaCoordinates.length - 1].x} ${chartPadding.top + chartInnerHeight} Z`
     : "";
-  const activeIndex = hoveredIndex ?? points.length - 1;
-  const activePoint = activeIndex >= 0 ? (points[activeIndex] ?? null) : null;
-  const activeX = activeIndex >= 0 ? (xPositions[activeIndex] ?? null) : null;
+  const activeIndex = hoveredIndex;
+  const activePoint = activeIndex !== null ? (points[activeIndex] ?? null) : null;
+  const activeX = activeIndex !== null ? (xPositions[activeIndex] ?? null) : null;
   const yAxisValues = Array.from(new Set([scaleMax, Math.round(scaleMax / 2), 0])).sort((a, b) => b - a);
   const xAxisIndices = Array.from(new Set([0, Math.max(0, Math.floor((xPositions.length - 1) / 2)), Math.max(0, xPositions.length - 1)]));
   const hoverZones = xPositions.map((x, index) => {
@@ -263,6 +264,10 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
     const right = index === xPositions.length - 1 ? chartWidth - chartPadding.right : (x + xPositions[index + 1]) / 2;
     return { index, x: left, width: right - left };
   });
+  const footerValues = series.map((item) => ({
+    ...item,
+    value: activePoint ? getTrendValue(activePoint, item.key) : sumTrendMetric(points, item.key),
+  }));
 
   return (
     <S.Panel>
@@ -318,7 +323,7 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
                 item.linePath ? <path key={item.key} d={item.linePath} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /> : null
               ))}
               {seriesPaths.map((item) => {
-                const coordinate = activeIndex >= 0 ? (item.coordinates[activeIndex] ?? null) : null;
+                const coordinate = activeIndex !== null ? (item.coordinates[activeIndex] ?? null) : null;
                 if (!coordinate) return null;
 
                 return (
@@ -365,14 +370,14 @@ const TrendPanel: React.FC<TrendPanelProps> = ({ eyebrow, title, subtitle, ariaL
       )}
 
       <S.TrendFooter>
-        <span>{activePoint ? formatBucketDetailLabel(activePoint.bucket_start, granularity) : emptyLabel}</span>
-        {activePoint ? (
+        <span>{activePoint ? formatBucketDetailLabel(activePoint.bucket_start, granularity) : (hasData ? overallLabel : emptyLabel)}</span>
+        {hasData ? (
           <S.TrendFooterValues>
-            {series.map((item) => (
+            {footerValues.map((item) => (
               <S.TrendFooterValue key={`${item.key}-footer`}>
                 <S.TrendLegendDot $color={item.color} />
                 <span>{item.label}</span>
-                <strong>{formatCount(getTrendValue(activePoint, item.key))}</strong>
+                <strong>{formatCount(item.value)}</strong>
               </S.TrendFooterValue>
             ))}
           </S.TrendFooterValues>
@@ -392,6 +397,8 @@ const AnalyticsPage: React.FC = () => {
 
   const periodStats = stats?.periods[selectedPeriod] ?? null;
   const periodLabel = t(`analytics.periods.${selectedPeriod}`);
+  const periodScopeLabel = t(`analytics.periodScopes.${selectedPeriod}`);
+  const trendOverallLabel = selectedPeriod === "total" ? t("analytics.trend.overall") : t("analytics.trend.overallInPeriod", { period: periodLabel });
   const interactionShare = (periodStats?.shares.interaction_types ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
   const originShare = (periodStats?.shares.message_origins ?? []).map((item) => ({ ...item, label: getShareLabel(item.id, item.label, t) }));
   const dietShare = (periodStats?.shares.diet_filters ?? [])
@@ -446,7 +453,7 @@ const AnalyticsPage: React.FC = () => {
       icon: <ChatIcon />,
       label: t("analytics.kpis.messages"),
       value: formatCompact(periodStats.summary.messages),
-      meta: t("analytics.kpiMeta.messages", { llm: formatCompact(totalLlmMessages), quick: formatCompact(totalQuickLookupMessages) }),
+      meta: t("analytics.kpiMeta.messages", { llm: formatCompact(totalLlmMessages), quick: formatCompact(totalQuickLookupMessages), period: periodScopeLabel }),
     },
     {
       id: "sessions",
@@ -460,7 +467,7 @@ const AnalyticsPage: React.FC = () => {
       icon: <MCPIcon />,
       label: t("analytics.kpis.toolCalls"),
       value: formatCompact(periodStats.summary.tool_calls),
-      meta: t("analytics.kpiMeta.toolCalls", { value: formatPercent(periodStats.summary.tool_success_rate) }),
+      meta: t("analytics.kpiMeta.toolCalls", { value: formatPercent(periodStats.summary.tool_success_rate), period: periodScopeLabel }),
     },
     {
       id: "active-chats",
@@ -507,6 +514,7 @@ const AnalyticsPage: React.FC = () => {
       title: t("analytics.kpis.avgToolCallsPerLlmTurn"),
       meta: t("analytics.kpiMeta.toolSuccessRateInline", {
         value: formatPercent(periodStats.summary.tool_success_rate),
+        period: periodScopeLabel,
       }),
     },
     {
@@ -514,7 +522,7 @@ const AnalyticsPage: React.FC = () => {
       icon: <AnalyticsIcon />,
       value: formatDecimal(periodStats.summary.average_messages_per_session),
       title: t("analytics.kpis.avgMessagesPerSession"),
-      meta: t("analytics.kpiMeta.avgMessagesPerSession"),
+      meta: t("analytics.kpiMeta.avgMessagesPerSession", { period: periodScopeLabel }),
     },
     {
       id: "canteen-coverage",
@@ -600,6 +608,7 @@ const AnalyticsPage: React.FC = () => {
               subtitle={t("analytics.trend.reach.subtitle", { period: periodLabel })}
               ariaLabel={t("analytics.trend.reach.ariaLabel")}
               emptyLabel={t("analytics.trend.empty")}
+              overallLabel={trendOverallLabel}
               points={trendPoints}
               granularity={trendGranularity}
               series={reachSeries}
@@ -610,6 +619,7 @@ const AnalyticsPage: React.FC = () => {
               subtitle={t("analytics.trend.behavior.subtitle", { period: periodLabel })}
               ariaLabel={t("analytics.trend.behavior.ariaLabel")}
               emptyLabel={t("analytics.trend.empty")}
+              overallLabel={trendOverallLabel}
               points={trendPoints}
               granularity={trendGranularity}
               series={behaviorSeries}
@@ -641,7 +651,7 @@ const AnalyticsPage: React.FC = () => {
                   {peakHeatmapCell.count > 0 ? t("analytics.heatmap.tooltip", { value: formatCount(peakHeatmapCell.count) }) : t("analytics.trend.empty")}
                 </S.HeatmapTooltip>
               </S.HeatmapMeta>
-              <S.HeatmapGridWrap>
+              <S.HeatmapGridWrap onMouseLeave={() => setActiveHeatmapKey(null)}>
                 <S.HeatmapMatrix>
                   <S.HeatmapHours>
                     {Array.from({ length: 24 }, (_, hour) => (
@@ -674,6 +684,7 @@ const AnalyticsPage: React.FC = () => {
                             aria-pressed={isActive}
                             onMouseEnter={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
                             onFocus={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
+                            onBlur={() => setActiveHeatmapKey(null)}
                             onClick={() => setActiveHeatmapKey(`${weekday}-${hour}`)}
                           />
                         );
