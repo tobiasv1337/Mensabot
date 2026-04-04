@@ -9,7 +9,18 @@ declare let self: ServiceWorkerGlobalScope
 
 const OFFLINE_URL = '/offline.html'
 const APP_SHELL_URL = '/index.html'
-const RUNTIME_CACHE_NAME = 'mensabot-runtime-v1'
+const RUNTIME_CACHE_PREFIX = 'mensabot-runtime-'
+const RUNTIME_CACHE_NAME = `${RUNTIME_CACHE_PREFIX}v2`
+
+const deleteOutdatedRuntimeCaches = async () => {
+  const cacheNames = await caches.keys()
+
+  await Promise.all(
+    cacheNames
+      .filter((cacheName) => cacheName.startsWith(RUNTIME_CACHE_PREFIX) && cacheName !== RUNTIME_CACHE_NAME)
+      .map((cacheName) => caches.delete(cacheName)),
+  )
+}
 
 self.skipWaiting()
 clientsClaim()
@@ -18,7 +29,12 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.registration.navigationPreload?.enable())
+  event.waitUntil(
+    Promise.all([
+      self.registration.navigationPreload?.enable(),
+      deleteOutdatedRuntimeCaches(),
+    ]),
+  )
 })
 
 registerRoute(

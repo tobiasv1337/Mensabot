@@ -239,11 +239,18 @@ select_repository_ref() {
 
 checkout_selected_ref() {
     if [ "$SELECTED_REF_TYPE" = "branch" ]; then
+        if ! git show-ref --verify --quiet "refs/remotes/origin/$SELECTED_REF"; then
+            error "Remote branch 'origin/$SELECTED_REF' was not found after fetch."
+        fi
+
         if git show-ref --verify --quiet "refs/heads/$SELECTED_REF"; then
             git checkout "$SELECTED_REF"
         else
-            git checkout -b "$SELECTED_REF" --track "origin/$SELECTED_REF"
+            git checkout --no-track -b "$SELECTED_REF" "refs/remotes/origin/$SELECTED_REF"
         fi
+
+        git config "branch.$SELECTED_REF.remote" origin
+        git config "branch.$SELECTED_REF.merge" "refs/heads/$SELECTED_REF"
         git pull --ff-only origin "$SELECTED_REF"
     else
         git checkout "$SELECTED_REF"
