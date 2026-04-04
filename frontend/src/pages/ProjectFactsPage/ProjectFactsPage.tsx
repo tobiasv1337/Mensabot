@@ -129,6 +129,11 @@ const ProjectFactsPage: React.FC = () => {
     const viewportRef = useRef<HTMLDivElement>(null);
     const [visibleCount, setVisibleCount] = useState(3);
 
+    // Drag states
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState(0);
+    const startXRef = useRef<number | null>(null);
+
     // Responsively determine how many cards to show
     useEffect(() => {
         const update = () => {
@@ -180,7 +185,36 @@ const ProjectFactsPage: React.FC = () => {
         const viewportWidth = viewportRef.current.offsetWidth;
         const gap = 24; // 1.5rem = 24px
         const cardWidth = (viewportWidth - gap * (visibleCount - 1)) / visibleCount;
-        return -(carouselIndex * (cardWidth + gap));
+        return -(carouselIndex * (cardWidth + gap)) + dragOffset;
+    };
+
+    // Drag handlers
+    const handleDragStart = (clientX: number) => {
+        setIsTransitioning(false);
+        setIsDragging(true);
+        startXRef.current = clientX;
+    };
+
+    const handleDragMove = (clientX: number) => {
+        if (!isDragging || startXRef.current === null) return;
+        setDragOffset(clientX - startXRef.current);
+    };
+
+    const handleDragEnd = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        setIsTransitioning(true);
+
+        const threshold = 50;
+
+        if (dragOffset > threshold) {
+            goLeft();
+        } else if (dragOffset < -threshold) {
+            goRight();
+        }
+
+        setDragOffset(0);
+        startXRef.current = null;
     };
 
     return (
@@ -231,7 +265,18 @@ const ProjectFactsPage: React.FC = () => {
                         <ChevronLeft />
                     </S.CarouselArrow>
 
-                    <S.CarouselViewport ref={viewportRef}>
+                    <S.CarouselViewport
+                        ref={viewportRef}
+                        $isDragging={isDragging}
+                        onMouseDown={(e) => handleDragStart(e.clientX)}
+                        onMouseMove={(e) => handleDragMove(e.clientX)}
+                        onMouseUp={handleDragEnd}
+                        onMouseLeave={handleDragEnd}
+                        onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+                        onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
+                        onTouchEnd={handleDragEnd}
+                        onDragStart={(e) => e.preventDefault()}
+                    >
                         <S.CarouselTrack
                             $offset={getOffset()}
                             $isTransitioning={isTransitioning}
