@@ -18,6 +18,7 @@
 import i18n from "@/app/i18n";
 import { streamChatResponse, type ChatStreamEvent } from "@/features/chat/model/chatStream";
 import type { ChatFilters, ChatRequestMessage } from "@/features/chat/model/chatTypes";
+import type { ChatAnalyticsPayload } from "@/shared/analytics/requestMeta";
 
 export type ToolCallTrace = {
 	id?: string;
@@ -134,12 +135,98 @@ export type TranscribeResponse = {
 	duration_s?: number;
 };
 
+export type ProjectStatsPeriodKey = "today" | "7d" | "30d" | "ytd" | "total";
+export type ProjectStatsTrendGranularity = "hour" | "day";
+
+export type ProjectStatsSummary = {
+	active_users: number;
+	messages: number;
+	sessions: number;
+	tool_calls: number;
+	active_chats: number;
+	distinct_canteens: number;
+	distinct_cities: number;
+	transcribe_requests: number;
+	shortcut_messages: number;
+	tool_success_rate: number;
+	average_messages_per_session: number;
+	average_tool_calls_per_llm_turn: number;
+};
+
+export type ProjectStatsShare = {
+	id: string;
+	label: string;
+	value: number;
+};
+
+export type ProjectStatsTrendPoint = {
+	bucket_start: string;
+	active_users: number;
+	messages: number;
+	llm_messages: number;
+	quick_lookup_messages: number;
+	interactions: number;
+	sessions: number;
+	shortcut_messages: number;
+	tool_calls: number;
+	transcribe_requests: number;
+};
+
+export type ProjectStatsHeatmapCell = {
+	weekday: number;
+	hour: number;
+	count: number;
+};
+
+export type ProjectStatsLeaderboardEntry = {
+	key: string;
+	label: string;
+	count: number;
+	city?: string;
+	id?: number;
+};
+
+export type ProjectStatsPeriod = {
+	summary: ProjectStatsSummary;
+	shares: {
+		interaction_types: ProjectStatsShare[];
+		message_origins: ProjectStatsShare[];
+		diet_filters: ProjectStatsShare[];
+	};
+	trend: {
+		granularity: ProjectStatsTrendGranularity;
+		points: ProjectStatsTrendPoint[];
+	};
+	heatmap: ProjectStatsHeatmapCell[];
+	leaderboards: {
+		cities: ProjectStatsLeaderboardEntry[];
+		canteens: ProjectStatsLeaderboardEntry[];
+		tools: ProjectStatsLeaderboardEntry[];
+		filters: ProjectStatsLeaderboardEntry[];
+	};
+};
+
+export type ProjectStatsResponse = {
+	updated_at: string;
+	timezone: string;
+	availability: {
+		total_canteens: number;
+		total_cities: number;
+	};
+	periods: Record<ProjectStatsPeriodKey, ProjectStatsPeriod>;
+};
+
 type SendMessagesOptions = {
 	includeToolCalls?: boolean;
 	filters?: ChatFilters;
 	judgeCorrection?: boolean;
 	onStreamEvent?: (event: ChatStreamEvent) => void;
 	onStreamFallback?: () => void;
+	analytics?: ChatAnalyticsPayload;
+};
+
+type RequestOptions = {
+	analyticsHeaders?: Record<string, string>;
 };
 
 export class MensaBotClient {
@@ -169,6 +256,10 @@ export class MensaBotClient {
 				canteens: filters.canteens.map((c) => ({ id: c.id, name: c.name })),
 				price_category: filters.priceCategory,
 			};
+		}
+
+		if (options.analytics) {
+			body.analytics = options.analytics;
 		}
 
 		return body;
@@ -208,7 +299,7 @@ export class MensaBotClient {
 		throw new Error("Unexpected chat API response shape");
 	}
 
-	private async getJson(path: string, params?: URLSearchParams): Promise<unknown> {
+	private async getJson(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<unknown> {
 		const queryString = params?.toString();
 		const url = this.baseUrl + path + (queryString ? `?${queryString}` : "");
 
@@ -216,6 +307,7 @@ export class MensaBotClient {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
+				...(options.analyticsHeaders ?? {}),
 			},
 		});
 
@@ -331,19 +423,20 @@ export class MensaBotClient {
 		return response as CanteenSearchResponse;
 	}
 
-	async getCanteenInfo(canteenId: number): Promise<Canteen> {
-		const response = await this.getJson(`/canteens/${canteenId}`);
+	async getCanteenInfo(canteenId: number, options: RequestOptions = {}): Promise<Canteen> {
+		const response = await this.getJson(`/canteens/${canteenId}`, undefined, options);
 		return response as Canteen;
 	}
 
-	async getCanteenOpeningHours(canteenId: number): Promise<CanteenOpeningHoursResponse> {
-		const response = await this.getJson(`/canteens/${canteenId}/opening-hours`);
+	async getCanteenOpeningHours(canteenId: number, options: RequestOptions = {}): Promise<CanteenOpeningHoursResponse> {
+		const response = await this.getJson(`/canteens/${canteenId}/opening-hours`, undefined, options);
 		return response as CanteenOpeningHoursResponse;
 	}
 
 	async getCanteenMenu(
 		canteenId: number,
-		params: { date?: string; dietFilter?: MenuDietFilter; excludeAllergens?: string[]; priceCategory?: PriceCategory } = {}
+		params: { date?: string; dietFilter?: MenuDietFilter; excludeAllergens?: string[]; priceCategory?: PriceCategory } = {},
+		options: RequestOptions = {},
 	): Promise<MenuResponse> {
 		const searchParams = new URLSearchParams();
 		if (params.date) searchParams.set("date", params.date);
@@ -353,7 +446,12 @@ export class MensaBotClient {
 		}
 		if (params.priceCategory) searchParams.set("price_category", params.priceCategory);
 
-		const response = await this.getJson(`/canteens/${canteenId}/menu`, searchParams);
+		const response = await this.getJson(`/canteens/${canteenId}/menu`, searchParams, options);
 		return response as MenuResponse;
+	}
+
+	async getProjectStats(): Promise<ProjectStatsResponse> {
+		const response = await this.getJson("/project-stats");
+		return response as ProjectStatsResponse;
 	}
 }

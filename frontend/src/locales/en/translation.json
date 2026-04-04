@@ -4,7 +4,8 @@
         "chatbot": "Chatbot",
         "canteens": "Canteens",
         "map": "Map",
-        "projectFacts": "About",
+        "about": "About",
+        "analytics": "Analytics",
         "legalNotice": "Legal Notice",
         "shortcuts": "Shortcuts",
         "settings": "Settings"
@@ -59,34 +60,241 @@
             }
         }
     },
-    "projectFacts": {
+    "about": {
         "eyebrow": "Project Insights",
         "title": "Behind the Bot",
         "githubButton": "View on GitHub",
         "facts": {
-            "studentProject": {
+            "0": {
                 "title": "Student Project",
-                "description": "Developed by students for students, aiming to improve the campus dining experience."
+                "description": "Developed by students for students and staff, aiming to improve the campus dining experience."
             },
-            "mcp": {
+            "1": {
                 "title": "Smart Data Retrieval via MCP",
                 "description": "Uses the MCP standard to provide accurate and helpful responses about canteen menus."
             },
-            "openSource": {
+            "2": {
                 "title": "Open Source",
                 "description": "Built with modern technologies and completely open source for community contributions."
             },
-            "fastReliable": {
+            "3": {
                 "title": "Fast & Reliable",
                 "description": "Optimized for speed to give you the information you need in seconds."
             }
         },
-        "statsTitle": "Project Statistics",
         "imageAlt": "MensaBot Project Visualization",
         "stats": {
             "cities": "Cities",
             "mensen": "Canteens",
             "stars": "Stars"
+        },
+        "creatorTitle": "Meet the Team",
+        "creators": {
+            "0": {
+                "name": "Tobias Veselsky",
+                "role": "Full-Stack Developer, AI Systems Architect & Technical Lead",
+                "description": "Full-Stack & Architecture, agentic LLM workflows, MCP tooling, backend services, API and tooling interfaces, CI/CD pipelines, and major frontend features including the final chat interface, streamed tool data and product integration.",
+                "github": "https://github.com/tobiasv1337",
+                "linkedin": "https://de.linkedin.com/in/tobias-veselsky"
+            },
+            "1": {
+                "name": "Judith Bucher",
+                "role": "Frontend Developer & Design Systems Engineer",
+                "description": "Led the design and key frontend features of the application, including routing, multilingual support, central reusable design components, theming, and visual consistency across the entire product, while also contributing to product polish and project coordination.",
+                "github": "https://github.com/jbucher99",
+                "linkedin": "https://de.linkedin.com/in/judith-bucher"
+            },
+            "2": {
+                "name": "Maximilian Krupper",
+                "role": "Frontend Developer & Layout Engineer",
+                "description": "Built core UI foundations including the header, sidebar, reusable design components, and early chat page layout that established the application’s structural interface.",
+                "github": "https://github.com/maximiliankrupper",
+                "linkedin": "https://www.linkedin.com/in/maximilian-krupper-0a4a3339b"
+            },
+            "3": {
+                "name": "Nils Herbig",
+                "role": "Design, User Research, Evaluation & Scientific Communication",
+                "description": "Planned and evaluated multiple user studies, contributed significantly to the project paper, and helped communicate the project clearly through presentations and research documentation.",
+                "github": "",
+                "linkedin": ""
+            },
+            "4": {
+                "name": "Christos Labroussis",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Co-developed data acquisition for STW Berlin and additional canteens, and designed an exploratory chat interface concept during early product iteration.",
+                "github": "",
+                "linkedin": ""
+            },
+            "5": {
+                "name": "Tamim Ayach",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Co-developed data acquisition for STW Berlin and additional canteens, and designed an exploratory chat interface concept during early product iteration.",
+                "github": "",
+                "linkedin": ""
+            },
+            "6": {
+                "name": "Dr.-Ing. Stefan Hillmann",
+                "role": "Academic Supervisor",
+                "description": "Supported the project as academic supervisor at TU Berlin, providing methodological guidance, feedback, and oversight throughout development, evaluation, and documentation.",
+                "github": "https://github.com/stefanhillmann",
+                "linkedin": ""
+            }
+        }
+    },
+    "analytics": {
+        "eyebrow": "Analytics",
+        "title": "MensaBot Analytics",
+        "subtitle": "Period-based usage analytics for messages, sessions, filters, tools, and explored canteens.",
+        "heroMeta": "The dashboard will appear once the first tracked events have been stored.",
+        "context": "Showing {{period}} · Updated {{updated}} · {{timezone}}",
+        "periods": {
+            "today": "Today",
+            "7d": "7d",
+            "30d": "30d",
+            "ytd": "This year",
+            "total": "Total"
+        },
+        "periodScopes": {
+            "today": "today",
+            "7d": "7d",
+            "30d": "30d",
+            "ytd": "this year",
+            "total": "all time"
+        },
+        "status": {
+            "eyebrow": "Project stats",
+            "loadingTitle": "Building the analytics view",
+            "loadingBody": "The project stats endpoint is responding and the dashboard is assembling the latest aggregates.",
+            "offlineTitle": "Analytics are unavailable offline",
+            "offlineBody": "Reconnect to load the live project statistics.",
+            "errorTitle": "Analytics could not be loaded",
+            "errorBody": "The project stats endpoint did not return usable analytics data.",
+            "waiting": "Analytics are waiting for the first tracked events."
+        },
+        "kpis": {
+            "activeUsers": "Active users",
+            "messages": "Messages",
+            "sessions": "Sessions",
+            "toolCalls": "Tool calls",
+            "activeChats": "Active chats",
+            "canteensExplored": "Canteens explored",
+            "citiesExplored": "Cities explored",
+            "transcribe": "Voice requests",
+            "shortcuts": "Shortcut starts",
+            "toolSuccessRate": "Tool success rate",
+            "avgToolCallsPerLlmTurn": "Avg tool calls / LLM turn",
+            "avgMessagesPerSession": "Avg messages / session",
+            "canteenCoverage": "Canteen coverage"
+        },
+        "kpiMeta": {
+            "activeUsers": "Unique users in {{period}}",
+            "messages": "{{llm}} LLM · {{quick}} quick · {{period}}",
+            "sessions": "New sessions in {{period}}",
+            "toolCalls": "{{value}} success rate · {{period}}",
+            "activeChats": "Unique chats with activity in {{period}}",
+            "canteensExplored": "Unique canteens touched in {{period}}",
+            "citiesExplored": "Unique cities reached in {{period}}",
+            "voiceRequests": "Speech-to-text requests in {{period}}",
+            "shortcuts": "Messages started from shortcuts in {{period}}",
+            "toolSuccessRate": "Successful tool executions divided by all tool calls",
+            "toolSuccessRateInline": "Success rate {{value}} · {{period}}",
+            "avgToolCallsPerLlmTurn": "Average number of tool calls for each LLM interaction in the selected period",
+            "avgMessagesPerSession": "Per session · {{period}}",
+            "canteenCoverage": "Share of {{total}} indexed canteens reached in this period"
+        },
+        "trend": {
+            "empty": "No activity recorded yet.",
+            "overall": "Overall",
+            "overallInPeriod": "Overall in {{period}}",
+            "controls": {
+                "activeUsers": "Active users",
+                "messages": "Messages",
+                "interactions": "Interactions",
+                "sessions": "Sessions",
+                "llm": "LLM",
+                "quickLookup": "Quick",
+                "shortcuts": "Shortcuts",
+                "tools": "Tools",
+                "voice": "Voice"
+            },
+            "reach": {
+                "eyebrow": "Reach",
+                "title": "Reach trend",
+                "subtitle": "Unique users, sessions, messages, and interactions for {{period}}.",
+                "ariaLabel": "Reach chart"
+            },
+            "behavior": {
+                "eyebrow": "Behavior",
+                "title": "Behavior trend",
+                "subtitle": "LLM, quick lookup, shortcuts, and voice usage for {{period}}.",
+                "ariaLabel": "Behavior chart"
+            }
+        },
+        "share": {
+            "interactions": {
+                "title": "LLM vs quick lookup",
+                "subtitle": "Interaction split for {{period}} between full chat turns and direct lookups.",
+                "total": "Interaction mix"
+            },
+            "origins": {
+                "title": "Voice vs typed vs shortcut",
+                "subtitle": "How real messages started in {{period}}, not just raw transcription attempts.",
+                "total": "Message origin"
+            },
+            "diets": {
+                "title": "Effective diet filter mix",
+                "subtitle": "Applied diet filters in {{period}}, including requests without a diet filter.",
+                "total": "Effective diet filters"
+            }
+        },
+        "heatmap": {
+            "eyebrow": "Rhythm",
+            "title": "Weekly activity by local time",
+            "subtitle": "Interaction density from {{period}}, aggregated in {{timezone}}.",
+            "selectedSlot": "Selected slot",
+            "tooltip": "{{value}} tracked interactions in this slot",
+            "peakSlot": "Peak slot",
+            "cellAriaLabel": "{{weekday}} {{hour}}, {{value}} interactions in {{period}} ({{timezone}}).",
+            "weekdays": {
+                "mon": "Mon",
+                "tue": "Tue",
+                "wed": "Wed",
+                "thu": "Thu",
+                "fri": "Fri",
+                "sat": "Sat",
+                "sun": "Sun"
+            }
+        },
+        "leaderboards": {
+            "empty": "No leaderboard data yet.",
+            "cities": {
+                "eyebrow": "Cities",
+                "title": "Top cities in {{period}}"
+            },
+            "canteens": {
+                "eyebrow": "Canteens",
+                "title": "Top canteens in {{period}}"
+            },
+            "tools": {
+                "eyebrow": "Tools",
+                "title": "Top tools in {{period}}"
+            },
+            "filters": {
+                "eyebrow": "Filters",
+                "title": "Top filters in {{period}}"
+            }
+        },
+        "labels": {
+            "llmChat": "LLM Chat",
+            "quickLookup": "Quick Lookup",
+            "typed": "Typed",
+            "voice": "Voice",
+            "shortcut": "Shortcut",
+            "noFilter": "No Filter",
+            "noDietFilter": "No Diet Filter",
+            "vegetarian": "Vegetarian",
+            "vegan": "Vegan",
+            "meat": "Meat"
         }
     },
     "canteens": {
@@ -377,7 +585,7 @@
         },
         "onboarding": {
             "welcome": "Hi! 👋 I'm **MensaBot** - your smart canteen assistant.",
-            "dataNotice": "MensaBot is a **university research project**. User data may be collected and logged for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
+            "dataNotice": "MensaBot is a **university research project**. User data, including **anonymized analytics data**, may be collected, logged and published for evaluation purposes. For questions about data collection, please use the contact in the **Legal Notice**.",
             "dataAccept": "Understood & Accept",
             "priceCategorySelect": "Are you a **student**, **employee**, **pupil** or **guest**? This helps me show you the right prices.",
             "priceCategoryNo": "Skip",

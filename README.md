@@ -296,7 +296,7 @@ Persistent volumes:
 ## Versioning and CI
 
 - [`VERSION`](VERSION) is the single source of truth for the project version.
-- `backend/scripts/sync_versions.py` propagates that version into selected package manifests and frontend metadata.
+- `backend/scripts/sync_versions.py` propagates that version into package manifests, refreshes backend `uv.lock` and `.venv` state, and rebuilds the frontend.
 - GitHub Actions currently cover frontend builds, backend package sync and compile checks, optional `pytest` runs when a package has tests, and an API healthcheck.
 
 ## Related README Files

@@ -4,7 +4,8 @@
         "chatbot": "Chatbot",
         "canteens": "Mensen",
         "map": "Karte",
-        "projectFacts": "Über uns/Fakten",
+        "about": "Über",
+        "analytics": "Analytics",
         "legalNotice": "Impressum",
         "shortcuts": "Shortcuts",
         "settings": "Einstellungen"
@@ -59,34 +60,241 @@
             }
         }
     },
-    "projectFacts": {
+    "about": {
         "eyebrow": "Projekt Einblicke",
-        "title": "Hinter dem Bot",
+        "title": "Projektstatistiken",
         "githubButton": "Auf GitHub ansehen",
         "facts": {
-            "studentProject": {
+            "0": {
                 "title": "Studentenprojekt",
-                "description": "Von Studenten für Studenten entwickelt, um das Mensa-Erlebnis zu verbessern."
+                "description": "Von Studierenden für Studierende und Mitarbeiter entwickelt, um das Mensa-Erlebnis zu verbessern."
             },
-            "mcp": {
+            "1": {
                 "title": "Smart Data Retrieval via MCP",
                 "description": "Nutzt den MCP Standard, um präzise und hilfreiche Antworten zu Mensa-Menüs zu geben."
             },
-            "openSource": {
+            "2": {
                 "title": "Open Source",
                 "description": "Mit modernen Technologien erstellt und komplett Open Source für Community-Beiträge."
             },
-            "fastReliable": {
+            "3": {
                 "title": "Schnell & Zuverlässig",
                 "description": "Optimiert für Geschwindigkeit, damit du die Informationen in Sekunden erhältst."
             }
         },
         "imageAlt": "MensaBot Projekt Visualisierung",
-        "statsTitle": "Projekt Statistiken",
         "stats": {
             "cities": "Städte",
             "mensen": "Mensen",
             "stars": "Sterne"
+        },
+        "creatorTitle": "Mensabot-Team",
+        "creators": {
+            "0": {
+                "name": "Tobias Veselsky",
+                "role": "Full-Stack Developer, AI Systems Architect & Technical Lead",
+                "description": "Full-Stack-Entwicklung und Systemarchitektur, agentische LLM-Workflows, MCP-Tooling, Backend-Services, API- und Tooling-Schnittstellen, CI/CD-Pipelines sowie zentrale Frontend-Features einschließlich der finalen Chat-Oberfläche, gestreamter Tool-Daten und Produktintegration.",
+                "github": "https://github.com/tobiasv1337",
+                "linkedin": "https://de.linkedin.com/in/tobias-veselsky"
+            },
+            "1": {
+                "name": "Judith Bucher",
+                "role": "Frontend Developer & Design Systems Engineer",
+                "description": "Entwicklung von Design und zentraler Frontend-Funktionen, wie Routing, Mehrsprachigkeit, zentraler wiederverwendbarer Designkomponenten, Theming und visuelle Konsistenz der gesamten Anwendung sowie Produkt-Feinschliff und Projektkoordination.",
+                "github": "https://github.com/jbucher99",
+                "linkedin": "https://de.linkedin.com/in/judith-bucher"
+            },
+            "2": {
+                "name": "Maximilian Krupper",
+                "role": "Frontend Developer & Layout Engineer",
+                "description": "Aufbau grundlegender UI-Strukturen einschließlich Header, Sidebar, wiederverwendbarer Designkomponenten und des initialen Chat-Seitenlayouts, das die strukturelle Oberfläche der Anwendung definiert hat.",
+                "github": "https://github.com/maximiliankrupper",
+                "linkedin": "https://www.linkedin.com/in/maximilian-krupper-0a4a3339b"
+            },
+            "3": {
+                "name": "Nils Herbig",
+                "role": "Design, User Research, Evaluation & Scientific Communication",
+                "description": "Planung und Auswertung mehrerer Nutzerstudien, maßgebliche Beiträge zur Projektdokumentation sowie Unterstützung bei der klaren Vermittlung des Projekts durch Präsentationen und wissenschaftliche Aufbereitung.",
+                "github": "",
+                "linkedin": ""
+            },
+            "4": {
+                "name": "Christos Labroussis",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Verantwortlich für die Datenerfassung für das STW Berlin und weitere Mensen sowie den Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
+                "github": "",
+                "linkedin": ""
+            },
+            "5": {
+                "name": "Tamim Ayach",
+                "role": "Data Acquisition & UX Prototyping",
+                "description": "Verantwortlich für die Datenerfassung für das STW Berlin und weitere Mensen sowie den Entwurf eines explorativen Chat-Interface-Konzepts in einer frühen Produktphase.",
+                "github": "",
+                "linkedin": ""
+            },
+            "6": {
+                "name": "Dr.-Ing. Stefan Hillmann",
+                "role": "Academic Supervisor",
+                "description": "Begleitung des Projekts als akademischer Betreuer an der TU Berlin mit methodischer Unterstützung, Feedback und fachlicher Aufsicht während Entwicklung, Evaluation und Dokumentation.",
+                "github": "https://github.com/stefanhillmann",
+                "linkedin": ""
+            }
+        }
+    },
+    "analytics": {
+        "eyebrow": "Analytics",
+        "title": "MensaBot Analytics",
+        "subtitle": "Zeitraumbezogene Nutzungsanalysen zu Nachrichten, Sessions, Filtern, Tools und erkundeten Mensen.",
+        "heroMeta": "Das Dashboard erscheint, sobald die ersten getrackten Events gespeichert wurden.",
+        "context": "Zeitraum {{period}} · Aktualisiert {{updated}} · {{timezone}}",
+        "periods": {
+            "today": "Heute",
+            "7d": "7T",
+            "30d": "30T",
+            "ytd": "Dieses Jahr",
+            "total": "Gesamt"
+        },
+        "periodScopes": {
+            "today": "heute",
+            "7d": "7T",
+            "30d": "30T",
+            "ytd": "dieses Jahr",
+            "total": "gesamt"
+        },
+        "status": {
+            "eyebrow": "Projektstatistiken",
+            "loadingTitle": "Analytics-Ansicht wird aufgebaut",
+            "loadingBody": "Der Projekt-Stats-Endpunkt antwortet und das Dashboard setzt die neuesten Aggregate zusammen.",
+            "offlineTitle": "Analytics sind offline nicht verfügbar",
+            "offlineBody": "Verbinde dich erneut, um die Live-Projektstatistiken zu laden.",
+            "errorTitle": "Analytics konnten nicht geladen werden",
+            "errorBody": "Der Projekt-Stats-Endpunkt hat keine nutzbaren Analytics-Daten geliefert.",
+            "waiting": "Die Analytics warten noch auf die ersten getrackten Events."
+        },
+        "kpis": {
+            "activeUsers": "Aktive Nutzer",
+            "messages": "Nachrichten",
+            "sessions": "Sessions",
+            "toolCalls": "Tool-Aufrufe",
+            "activeChats": "Aktive Chats",
+            "canteensExplored": "Erkundete Mensen",
+            "citiesExplored": "Erkundete Städte",
+            "transcribe": "Voice-Anfragen",
+            "shortcuts": "Shortcut-Starts",
+            "toolSuccessRate": "Tool-Erfolgsquote",
+            "avgToolCallsPerLlmTurn": "Tool-Aufrufe / LLM-Turn",
+            "avgMessagesPerSession": "Nachrichten / Session",
+            "canteenCoverage": "Mensa-Abdeckung"
+        },
+        "kpiMeta": {
+            "activeUsers": "Eindeutige Nutzer in {{period}}",
+            "messages": "LLM {{llm}} · Quick {{quick}} · {{period}}",
+            "sessions": "Neue Sessions in {{period}}",
+            "toolCalls": "{{value}} Erfolgsquote · {{period}}",
+            "activeChats": "Eindeutige Chats mit Aktivität in {{period}}",
+            "canteensExplored": "Eindeutige Mensen mit Aktivität in {{period}}",
+            "citiesExplored": "Eindeutige Städte mit Aktivität in {{period}}",
+            "voiceRequests": "Speech-to-Text-Anfragen in {{period}}",
+            "shortcuts": "Über Shortcuts gestartete Nachrichten in {{period}}",
+            "toolSuccessRate": "Erfolgreiche Tool-Ausführungen geteilt durch alle Tool-Aufrufe",
+            "toolSuccessRateInline": "Erfolgsquote {{value}} · {{period}}",
+            "avgToolCallsPerLlmTurn": "Durchschnittliche Anzahl an Tool-Aufrufen pro LLM-Interaktion im gewählten Zeitraum",
+            "avgMessagesPerSession": "Je Session · {{period}}",
+            "canteenCoverage": "Anteil von {{total}} indexierten Mensen, die in diesem Zeitraum erreicht wurden"
+        },
+        "trend": {
+            "empty": "Noch keine Aktivität erfasst.",
+            "overall": "Gesamt",
+            "overallInPeriod": "Gesamt für {{period}}",
+            "controls": {
+                "activeUsers": "Aktive Nutzer",
+                "messages": "Nachrichten",
+                "interactions": "Interaktionen",
+                "sessions": "Sessions",
+                "llm": "LLM",
+                "quickLookup": "Quick",
+                "shortcuts": "Shortcuts",
+                "tools": "Tools",
+                "voice": "Voice"
+            },
+            "reach": {
+                "eyebrow": "Reichweite",
+                "title": "Reichweiten-Trend",
+                "subtitle": "Eindeutige Nutzer, Sessions, Nachrichten und Interaktionen für {{period}}.",
+                "ariaLabel": "Reichweiten-Chart"
+            },
+            "behavior": {
+                "eyebrow": "Verhalten",
+                "title": "Verhaltens-Trend",
+                "subtitle": "LLM-, Quick-Lookup-, Shortcut- und Voice-Nutzung für {{period}}.",
+                "ariaLabel": "Verhaltens-Chart"
+            }
+        },
+        "share": {
+            "interactions": {
+                "title": "LLM vs Quick Lookup",
+                "subtitle": "Interaktionsverteilung in {{period}} zwischen vollständigen Chat-Turns und direkten Lookups.",
+                "total": "Interaktionsmix"
+            },
+            "origins": {
+                "title": "Voice vs Getippt vs Shortcut",
+                "subtitle": "Wie echte Nachrichten in {{period}} gestartet wurden, nicht nur rohe Transkriptionsversuche.",
+                "total": "Nachrichtenursprung"
+            },
+            "diets": {
+                "title": "Mix effektiver Diet-Filter",
+                "subtitle": "Tatsächlich angewendete Diet-Filter in {{period}}, inklusive Anfragen ohne Diet-Filter.",
+                "total": "Effektive Diet-Filter"
+            }
+        },
+        "heatmap": {
+            "eyebrow": "Rhythmus",
+            "title": "Wöchentliche Aktivität nach lokaler Zeit",
+            "subtitle": "Interaktionsdichte aus {{period}}, aggregiert in {{timezone}}.",
+            "selectedSlot": "Ausgewählter Slot",
+            "tooltip": "{{value}} getrackte Interaktionen in diesem Zeitfenster",
+            "peakSlot": "Peak-Slot",
+            "cellAriaLabel": "{{weekday}} {{hour}}, {{value}} Interaktionen in {{period}} ({{timezone}}).",
+            "weekdays": {
+                "mon": "Mo",
+                "tue": "Di",
+                "wed": "Mi",
+                "thu": "Do",
+                "fri": "Fr",
+                "sat": "Sa",
+                "sun": "So"
+            }
+        },
+        "leaderboards": {
+            "empty": "Noch keine Leaderboard-Daten vorhanden.",
+            "cities": {
+                "eyebrow": "Städte",
+                "title": "Top-Städte in {{period}}"
+            },
+            "canteens": {
+                "eyebrow": "Mensen",
+                "title": "Top-Mensen in {{period}}"
+            },
+            "tools": {
+                "eyebrow": "Tools",
+                "title": "Top-Tools in {{period}}"
+            },
+            "filters": {
+                "eyebrow": "Filter",
+                "title": "Top-Filter in {{period}}"
+            }
+        },
+        "labels": {
+            "llmChat": "LLM Chat",
+            "quickLookup": "Quick Lookup",
+            "typed": "Getippt",
+            "voice": "Voice",
+            "shortcut": "Shortcut",
+            "noFilter": "Kein Filter",
+            "noDietFilter": "Kein Diet-Filter",
+            "vegetarian": "Vegetarisch",
+            "vegan": "Vegan",
+            "meat": "Fleisch"
         }
     },
     "canteens": {
@@ -315,9 +523,9 @@
             "meat": "Nur mit Fleisch"
         },
         "priceCategoryOptions": {
-            "students": "Student",
-            "employees": "Mitarbeiter",
-            "pupils": "Schüler",
+            "students": "Student:in",
+            "employees": "Mitarbeiter:in",
+            "pupils": "Schüler:in",
             "others": "Gast"
         },
         "allergenLabels": {
@@ -377,9 +585,9 @@
         },
         "onboarding": {
             "welcome": "Hallo! 👋 Ich bin der **MensaBot** - dein smarter Mensa-Assistent.",
-            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten können zu Auswertungszwecken erfasst und geloggt werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
+            "dataNotice": "MensaBot ist ein **Uni-Forschungsprojekt**. Nutzerdaten, einschließlich **anonymisierter Analytics-Daten**, können zu Auswertungszwecken erfasst, geloggt und veröffentlicht werden. Bei Rückfragen zur Datenerfassung nutze bitte den Kontakt im **Impressum**.",
             "dataAccept": "Verstanden & Akzeptieren",
-            "priceCategorySelect": "Bist du **Student**, **Mitarbeiter**, **Schüler** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
+            "priceCategorySelect": "Bist du **Student:in**, **Mitarbeiter:in**, **Schüler:in** oder **Gast**? Damit kann ich dir die passenden Preise anzeigen.",
             "priceCategoryNo": "Überspringen",
             "dietQuestion": "Hast du eine besondere **Essenspräferenz**, die ich berücksichtigen soll?",
             "dietYes": "Ja",

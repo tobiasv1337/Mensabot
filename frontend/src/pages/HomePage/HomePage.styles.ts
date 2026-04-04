@@ -189,56 +189,6 @@ export const FeaturesGrid = styled.div`
   }
 `;
 
-export const FeatureCard = styled.div<{ $delay?: number }>`
-  padding: 28px 24px;
-  border-radius: 20px;
-  background: ${({ theme }) => theme.surfaceCard};
-  border: 1px solid ${({ theme }) => `${theme.textMuted}22`};
-  box-shadow: 0 10px 25px ${({ theme }) => `${theme.textDark}14`};
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  animation: ${fadeUp} 0.5s ease both;
-  animation-delay: ${({ $delay }) => ($delay ?? 0) * 0.1}s;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 34px ${({ theme }) => `${theme.textDark}22`};
-    border-color: ${({ theme }) => `${theme.accent1}44`};
-  }
-`;
-
-export const FeatureIcon = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, ${({ theme }) => `${theme.accent1}18`}, ${({ theme }) => `${theme.accent2}18`});
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.accent1};
-
-  svg {
-    width: 24px;
-    height: 24px;
-  }
-`;
-
-export const FeatureTitle = styled.h3`
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textOnCard};
-`;
-
-export const FeatureDescription = styled.p`
-  margin: 0;
-  font-size: 14px;
-  color: ${({ theme }) => theme.textSecondary};
-  line-height: 1.6;
-`;
-
 /* ── Footer / Bottom ── */
 
 export const BottomSection = styled.div`

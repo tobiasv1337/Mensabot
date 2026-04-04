@@ -5,15 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from mensabot_backend_core.cache import shared_cache
 
+from .analytics import analytics_store
+from .config import settings
 from .routes.canteens import router as canteens_router
 from .routes.chat import router as chat_router
 from .routes.chat_ws import router as chat_ws_router
 from .routes.debug import router as debug_router
+from .routes.project_stats import router as project_stats_router
 from .routes.transcribe import router as transcribe_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    analytics_store.configure(settings.analytics_dir)
+    analytics_store.load()
     shared_cache.load()
     try:
         yield
@@ -42,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_ws_router)
     app.include_router(canteens_router)
     app.include_router(debug_router)
+    app.include_router(project_stats_router)
     app.include_router(transcribe_router)
 
     @app.get("/api/health")

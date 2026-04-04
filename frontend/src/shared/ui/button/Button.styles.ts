@@ -100,7 +100,7 @@ const getSizeStyles = (size: ButtonProps['size'] = 'hug') => {
             justify-content: center;
             align-items: center;
             box-sizing: border-box;
-            img {
+            img, svg {
                 width: 20px;
                 height: 20px;
             }
@@ -123,6 +123,11 @@ export const ButtonIconWrapper = styled.span`
     width: 20px;
     height: 20px;
     filter: brightness(0) saturate(100%) invert(1);
+  }
+  
+  svg {
+    width: 20px;
+    height: 20px;
   }
 `;
 

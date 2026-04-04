@@ -1,6 +1,6 @@
 [project]
 name = "openmensa-sdk"
-version = "1.1.0"
+version = "1.1.1"
 description = "Typed OpenMensa API v2 wrapper (dataclasses, stable to_dict, pagination)."
 keywords = ["openmensa", "api", "sdk", "canteen", "mensa"]
 readme = "README.md"

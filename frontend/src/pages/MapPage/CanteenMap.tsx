@@ -23,7 +23,7 @@ const MAX_ZOOM = 18;
 const CLUSTER_MAX_ZOOM = 14;
 
 const PER_PAGE = 100;
-const MAX_PINS = 2000;
+const MAX_PINS = 10000;
 const SEARCH_MIN_SCORE = 60;
 const MAP_STYLE_ERROR = "Kartenstil konnte nicht geladen werden.";
 const NUMERIC_COMPARISON_OPS = new Set(["<", "<=", ">", ">="]);
@@ -616,15 +616,13 @@ const CanteenMap: React.FC<Props> = ({ styleUrl, query, selectedCanteenIds, onSe
       void (async () => {
         const rid = ++requestId.current;
         if (destroyedRef.current) return;
-        setLoading(true);
-        setError(null);
-        setTotalResults(null);
-        setIsCapped(false);
-        setCanteens([]);
-        closeSpider();
-
         const trimmed = queryRef.current.trim();
         const hasQuery = trimmed.length > 0;
+
+        setLoading(true);
+        setError(null);
+        setIsCapped(false);
+        closeSpider();
         const queryParam = hasQuery ? trimmed : undefined;
 
         try {

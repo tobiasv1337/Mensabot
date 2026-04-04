@@ -5,7 +5,8 @@ export type NavItem =
     | "ChatBot"
     | "Canteens"
     | "Map"
-    | "ProjectFacts"
+    | "About"
+    | "Analytics"
     | "LegalNotice"
     | "Shortcuts"
     | "Settings";
@@ -18,7 +19,8 @@ const NAV_LABEL_KEYS: Record<NavItem, string> = {
     Shortcuts: "nav.shortcuts",
     Settings: "nav.settings",
     Map: "nav.map",
-    ProjectFacts: "nav.projectFacts",
+    About: "nav.about",
+    Analytics: "nav.analytics",
 };
 
 export const getNavLabel = (item: NavItem, t: TFunction): string =>
@@ -29,7 +31,8 @@ export const NAV_ROUTES: Record<NavItem, string> = {
     ChatBot: "/chat",
     Canteens: "/canteens",
     Map: "/map",
-    ProjectFacts: "/about",
+    About: "/about",
+    Analytics: "/analytics",
     LegalNotice: "/legal",
     Shortcuts: "/shortcuts",
     Settings: "/settings",
@@ -44,7 +47,7 @@ const BASE_ROUTES = Object.keys(PATH_TO_NAV)
 
 export const navItemFromPath = (pathname: string): NavItem | undefined => {
     if (Object.hasOwn(PATH_TO_NAV, pathname)) return PATH_TO_NAV[pathname];
-    
+
     let normalized = pathname;
     if (normalized !== "/" && normalized.endsWith("/")) {
         normalized = normalized.slice(0, -1);

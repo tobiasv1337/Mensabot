@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,6 +30,14 @@ class ChatRequest(BaseModel):
     filters: UserFilters | None = None
     language: str | None = None
     judge_correction: bool = Field(default=True, alias="judgeCorrection")
+    analytics: ChatAnalytics | None = None
+
+
+class ChatAnalytics(BaseModel):
+    user_id: str | None = None
+    chat_id: str | None = None
+    request_id: str | None = None
+    message_origin: Literal["typed", "voice", "shortcut"] | None = None
 
 
 class ChatStreamRequestEnvelope(BaseModel):
@@ -144,3 +154,93 @@ class CanteenSearchResponse(BaseModel):
     total_results: int
     page_info: PageInfo
     index: CanteenIndexInfo
+
+
+ProjectStatsPeriodKey: TypeAlias = Literal["today", "7d", "30d", "ytd", "total"]
+ProjectStatsTrendGranularity: TypeAlias = Literal["hour", "day"]
+
+
+class ProjectStatsSummary(BaseModel):
+    active_users: int
+    messages: int
+    sessions: int
+    tool_calls: int
+    active_chats: int
+    distinct_canteens: int
+    distinct_cities: int
+    transcribe_requests: int
+    shortcut_messages: int
+    tool_success_rate: float
+    average_messages_per_session: float
+    average_tool_calls_per_llm_turn: float
+
+
+class ProjectStatsShareEntry(BaseModel):
+    id: str
+    label: str
+    value: int
+
+
+class ProjectStatsTrendPoint(BaseModel):
+    bucket_start: str
+    active_users: int
+    messages: int
+    llm_messages: int
+    quick_lookup_messages: int
+    interactions: int
+    sessions: int
+    shortcut_messages: int
+    tool_calls: int
+    transcribe_requests: int
+
+
+class ProjectStatsHeatmapCell(BaseModel):
+    weekday: int
+    hour: int
+    count: int
+
+
+class ProjectStatsLeaderboardEntry(BaseModel):
+    key: str
+    label: str
+    count: int
+    city: str | None = None
+    id: int | None = None
+
+
+class ProjectStatsShares(BaseModel):
+    interaction_types: list[ProjectStatsShareEntry]
+    message_origins: list[ProjectStatsShareEntry]
+    diet_filters: list[ProjectStatsShareEntry]
+
+
+class ProjectStatsTrend(BaseModel):
+    granularity: ProjectStatsTrendGranularity
+    points: list[ProjectStatsTrendPoint]
+
+
+class ProjectStatsLeaderboards(BaseModel):
+    cities: list[ProjectStatsLeaderboardEntry]
+    canteens: list[ProjectStatsLeaderboardEntry]
+    tools: list[ProjectStatsLeaderboardEntry]
+    filters: list[ProjectStatsLeaderboardEntry]
+
+
+class ProjectStatsPeriod(BaseModel):
+    summary: ProjectStatsSummary
+    shares: ProjectStatsShares
+    trend: ProjectStatsTrend
+    heatmap: list[ProjectStatsHeatmapCell]
+    leaderboards: ProjectStatsLeaderboards
+
+
+class ProjectStatsAvailability(BaseModel):
+    total_canteens: int
+    total_cities: int
+
+
+class ProjectStatsResponse(BaseModel):
+    updated_at: str
+    timezone: str
+    availability: ProjectStatsAvailability
+    periods: dict[ProjectStatsPeriodKey, ProjectStatsPeriod]
