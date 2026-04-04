@@ -4,7 +4,7 @@
         "chatbot": "Chatbot",
         "canteens": "Mensen",
         "map": "Karte",
-        "projectFacts": "Über",
+        "about": "Über",
         "legalNotice": "Impressum",
         "shortcuts": "Shortcuts",
         "settings": "Einstellungen"
@@ -59,7 +59,7 @@
             }
         }
     },
-    "projectFacts": {
+    "about": {
         "eyebrow": "Projekt Einblicke",
         "title": "Projektstatistiken",
         "githubButton": "Auf GitHub ansehen",
@@ -87,7 +87,7 @@
             "mensen": "Mensen",
             "stars": "Sterne"
         },
-        "creatorTitle": "Das Team hinter Mensabot",
+        "creatorTitle": "Mensabot-Team",
         "creators": {
             "0": {
                 "name": "Tobias Veselsky",

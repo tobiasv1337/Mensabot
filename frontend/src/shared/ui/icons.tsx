@@ -131,7 +131,7 @@ export const MapIcon = () => (
     </svg>
 );
 
-export const ProjectFactsIcon = () => (
+export const AboutIcon = () => (
     <svg
         width="20"
         height="20"
