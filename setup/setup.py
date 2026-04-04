@@ -59,6 +59,47 @@ def run_cmd_live(cmd: Sequence[str], cwd: str = BASE_DIR, env: Optional[Dict[str
     process = subprocess.Popen(list(cmd), cwd=cwd, env=process_env)
     return process.wait()
 
+
+def ensure_local_branch_tracks_origin(branch_name: str) -> Tuple[int, str, str]:
+    """Check out a local branch for origin/<branch_name> and set its upstream explicitly."""
+    remote_ref = f"refs/remotes/origin/{branch_name}"
+    local_ref = f"refs/heads/{branch_name}"
+
+    code_remote, out_remote, err_remote = run_cmd(["git", "show-ref", "--verify", remote_ref])
+    if code_remote != 0:
+        return code_remote, out_remote, err_remote or f"Remote branch origin/{branch_name} was not found after fetch."
+
+    code_local, _, _ = run_cmd(["git", "show-ref", "--verify", local_ref])
+    if code_local == 0:
+        code_checkout, out_checkout, err_checkout = run_cmd(["git", "checkout", branch_name])
+    else:
+        code_checkout, out_checkout, err_checkout = run_cmd(
+            ["git", "checkout", "--no-track", "-b", branch_name, remote_ref]
+        )
+
+    if code_checkout != 0:
+        return code_checkout, out_checkout, err_checkout
+
+    code_remote_config, out_remote_config, err_remote_config = run_cmd(
+        ["git", "config", f"branch.{branch_name}.remote", "origin"]
+    )
+    if code_remote_config != 0:
+        return code_remote_config, out_remote_config, err_remote_config
+
+    code_merge_config, out_merge_config, err_merge_config = run_cmd(
+        ["git", "config", f"branch.{branch_name}.merge", f"refs/heads/{branch_name}"]
+    )
+    if code_merge_config != 0:
+        return code_merge_config, out_merge_config, err_merge_config
+
+    outputs = "\n".join(
+        part for part in (out_checkout, out_remote_config, out_merge_config) if part
+    )
+    errors = "\n".join(
+        part for part in (err_checkout, err_remote_config, err_merge_config) if part
+    )
+    return 0, outputs, errors
+
 def check_prerequisites():
     """Checks if Docker and Docker Compose are installed and running."""
     code, out, err = run_cmd(["docker", "info"])
@@ -799,14 +840,9 @@ def action_update():
 
     with console.status(f"Checking out {selected_ref}...", spinner="dots"):
         if is_branch:
-            local_branch_exists, _, _ = run_cmd(["git", "show-ref", "--verify", f"refs/heads/{selected_ref}"])
-            if local_branch_exists == 0:
-                checkout_cmd = ["git", "checkout", selected_ref]
-            else:
-                checkout_cmd = ["git", "checkout", "-b", selected_ref, "--track", f"origin/{selected_ref}"]
+            code, out, err = ensure_local_branch_tracks_origin(selected_ref)
         else:
-            checkout_cmd = ["git", "checkout", selected_ref]
-        code, out, err = run_cmd(checkout_cmd)
+            code, out, err = run_cmd(["git", "checkout", selected_ref])
     if code != 0:
         console.print("[bold red]Error checking out the selected version.[/bold red]")
         details = "\n".join(part for part in (out, err) if part)
