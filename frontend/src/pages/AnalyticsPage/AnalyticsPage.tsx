@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAppShellContext } from "@/layouts/AppShell/useAppShellContext";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
+import type { DefaultTheme } from "styled-components";
 import type {
   ProjectStatsLeaderboardEntry,
   ProjectStatsPeriodKey,
@@ -77,6 +78,64 @@ const sumTrendMetric = (points: ProjectStatsTrendPoint[], key: TrendMetricKey) =
 const getTotalShare = (items: ProjectStatsShare[]) => items.reduce((sum, item) => sum + item.value, 0);
 const titleCase = (value: string) => value.split(/[_\s-]+/).filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+type RgbColor = { r: number; g: number; b: number };
+
+const hexToRgb = (hex: string): RgbColor => {
+  let normalized = hex.replace("#", "");
+  if (normalized.length === 3) {
+    normalized = normalized.split("").map((char) => `${char}${char}`).join("");
+  }
+  if (normalized.length !== 6) {
+    return { r: 255, g: 255, b: 255 };
+  }
+
+  const value = Number.parseInt(normalized, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+};
+
+const mixRgb = (from: RgbColor, to: RgbColor, ratio: number): RgbColor => {
+  const t = clamp(ratio, 0, 1);
+  return {
+    r: Math.round(from.r + (to.r - from.r) * t),
+    g: Math.round(from.g + (to.g - from.g) * t),
+    b: Math.round(from.b + (to.b - from.b) * t),
+  };
+};
+
+const toRgba = (color: RgbColor, alpha: number) => `rgba(${color.r}, ${color.g}, ${color.b}, ${clamp(alpha, 0, 1).toFixed(3)})`;
+
+const getHeatmapRampColor = (theme: DefaultTheme, position: number): RgbColor => {
+  const rampPosition = clamp(position, 0, 1);
+  const warmSplit = 0.58;
+  const yellow = hexToRgb(theme.accent3);
+  const orange = hexToRgb(theme.accent2);
+  const red = hexToRgb(theme.accent1);
+
+  if (rampPosition <= warmSplit) {
+    return mixRgb(yellow, orange, rampPosition / warmSplit);
+  }
+
+  return mixRgb(orange, red, (rampPosition - warmSplit) / (1 - warmSplit));
+};
+
+const getHeatmapCellBackground = (theme: DefaultTheme, intensity: number) => {
+  const clampedIntensity = clamp(intensity, 0, 1);
+  const neutral = hexToRgb(theme.surfacePage);
+  const lowUsageThreshold = 0.2;
+  const warmReveal = Math.pow(clamp(clampedIntensity / lowUsageThreshold, 0, 1), 1.6);
+  const gradientEnd = 0.14 + clampedIntensity * 0.86;
+  const topRampColor = getHeatmapRampColor(theme, gradientEnd * 0.35);
+  const bottomRampColor = getHeatmapRampColor(theme, gradientEnd);
+  const topColor = mixRgb(neutral, topRampColor, 0.03 + warmReveal * 0.42);
+  const bottomColor = mixRgb(neutral, bottomRampColor, 0.06 + warmReveal * 0.94);
+
+  return `linear-gradient(180deg, ${toRgba(topColor, 0.88 + clampedIntensity * 0.06)}, ${toRgba(bottomColor, 0.92 + clampedIntensity * 0.08)})`;
+};
 
 const formatBucketAxisLabel = (bucketStart: string, granularity: ProjectStatsTrendGranularity) => {
   const date = new Date(bucketStart);
@@ -664,8 +723,7 @@ const AnalyticsPage: React.FC = () => {
                       {Array.from({ length: 24 }, (_, hour) => {
                         const cell = heatmapLookup.get(`${weekday}-${hour}`) ?? { count: 0 };
                         const intensity = heatmapMax <= 0 ? 0 : cell.count / heatmapMax;
-                        const alpha = clamp(0.12 + intensity * 0.88, 0.12, 1);
-                        const background = intensity < 0.12 ? `${theme.surfacePage}` : `linear-gradient(180deg, ${theme.accent3}${Math.round(alpha * 255).toString(16).padStart(2, "0")}, ${theme.accent1}${Math.round((0.28 + intensity * 0.52) * 255).toString(16).padStart(2, "0")})`;
+                        const background = getHeatmapCellBackground(theme, intensity);
                         const isActive = selectedHeatmapCell.weekday === weekday && selectedHeatmapCell.hour === hour;
 
                         return (
